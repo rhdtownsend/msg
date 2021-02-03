@@ -8,3 +8,7 @@
 # Fortran module files
 *.mod
 *.smod
+
+# Dependency files
+.*.d
+.*.dpp

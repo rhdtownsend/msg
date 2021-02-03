@@ -7,18 +7,16 @@ import re
 import sys
 import fypp
 
-incfiles = {}
-
 class FyppDeps (fypp.Fypp):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._preprocessor._parser.handle_include = self.handle_include_and_add_dep
+        self._preprocessor._parser.handle_include = self.handle_include_and_add_deps
         self.incfiles = {}
 
     def handle_include_and_add_deps (self, span, fname):
         if span is not None:
-            if fname in incfiles:
+            if fname in self.incfiles:
                 self.incfiles[fname] += [span]
             else:
                 self.incfiles[fname] = [span]
