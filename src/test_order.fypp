@@ -1,0 +1,15 @@
+program  test_order_m
+
+  ! Uses
+
+  use test_order_m
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Run the tests
+
+  call test()
+
+end program test_order_m

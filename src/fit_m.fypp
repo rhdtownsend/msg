@@ -1,5 +1,5 @@
-! Module  : linfit_m
-! Purpose : linear least-squares fitting
+! Module  : fit_m
+! Purpose : data fitting routines
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-module linfit_m
+module fit_m
 
   ! Uses
 
@@ -31,20 +31,20 @@ module linfit_m
 
   ! Interfaces
 
-  interface linfit
-     module procedure linfit_1_
-     module procedure linfit_2_
-  end interface linfit
+  interface gls_fit
+     module procedure gls_fit_1_
+     module procedure gls_fit_2_
+  end interface gls_fit
 
   ! Access specifiers
 
   private
 
-  public :: linfit
+  public :: gls_fit
 
 contains
 
-  subroutine linfit_1_(x, y, f, a)
+  subroutine gls_fit_1_(x, y, f, a)
 
     real(R8), intent(in) :: x(:)
     real(R8), intent(in) :: y(:)
@@ -71,7 +71,7 @@ contains
 
     y_2(:,1) = y
 
-    call linfit_2_(x, y_2, f, a_2)
+    call gls_fit(x, y_2, f, a_2)
 
     a = a_2(:,1)
 
@@ -79,11 +79,11 @@ contains
 
     return
 
-  end subroutine linfit_1_
+ end subroutine gls_fit_1_
 
   !****
   
-  subroutine linfit_2_(x, y, f, a)
+  subroutine gls_fit_2_(x, y, f, a)
 
     real(R8), intent(in) :: x(:)
     real(R8), intent(in) :: y(:,:)
@@ -136,7 +136,7 @@ contains
 
     ! Finish
 
-  end subroutine linfit_2_
+ end subroutine gls_fit_2_
 
-end module linfit_m
+end module fit_m
 
