@@ -1,0 +1,105 @@
+! Module  : math_m
+! Purpose : various mathematical functions
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module math_m
+
+  ! Uses
+  
+  use kinds_m
+  use order_m
+
+  use ISO_FORTRAN_ENV
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Access specifiers
+
+  private
+
+  public :: integrate
+
+  ! Procedures
+
+contains
+
+  function integrate(x, y, x_a, x_b) result (iy)
+
+    real(R8), intent(in) :: x(:)
+    real(R8), intent(in) :: y(:)
+    real(R8), intent(in) :: x_a
+    real(R8), intent(in) :: x_b
+    real(R8)             :: iy
+
+    integer  :: i_a
+    integer  :: i_b
+    integer  :: n_x
+    real(R8) :: u_a
+    real(R8) :: u_b
+    real(R8) :: iy_a
+    real(R8) :: iy_b
+
+    @:CHECK_BOUNDS(SIZE(y), SIZE(x))
+
+    ! Integrate the function y(x) from x_a to x_b using the
+    ! trapezoidal scheme. The endpoints are handled using linear
+    ! interpolation
+
+    call locate(x, x_a, i_a)
+    call locate(x, x_b, i_b)
+
+    n_x = SIZE(x)
+
+    @:ASSERT(i_a >= 1,out-of-bounds integration)
+    @:ASSERT(i_a < n_x,out-of-bounds integration)
+
+    @:ASSERT(i_b >= 1,out-of-bounds integration)
+    @:ASSERT(i_b < n_x,out-of-bounds integration)
+
+    u_a = (x_a - x(i_a))/(x(i_a+1)-x(i_a))
+    u_b = (x_b - x(i_b))/(x(i_b+1)-x(i_b))
+
+    if (i_a == i_b) then
+
+       iy = 0.5_R8*( &
+            y(i_a)*(2._R8 - u_a - u_b) + y(i_a+1)*(u_a + u_b) ) * &
+            (u_b - u_a)*(x(i_a+1) - x(i_a))
+
+    else
+
+       iy_a = 0.5_R8*( &
+            y(i_a)*(1._R8 - u_a) + y(i_a+1)*(1._R8 + u_a) ) * &
+            (1._R8 - u_a)*(x(i_a+1) - x(i_a))
+       
+       iy_b = 0.5_R8*( &
+            y(i_b)*(2._R8 - u_b) + y(i_b+1)*u_b ) * &
+            u_b*(x(i_b+1) - x(i_b))
+       
+       iy = (iy_a + iy_b) + 0.5_R8*SUM((y(i_a+1:i_b-1) + y(i_a+2:i_b))*(x(i_a+2:i_b) - x(i_a+1:i_b-1)))
+
+    endif
+
+    ! Finish
+
+    return
+
+  end function integrate
+
+end module math_m

@@ -1,0 +1,574 @@
+! Module  : radint_m
+! Purpose : define radint_t type
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module radint_m
+
+   ! Uses
+
+   use kinds_m
+   use const_m
+   use hdf5io_m
+
+   use linfit_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Parameter definitions
+
+   integer, parameter :: LINEAR_LAW = 1
+   integer, parameter :: CLARET_LAW = 2
+
+   ! Derived-type definitions
+
+   type radint_t
+      private
+      real(R8), allocatable :: I_1(:)
+      real(R8), allocatable :: a(:,:)
+      real(R8)              :: w_0
+      real(R8)              :: dw
+      integer               :: n_a
+      integer               :: n_w
+      integer               :: law
+   contains
+      private
+      procedure, public :: I
+      procedure, public :: F
+      procedure         :: locate_
+   end type radint_t
+
+   ! Interfaces
+
+   interface radint_t
+      module procedure radint_t_
+      module procedure radint_t_fit_
+      module procedure radint_t_rebin_
+   end interface radint_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: radint_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function radint_t_(I_1, a, w_0, dw, law) result (ri)
+
+      real(R8), intent(in) :: I_1(:)
+      real(R8), intent(in) :: a(:,:)
+      real(R8), intent(in) :: w_0
+      real(R8), intent(in) :: dw
+      integer, intent(in)  :: law
+      type(radint_t)       :: ri
+
+      integer :: n_a
+      integer :: n_w
+
+      @:CHECK_BOUNDS(SIZE(I_1), SIZE(a, 2))
+
+      ! Construct the radint_t from the supplied data
+
+      n_a = n_coeff_(law)
+      n_w = SIZE(a, 2)
+
+      @:ASSERT(SIZE(a, 1) == n_a,invalid number of coefficients)
+
+      ri%I_1 = I_1
+      ri%a = a
+
+      ri%w_0 = w_0
+      ri%dw = dw
+
+      ri%n_a = n_a
+      ri%n_w = n_w
+
+      ! Finish
+
+      return
+
+   end function radint_t_
+
+   !****
+
+   function radint_t_fit_(I, mu, w_0, dw, law) result (ri)
+
+      real(R8), intent(in) :: I(:,:)
+      real(R8), intent(in) :: mu(:)
+      real(R8), intent(in) :: w_0
+      real(R8), intent(in) :: dw
+      integer, intent(in)  :: law
+      type(radint_t)       :: ri
+
+      integer               :: n_mu
+      real(R8), allocatable :: I_1(:)
+      integer               :: n_w
+      real(R8), allocatable :: y(:,:)
+      integer               :: k
+      integer               :: n_a
+      real(R8), allocatable :: a(:,:)
+
+      @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
+
+      ! Construct the radint_t by fitting a limb-darkening law to
+      ! I(mu,w)
+
+      ! Set the normal intensity
+
+      n_mu = SIZE(mu)
+
+      I_1 = I(n_mu,:)
+
+      ! Set up the fit data
+
+      n_w = SIZE(I, 2)
+
+      allocate(y(n_mu,n_w))
+
+      w_loop : do k = 1, n_w
+         y(:,k) = 1._R8 - I(:,k)/I_1(k)
+      end do w_loop
+
+      ! Do the fit
+
+      n_a = n_coeff_(law)
+
+      allocate(a(n_a,n_w))
+
+      call linfit(mu, y, f_, a)
+
+      ! Create the radint_t
+
+      ri = radint_t(I_1, a, w_0, dw, law)
+
+      ! Finish
+
+      return
+
+   contains
+
+      function f_ (mu, n)
+
+         real(R8), intent(in) :: mu
+         integer, intent(in)  :: n
+         real(R8)             :: f_(n)
+
+         f_ = I_basis_(law, mu)
+
+      end function f_
+
+   end function radint_t_fit_
+
+   !****
+
+   function radint_t_rebin_(ri_in, w_min, w_max, dw) result (ri)
+
+      type(radint_t), intent(in)     :: ri_in
+      real(R8), intent(in), optional :: w_min
+      real(R8), intent(in), optional :: w_max
+      real(R8), intent(in), optional :: dw
+      type(radint_t)                 :: ri
+
+      real(R8)              :: w_min_
+      real(R8)              :: w_max_
+      real(R8)              :: dw_
+      integer               :: n_w
+      real(R8), allocatable :: I_1(:)
+      real(R8), allocatable :: a(:,:)
+      real(R8)              :: u
+      integer               :: k_in
+      integer               :: k
+      real(R8)              :: w_a_in
+      real(R8)              :: w_b_in
+      real(R8)              :: w_a
+      real(R8)              :: w_b
+      real(R8)              :: delta_w
+      logical               :: update_in
+      logical               :: update
+
+      ! Construct the radint_t by rebinning ri_in
+
+      if (PRESENT(w_min)) then
+         w_min_ = w_min
+      else
+         w_min_ = ri_in%w_0
+      endif
+
+      if (PRESENT(w_max)) then
+         w_max_ = w_max
+      else
+         w_max_ = ri%w_0 + ri_in%dw*ri_in%n_w
+      endif
+
+      if (PRESENT(dw)) then
+         dw_ = dw
+      else
+         dw_ = ri_in%dw
+      endif
+
+      @:ASSERT(w_min_ >= ri_in%w_0, invalid w_min)
+      @:ASSERT(w_max_ <= ri_in%w_0 + ri_in%dw*ri_in%n_w, invalid w_max)
+
+      ! Determine the new number of bins
+
+      n_w = CEILING((w_max_ - w_min_)/dw_)
+
+      ! (fix required for when the default w_min_ and w_max_ are
+      ! used; otherwise, the final bin falls outside the original grid)
+
+      if (dw_*n_w > ri_in%dw*ri_in%n_w) n_w = n_w - 1
+
+      ! Allocate the new data arrays
+
+      allocate(I_1(n_w))
+      allocate(a(ri_in%n_a,n_w))
+
+      I_1 = 0._R8
+      a = 0._R8
+
+      ! Integrate the intensity in each bin of I
+
+      call ri_in%locate_(w_min_, 0._R8, k_in)
+
+      @:ASSERT(k_in >= 1, out-of-bounds rebinning)
+      @:ASSERT(k_in <= ri_in%n_w, out-of-bouneds rebinning)
+
+      k = 1
+
+      w_a_in = ri_in%w_0 + (k_in-1)*ri_in%dw
+      w_b_in = ri_in%w_0 + (k_in  )*ri_in%dw
+
+      w_a = w_min_ + (k-1)*dw_
+      w_b = w_min_ + (k  )*dw_
+
+      integrate_loop : do
+
+         delta_w = MIN(w_b_in, w_b) - MAX(w_a_in, w_a)
+
+         @:ASSERT_DEBUG(dw > 0._R8, invalid delta_w)
+
+         I_1(k) = I_1(k) + ri_in%I_1(k_in)*delta_w
+         a(:,k) = a(:,k) + ri_in%I_1(k_in)*ri_in%a(:,k)*delta_w
+
+         update_in = w_b >= w_b_in
+         update = w_b_in >= w_b
+
+         if (update_in) then
+
+            k_in = k_in + 1
+
+            w_a_in = w_b_in
+            w_b_in = ri_in%w_0 + (k_in  )*ri_in%dw
+
+         endif
+
+         if (update) then 
+
+            I_1(k) = I_1(k)/(w_b - w_a)
+            a(:,k) = a(:,k)/(w_b - w_a)/I_1(k)
+
+            k = k + 1
+
+            w_a = w_b
+            w_b = w_min_ + (k  )*dw_
+
+         endif
+
+         @:ASSERT_DEBUG(k_in <= ri_in%n_w, out-of-bounds rebinning)
+
+         if (k > n_w) exit integrate_loop
+
+      end do integrate_loop
+
+      ! Create the radint_t
+
+      ri = radint_t(I_1, a, w_min_, dw_, ri_in%law)
+
+      ! Finish
+
+      return
+
+   end function radint_t_rebin_
+
+   !****
+
+   subroutine read_(hi, ri)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(radint_t), intent(out)   :: ri
+
+      real(R8)              :: w_0
+      real(R8)              :: dw
+      integer               :: law
+      real(R8), allocatable :: I_1(:)
+      real(R8), allocatable :: a(:,:)
+
+      ! Read the radint_t
+
+      call hi%read_attr('w_0', w_0)
+      call hi%read_attr('dw', dw)
+      call hi%read_attr('law', law)
+
+      call hi%alloc_read_dset('I_1', I_1)
+      call hi%alloc_read_dset('a', a)
+
+      ri = radint_t(I_1, a, w_0, dw, law)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_ (hg, ri)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(radint_t), intent(out)   :: ri
+
+      ! Write the radint_t
+
+      call hi%write_attr('w_0', ri%w_0)
+      call hi%write_attr('dw', ri%dw)
+      call hi%write_attr('law', ri%law)
+
+      call hi%write_dset('I_1', ri%I_1, comp_level=9)
+      call hi%write_dset('a', ri%a, comp_level=9)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function I(self, mu, w_base, w_off, n_w)
+
+      class(radint_t), intent(in) :: self
+      real(R8), intent(in)        :: mu
+      real(R8), intent(in)        :: w_base
+      real(R8), intent(in)        :: w_off
+      integer, intent(in)         :: n_w
+      real(R8)                    :: I(n_w)
+
+      integer               :: k
+      real(R8)              :: u
+      real(R8), allocatable :: b(:)
+      integer               :: i_w
+
+      ! Set up interpolation starting index and weight
+
+      call self%locate_(w_base, w_off, k, u)
+
+      @:ASSERT(k >= 1 .AND. k+n_w-1 < self%n_w, out-of-bounds interpolation)
+
+      ! Set up the intensity basis functions
+
+      b = I_basis_(self%law, mu)
+
+      ! Evaluate the intensity
+
+      !$OMP PARALLEL DO
+      w_loop : do i_w = 1, n_w
+         I(i_w) = (1._R8-u)*self%I_1(k+i_w-1)*(1._R8 - DOT_PRODUCT(self%a(:,k+i_w-1), b)) + &
+              (      u)*self%I_1(k+i_w  )*(1._R8 - DOT_PRODUCT(self%a(:,k+i_w  ), b))
+      end do w_loop
+
+      ! Finish
+
+      return
+
+   end function I
+
+   !****
+
+   function F (self, w_base, w_off, n_w)
+
+      class(radint_t), intent(in) :: self
+      real(R8), intent(in)        :: w_base
+      real(R8), intent(in)        :: w_off
+      integer, intent(in)         :: n_w
+      real(R8)                    :: F(n_w)
+
+      integer  :: k
+      real(R8) :: u
+      real(R8) :: b(self%n_a)
+      integer  :: i_w
+
+      ! Set up interpolation starting index and weight
+
+      call self%locate_(w_base, w_off, k, u)
+
+      $ASSERT(k >= 1 .AND. k+n_w-1 < self%n_w,Out-of-bounds interpolation)
+
+      ! Set up the flux basis functions
+
+      b = F_basis_(self%law)
+
+      ! Evaluate the flux
+
+      !$OMP PARALLEL DO
+      w_loop : do i_w = 1, n_w
+         F(i_w) = (1._R8-u)*self%I_1(k+i_w-1)*TWOPI*(0.5_R8 - DOT_PRODUCT(self%a(:,k+i_w-1), b)) + &
+              (      u)*self%I_1(k+i_w  )*TWOPI*(0.5_R8 - DOT_PRODUCT(self%a(:,k+i_w  ), b))
+      end do w_loop
+
+      ! Finish
+
+      return
+
+   end function F
+
+   !****
+
+   subroutine locate_(self, w_base, w_off, k, u)
+
+      class(radint_t), intent(in)     :: self
+      real(R8), intent(in)            :: w_base
+      real(R8), intent(in)            :: w_off
+      integer, intent(out)            :: k
+      real(R8), intent(out), optional :: u
+
+      real(R8) :: w_pri
+
+      ! Set up k such that (k-1)*self%dw <= w' < k*self%dw, where 
+      ! w' = (w_base-self%w_0)+w_off
+
+      w_pri = (w_base-self%w_0) + w_off
+
+      k = FLOOR(w_pri/self%dw) + 1
+
+      ! Set up the associated interpolation weight
+
+      if (PRESENT(u)) then
+
+         u = w_pri/self%dw - (k-1)
+
+         @:ASSERT_DEBUG(u >= 0._R8, invalid interpolation weight)
+         @:ASSERT_DEBUG(u <= 1._R8, invalid interpolation weight)
+
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine locate_
+
+   !****
+
+   function n_coeff_ (law) result (n_a)
+
+      integer, intent(in) :: law
+      integer             :: n_a
+
+      ! Return the number of coefficients given the law
+
+      select case (law)
+      case (LINEAR_LAW)
+         n_a = 1
+      case (CLARET_LAW)
+         n_a = 4
+      case default
+         @:ABORT(invalid law)
+      end select
+
+      ! Finish
+
+      return
+
+   end function n_coeff_
+
+   !****
+
+   function I_basis_(law, mu) result (b)
+
+      integer, intent(in)   :: law
+      real(R8), intent(in)  :: mu
+      real(R8), allocatable :: b(:)
+
+      ! Evaluate the intensity basis functions
+
+      allocate(b(n_coeff_(law)))
+
+      select case (law)
+      case (LINEAR_LAW)
+         b(1) = 1._R8 - mu
+      case (CLARET_LAW)
+         b(1) = 1._R8 - SQRT(mu)
+         b(2) = 1._R8 - mu
+         b(3) = 1._R8 - mu*SQRT(mu)
+         b(4) = 1._R8 - mu*mu
+      case default
+         @:ABORT(invalid law)
+      end select
+
+      ! Finish
+
+      return
+
+   end function I_basis_
+
+   !****
+
+   function F_basis_(law) result (b)
+
+      integer, intent(in)   :: law
+      real(R8), allocatable :: b(:)
+
+      ! Evaluate the flux basis functions
+
+      allocate(b(n_coeff_(law)))
+
+      select case (law)
+      case (LINEAR_LAW)
+         b(1) = 1._R8/6._R8
+      case (CLARET_LAW)
+         b(1) = 1._R8/10._R8
+         b(2) = 1._R8/6._R8
+         b(3) = 3._R8/14._R8
+         b(4) = 1._R8/4._R8
+      case default
+         @:ABORT(Invalid law)
+      end select
+
+      ! Finish
+
+      return
+
+   end function F_basis_
+
+end module radint_m
