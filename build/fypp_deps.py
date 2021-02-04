@@ -34,12 +34,12 @@ def run_fypp_deps():
         tool = FyppDeps(opts)
         tool.process_file(infile, outfile)
         print('{:s} : {:s} {:s}'.format(outfile, infile, ' '.join(tool.incfiles.keys())))
-    except FyppStopRequest as exc:
-        sys.stderr.write(_formatted_exception(exc))
-        sys.exit(USER_ERROR_EXIT_CODE)
-    except FyppFatalError as exc:
-        sys.stderr.write(_formatted_exception(exc))
-        sys.exit(ERROR_EXIT_CODE)
+    except fypp.FyppStopRequest as exc:
+        sys.stderr.write(fypp._formatted_exception(exc))
+        sys.exit(fypp.USER_ERROR_EXIT_CODE)
+    except fypp.FyppFatalError as exc:
+        sys.stderr.write(fypp._formatted_exception(exc))
+        sys.exit(fypp.ERROR_EXIT_CODE)
 
 if __name__ == '__main__':
     sys.exit(run_fypp_deps())
