@@ -3,7 +3,24 @@
 
 # Variables
 
-TARGETS = test_math test_order test_fit
+#TARGETS = test_math test_order test_fit
+TARGETS = make_radint
+
+make_radint_SRCS = \
+  make_radint.fypp \
+  radint_m.fypp \
+  radint_factory_m.fypp \
+  fit_m.fypp \
+  kinds_m.fypp \
+  const_m.fypp \
+  math_m.fypp \
+  memory_m.fypp \
+  order_m.fypp \
+  system_m.fypp \
+  hdf5io_m.fypp \
+  hdf5io_read_sm.fypp \
+  hdf5io_alloc_read_sm.fypp \
+  hdf5io_write_sm.fypp
 
 test_math_SRCS = \
   test_math.fypp \
