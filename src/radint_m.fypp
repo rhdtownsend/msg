@@ -25,7 +25,7 @@ module radint_m
    use const_m
    use hdf5io_m
 
-   use linfit_m
+   use fit_m
 
    use ISO_FORTRAN_ENV
 
@@ -76,6 +76,8 @@ module radint_m
 
    private
 
+   public :: LINEAR_LAW
+   public :: CLARET_LAW
    public :: radint_t
    public :: read
    public :: write
@@ -103,7 +105,7 @@ contains
       n_a = n_coeff_(law)
       n_w = SIZE(a, 2)
 
-      @:ASSERT(SIZE(a, 1) == n_a,invalid number of coefficients)
+      @:ASSERT(SIZE(a, 1) == n_a, invalid number of coefficients)
 
       ri%I_1 = I_1
       ri%a = a
@@ -166,7 +168,7 @@ contains
 
       allocate(a(n_a,n_w))
 
-      call linfit(mu, y, f_, a)
+      call gls_fit(mu, y, f_, a)
 
       ! Create the radint_t
 
@@ -353,7 +355,7 @@ contains
 
    !****
 
-   subroutine write_ (hg, ri)
+   subroutine write_ (hi, ri)
 
       type(hdf5io_t), intent(inout) :: hi
       type(radint_t), intent(out)   :: ri
@@ -364,8 +366,8 @@ contains
       call hi%write_attr('dw', ri%dw)
       call hi%write_attr('law', ri%law)
 
-      call hi%write_dset('I_1', ri%I_1, comp_level=9)
-      call hi%write_dset('a', ri%a, comp_level=9)
+      call hi%write_dset('I_1', ri%I_1)
+      call hi%write_dset('a', ri%a)
 
       ! Finish
 
@@ -432,7 +434,7 @@ contains
 
       call self%locate_(w_base, w_off, k, u)
 
-      $ASSERT(k >= 1 .AND. k+n_w-1 < self%n_w,Out-of-bounds interpolation)
+      @:ASSERT(k >= 1 .AND. k+n_w-1 < self%n_w, out-of-bounds interpolation)
 
       ! Set up the flux basis functions
 

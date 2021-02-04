@@ -1,0 +1,106 @@
+! Module   : radint_factory_m
+! Purpose  : factory procedures for radint_t type
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module radint_factory_m
+
+  ! Uses
+  
+   use kinds_m
+   use math_m
+   
+   use radint_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: radint_from_table
+
+   ! Procedures
+
+contains
+
+   function radint_from_table (I, mu, lambda, w_0, dw, n_w, law) result (ri)
+
+      real(R8), intent(in) :: I(:,:)
+      real(R8), intent(in) :: mu(:)
+      real(R8), intent(in) :: lambda(:)
+      real(R8), intent(in) :: w_0
+      real(R8), intent(in) :: dw
+      integer, intent(in)  :: n_w
+      integer, intent(in)  :: law
+      type(radint_t)       :: ri
+
+      integer               :: n_mu
+      integer               :: n_lambda
+      real(R8), allocatable :: I_w(:,:)
+      real(R8), allocatable :: x(:)
+      integer               :: k
+      real(R8)              :: w_a
+      real(R8)              :: w_b
+      integer               :: j
+      real(R8), allocatable :: y(:)
+
+      @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
+      @:CHECK_BOUNDS(SIZE(I, 2), SIZE(w))
+
+      ! Construct the radint_t from the tabulated I(mu,lambda) data
+
+      ! Transform the intensity data onto the uniform-w grid
+
+      n_mu = SIZE(mu)
+      n_lambda = SIZE(lambda)
+
+      @:ASSERT(w_0 >= LOG(lambda(1)), out-of-range w)
+      @:ASSERT(w_0 + n_w*dw <= LOG(lambda(n_lambda)), out-of-range w)
+
+      allocate(I_w(n_mu,n_w))
+
+      x = LOG(lambda)
+
+      w_loop : do k = 1, n_w
+
+         w_a = w_0 + (k-1)*dw
+         w_b = w_0 + (k  )*dw
+
+         mu_loop : do j = 1, n_mu
+
+            y = I(j,:)*lambda
+
+            I_w(j,k) = integrate(x, y, w_a, w_b)/(w_b - w_a)
+
+         end do mu_loop
+
+      end do w_loop
+
+      ! Create the radint_t
+
+      ri = radint_t(I_w, mu, w_0, dw, law)
+
+      ! Finish
+
+   end function radint_from_table
+
+end module radint_factory_m
