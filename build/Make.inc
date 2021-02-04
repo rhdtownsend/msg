@@ -111,7 +111,6 @@ almostclean :
 # Dependency handling
 
 ifneq ($(MAKECMDGOALS),clean)
--include $(addprefix .,$(subst .fypp,.dpp,${TARGETS}))
 -include $(addprefix .,$(addsuffix .d,${TARGETS}))
 endif
 
@@ -126,3 +125,5 @@ endif
             -l '@echo LD $*; $${F9XC} $${F9XFLAGS} -o $$@ $$^ $${LDFLAGS}' \
             $^ | \
 	    sed -e "s/FOBJ/$*_FOBJ/g" > $@
+	@echo "include $(addprefix .,$(subst .fypp,.dpp,$($*_SRCS)))" >> $@
+
