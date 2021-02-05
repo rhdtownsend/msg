@@ -69,6 +69,12 @@ F77FLAGS:=${F9XFLAGS} -ffp-contract=off
 
 LDFLAGS:=${LDFLAGS} `hdf5_link`
 
+# Cancel implicit rules
+
+%.o : %.mod
+% : %.mod
+% : %.o
+
 # Rules
 
 vpath %.fypp ${SUBDIRS}
@@ -76,23 +82,12 @@ vpath %.inc ${SUBDIRS}
 
 .PRECIOUS : %.f90
 
-%.o : %.mod # This cancels the default m2c rule
+%.f90 %.dpp : %.fypp
+	@./fypp_deps ${FYPPFLAGS} $< $*.f90 > $*.dpp
 
-%.f90 : %.fypp
-	@./fypp_deps.py ${FYPPFLAGS} $< $*.f90 > .$*.dpp
-
-.%.dpp : %.f90
-	@true
-
-%.o : %.f90
+%.o %.mod : %.f90
 	@echo FC $<
 	@${F9XC} ${F9XFLAGS} ${MODINCS} -c $<
-
-%.mod : %.o
-	@true
-
-%.smod : %.o
-	@true
 
 all : ${TARGETS}
 
@@ -103,7 +98,7 @@ install : ${TARGETS}
         done
 
 clean :
-	rm -f ${TARGETS} $(addsuffix .f90,${TARGETS}) *.o *.mod *.smod *.f90 .*.d .*.dpp
+	rm -f ${TARGETS} $(addsuffix .f90,${TARGETS}) *.o *.mod *.smod *.f90 *.d *.dpp
 
 almostclean :
 	rm -f ${TARGETS} $(addsuffix .f90,${TARGETS}) *.o *.mod *.smod *.f90
@@ -111,19 +106,13 @@ almostclean :
 # Dependency handling
 
 ifneq ($(MAKECMDGOALS),clean)
--include $(addprefix .,$(addsuffix .d,${TARGETS}))
+-include $(addsuffix .d,${TARGETS})
 endif
-
-# Secondary expansion stuff
 
 .SECONDEXPANSION:
 
-.%.d : $$(subst .fypp,.f90,$$(%_SRCS))
-	@makedepf90 \
-            -m %m.mod \
-            -o $* \
-            -l '@echo LD $*; $${F9XC} $${F9XFLAGS} -o $$@ $$^ $${LDFLAGS}' \
-            $^ | \
-	    sed -e "s/FOBJ/$*_FOBJ/g" > $@
-	@echo "include $(addprefix .,$(subst .fypp,.dpp,$($*_SRCS)))" >> $@
+${TARGETS}: $$(subst .f90,.o,$$($$@_SRCS))
+	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS}
 
+%.d : $$($$*_SRCS)
+	@./makedepf90_deps $@ $^ > $@

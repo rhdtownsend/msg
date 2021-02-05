@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Wrapper script for makedepf90, to encapsulate various steps required
+# to process the output from makedepf90
+
+# Process arguments
+
+TARGET=${1%.d}
+SRCS="${@:2}"
+
+# Print out the rules
+
+# Run makedepf90 to generate the dependencies
+
+makedepf90 -m %m.mod ${SRCS}
+
+# Append the necessary include files
+
+cat <<EOF
+
+include \$(patsubst %.f90,%.dpp,${SRCS})
+EOF
+
