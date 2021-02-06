@@ -1,5 +1,5 @@
-! Module  : radint_m
-! Purpose : define radint_t type
+! Module  : specrad_m
+! Purpose : define specrad_t type, for representing spectral radiance
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-module radint_m
+module specrad_m
 
    ! Uses
 
@@ -26,6 +26,8 @@ module radint_m
    use hdf5io_m
 
    use fit_m
+   use limb_m
+   use math_m
 
    use ISO_FORTRAN_ENV
 
@@ -33,36 +35,31 @@ module radint_m
 
    implicit none
 
-   ! Parameter definitions
-
-   integer, parameter :: LINEAR_LAW = 1
-   integer, parameter :: CLARET_LAW = 2
-
    ! Derived-type definitions
 
-   type radint_t
+   type specrad_t
       private
+      type(limb_t)          :: li
       real(R8), allocatable :: I_1(:)
       real(R8), allocatable :: a(:,:)
       real(R8)              :: w_0
       real(R8)              :: dw
       integer               :: n_a
       integer               :: n_w
-      integer               :: law
    contains
       private
       procedure, public :: I
       procedure, public :: F
       procedure         :: locate_
-   end type radint_t
+   end type specrad_t
 
    ! Interfaces
 
-   interface radint_t
-      module procedure radint_t_
-      module procedure radint_t_fit_
-      module procedure radint_t_rebin_
-   end interface radint_t
+   interface specrad_t
+      module procedure specrad_t_
+      module procedure specrad_t_fit_
+      module procedure specrad_t_rebin_
+   end interface specrad_t
 
    interface read
       module procedure read_
@@ -76,9 +73,7 @@ module radint_m
 
    private
 
-   public :: LINEAR_LAW
-   public :: CLARET_LAW
-   public :: radint_t
+   public :: specrad_t
    public :: read
    public :: write
 
@@ -86,64 +81,70 @@ module radint_m
 
 contains
 
-   function radint_t_(I_1, a, w_0, dw, law) result (ri)
+   function specrad_t_(I_1, a, w_0, dw, limb_law) result (sr)
 
       real(R8), intent(in) :: I_1(:)
       real(R8), intent(in) :: a(:,:)
       real(R8), intent(in) :: w_0
       real(R8), intent(in) :: dw
-      integer, intent(in)  :: law
-      type(radint_t)       :: ri
+      integer, intent(in)  :: limb_law
+      type(specrad_t)      :: sr
 
-      integer :: n_a
-      integer :: n_w
+      type(limb_t) :: li
+      integer      :: n_a
+      integer      :: n_w
 
       @:CHECK_BOUNDS(SIZE(I_1), SIZE(a, 2))
 
-      ! Construct the radint_t from the supplied data
+      ! Construct the specrad_t from the supplied data
 
-      n_a = n_coeff_(law)
-      n_w = SIZE(a, 2)
+      li = limb_t(limb_law)
+
+      n_a = li%n_basis()
+      n_w = SIZE(I_1)
 
       @:ASSERT(SIZE(a, 1) == n_a, invalid number of coefficients)
 
-      ri%I_1 = I_1
-      ri%a = a
+      sr%li = li
 
-      ri%w_0 = w_0
-      ri%dw = dw
+      sr%I_1 = I_1
+      sr%a = a
 
-      ri%n_a = n_a
-      ri%n_w = n_w
+      sr%w_0 = w_0
+      sr%dw = dw
+
+      sr%n_a = n_a
+      sr%n_w = n_w
 
       ! Finish
 
       return
 
-   end function radint_t_
+   end function specrad_t_
 
    !****
 
-   function radint_t_fit_(I, mu, w_0, dw, law) result (ri)
+   function specrad_t_fit_(I, mu, w_0, dw, limb_law) result (sr)
 
       real(R8), intent(in) :: I(:,:)
       real(R8), intent(in) :: mu(:)
       real(R8), intent(in) :: w_0
       real(R8), intent(in) :: dw
-      integer, intent(in)  :: law
-      type(radint_t)       :: ri
+      integer, intent(in)  :: limb_law
+      type(specrad_t)      :: sr
 
       integer               :: n_mu
       real(R8), allocatable :: I_1(:)
       integer               :: n_w
       real(R8), allocatable :: y(:,:)
       integer               :: k
+      type(limb_t)          :: li
       integer               :: n_a
       real(R8), allocatable :: a(:,:)
 
       @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
 
-      ! Construct the radint_t by fitting a limb-darkening law to
+      ! Construct the specrad_t by fitting a limb-darkening law to
       ! I(mu,w)
 
       ! Set the normal intensity
@@ -164,15 +165,26 @@ contains
 
       ! Do the fit
 
-      n_a = n_coeff_(law)
+      li = limb_t(limb_law)
+
+      n_a = li%n_basis()
 
       allocate(a(n_a,n_w))
 
       call gls_fit(mu, y, f_, a)
 
-      ! Create the radint_t
+      ! Construct the specrad_t
 
-      ri = radint_t(I_1, a, w_0, dw, law)
+      sr%li = li
+
+      sr%I_1 = I_1
+      sr%a = a
+
+      sr%w_0 = w_0
+      sr%dw = dw
+
+      sr%n_a = n_a
+      sr%n_w = n_w
 
       ! Finish
 
@@ -186,61 +198,56 @@ contains
          integer, intent(in)  :: n
          real(R8)             :: f_(n)
 
-         f_ = I_basis_(law, mu)
+         f_ = li%I_basis(mu)
 
       end function f_
 
-   end function radint_t_fit_
+   end function specrad_t_fit_
 
    !****
 
-   function radint_t_rebin_(ri_in, w_min, w_max, dw) result (ri)
+   function specrad_t_rebin_(sr_in, w_min, w_max, dw) result (sr)
 
-      type(radint_t), intent(in)     :: ri_in
+      type(specrad_t), intent(in)    :: sr_in
       real(R8), intent(in), optional :: w_min
       real(R8), intent(in), optional :: w_max
       real(R8), intent(in), optional :: dw
-      type(radint_t)                 :: ri
+      type(specrad_t)                :: sr
 
       real(R8)              :: w_min_
       real(R8)              :: w_max_
       real(R8)              :: dw_
       integer               :: n_w
+      real(R8), allocatable :: w_in(:)
+      integer               :: k
+      real(R8), allocatable :: w(:)
       real(R8), allocatable :: I_1(:)
       real(R8), allocatable :: a(:,:)
-      real(R8)              :: u
-      integer               :: k_in
-      integer               :: k
-      real(R8)              :: w_a_in
-      real(R8)              :: w_b_in
-      real(R8)              :: w_a
-      real(R8)              :: w_b
-      real(R8)              :: delta_w
-      logical               :: update_in
-      logical               :: update
+      integer               :: j
+      real(R8), allocatable :: y(:)
 
-      ! Construct the radint_t by rebinning ri_in
+      ! Construct the specrad_t by rebinning sr_in
 
       if (PRESENT(w_min)) then
          w_min_ = w_min
       else
-         w_min_ = ri_in%w_0
+         w_min_ = sr_in%w_0
       endif
 
       if (PRESENT(w_max)) then
          w_max_ = w_max
       else
-         w_max_ = ri%w_0 + ri_in%dw*ri_in%n_w
+         w_max_ = sr_in%w_0 + sr_in%dw*sr_in%n_w
       endif
 
       if (PRESENT(dw)) then
          dw_ = dw
       else
-         dw_ = ri_in%dw
+         dw_ = sr_in%dw
       endif
 
-      @:ASSERT(w_min_ >= ri_in%w_0, invalid w_min)
-      @:ASSERT(w_max_ <= ri_in%w_0 + ri_in%dw*ri_in%n_w, invalid w_max)
+      @:ASSERT(w_min_ >= sr_in%w_0, invalid w_min)
+      @:ASSERT(w_max_ <= sr_in%w_0 + sr_in%dw*sr_in%n_w, invalid w_max)
 
       ! Determine the new number of bins
 
@@ -249,103 +256,69 @@ contains
       ! (fix required for when the default w_min_ and w_max_ are
       ! used; otherwise, the final bin falls outside the original grid)
 
-      if (dw_*n_w > ri_in%dw*ri_in%n_w) n_w = n_w - 1
+      if (dw_*n_w > sr_in%dw*sr_in%n_w) n_w = n_w - 1
+
+      ! Construct the axes
+
+      w_in = sr_in%w_0 + sr_in%dw*[(k-1,k=1,sr_in%n_w+1)]
+      w = w_min_ + dw*[(k-1,k=1,n_w+1)]
 
       ! Allocate the new data arrays
 
       allocate(I_1(n_w))
-      allocate(a(ri_in%n_a,n_w))
+      allocate(a(sr_in%n_a,n_w))
 
-      I_1 = 0._R8
-      a = 0._R8
+      ! Do the rebinning
 
-      ! Integrate the intensity in each bin of I
+      do k = 1, n_w
+         I_1(k) = integrate_con(w_in, sr_in%I_1, w(k), w(k+1))/(w(k+1) - w(k))
+      end do
 
-      call ri_in%locate_(w_min_, 0._R8, k_in)
+      do j = 1, sr_in%n_a
 
-      @:ASSERT(k_in >= 1, out-of-bounds rebinning)
-      @:ASSERT(k_in <= ri_in%n_w, out-of-bouneds rebinning)
+         y = sr_in%I_1*sr_in%a(j,:)
 
-      k = 1
+         do k = 1, n_w
+            a(j,k) = integrate_con(w_in, y, w(k), w(k+1))/(w(k+1) - w(k))
+         end do
 
-      w_a_in = ri_in%w_0 + (k_in-1)*ri_in%dw
-      w_b_in = ri_in%w_0 + (k_in  )*ri_in%dw
+         a(j,:) = a(j,:)/I_1
 
-      w_a = w_min_ + (k-1)*dw_
-      w_b = w_min_ + (k  )*dw_
+      end do
+            
+      ! Create the specrad_t
 
-      integrate_loop : do
-
-         delta_w = MIN(w_b_in, w_b) - MAX(w_a_in, w_a)
-
-         @:ASSERT_DEBUG(dw > 0._R8, invalid delta_w)
-
-         I_1(k) = I_1(k) + ri_in%I_1(k_in)*delta_w
-         a(:,k) = a(:,k) + ri_in%I_1(k_in)*ri_in%a(:,k)*delta_w
-
-         update_in = w_b >= w_b_in
-         update = w_b_in >= w_b
-
-         if (update_in) then
-
-            k_in = k_in + 1
-
-            w_a_in = w_b_in
-            w_b_in = ri_in%w_0 + (k_in  )*ri_in%dw
-
-         endif
-
-         if (update) then 
-
-            I_1(k) = I_1(k)/(w_b - w_a)
-            a(:,k) = a(:,k)/(w_b - w_a)/I_1(k)
-
-            k = k + 1
-
-            w_a = w_b
-            w_b = w_min_ + (k  )*dw_
-
-         endif
-
-         @:ASSERT_DEBUG(k_in <= ri_in%n_w, out-of-bounds rebinning)
-
-         if (k > n_w) exit integrate_loop
-
-      end do integrate_loop
-
-      ! Create the radint_t
-
-      ri = radint_t(I_1, a, w_min_, dw_, ri_in%law)
+      sr = specrad_t(I_1, a, w_min_, dw_, sr_in%li%law)
 
       ! Finish
 
       return
 
-   end function radint_t_rebin_
+   end function specrad_t_rebin_
 
    !****
 
-   subroutine read_(hi, ri)
+   subroutine read_(hi, sr)
 
       type(hdf5io_t), intent(inout) :: hi
-      type(radint_t), intent(out)   :: ri
+      type(specrad_t), intent(out)  :: sr
 
       real(R8)              :: w_0
       real(R8)              :: dw
-      integer               :: law
+      integer               :: limb_law
       real(R8), allocatable :: I_1(:)
       real(R8), allocatable :: a(:,:)
 
-      ! Read the radint_t
+      ! Read the specrad_t
 
       call hi%read_attr('w_0', w_0)
       call hi%read_attr('dw', dw)
-      call hi%read_attr('law', law)
+      call hi%read_attr('limb_law', limb_law)
 
       call hi%alloc_read_dset('I_1', I_1)
       call hi%alloc_read_dset('a', a)
 
-      ri = radint_t(I_1, a, w_0, dw, law)
+      sr = specrad_t(I_1, a, w_0, dw, limb_law)
 
       ! Finish
 
@@ -355,19 +328,19 @@ contains
 
    !****
 
-   subroutine write_ (hi, ri)
+   subroutine write_ (hi, sr)
 
       type(hdf5io_t), intent(inout) :: hi
-      type(radint_t), intent(out)   :: ri
+      type(specrad_t), intent(in)   :: sr
 
-      ! Write the radint_t
+      ! Write the specrad_t
 
-      call hi%write_attr('w_0', ri%w_0)
-      call hi%write_attr('dw', ri%dw)
-      call hi%write_attr('law', ri%law)
+      call hi%write_attr('w_0', sr%w_0)
+      call hi%write_attr('dw', sr%dw)
+      call hi%write_attr('limb_law', sr%li%law)
 
-      call hi%write_dset('I_1', ri%I_1)
-      call hi%write_dset('a', ri%a)
+      call hi%write_dset('I_1', sr%I_1)
+      call hi%write_dset('a', sr%a)
 
       ! Finish
 
@@ -379,7 +352,7 @@ contains
 
    function I(self, mu, w_base, w_off, n_w)
 
-      class(radint_t), intent(in) :: self
+      class(specrad_t), intent(in) :: self
       real(R8), intent(in)        :: mu
       real(R8), intent(in)        :: w_base
       real(R8), intent(in)        :: w_off
@@ -397,15 +370,16 @@ contains
 
       @:ASSERT(k >= 1 .AND. k+n_w-1 < self%n_w, out-of-bounds interpolation)
 
-      ! Set up the intensity basis functions
+      ! Set up the intensity basis vector
 
-      b = I_basis_(self%law, mu)
+      b = self%li%I_basis(mu)
 
       ! Evaluate the intensity
 
       !$OMP PARALLEL DO
       w_loop : do i_w = 1, n_w
-         I(i_w) = (1._R8-u)*self%I_1(k+i_w-1)*(1._R8 - DOT_PRODUCT(self%a(:,k+i_w-1), b)) + &
+         I(i_w) = &
+              (1._R8-u)*self%I_1(k+i_w-1)*(1._R8 - DOT_PRODUCT(self%a(:,k+i_w-1), b)) + &
               (      u)*self%I_1(k+i_w  )*(1._R8 - DOT_PRODUCT(self%a(:,k+i_w  ), b))
       end do w_loop
 
@@ -419,7 +393,7 @@ contains
 
    function F (self, w_base, w_off, n_w)
 
-      class(radint_t), intent(in) :: self
+      class(specrad_t), intent(in) :: self
       real(R8), intent(in)        :: w_base
       real(R8), intent(in)        :: w_off
       integer, intent(in)         :: n_w
@@ -436,15 +410,16 @@ contains
 
       @:ASSERT(k >= 1 .AND. k+n_w-1 < self%n_w, out-of-bounds interpolation)
 
-      ! Set up the flux basis functions
+      ! Set up the flux basis vector
 
-      b = F_basis_(self%law)
+      b = self%li%F_basis()
 
       ! Evaluate the flux
 
       !$OMP PARALLEL DO
       w_loop : do i_w = 1, n_w
-         F(i_w) = (1._R8-u)*self%I_1(k+i_w-1)*TWOPI*(0.5_R8 - DOT_PRODUCT(self%a(:,k+i_w-1), b)) + &
+         F(i_w) = &
+              (1._R8-u)*self%I_1(k+i_w-1)*TWOPI*(0.5_R8 - DOT_PRODUCT(self%a(:,k+i_w-1), b)) + &
               (      u)*self%I_1(k+i_w  )*TWOPI*(0.5_R8 - DOT_PRODUCT(self%a(:,k+i_w  ), b))
       end do w_loop
 
@@ -458,7 +433,7 @@ contains
 
    subroutine locate_(self, w_base, w_off, k, u)
 
-      class(radint_t), intent(in)     :: self
+      class(specrad_t), intent(in)     :: self
       real(R8), intent(in)            :: w_base
       real(R8), intent(in)            :: w_off
       integer, intent(out)            :: k
@@ -490,87 +465,4 @@ contains
 
    end subroutine locate_
 
-   !****
-
-   function n_coeff_ (law) result (n_a)
-
-      integer, intent(in) :: law
-      integer             :: n_a
-
-      ! Return the number of coefficients given the law
-
-      select case (law)
-      case (LINEAR_LAW)
-         n_a = 1
-      case (CLARET_LAW)
-         n_a = 4
-      case default
-         @:ABORT(invalid law)
-      end select
-
-      ! Finish
-
-      return
-
-   end function n_coeff_
-
-   !****
-
-   function I_basis_(law, mu) result (b)
-
-      integer, intent(in)   :: law
-      real(R8), intent(in)  :: mu
-      real(R8), allocatable :: b(:)
-
-      ! Evaluate the intensity basis functions
-
-      allocate(b(n_coeff_(law)))
-
-      select case (law)
-      case (LINEAR_LAW)
-         b(1) = 1._R8 - mu
-      case (CLARET_LAW)
-         b(1) = 1._R8 - SQRT(mu)
-         b(2) = 1._R8 - mu
-         b(3) = 1._R8 - mu*SQRT(mu)
-         b(4) = 1._R8 - mu*mu
-      case default
-         @:ABORT(invalid law)
-      end select
-
-      ! Finish
-
-      return
-
-   end function I_basis_
-
-   !****
-
-   function F_basis_(law) result (b)
-
-      integer, intent(in)   :: law
-      real(R8), allocatable :: b(:)
-
-      ! Evaluate the flux basis functions
-
-      allocate(b(n_coeff_(law)))
-
-      select case (law)
-      case (LINEAR_LAW)
-         b(1) = 1._R8/6._R8
-      case (CLARET_LAW)
-         b(1) = 1._R8/10._R8
-         b(2) = 1._R8/6._R8
-         b(3) = 3._R8/14._R8
-         b(4) = 1._R8/4._R8
-      case default
-         @:ABORT(Invalid law)
-      end select
-
-      ! Finish
-
-      return
-
-   end function F_basis_
-
-end module radint_m
+end module specrad_m

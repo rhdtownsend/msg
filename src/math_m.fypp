@@ -19,87 +19,142 @@
 
 module math_m
 
-  ! Uses
-  
-  use kinds_m
-  use order_m
+   ! Uses
 
-  use ISO_FORTRAN_ENV
+   use kinds_m
+   use order_m
 
-  ! No implicit typing
+   use ISO_FORTRAN_ENV
 
-  implicit none
+   ! No implicit typing
 
-  ! Access specifiers
+   implicit none
 
-  private
+   ! Access specifiers
 
-  public :: integrate
+   private
 
-  ! Procedures
+   public :: integrate_con
+   public :: integrate_lin
+
+   ! Procedures
 
 contains
 
-  function integrate(x, y, x_a, x_b) result (iy)
+   function integrate_con(x, y, x_a, x_b) result (iy)
 
-    real(R8), intent(in) :: x(:)
-    real(R8), intent(in) :: y(:)
-    real(R8), intent(in) :: x_a
-    real(R8), intent(in) :: x_b
-    real(R8)             :: iy
+      real(R8), intent(in) :: x(:)
+      real(R8), intent(in) :: y(:)
+      real(R8), intent(in) :: x_a
+      real(R8), intent(in) :: x_b
+      real(R8)             :: iy
 
-    integer  :: i_a
-    integer  :: i_b
-    integer  :: n_x
-    real(R8) :: u_a
-    real(R8) :: u_b
-    real(R8) :: iy_a
-    real(R8) :: iy_b
+      integer  :: i_a
+      integer  :: i_b
+      integer  :: n_x
+      real(R8) :: u_a
+      real(R8) :: u_b
+      real(R8) :: iy_a
+      real(R8) :: iy_b
 
-    @:CHECK_BOUNDS(SIZE(y), SIZE(x))
+      @:CHECK_BOUNDS(SIZE(y), SIZE(x)-1)
 
-    ! Integrate the function y(x) from x_a to x_b using the
-    ! trapezoidal scheme. The endpoints are handled using linear
-    ! interpolation
+      ! Integrate the piecewise-constant function y(x) from x_a to x_b
 
-    call locate(x, x_a, i_a)
-    call locate(x, x_b, i_b)
+      call locate(x, x_a, i_a)
+      call locate(x, x_b, i_b)
 
-    n_x = SIZE(x)
+      n_x = SIZE(x)
 
-    @:ASSERT(i_a >= 1,out-of-bounds integration)
-    @:ASSERT(i_a < n_x,out-of-bounds integration)
+      @:ASSERT(i_a >= 1,out-of-bounds integration)
+      @:ASSERT(i_a < n_x,out-of-bounds integration)
 
-    @:ASSERT(i_b >= 1,out-of-bounds integration)
-    @:ASSERT(i_b < n_x,out-of-bounds integration)
+      @:ASSERT(i_b >= 1,out-of-bounds integration)
+      @:ASSERT(i_b < n_x,out-of-bounds integration)
 
-    u_a = (x_a - x(i_a))/(x(i_a+1)-x(i_a))
-    u_b = (x_b - x(i_b))/(x(i_b+1)-x(i_b))
+      u_a = (x_a - x(i_a))/(x(i_a+1)-x(i_a))
+      u_b = (x_b - x(i_b))/(x(i_b+1)-x(i_b))
 
-    if (i_a == i_b) then
+      if (i_a == i_b) then
 
-       iy = 0.5_R8*( &
-            y(i_a)*(2._R8 - u_a - u_b) + y(i_a+1)*(u_a + u_b) ) * &
-            (u_b - u_a)*(x(i_a+1) - x(i_a))
+         iy = y(i_a)*(u_b - u_a)*(x(i_a+1) - x(i_a))
 
-    else
+      else
 
-       iy_a = 0.5_R8*( &
-            y(i_a)*(1._R8 - u_a) + y(i_a+1)*(1._R8 + u_a) ) * &
-            (1._R8 - u_a)*(x(i_a+1) - x(i_a))
-       
-       iy_b = 0.5_R8*( &
-            y(i_b)*(2._R8 - u_b) + y(i_b+1)*u_b ) * &
-            u_b*(x(i_b+1) - x(i_b))
-       
-       iy = (iy_a + iy_b) + 0.5_R8*SUM((y(i_a+1:i_b-1) + y(i_a+2:i_b))*(x(i_a+2:i_b) - x(i_a+1:i_b-1)))
+         iy_a = y(i_a)*(1._R8 - u_a)*(x(i_a+1) - x(i_a))
 
-    endif
+         iy_b = y(i_b)*u_b*(x(i_b+1) - x(i_b))
 
-    ! Finish
+         iy = (iy_a + iy_b) + SUM(y(i_a+1:i_b-1)*(x(i_a+2:i_b) - x(i_a+1:i_b-1)))
 
-    return
+      endif
 
-  end function integrate
+      ! Finish
+
+      return
+
+   end function integrate_con
+
+   !****
+
+   function integrate_lin(x, y, x_a, x_b) result (iy)
+
+      real(R8), intent(in) :: x(:)
+      real(R8), intent(in) :: y(:)
+      real(R8), intent(in) :: x_a
+      real(R8), intent(in) :: x_b
+      real(R8)             :: iy
+
+      integer  :: i_a
+      integer  :: i_b
+      integer  :: n_x
+      real(R8) :: u_a
+      real(R8) :: u_b
+      real(R8) :: iy_a
+      real(R8) :: iy_b
+
+      @:CHECK_BOUNDS(SIZE(y), SIZE(x))
+
+      ! Integrate the piecewise linear function y(x) from x_a to x_b
+
+      call locate(x, x_a, i_a)
+      call locate(x, x_b, i_b)
+
+      n_x = SIZE(x)
+
+      @:ASSERT(i_a >= 1,out-of-bounds integration)
+      @:ASSERT(i_a < n_x,out-of-bounds integration)
+
+      @:ASSERT(i_b >= 1,out-of-bounds integration)
+      @:ASSERT(i_b < n_x,out-of-bounds integration)
+
+      u_a = (x_a - x(i_a))/(x(i_a+1)-x(i_a))
+      u_b = (x_b - x(i_b))/(x(i_b+1)-x(i_b))
+
+      if (i_a == i_b) then
+
+         iy = 0.5_R8*( &
+              y(i_a)*(2._R8 - u_a - u_b) + y(i_a+1)*(u_a + u_b) ) * &
+              (u_b - u_a)*(x(i_a+1) - x(i_a))
+
+      else
+
+         iy_a = 0.5_R8*( &
+              y(i_a)*(1._R8 - u_a) + y(i_a+1)*(1._R8 + u_a) ) * &
+              (1._R8 - u_a)*(x(i_a+1) - x(i_a))
+
+         iy_b = 0.5_R8*( &
+              y(i_b)*(2._R8 - u_b) + y(i_b+1)*u_b ) * &
+              u_b*(x(i_b+1) - x(i_b))
+
+         iy = (iy_a + iy_b) + 0.5_R8*SUM((y(i_a+1:i_b-1) + y(i_a+2:i_b))*(x(i_a+2:i_b) - x(i_a+1:i_b-1)))
+
+      endif
+
+      ! Finish
+
+      return
+
+   end function integrate_lin
 
 end module math_m

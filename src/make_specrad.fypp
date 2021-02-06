@@ -1,5 +1,5 @@
-! Module   : make_radint
-! Purpose  : create radint files from synspec files
+! Module   : make_specrad
+! Purpose  : create specrad files from synspec files
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-program make_radint
+program make_specrad
 
    ! Uses
 
@@ -28,8 +28,9 @@ program make_radint
    use order_m
    use system_m
 
-   use radint_m
-   use radint_factory_m
+   use specrad_m
+   use specrad_factory_m
+   use limb_m
 
    use ISO_FORTRAN_ENV
 
@@ -43,31 +44,40 @@ program make_radint
    integer                   :: n_mu
    real(R8)                  :: mu_0
    real(R8)                  :: R
-   character(:), allocatable :: limb_law
+   character(:), allocatable :: limb_law_str
    character(:), allocatable :: filename_out
 
+   integer               :: limb_law
    real(R8), allocatable :: I(:,:)
    real(R8), allocatable :: lambda(:)
    integer               :: n_lambda
    real(R8)              :: w_0
    real(R8)              :: dw
    integer               :: n_w
-   integer               :: law
    integer               :: j
    real(R8), allocatable :: mu(:)
-   type(radint_t)        :: ri
+   type(specrad_t)       :: sr
    type(hdf5io_t)        :: hi
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 6,{Syntax: make_radint filename_in n_mu, mu_0 R limb_law filename_out})
+   @:ASSERT(n_arg() == 6,{Syntax: make_specrad filename_in n_mu mu_0 R limb_law filename_out})
 
    call get_arg(1, filename_in)
    call get_arg(2, n_mu)
    call get_arg(3, mu_0)
    call get_arg(4, R)
-   call get_arg(5, limb_law)
+   call get_arg(5, limb_law_str)
    call get_arg(6, filename_out)
+
+   select case (limb_law_str)
+   case ('LINEAR')
+      limb_law = LINEAR_LAW
+   case ('CLARET')
+      limb_law = CLARET_LAW
+   case default
+      @:ABORT(invalid limb_law)
+   end select
 
    ! Read data from the synspec file
 
@@ -79,27 +89,18 @@ program make_radint
 
    dw = 1._R8/R
    w_0 = LOG(lambda(1))
-   n_w = FLOOR((lambda(n_lambda) - lambda(1))/dw)
+   n_w = FLOOR((LOG(lambda(n_lambda)) - LOG(lambda(1)))/dw)
 
-   ! Create the radint_t
+   ! Create the specrad_t
 
-   select case (limb_law)
-   case ('LINEAR')
-      law = LINEAR_LAW
-   case ('CLARET')
-      law = CLARET_LAW
-   case default
-      @:ABORT(invalid limb_law)
-   end select
+   mu = [((mu_0*(n_mu-j) + 1._R8*(j-1))/(n_mu-1), j=1,n_mu)]
 
-   mu = [((mu_0*(n_mu-j) + 1._R8*(j-1))/(n_mu-1))]
+   sr = specrad_from_table(I, mu, lambda, w_0, dw, n_w, limb_law)
 
-   ri = radint_from_table(I, mu, lambda, w_0, dw, n_w, law)
-
-   ! Write the radint_t
+   ! Write the specrad_t
 
    hi = hdf5io_t(filename_out, CREATE_FILE, comp_level=9)
-   call write(hi, ri)
+   call write(hi, sr)
    call hi%final()
 
    ! Finish
@@ -227,4 +228,4 @@ contains
 
    end subroutine read_data
 
-end program make_radint
+end program make_specrad

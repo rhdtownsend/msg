@@ -1,0 +1,171 @@
+! Module  : limb_m
+! Purpose : define limb_t type, representing limb-darkening laws
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module limb_m
+
+   ! Uses
+
+   use kinds_m
+   use const_m
+   use hdf5io_m
+
+   use fit_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Parameter definitions
+
+   integer, parameter :: LINEAR_LAW = 1
+   integer, parameter :: CLARET_LAW = 2
+
+   ! Derived-type definitions
+
+   type limb_t
+      private
+      integer, public :: law
+   contains
+      private
+      procedure, public :: n_basis
+      procedure, public :: I_basis
+      procedure, public :: F_basis
+   end type limb_t
+
+   ! Interfaces
+
+   interface limb_t
+      module procedure limb_t_
+   end interface limb_t
+
+   ! Access specifiers
+
+   private
+
+   public :: LINEAR_LAW
+   public :: CLARET_LAW
+   public :: limb_t
+
+   ! Procedures
+
+contains
+
+   function limb_t_(law) result (li)
+
+      integer, intent(in) :: law
+      type(limb_t)        :: li
+
+      ! Construct the limb_t from the supplied data
+
+      @:ASSERT(law == LINEAR_LAW .OR. law == CLARET_LAW,invalid law)
+
+      li%law = law
+
+      ! Finish
+
+      return
+
+   end function limb_t_
+
+   !****
+
+   function n_basis (self)
+
+      class(limb_t), intent(in) :: self
+      integer                   :: n_basis
+
+      ! Return the basis dimension
+
+      select case (self%law)
+      case (LINEAR_LAW)
+         n_basis = 1
+      case (CLARET_LAW)
+         n_basis = 4
+      case default
+         @:ABORT(invalid law)
+      end select
+
+      ! Finish
+
+      return
+
+   end function n_basis
+
+   !****
+
+   function I_basis(self, mu) result (b)
+
+      class(limb_t), intent(in) :: self
+      real(R8), intent(in)      :: mu
+      real(R8), allocatable     :: b(:)
+
+      ! Evaluate the intensity basis functions
+
+      allocate(b(self%n_basis()))
+
+      select case (self%law)
+      case (LINEAR_LAW)
+         b(1) = 1._R8 - mu
+      case (CLARET_LAW)
+         b(1) = 1._R8 - SQRT(mu)
+         b(2) = 1._R8 - mu
+         b(3) = 1._R8 - mu*SQRT(mu)
+         b(4) = 1._R8 - mu*mu
+      case default
+         @:ABORT(invalid law)
+      end select
+
+      ! Finish
+
+      return
+
+   end function I_basis
+
+   !****
+
+   function F_basis(self) result (b)
+
+      class(limb_t), intent(in) :: self
+      real(R8), allocatable     :: b(:)
+
+      ! Evaluate the flux basis functions
+
+      allocate(b(self%n_basis()))
+
+      select case (self%law)
+      case (LINEAR_LAW)
+         b(1) = 1._R8/6._R8
+      case (CLARET_LAW)
+         b(1) = 1._R8/10._R8
+         b(2) = 1._R8/6._R8
+         b(3) = 3._R8/14._R8
+         b(4) = 1._R8/4._R8
+      case default
+         @:ABORT(Invalid law)
+      end select
+
+      ! Finish
+
+      return
+
+   end function F_basis
+
+end module limb_m

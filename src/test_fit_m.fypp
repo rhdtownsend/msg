@@ -34,7 +34,6 @@ contains
       integer, parameter :: n_x = 10
       integer, parameter :: n_a = 4
 
-      integer  :: i
       real(R8) :: x(n_x)
       real(R8) :: y(n_x)
       real(R8) :: a_chk(n_a)

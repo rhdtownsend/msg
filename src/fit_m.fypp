@@ -25,6 +25,8 @@ module fit_m
 
   use f95_lapack
 
+  use ISO_FORTRAN_ENV
+
   ! No implicit typing
 
   implicit none

@@ -1,5 +1,5 @@
-! Module   : radint_factory_m
-! Purpose  : factory procedures for radint_t type
+! Module   : specrad_factory_m
+! Purpose  : factory procedures for specrad_t type
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -17,14 +17,14 @@
 
 #:include 'forum.inc'
 
-module radint_factory_m
+module specrad_factory_m
 
   ! Uses
   
    use kinds_m
    use math_m
    
-   use radint_m
+   use specrad_m
 
    use ISO_FORTRAN_ENV
 
@@ -36,13 +36,13 @@ module radint_factory_m
 
    private
 
-   public :: radint_from_table
+   public :: specrad_from_table
 
    ! Procedures
 
 contains
 
-   function radint_from_table (I, mu, lambda, w_0, dw, n_w, law) result (ri)
+   function specrad_from_table (I, mu, lambda, w_0, dw, n_w, limb_law) result (sr)
 
       real(R8), intent(in) :: I(:,:)
       real(R8), intent(in) :: mu(:)
@@ -50,8 +50,8 @@ contains
       real(R8), intent(in) :: w_0
       real(R8), intent(in) :: dw
       integer, intent(in)  :: n_w
-      integer, intent(in)  :: law
-      type(radint_t)       :: ri
+      integer, intent(in)  :: limb_law
+      type(specrad_t)      :: sr
 
       integer               :: n_mu
       integer               :: n_lambda
@@ -64,9 +64,9 @@ contains
       real(R8), allocatable :: y(:)
 
       @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
-      @:CHECK_BOUNDS(SIZE(I, 2), SIZE(w))
+      @:CHECK_BOUNDS(SIZE(I, 2), SIZE(lambda))
 
-      ! Construct the radint_t from the tabulated I(mu,lambda) data
+      ! Construct the specrad_t from the tabulated I(mu,lambda) data
 
       ! Transform the intensity data onto the uniform-w grid
 
@@ -80,27 +80,27 @@ contains
 
       x = LOG(lambda)
 
-      w_loop : do k = 1, n_w
+      mu_loop : do j = 1, n_mu
 
-         w_a = w_0 + (k-1)*dw
-         w_b = w_0 + (k  )*dw
+         y = I(j,:)*lambda
 
-         mu_loop : do j = 1, n_mu
+         w_loop : do k = 1, n_w
 
-            y = I(j,:)*lambda
+            w_a = w_0 + (k-1)*dw
+            w_b = w_0 + (k  )*dw
 
-            I_w(j,k) = integrate(x, y, w_a, w_b)/(w_b - w_a)
+            I_w(j,k) = integrate_lin(x, y, w_a, w_b)/(w_b - w_a)
 
-         end do mu_loop
+         end do w_loop
 
-      end do w_loop
+      end do mu_loop
 
-      ! Create the radint_t
+      ! Create the specrad_t
 
-      ri = radint_t(I_w, mu, w_0, dw, law)
+      sr = specrad_t(I_w, mu, w_0, dw, limb_law)
 
       ! Finish
 
-   end function radint_from_table
+   end function specrad_from_table
 
-end module radint_factory_m
+end module specrad_factory_m
