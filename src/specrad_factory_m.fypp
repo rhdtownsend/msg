@@ -24,6 +24,7 @@ module specrad_factory_m
    use kinds_m
    use math_m
    
+   use limb_m
    use specrad_m
 
    use ISO_FORTRAN_ENV
@@ -42,16 +43,16 @@ module specrad_factory_m
 
 contains
 
-   function specrad_from_table (I, mu, lambda, w_0, dw, n_w, limb_law) result (sr)
+   function specrad_from_table (I, mu, lambda, w_0, dw, n_w, li) result (sr)
 
-      real(R8), intent(in) :: I(:,:)
-      real(R8), intent(in) :: mu(:)
-      real(R8), intent(in) :: lambda(:)
-      real(R8), intent(in) :: w_0
-      real(R8), intent(in) :: dw
-      integer, intent(in)  :: n_w
-      integer, intent(in)  :: limb_law
-      type(specrad_t)      :: sr
+      real(R8), intent(in)     :: I(:,:)
+      real(R8), intent(in)     :: mu(:)
+      real(R8), intent(in)     :: lambda(:)
+      real(R8), intent(in)     :: w_0
+      real(R8), intent(in)     :: dw
+      integer, intent(in)      :: n_w
+      type(limb_t), intent(in) :: li
+      type(specrad_t)          :: sr
 
       integer               :: n_mu
       integer               :: n_lambda
@@ -97,7 +98,7 @@ contains
 
       ! Create the specrad_t
 
-      sr = specrad_t(I_w, mu, w_0, dw, limb_law)
+      sr = specrad_t(I_w, mu, w_0, dw, li)
 
       ! Finish
 

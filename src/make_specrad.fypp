@@ -28,9 +28,9 @@ program make_specrad
    use order_m
    use system_m
 
+   use limb_m
    use specrad_m
    use specrad_factory_m
-   use limb_m
 
    use ISO_FORTRAN_ENV
 
@@ -44,10 +44,10 @@ program make_specrad
    integer                   :: n_mu
    real(R8)                  :: mu_0
    real(R8)                  :: R
-   character(:), allocatable :: limb_law_str
+   character(:), allocatable :: limb_law
    character(:), allocatable :: filename_out
 
-   integer               :: limb_law
+   type(limb_t)          :: li
    real(R8), allocatable :: I(:,:)
    real(R8), allocatable :: lambda(:)
    integer               :: n_lambda
@@ -67,14 +67,16 @@ program make_specrad
    call get_arg(2, n_mu)
    call get_arg(3, mu_0)
    call get_arg(4, R)
-   call get_arg(5, limb_law_str)
+   call get_arg(5, limb_law)
    call get_arg(6, filename_out)
 
-   select case (limb_law_str)
+   ! Set up the limb-darkening law
+
+   select case (limb_law)
    case ('LINEAR')
-      limb_law = LINEAR_LAW
+      li = limb_t(LINEAR_LAW)
    case ('CLARET')
-      limb_law = CLARET_LAW
+      li = limb_t(CLARET_LAW)
    case default
       @:ABORT(invalid limb_law)
    end select
@@ -95,7 +97,7 @@ program make_specrad
 
    mu = [((mu_0*(n_mu-j) + 1._R8*(j-1))/(n_mu-1), j=1,n_mu)]
 
-   sr = specrad_from_table(I, mu, lambda, w_0, dw, n_w, limb_law)
+   sr = specrad_from_table(I, mu, lambda, w_0, dw, n_w, li)
 
    ! Write the specrad_t
 

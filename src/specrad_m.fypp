@@ -81,24 +81,21 @@ module specrad_m
 
 contains
 
-   function specrad_t_(I_1, a, w_0, dw, limb_law) result (sr)
+   function specrad_t_(I_1, a, w_0, dw, li) result (sr)
 
-      real(R8), intent(in) :: I_1(:)
-      real(R8), intent(in) :: a(:,:)
-      real(R8), intent(in) :: w_0
-      real(R8), intent(in) :: dw
-      integer, intent(in)  :: limb_law
-      type(specrad_t)      :: sr
+      real(R8), intent(in)     :: I_1(:)
+      real(R8), intent(in)     :: a(:,:)
+      real(R8), intent(in)     :: w_0
+      real(R8), intent(in)     :: dw
+      type(limb_t), intent(in) :: li
+      type(specrad_t)          :: sr
 
-      type(limb_t) :: li
-      integer      :: n_a
-      integer      :: n_w
+      integer :: n_a
+      integer :: n_w
 
       @:CHECK_BOUNDS(SIZE(I_1), SIZE(a, 2))
 
       ! Construct the specrad_t from the supplied data
-
-      li = limb_t(limb_law)
 
       n_a = li%n_basis()
       n_w = SIZE(I_1)
@@ -124,21 +121,20 @@ contains
 
    !****
 
-   function specrad_t_fit_(I, mu, w_0, dw, limb_law) result (sr)
+   function specrad_t_fit_(I, mu, w_0, dw, li) result (sr)
 
-      real(R8), intent(in) :: I(:,:)
-      real(R8), intent(in) :: mu(:)
-      real(R8), intent(in) :: w_0
-      real(R8), intent(in) :: dw
-      integer, intent(in)  :: limb_law
-      type(specrad_t)      :: sr
+      real(R8), intent(in)     :: I(:,:)
+      real(R8), intent(in)     :: mu(:)
+      real(R8), intent(in)     :: w_0
+      real(R8), intent(in)     :: dw
+      type(limb_t), intent(in) :: li
+      type(specrad_t)          :: sr
 
       integer               :: n_mu
       real(R8), allocatable :: I_1(:)
       integer               :: n_w
       real(R8), allocatable :: y(:,:)
       integer               :: k
-      type(limb_t)          :: li
       integer               :: n_a
       real(R8), allocatable :: a(:,:)
 
@@ -165,8 +161,6 @@ contains
 
       ! Do the fit
 
-      li = limb_t(limb_law)
-
       n_a = li%n_basis()
 
       allocate(a(n_a,n_w))
@@ -175,16 +169,7 @@ contains
 
       ! Construct the specrad_t
 
-      sr%li = li
-
-      sr%I_1 = I_1
-      sr%a = a
-
-      sr%w_0 = w_0
-      sr%dw = dw
-
-      sr%n_a = n_a
-      sr%n_w = n_w
+      sr = specrad_t(I_1, a, w_0, dw, li)
 
       ! Finish
 
@@ -288,7 +273,7 @@ contains
             
       ! Create the specrad_t
 
-      sr = specrad_t(I_1, a, w_min_, dw_, sr_in%li%law)
+      sr = specrad_t(I_1, a, w_min_, dw_, sr_in%li)
 
       ! Finish
 
@@ -303,22 +288,30 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(specrad_t), intent(out)  :: sr
 
+      character(TYPE_LEN)   :: type
       real(R8)              :: w_0
       real(R8)              :: dw
-      integer               :: limb_law
+      type(hdf5io_t)        :: hi_li
+      type(limb_t)          :: li
       real(R8), allocatable :: I_1(:)
       real(R8), allocatable :: a(:,:)
 
       ! Read the specrad_t
 
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'specrad_t',invalid type)
+
       call hi%read_attr('w_0', w_0)
       call hi%read_attr('dw', dw)
-      call hi%read_attr('limb_law', limb_law)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, li)
+      call hi_li%final()
 
       call hi%alloc_read_dset('I_1', I_1)
       call hi%alloc_read_dset('a', a)
 
-      sr = specrad_t(I_1, a, w_0, dw, limb_law)
+      sr = specrad_t(I_1, a, w_0, dw, li)
 
       ! Finish
 
@@ -333,11 +326,18 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(specrad_t), intent(in)   :: sr
 
+      type(hdf5io_t) :: hi_li
+
       ! Write the specrad_t
+
+      call hi%write_attr('TYPE', 'specrad_t')
 
       call hi%write_attr('w_0', sr%w_0)
       call hi%write_attr('dw', sr%dw)
-      call hi%write_attr('limb_law', sr%li%law)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, sr%li)
+      call hi_li%final()
 
       call hi%write_dset('I_1', sr%I_1)
       call hi%write_dset('a', sr%a)
