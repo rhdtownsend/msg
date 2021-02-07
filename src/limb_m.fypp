@@ -56,6 +56,14 @@ module limb_m
       module procedure limb_t_
    end interface limb_t
 
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
    ! Access specifiers
 
    private
@@ -63,6 +71,8 @@ module limb_m
    public :: LINEAR_LAW
    public :: CLARET_LAW
    public :: limb_t
+   public :: read
+   public :: write
 
    ! Procedures
 
@@ -84,6 +94,50 @@ contains
       return
 
    end function limb_t_
+
+   !****
+
+   subroutine read_(hi, li)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(limb_t), intent(out)     :: li
+
+      character(TYPE_LEN) :: type
+      integer             :: law
+
+      ! Read the limb_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'limb_t',invalid type)
+
+      call hi%read_attr('law', law)
+  
+      li = limb_t(law)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_ (hi, li)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(limb_t), intent(in)      :: li
+
+      ! Write the limb_t
+
+      call hi%write_attr('TYPE', 'limb_t')
+      
+      call hi%write_attr('law', li%law)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
 
    !****
 
