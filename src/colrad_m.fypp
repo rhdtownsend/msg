@@ -1,0 +1,274 @@
+! Module  : colrad_m
+! Purpose : define colrad_t type, for representing color radiance
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module colrad_m
+
+   ! Uses
+
+   use kinds_m
+   use const_m
+   use hdf5io_m
+
+   use fit_m
+   use limb_m
+   use math_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type colrad_t
+      private
+      type(limb_t)          :: li
+      real(R8)              :: I_1
+      real(R8), allocatable :: a(:)
+      integer               :: n_a
+   contains
+      private
+      procedure, public :: I
+      procedure, public :: F
+   end type colrad_t
+
+   ! Interfaces
+
+   interface colrad_t
+      module procedure colrad_t_
+   end interface colrad_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: colrad_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function colrad_t_(I_1, a, li) result (cr)
+
+      real(R8), intent(in)     :: I_1
+      real(R8), intent(in)     :: a(:)
+      type(limb_t), intent(in) :: li
+      type(colrad_t)           :: cr
+
+      integer :: n_a
+      integer :: n_w
+
+      ! Construct the colrad_t from the supplied data
+
+      n_a = li%n_basis()
+
+      @:ASSERT(SIZE(a, 1) == n_a, invalid number of coefficients)
+
+      cr%li = li
+
+      cr%I_1 = I_1
+      cr%a = a
+
+      cr%n_a = n_a
+
+      ! Finish
+
+      return
+
+   end function colrad_t_
+
+   !****
+
+   function colrad_t_fit_(I, mu, li) result (cr)
+
+      real(R8), intent(in)     :: I(:)
+      real(R8), intent(in)     :: mu(:)
+      type(limb_t), intent(in) :: li
+      type(colrad_t)           :: cr
+
+      integer               :: n_mu
+      real(R8)              :: I_1
+      integer               :: n_w
+      real(R8), allocatable :: y(:)
+      integer               :: n_a
+      real(R8), allocatable :: a(:)
+
+      @:CHECK_BOUNDS(SIZE(I), SIZE(mu))
+
+      ! Construct the colrad_t by fitting a limb-darkening law to
+      ! I(mu)
+
+      ! Set the normal intensity
+
+      n_mu = SIZE(mu)
+
+      I_1 = I(n_mu)
+
+      ! Set up the fit data
+
+      y = 1._R8 - I/I_1
+
+      ! Do the fit
+
+      n_a = li%n_basis()
+
+      allocate(a(n_a))
+
+      call gls_fit(mu, y, f_, a)
+
+      ! Construct the colrad_t
+
+      cr = colrad_t(I_1, a, li)
+
+      ! Finish
+
+      return
+
+   contains
+
+      function f_ (mu, n)
+
+         real(R8), intent(in) :: mu
+         integer, intent(in)  :: n
+         real(R8)             :: f_(n)
+
+         f_ = li%I_basis(mu)
+
+      end function f_
+
+   end function colrad_t_fit_
+
+   !****
+
+   subroutine read_(hi, cr)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(colrad_t), intent(out)   :: cr
+
+      character(TYPE_LEN)   :: type
+      type(hdf5io_t)        :: hi_li
+      type(limb_t)          :: li
+      real(R8)              :: I_1
+      real(R8), allocatable :: a(:)
+
+      ! Read the colrad_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'colrad_t',invalid type)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, li)
+      call hi_li%final()
+
+      call hi%read_dset('I_1', I_1)
+      call hi%alloc_read_dset('a', a)
+
+      cr = colrad_t(I_1, a, li)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_ (hi, cr)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(colrad_t), intent(in)    :: cr
+
+      type(hdf5io_t) :: hi_li
+
+      ! Write the colrad_t
+
+      call hi%write_attr('TYPE', 'colrad_t')
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, cr%li)
+      call hi_li%final()
+
+      call hi%write_dset('I_1', cr%I_1)
+      call hi%write_dset('a', cr%a)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function I(self, mu)
+
+      class(colrad_t), intent(in) :: self
+      real(R8), intent(in)        :: mu
+      real(R8)                    :: I
+
+      real(R8), allocatable :: b(:)
+
+      ! Set up the intensity basis vector
+
+      b = self%li%I_basis(mu)
+
+      ! Evaluate the intensity
+
+      I = self%I_1*(1._R8 - DOT_PRODUCT(self%a, b))
+
+      ! Finish
+
+      return
+
+   end function I
+
+   !****
+
+   function F (self)
+
+      class(colrad_t), intent(in) :: self
+      real(R8)                    :: F
+
+      real(R8) :: b(self%n_a)
+
+      ! Set up the flux basis vector
+
+      b = self%li%F_basis()
+
+      ! Evaluate the flux
+
+      F = self%I_1*TWOPI*(0.5_R8 - DOT_PRODUCT(self%a, b))
+
+      ! Finish
+
+      return
+
+   end function F
+
+end module colrad_m
