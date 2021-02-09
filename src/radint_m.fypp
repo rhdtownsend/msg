@@ -111,6 +111,9 @@ contains
       type(limb_t), intent(in) :: li
       type(radint_t)           :: ri
 
+      real(RD)              :: I_1
+      real(RD), allocatable :: a(:)
+
       ! Construct the radint_t by fitting the supplied I(mu)
       ! intensity data
 
