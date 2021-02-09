@@ -88,6 +88,7 @@ vpath %.inc ${SUBDIRS}
 %.o %.mod : %.f90
 	@echo FC $<
 	@${F9XC} ${F9XFLAGS} ${MODINCS} -c $<
+	@touch $*.mod
 
 all : ${TARGETS}
 
@@ -112,6 +113,7 @@ endif
 .SECONDEXPANSION:
 
 ${TARGETS}: $$(subst .f90,.o,$$($$@_SRCS))
+	@echo LD $@
 	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS}
 
 %.d : $$($$*_SRCS)

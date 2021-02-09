@@ -3,16 +3,16 @@
 
 # Variables
 
-#TARGETS = test_math test_order test_fit
-TARGETS = make_radint
+TARGETS = test_math test_order test_fit make_specint
 
-make_radint_SRCS = \
-  make_radint.f90 \
-  radint_m.f90 \
-  radint_factory_m.f90 \
+make_specint_SRCS = \
+  make_specint.f90 \
+  specint_m.f90 \
+  specint_factory_m.f90 \
   fit_m.f90 \
   kinds_m.f90 \
   const_m.f90 \
+  limb_m.f90 \
   math_m.f90 \
   memory_m.f90 \
   order_m.f90  \
@@ -20,24 +20,24 @@ make_radint_SRCS = \
   hdf5io_m.f90
 
 test_math_SRCS = \
-  test_math \
-  test_math_m \
-  order_m \
-  math_m \
-  kinds_m
+  test_math.f90 \
+  test_math_m.f90 \
+  order_m.f90 \
+  math_m.f90 \
+  kinds_m.f90
 
 test_order_SRCS = \
-  test_order \
-  test_order_m \
-  order_m \
-  math_m \
-  kinds_m
+  test_order.f90 \
+  test_order_m.f90 \
+  order_m.f90 \
+  math_m.f90 \
+  kinds_m.f90
 
 test_fit_SRCS = \
-  test_fit \
-  test_fit_m \
-  fit_m \
-  kinds_m
+  test_fit.f90 \
+  test_fit_m.f90 \
+  fit_m.f90 \
+  kinds_m.f90
 
 # Targets
 
@@ -47,7 +47,7 @@ all :
 
 SUBDIRS = ../src:../../forum
 
-include Make.inc
-
 # Additional rules
+
+include Make.inc
 
