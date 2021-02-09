@@ -1,0 +1,221 @@
+! Module  : radint_m
+! Purpose : define radint_t type, for representing radiant intensity
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module radint_m
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+
+   use limb_m
+   use math_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type radint_t
+      private
+      type(limb_t) :: li
+      real(RD)     :: I_1
+      real(RD)     :: a(:,:)
+   contains
+      private
+      procedure, public :: intensity
+      procedure, public :: flux
+   end type radint_t
+
+   ! Interfaces
+
+   interface radint_t
+      module procedure radint_t_
+      module procedure radint_t_fit_
+   end interface radint_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: radint_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function radint_t_(I_1, a, w_0, dw, li) result (ri)
+
+      real(RD), intent(in)     :: I_1
+      real(RD), intent(in)     :: a(:)
+      real(RD), intent(in)     :: w_0
+      real(RD), intent(in)     :: dw
+      type(limb_t), intent(in) :: li
+      type(radint_t)           :: ri
+
+      integer :: n_b
+      integer :: n_w
+
+      ! Construct the radint_t from the supplied data
+
+      n_b = li%n_basis()
+
+      @:CHECK_BOUNDS(SIZE(a), n_b)
+
+      ri%li = li
+
+      ri%I_1 = I_1
+      ri%a = a
+
+      ! Finish
+
+      return
+
+   end function radint_t_
+
+   !****
+
+   function radint_t_fit_(I, mu, w_0, dw, li) result (ri)
+
+      real(RD), intent(in)     :: I(:)
+      real(RD), intent(in)     :: mu(:)
+      type(limb_t), intent(in) :: li
+      type(radint_t)           :: ri
+
+      ! Construct the radint_t by fitting the supplied I(mu)
+      ! intensity data
+
+      call li%fit_intensity(I, mu, I_1, a)
+
+      ri = radint_t(I_1, a, li)
+
+      ! Finish
+
+      return
+
+   end function radint_t_fit_
+
+   !****
+
+   subroutine read_(hi, si)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(radint_t), intent(out)  :: si
+
+      character(TYPE_LEN)   :: type
+      type(hdf5io_t)        :: hi_li
+      type(limb_t)          :: li
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+
+      ! Read the radint_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'radint_t',invalid type)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, li)
+      call hi_li%final()
+
+      call hi%alloc_read_dset('I_1', I_1)
+      call hi%alloc_read_dset('a', a)
+
+      ri = radint_t(I_1, a, li)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_ (hi, ri)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(radint_t), intent(in)    :: ri
+
+      type(hdf5io_t) :: hi_li
+
+      ! Write the radint_t
+
+      call hi%write_attr('TYPE', 'radint_t')
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, si%li)
+      call hi_li%final()
+
+      call hi%write_dset('I_1', si%I_1)
+      call hi%write_dset('a', si%a)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function intensity(self, mu) result (I)
+
+      class(radint_t), intent(in) :: self
+      real(RD), intent(in)        :: mu
+      real(RD)                    :: I
+
+      ! Evaluate the intensity
+
+      I = self%li%intensity(self%I_1, self%a, mu)
+
+      ! Finish
+
+      return
+
+   end function intensity
+
+   !****
+
+   function flux (self) result(F)
+
+      class(radint_t), intent(in) :: self
+      real(RD)                    :: F
+
+      ! Evaluate the flux
+
+      F = self%li%flux(self%I_1, self%a)
+
+      ! Finish
+
+      return
+
+   end function flux
+
+end module radint_m
