@@ -29,35 +29,35 @@ module const_m
 
   ! Mathematical constants
 
-  real(R8), parameter :: PI = ACOS(-1._R8)
-  real(R8), parameter :: TWOPI = 2._R8*PI
-  real(R8), parameter :: HALFPI = ASIN(1._R8)
+  real(RD), parameter :: PI = ACOS(-1._RD)
+  real(RD), parameter :: TWOPI = 2._RD*PI
+  real(RD), parameter :: HALFPI = ASIN(1._RD)
 
-  real(R8), parameter :: DEG_TO_RAD = PI/180._R8
-  real(R8), parameter :: RAD_TO_DEG = 1._R8/DEG_TO_RAD
+  real(RD), parameter :: DEG_TO_RAD = PI/180._RD
+  real(RD), parameter :: RAD_TO_DEG = 1._RD/DEG_TO_RAD
 
   ! Physical constants (cgs)
 
-  real(R8), parameter :: G_GRAVITY = 6.67430e-8_R8                ! Gravitational constant (CODATA 2018)
-  real(R8), parameter :: C_LIGHT = 2.99792458E10_R8               ! Speed of light in vacuuo (CODATA 2018)
-  real(R8), parameter :: SIGMA_STEFAN = 5.670374419E-5_R8         ! Stefan's constant (CODATA 2018)
-  real(R8), parameter :: A_RADIATION = 4._R8*SIGMA_STEFAN/C_LIGHT ! Radiation constant
-  real(R8), parameter :: H_PLANCK =  6.62606896E-27_R8            ! Planck's constant
-  real(R8), parameter :: K_BOLTZMANN = 1.3806504E-16_R8           ! Boltzmann's constant
-  real(R8), parameter :: U_ATOMIC = 1.660538782E-24_R8            ! Atomic mass unit
-  real(R8), parameter :: ELECTRON_VOLT = 1.602176487E-12_R8       ! Electron volt
-  real(R8), parameter :: E_ELECTRON = 4.80320427E-10_R8           ! Electron charge
-  real(R8), parameter :: M_ELECTRON = 9.10938215E-28_R8           ! Electron mass
-  real(R8), parameter :: M_PROTON = 1.672621898E-24_R8            ! Proton mass
-  real(R8), parameter :: SIGMA_THOMSON = 6.6524586E-25_R8         ! Thomson cross section
-  real(R8), parameter :: N_AVOGADRO = 6.0221415E23_R8             ! Avogadro's number
+  real(RD), parameter :: G_GRAVITY = 6.67430e-8_RD                ! Gravitational constant (CODATA 2018)
+  real(RD), parameter :: C_LIGHT = 2.99792458E10_RD               ! Speed of light in vacuuo (CODATA 2018)
+  real(RD), parameter :: SIGMA_STEFAN = 5.670374419E-5_RD         ! Stefan's constant (CODATA 2018)
+  real(RD), parameter :: A_RADIATION = 4._RD*SIGMA_STEFAN/C_LIGHT ! Radiation constant
+  real(RD), parameter :: H_PLANCK =  6.62606896E-27_RD            ! Planck's constant
+  real(RD), parameter :: K_BOLTZMANN = 1.3806504E-16_RD           ! Boltzmann's constant
+  real(RD), parameter :: U_ATOMIC = 1.660538782E-24_RD            ! Atomic mass unit
+  real(RD), parameter :: ELECTRON_VOLT = 1.602176487E-12_RD       ! Electron volt
+  real(RD), parameter :: E_ELECTRON = 4.80320427E-10_RD           ! Electron charge
+  real(RD), parameter :: M_ELECTRON = 9.10938215E-28_RD           ! Electron mass
+  real(RD), parameter :: M_PROTON = 1.672621898E-24_RD            ! Proton mass
+  real(RD), parameter :: SIGMA_THOMSON = 6.6524586E-25_RD         ! Thomson cross section
+  real(RD), parameter :: N_AVOGADRO = 6.0221415E23_RD             ! Avogadro's number
 
   ! Astronomical constants (cgs)
 
-  real(R8), parameter :: GM_SUN = 1.3271244E26_R8 ! Gravitational constant * nominal solar mass (IAU 215 resolution B3)
-  real(R8), parameter :: M_SUN = GM_SUN/G_GRAVITY ! Nominal Solar mass
-  real(R8), parameter :: R_SUN = 6.957E10_R8      ! Nominal solar radius (IAU 2015 resolution B3)
-  real(R8), parameter :: L_SUN = 3.828E33_R8      ! Nominal solar luminosity (IAU 2015 resolution B3)
+  real(RD), parameter :: GM_SUN = 1.3271244E26_RD ! Gravitational constant * nominal solar mass (IAU 215 resolution B3)
+  real(RD), parameter :: M_SUN = GM_SUN/G_GRAVITY ! Nominal Solar mass
+  real(RD), parameter :: R_SUN = 6.957E10_RD      ! Nominal solar radius (IAU 2015 resolution B3)
+  real(RD), parameter :: L_SUN = 3.828E33_RD      ! Nominal solar luminosity (IAU 2015 resolution B3)
   
   ! Filename lengths etc
 

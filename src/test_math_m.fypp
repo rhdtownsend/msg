@@ -33,12 +33,12 @@ contains
 
    subroutine test_integrate_con_()
 
-      real(R8), allocatable :: x(:)
-      real(R8), allocatable :: y(:)
-      real(R8)              :: x_a
-      real(R8)              :: x_b
-      real(R8)              :: iy
-      real(R8)              :: iy_chk
+      real(RD), allocatable :: x(:)
+      real(RD), allocatable :: y(:)
+      real(RD)              :: x_a
+      real(RD)              :: x_b
+      real(RD)              :: iy
+      real(RD)              :: iy_chk
 
       integer :: i
 
@@ -65,21 +65,21 @@ contains
          integer :: k
 
          x = [(k,k=1,10)]
-         y = [(1._R8,k=1,9)]
+         y = [(1._RD,k=1,9)]
 
          select case (i)
          case (1)
-            x_a = 3.15_R8
-            x_b = 3.45_R8
-            iy_chk = 0.30_R8
+            x_a = 3.15_RD
+            x_b = 3.45_RD
+            iy_chk = 0.30_RD
          case (2)
-            x_a = 3.15_R8
-            x_b = 6.25_R8
-            iy_chk = 3.10_R8
+            x_a = 3.15_RD
+            x_b = 6.25_RD
+            iy_chk = 3.10_RD
          case (3)
-            x_a = 1._R8
-            x_b = 10._R8
-            iy_chk = 9._R8
+            x_a = 1._RD
+            x_b = 10._RD
+            iy_chk = 9._RD
          case default
             @:ABORT(invalid instance)
          end select
@@ -110,7 +110,7 @@ contains
 
          integer, intent(in) :: i
 
-         real(R8) :: err
+         real(RD) :: err
 
          err = ABS((iy - iy_chk)/iy_chk)
 
@@ -133,12 +133,12 @@ contains
 
    subroutine test_integrate_lin_()
 
-      real(R8), allocatable :: x(:)
-      real(R8), allocatable :: y(:)
-      real(R8)              :: x_a
-      real(R8)              :: x_b
-      real(R8)              :: iy
-      real(R8)              :: iy_chk
+      real(RD), allocatable :: x(:)
+      real(RD), allocatable :: y(:)
+      real(RD)              :: x_a
+      real(RD)              :: x_b
+      real(RD)              :: iy
+      real(RD)              :: iy_chk
 
       integer :: i
 
@@ -169,17 +169,17 @@ contains
 
          select case (i)
          case (1)
-            x_a = 3.15_R8
-            x_b = 3.45_R8
-            iy_chk = 3.33_R8
+            x_a = 3.15_RD
+            x_b = 3.45_RD
+            iy_chk = 3.33_RD
          case (2)
-            x_a = 3.15_R8
-            x_b = 6.25_R8
-            iy_chk = 71.4775_R8
+            x_a = 3.15_RD
+            x_b = 6.25_RD
+            iy_chk = 71.4775_RD
          case (3)
-            x_a = 1._R8
-            x_b = 10._R8
-            iy_chk = 334.5_R8
+            x_a = 1._RD
+            x_b = 10._RD
+            iy_chk = 334.5_RD
          case default
             @:ABORT(invalid instance)
          end select
@@ -210,7 +210,7 @@ contains
 
          integer, intent(in) :: i
 
-         real(R8) :: err
+         real(RD) :: err
 
          err = ABS((iy - iy_chk)/iy_chk)
 

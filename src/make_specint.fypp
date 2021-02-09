@@ -1,5 +1,5 @@
-! Module   : make_specrad
-! Purpose  : create specrad files from synspec files
+! Module   : make_specint
+! Purpose  : create specint files from synspec files
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -17,20 +17,20 @@
 
 #:include 'forum.inc'
 
-program make_specrad
+program make_specint
 
    ! Uses
 
    use kinds_m
-   use const_m
    use hdf5io_m
    use memory_m
    use order_m
    use system_m
 
+   use const_m
    use limb_m
-   use specrad_m
-   use specrad_factory_m
+   use specint_m
+   use specint_factory_m
 
    use ISO_FORTRAN_ENV
 
@@ -42,26 +42,26 @@ program make_specrad
 
    character(:), allocatable :: filename_in
    integer                   :: n_mu
-   real(R8)                  :: mu_0
-   real(R8)                  :: R
+   real(RD)                  :: mu_0
+   real(RD)                  :: R
    character(:), allocatable :: limb_law
    character(:), allocatable :: filename_out
 
    type(limb_t)          :: li
-   real(R8), allocatable :: I(:,:)
-   real(R8), allocatable :: lambda(:)
+   real(RD), allocatable :: I(:,:)
+   real(RD), allocatable :: lambda(:)
    integer               :: n_lambda
-   real(R8)              :: w_0
-   real(R8)              :: dw
+   real(RD)              :: w_0
+   real(RD)              :: dw
    integer               :: n_w
    integer               :: j
-   real(R8), allocatable :: mu(:)
-   type(specrad_t)       :: sr
+   real(RD), allocatable :: mu(:)
+   type(specint_t)       :: sr
    type(hdf5io_t)        :: hi
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 6,{Syntax: make_specrad filename_in n_mu mu_0 R limb_law filename_out})
+   @:ASSERT(n_arg() == 6,{Syntax: make_specint filename_in n_mu mu_0 R limb_law filename_out})
 
    call get_arg(1, filename_in)
    call get_arg(2, n_mu)
@@ -89,17 +89,17 @@ program make_specrad
 
    ! Set up binning parameters
 
-   dw = 1._R8/R
+   dw = 1._RD/R
    w_0 = LOG(lambda(1))
    n_w = FLOOR((LOG(lambda(n_lambda)) - LOG(lambda(1)))/dw)
 
-   ! Create the specrad_t
+   ! Create the specint_t
 
-   mu = [((mu_0*(n_mu-j) + 1._R8*(j-1))/(n_mu-1), j=1,n_mu)]
+   mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
 
-   sr = specrad_from_table(I, mu, lambda, w_0, dw, n_w, li)
+   sr = specint_from_table(I, mu, lambda, w_0, dw, n_w, li)
 
-   ! Write the specrad_t
+   ! Write the specint_t
 
    hi = hdf5io_t(filename_out, CREATE_FILE, comp_level=9)
    call write(hi, sr)
@@ -113,11 +113,11 @@ contains
 
       character(*), intent(in)           :: filename
       integer, intent(in)                :: n_mu
-      real(R8), allocatable, intent(out) :: lambda(:)
-      real(R8), allocatable, intent(out) :: I(:,:)
+      real(RD), allocatable, intent(out) :: lambda(:)
+      real(RD), allocatable, intent(out) :: I(:,:)
 
       integer              :: unit
-      real(R8)             :: H
+      real(RD)             :: H
       integer              :: d_lam
       integer              :: n_lam
       integer, allocatable :: ind(:)
@@ -159,7 +159,7 @@ contains
          ! Convert to correct units
          !   intensity: ergs/s/cm**2/Angstom/sr
 
-         I(:,n_lam) = I(:,n_lam)*C_LIGHT/(lambda(n_lam)*1E-8_R8)**2
+         I(:,n_lam) = I(:,n_lam)*C_LIGHT/(lambda(n_lam)*1E-8_RD)**2
 
       end do read_loop
 
@@ -230,4 +230,4 @@ contains
 
    end subroutine read_data
 
-end program make_specrad
+end program make_specint

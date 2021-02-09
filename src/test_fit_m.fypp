@@ -34,10 +34,10 @@ contains
       integer, parameter :: n_x = 10
       integer, parameter :: n_a = 4
 
-      real(R8) :: x(n_x)
-      real(R8) :: y(n_x)
-      real(R8) :: a_chk(n_a)
-      real(R8) :: a(n_a)
+      real(RD) :: x(n_x)
+      real(RD) :: y(n_x)
+      real(RD) :: a_chk(n_a)
+      real(RD) :: a(n_a)
 
       call gls_fit_arrange_()
       call gls_fit_act_()
@@ -52,10 +52,10 @@ contains
          x =  [(i,i=1,n_x)]
          y = SIN(x)
          a_chk = [ &
-              3.294862083657227547e+00_R8, &
-              -2.361968464010496760e+00_R8, &
-              4.583475895500784825e-01_R8, &
-              -2.581586410629988990e-02_R8 &
+              3.294862083657227547e+00_RD, &
+              -2.361968464010496760e+00_RD, &
+              4.583475895500784825e-01_RD, &
+              -2.581586410629988990e-02_RD &
               ]
 
       end subroutine gls_fit_arrange_
@@ -72,9 +72,9 @@ contains
 
       function gls_fit_func_(x, n) result (func)
 
-         real(R8), intent(in) :: x
+         real(RD), intent(in) :: x
          integer, intent(in)  :: n
-         real(R8)             :: func(n)
+         real(RD)             :: func(n)
          
          integer :: i
          
@@ -88,7 +88,7 @@ contains
 
       subroutine gls_fit_assert_()
 
-         real(R8) :: err(n_a)
+         real(RD) :: err(n_a)
 
          err = (a - a_chk)/a_chk
          

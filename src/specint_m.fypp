@@ -1,0 +1,426 @@
+! Module  : specint_m
+! Purpose : define specint_t type, for representing spectral intensity
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module specint_m
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+
+   use limb_m
+   use math_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type specint_t
+      private
+      type(limb_t)          :: li
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+      real(RD)              :: w_0
+      real(RD)              :: dw
+      integer               :: n_w
+   contains
+      private
+      procedure, public :: intensity
+      procedure, public :: flux
+      procedure         :: locate_
+   end type specint_t
+
+   ! Interfaces
+
+   interface specint_t
+      module procedure specint_t_
+      module procedure specint_t_fit_
+      module procedure specint_t_rebin_
+   end interface specint_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: specint_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function specint_t_(I_1, a, w_0, dw, li) result (si)
+
+      real(RD), intent(in)     :: I_1(:)
+      real(RD), intent(in)     :: a(:,:)
+      real(RD), intent(in)     :: w_0
+      real(RD), intent(in)     :: dw
+      type(limb_t), intent(in) :: li
+      type(specint_t)          :: si
+
+      integer :: n_b
+      integer :: n_w
+
+      @:CHECK_BOUNDS(SIZE(I_1), SIZE(a, 2))
+
+      ! Construct the specint_t from the supplied data
+
+      n_b = li%n_basis()
+      n_w = SIZE(I_1)
+
+      @:CHECK_BOUNDS(SIZE(a, 1), n_b)
+      @:CHECK_BOUNDS(SIZE(a, 2), n_w)
+
+      si%li = li
+
+      si%I_1 = I_1
+      si%a = a
+
+      si%w_0 = w_0
+      si%dw = dw
+
+      si%n_w = n_w
+
+      ! Finish
+
+      return
+
+   end function specint_t_
+
+   !****
+
+   function specint_t_fit_(I, mu, w_0, dw, li) result (si)
+
+      real(RD), intent(in)     :: I(:,:)
+      real(RD), intent(in)     :: mu(:)
+      real(RD), intent(in)     :: w_0
+      real(RD), intent(in)     :: dw
+      type(limb_t), intent(in) :: li
+      type(specint_t)          :: si
+
+      integer               :: n_mu
+      real(RD), allocatable :: I_1(:)
+      integer               :: n_w
+      real(RD), allocatable :: y(:,:)
+      integer               :: k
+      integer               :: n_a
+      real(RD), allocatable :: a(:,:)
+
+      @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
+
+      ! Construct the specint_t by fitting the supplied I(mu,w)
+      ! intensity data
+
+      call li%fit_intensity(I, mu, I_1, a)
+
+      si = specint_t(I_1, a, w_0, dw, li)
+
+      ! Finish
+
+      return
+
+   end function specint_t_fit_
+
+   !****
+
+   function specint_t_rebin_(si_in, w_min, w_max, dw) result (si)
+
+      type(specint_t), intent(in)    :: si_in
+      real(RD), intent(in), optional :: w_min
+      real(RD), intent(in), optional :: w_max
+      real(RD), intent(in), optional :: dw
+      type(specint_t)                :: si
+
+      real(RD)              :: w_min_
+      real(RD)              :: w_max_
+      real(RD)              :: dw_
+      integer               :: n_w
+      real(RD), allocatable :: w_in(:)
+      integer               :: k
+      real(RD), allocatable :: w(:)
+      integer               :: n_b
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+      integer               :: j
+      real(RD), allocatable :: y(:)
+
+      ! Construct the specint_t by rebinning si_in
+
+      if (PRESENT(w_min)) then
+         w_min_ = w_min
+      else
+         w_min_ = si_in%w_0
+      endif
+
+      if (PRESENT(w_max)) then
+         w_max_ = w_max
+      else
+         w_max_ = si_in%w_0 + si_in%dw*si_in%n_w
+      endif
+
+      if (PRESENT(dw)) then
+         dw_ = dw
+      else
+         dw_ = si_in%dw
+      endif
+
+      @:ASSERT(w_min_ >= si_in%w_0, invalid w_min)
+      @:ASSERT(w_max_ <= si_in%w_0 + si_in%dw*si_in%n_w, invalid w_max)
+
+      ! Determine the new number of bins
+
+      n_w = CEILING((w_max_ - w_min_)/dw_)
+
+      ! (fix required for when the default w_min_ and w_max_ are
+      ! used; otherwise, the final bin falls outside the original grid)
+
+      if (dw_*n_w > si_in%dw*si_in%n_w) n_w = n_w - 1
+
+      ! Construct the axes
+
+      w_in = si_in%w_0 + si_in%dw*[(k-1,k=1,si_in%n_w+1)]
+      w = w_min_ + dw*[(k-1,k=1,n_w+1)]
+
+      ! Allocate the new data arrays
+
+      n_b = si_in%li%n_basis()
+
+      allocate(I_1(n_w))
+      allocate(a(n_b,n_w))
+
+      ! Do the rebinning
+
+      do k = 1, n_w
+         I_1(k) = integrate_con(w_in, si_in%I_1, w(k), w(k+1))/(w(k+1) - w(k))
+      end do
+
+      do j = 1, n_b
+
+         y = si_in%I_1*si_in%a(j,:)
+
+         do k = 1, n_w
+            a(j,k) = integrate_con(w_in, y, w(k), w(k+1))/(w(k+1) - w(k))
+         end do
+
+         a(j,:) = a(j,:)/I_1
+
+      end do
+            
+      ! Create the specint_t
+
+      si = specint_t(I_1, a, w_min_, dw_, si_in%li)
+
+      ! Finish
+
+      return
+
+   end function specint_t_rebin_
+
+   !****
+
+   subroutine read_(hi, si)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(specint_t), intent(out)  :: si
+
+      character(TYPE_LEN)   :: type
+      real(RD)              :: w_0
+      real(RD)              :: dw
+      type(hdf5io_t)        :: hi_li
+      type(limb_t)          :: li
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+
+      ! Read the specint_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'specint_t',invalid type)
+
+      call hi%read_attr('w_0', w_0)
+      call hi%read_attr('dw', dw)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, li)
+      call hi_li%final()
+
+      call hi%alloc_read_dset('I_1', I_1)
+      call hi%alloc_read_dset('a', a)
+
+      si = specint_t(I_1, a, w_0, dw, li)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_ (hi, si)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(specint_t), intent(in)   :: si
+
+      type(hdf5io_t) :: hi_li
+
+      ! Write the specint_t
+
+      call hi%write_attr('TYPE', 'specint_t')
+
+      call hi%write_attr('w_0', si%w_0)
+      call hi%write_attr('dw', si%dw)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, si%li)
+      call hi_li%final()
+
+      call hi%write_dset('I_1', si%I_1)
+      call hi%write_dset('a', si%a)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function intensity(self, mu, w_base, w_off, n_w) result (I)
+
+      class(specint_t), intent(in) :: self
+      real(RD), intent(in)        :: mu
+      real(RD), intent(in)        :: w_base
+      real(RD), intent(in)        :: w_off
+      integer, intent(in)         :: n_w
+      real(RD)                    :: I(n_w)
+
+      integer  :: k
+      real(RD) :: u
+      integer  :: k_a
+      integer  :: k_b
+      real(RD) :: I_x(n_w+1)
+
+      ! Set up interpolation starting index and weight
+
+      call self%locate_(w_base, w_off, k, u)
+
+      k_a = k
+      k_b = k + n_w
+
+      @:ASSERT(k_a >= 1 .AND. k_b <= self%n_w, out-of-bounds interpolation)
+
+      ! Evaluate the intensity
+
+      I_x = self%li%intensity(self%I_1(k_a:k_b), self%a(:,k_a:k_b), mu)
+
+      I = (1._RD-u)*I_x(1:n_w) + u*I_x(2:n_w+1)
+
+      ! Finish
+
+      return
+
+   end function intensity
+
+   !****
+
+   function flux (self, w_base, w_off, n_w) result(F)
+
+      class(specint_t), intent(in) :: self
+      real(RD), intent(in)        :: w_base
+      real(RD), intent(in)        :: w_off
+      integer, intent(in)         :: n_w
+      real(RD)                    :: F(n_w)
+
+      integer  :: k
+      real(RD) :: u
+      integer  :: k_a
+      integer  :: k_b
+      real(RD) :: F_x(n_w+1)
+
+      ! Set up interpolation starting index and weight
+
+      call self%locate_(w_base, w_off, k, u)
+
+      k_a = k
+      k_b = k + n_w
+
+      @:ASSERT(k_a >= 1 .AND. k_b <= self%n_w, out-of-bounds interpolation)
+
+      ! Evaluate the intensity
+
+      F_x = self%li%flux(self%I_1(k_a:k_b), self%a(:,k_a:k_b))
+
+      F = (1._RD-u)*F_x(1:n_w) + u*F_x(2:n_w+1)
+
+      ! Finish
+
+      return
+
+   end function flux
+
+   !****
+
+   subroutine locate_(self, w_base, w_off, k, u)
+
+      class(specint_t), intent(in)     :: self
+      real(RD), intent(in)            :: w_base
+      real(RD), intent(in)            :: w_off
+      integer, intent(out)            :: k
+      real(RD), intent(out), optional :: u
+
+      real(RD) :: w_pri
+
+      ! Set up k such that (k-1)*self%dw <= w' < k*self%dw, where 
+      ! w' = (w_base-self%w_0)+w_off
+
+      w_pri = (w_base-self%w_0) + w_off
+
+      k = FLOOR(w_pri/self%dw) + 1
+
+      ! Set up the associated interpolation weight
+
+      if (PRESENT(u)) then
+
+         u = w_pri/self%dw - (k-1)
+
+         @:ASSERT_DEBUG(u >= 0._RD, invalid interpolation weight)
+         @:ASSERT_DEBUG(u <= 1._RD, invalid interpolation weight)
+
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine locate_
+
+end module specint_m

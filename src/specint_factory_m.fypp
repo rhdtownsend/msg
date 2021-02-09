@@ -1,5 +1,5 @@
-! Module   : specrad_factory_m
-! Purpose  : factory procedures for specrad_t type
+! Module   : specint_factory_m
+! Purpose  : factory procedures for specint_t type
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-module specrad_factory_m
+module specint_factory_m
 
   ! Uses
   
@@ -25,7 +25,7 @@ module specrad_factory_m
    use math_m
    
    use limb_m
-   use specrad_m
+   use specint_m
 
    use ISO_FORTRAN_ENV
 
@@ -37,37 +37,37 @@ module specrad_factory_m
 
    private
 
-   public :: specrad_from_table
+   public :: specint_from_table
 
    ! Procedures
 
 contains
 
-   function specrad_from_table (I, mu, lambda, w_0, dw, n_w, li) result (sr)
+   function specint_from_table (I, mu, lambda, w_0, dw, n_w, li) result (sr)
 
-      real(R8), intent(in)     :: I(:,:)
-      real(R8), intent(in)     :: mu(:)
-      real(R8), intent(in)     :: lambda(:)
-      real(R8), intent(in)     :: w_0
-      real(R8), intent(in)     :: dw
+      real(RD), intent(in)     :: I(:,:)
+      real(RD), intent(in)     :: mu(:)
+      real(RD), intent(in)     :: lambda(:)
+      real(RD), intent(in)     :: w_0
+      real(RD), intent(in)     :: dw
       integer, intent(in)      :: n_w
       type(limb_t), intent(in) :: li
-      type(specrad_t)          :: sr
+      type(specint_t)          :: sr
 
       integer               :: n_mu
       integer               :: n_lambda
-      real(R8), allocatable :: I_w(:,:)
-      real(R8), allocatable :: x(:)
+      real(RD), allocatable :: I_w(:,:)
+      real(RD), allocatable :: x(:)
       integer               :: k
-      real(R8)              :: w_a
-      real(R8)              :: w_b
+      real(RD)              :: w_a
+      real(RD)              :: w_b
       integer               :: j
-      real(R8), allocatable :: y(:)
+      real(RD), allocatable :: y(:)
 
       @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
       @:CHECK_BOUNDS(SIZE(I, 2), SIZE(lambda))
 
-      ! Construct the specrad_t from the tabulated I(mu,lambda) data
+      ! Construct the specint_t from the tabulated I(mu,lambda) data
 
       ! Transform the intensity data onto the uniform-w grid
 
@@ -96,12 +96,12 @@ contains
 
       end do mu_loop
 
-      ! Create the specrad_t
+      ! Create the specint_t
 
-      sr = specrad_t(I_w, mu, w_0, dw, li)
+      sr = specint_t(I_w, mu, w_0, dw, li)
 
       ! Finish
 
-   end function specrad_from_table
+   end function specint_from_table
 
-end module specrad_factory_m
+end module specint_factory_m

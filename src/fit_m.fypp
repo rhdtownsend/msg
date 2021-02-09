@@ -48,20 +48,20 @@ contains
 
   subroutine gls_fit_1_(x, y, f, a)
 
-    real(R8), intent(in) :: x(:)
-    real(R8), intent(in) :: y(:)
+    real(RD), intent(in) :: x(:)
+    real(RD), intent(in) :: y(:)
     interface
        function f (x, n)
          use kinds_m
-         real(R8), intent(in) :: x
+         real(RD), intent(in) :: x
          integer, intent(in)  :: n
-         real(R8)             :: f(n)
+         real(RD)             :: f(n)
        end function f
     end interface
-    real(R8), intent(out) :: a(:)
+    real(RD), intent(out) :: a(:)
 
-    real(R8), allocatable :: y_2(:,:)
-    real(R8), allocatable :: a_2(:,:)
+    real(RD), allocatable :: y_2(:,:)
+    real(RD), allocatable :: a_2(:,:)
 
     @:CHECK_BOUNDS(SIZE(y), SIZE(x))
 
@@ -87,23 +87,23 @@ contains
   
   subroutine gls_fit_2_(x, y, f, a)
 
-    real(R8), intent(in) :: x(:)
-    real(R8), intent(in) :: y(:,:)
+    real(RD), intent(in) :: x(:)
+    real(RD), intent(in) :: y(:,:)
     interface
        function f (x, n)
          use kinds_m
-         real(R8), intent(in) :: x
+         real(RD), intent(in) :: x
          integer, intent(in)  :: n
-         real(R8)             :: f(n)
+         real(RD)             :: f(n)
        end function f
     end interface
-    real(R8), intent(out) :: a(:,:)
+    real(RD), intent(out) :: a(:,:)
 
     integer               :: n_a
     integer               :: n_x
     integer               :: i
-    real(R8), allocatable :: M(:,:)
-    real(R8), allocatable :: B(:,:)
+    real(RD), allocatable :: M(:,:)
+    real(RD), allocatable :: B(:,:)
 
     @:CHECK_BOUNDS(SIZE(y, 1), SIZE(x))
 
@@ -126,7 +126,7 @@ contains
     allocate(B(MAX(n_x, n_a), SIZE(y, 2)))
 
     B(:n_x,:) = y
-    B(n_x+1:,:) = 0._R8
+    B(n_x+1:,:) = 0._RD
 
     ! Do the fit
 
