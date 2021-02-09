@@ -125,6 +125,9 @@ contains
       type(limb_t), intent(in) :: li
       type(specint_t)          :: si
 
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+
       ! Construct the specint_t by fitting the supplied I(mu,w)
       ! intensity data
 
@@ -379,7 +382,7 @@ contains
 
    subroutine locate_(self, w_base, w_off, k, u)
 
-      class(specint_t), intent(in)    :: self
+      class(specint_t), intent(in)     :: self
       real(RD), intent(in)            :: w_base
       real(RD), intent(in)            :: w_off
       integer, intent(out)            :: k
