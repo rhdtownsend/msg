@@ -90,8 +90,6 @@ contains
       integer :: n_b
       integer :: n_w
 
-      @:CHECK_BOUNDS(SIZE(I_1), SIZE(a, 2))
-
       ! Construct the specint_t from the supplied data
 
       n_b = li%n_basis()
@@ -126,16 +124,6 @@ contains
       real(RD), intent(in)     :: dw
       type(limb_t), intent(in) :: li
       type(specint_t)          :: si
-
-      integer               :: n_mu
-      real(RD), allocatable :: I_1(:)
-      integer               :: n_w
-      real(RD), allocatable :: y(:,:)
-      integer               :: k
-      integer               :: n_a
-      real(RD), allocatable :: a(:,:)
-
-      @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
 
       ! Construct the specint_t by fitting the supplied I(mu,w)
       ! intensity data
@@ -375,7 +363,7 @@ contains
 
       @:ASSERT(k_a >= 1 .AND. k_b <= self%n_w, out-of-bounds interpolation)
 
-      ! Evaluate the intensity
+      ! Evaluate the flux
 
       F_x = self%li%flux(self%I_1(k_a:k_b), self%a(:,k_a:k_b))
 
@@ -391,7 +379,7 @@ contains
 
    subroutine locate_(self, w_base, w_off, k, u)
 
-      class(specint_t), intent(in)     :: self
+      class(specint_t), intent(in)    :: self
       real(RD), intent(in)            :: w_base
       real(RD), intent(in)            :: w_off
       integer, intent(out)            :: k
