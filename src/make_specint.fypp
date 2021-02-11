@@ -40,12 +40,12 @@ program make_specint
 
    ! Variables
 
-   character(:), allocatable :: filename_in
+   character(:), allocatable :: synspec_filename
    integer                   :: n_mu
    real(RD)                  :: mu_0
    real(RD)                  :: R
    character(:), allocatable :: limb_law
-   character(:), allocatable :: filename_out
+   character(:), allocatable :: specint_filename
 
    type(limb_t)          :: li
    real(RD), allocatable :: I(:,:)
@@ -56,19 +56,19 @@ program make_specint
    integer               :: n_w
    integer               :: j
    real(RD), allocatable :: mu(:)
-   type(specint_t)       :: sr
+   type(specint_t)       :: si
    type(hdf5io_t)        :: hi
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 6,{Syntax: make_specint filename_in n_mu mu_0 R limb_law filename_out})
+   @:ASSERT(n_arg() == 6,{Syntax: make_specint synspec_filename n_mu mu_0 R limb_law specint_filename})
 
-   call get_arg(1, filename_in)
+   call get_arg(1, synspec_filename)
    call get_arg(2, n_mu)
    call get_arg(3, mu_0)
    call get_arg(4, R)
    call get_arg(5, limb_law)
-   call get_arg(6, filename_out)
+   call get_arg(6, specint_filename)
 
    ! Set up the limb-darkening law
 
@@ -83,7 +83,7 @@ program make_specint
 
    ! Read data from the synspec file
 
-   call read_data(filename_in, n_mu, lambda, I)
+   call read_data(synspec_filename, n_mu, lambda, I)
 
    n_lambda = SIZE(lambda)
 
@@ -97,12 +97,12 @@ program make_specint
 
    mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
 
-   sr = specint_from_table(I, mu, lambda, w_0, dw, n_w, li)
+   si = specint_from_table(I, mu, lambda, w_0, dw, n_w, li)
 
    ! Write the specint_t
 
-   hi = hdf5io_t(filename_out, CREATE_FILE, comp_level=9)
-   call write(hi, sr)
+   hi = hdf5io_t(specint_filename, CREATE_FILE, comp_level=9)
+   call write(hi, si)
    call hi%final()
 
    ! Finish
