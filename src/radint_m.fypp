@@ -37,9 +37,9 @@ module radint_m
 
    type radint_t
       private
-      type(limb_t) :: li
-      real(RD)     :: I_1
-      real(RD)     :: a(:,:)
+      type(limb_t)          :: li
+      real(RD)              :: I_1
+      real(RD), allocatable :: a(:)
    contains
       private
       procedure, public :: intensity
@@ -73,12 +73,10 @@ module radint_m
 
 contains
 
-   function radint_t_(I_1, a, w_0, dw, li) result (ri)
+   function radint_t_(I_1, a, li) result (ri)
 
       real(RD), intent(in)     :: I_1
       real(RD), intent(in)     :: a(:)
-      real(RD), intent(in)     :: w_0
-      real(RD), intent(in)     :: dw
       type(limb_t), intent(in) :: li
       type(radint_t)           :: ri
 
@@ -104,7 +102,7 @@ contains
 
    !****
 
-   function radint_t_fit_(I, mu, w_0, dw, li) result (ri)
+   function radint_t_fit_(I, mu, li) result (ri)
 
       real(RD), intent(in)     :: I(:)
       real(RD), intent(in)     :: mu(:)
@@ -129,16 +127,16 @@ contains
 
    !****
 
-   subroutine read_(hi, si)
+   subroutine read_(hi, ri)
 
       type(hdf5io_t), intent(inout) :: hi
-      type(radint_t), intent(out)  :: si
+      type(radint_t), intent(out)  :: ri
 
       character(TYPE_LEN)   :: type
       type(hdf5io_t)        :: hi_li
       type(limb_t)          :: li
-      real(RD), allocatable :: I_1(:)
-      real(RD), allocatable :: a(:,:)
+      real(RD), allocatable :: I_1
+      real(RD), allocatable :: a(:)
 
       ! Read the radint_t
 
@@ -174,11 +172,11 @@ contains
       call hi%write_attr('TYPE', 'radint_t')
 
       hi_li = hdf5io_t(hi, 'li')
-      call write(hi_li, si%li)
+      call write(hi_li, ri%li)
       call hi_li%final()
 
-      call hi%write_dset('I_1', si%I_1)
-      call hi%write_dset('a', si%a)
+      call hi%write_dset('I_1', ri%I_1)
+      call hi%write_dset('a', ri%a)
 
       ! Finish
 
