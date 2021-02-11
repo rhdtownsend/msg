@@ -3,12 +3,13 @@
 
 # Variables
 
-TARGETS = test_math test_order test_fit make_specint
+TARGETS = test_math test_order test_fit make_specint make_radint
 
 make_specint_SRCS = \
   make_specint.f90 \
   specint_m.f90 \
   specint_factory_m.f90 \
+  radint_m.f90 \
   fit_m.f90 \
   kinds_m.f90 \
   const_m.f90 \
@@ -16,6 +17,19 @@ make_specint_SRCS = \
   math_m.f90 \
   memory_m.f90 \
   order_m.f90  \
+  system_m.f90 \
+  hdf5io_m.f90
+
+make_radint_SRCS = \
+  make_radint.f90 \
+  specint_m.f90 \
+  radint_m.f90 \
+  fit_m.f90 \
+  kinds_m.f90 \
+  const_m.f90 \
+  limb_m.f90 \
+  math_m.f90 \
+  order_m.f90 \
   system_m.f90 \
   hdf5io_m.f90
 
