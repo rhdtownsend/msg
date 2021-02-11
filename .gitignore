@@ -8,3 +8,6 @@
 # Fortran module files
 *.mod
 *.smod
+
+# Python cache
+__pycache__
