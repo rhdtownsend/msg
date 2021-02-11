@@ -26,6 +26,7 @@ module specint_m
 
    use limb_m
    use math_m
+   use radint_m
 
    use ISO_FORTRAN_ENV
 
@@ -58,6 +59,10 @@ module specint_m
       module procedure specint_t_rebin_
    end interface specint_t
 
+   interface radint_t
+      module procedure radint_t_convolve_
+   end interface radint_t
+
    interface read
       module procedure read_
    end interface read
@@ -71,6 +76,7 @@ module specint_m
    private
 
    public :: specint_t
+   public :: radint_t
    public :: read
    public :: write
 
@@ -413,5 +419,64 @@ contains
       return
 
    end subroutine locate_
+
+   !****
+
+   function radint_t_convolve_(si, S, lambda) result (ri)
+
+      type(specint_t), intent(in) :: si
+      real(RD), intent(in)        :: S(:)
+      real(RD), intent(in)        :: lambda(:)
+      type(radint_t)              :: ri
+
+      integer               :: n_b
+      real(RD)              :: I_1
+      real(RD), allocatable :: a(:)
+      integer               :: k
+      real(RD)              :: w_a
+      real(RD)              :: w_b
+      real(RD)              :: S_dlambda
+
+      @:CHECK_BOUNDS(SIZE(lambda), SIZE(S))
+
+      ! Construct the radint_t by convolving the specint_t with the
+      ! response function S(lambda). Note that this response function
+      ! is the photon one, not the energy one (see Appendix A of
+      ! Bessel & Murhphy 2013, PASP 124, 140).
+
+      ! Initialize arrays
+
+      n_b = si%li%n_basis()
+
+      allocate(a(n_b))
+
+      I_1 = 0._RD
+      a = 0._RD
+
+      ! Do the convolution
+
+      conv_loop : do k = 1, SIZE(S)
+
+         w_a = si%w_0 + (k-1)*si%dw
+         w_b = si%w_0 + (k  )*si%dw
+         
+         S_dlambda = integrate_lin(lambda, S, exp(w_a), exp(w_b))
+
+         I_1 = I_1 + si%I_1(k)*S_dlambda
+         a = a + si%I_1(k)*si%a(:,k)*S_dlambda
+
+      end do conv_loop
+
+      a = a/I_1
+
+      ! Construct the radint_t
+
+      ri = radint_t(I_1, a, si%li)
+
+      ! Finish
+
+      return
+
+   end function radint_t_convolve_
 
 end module specint_m
