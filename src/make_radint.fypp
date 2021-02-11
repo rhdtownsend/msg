@@ -1,0 +1,121 @@
+! Module   : make_radint
+! Purpose  : create radint files from synspec files
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program make_radint
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use system_m
+
+   use radint_m
+   use specint_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: specint_filename
+   character(:), allocatable :: filter_filename
+   character(:), allocatable :: radint_filename
+
+   type(hdf5io_t)        :: hi
+   type(specint_t)       :: si
+   real(RD), allocatable :: lambda(:)
+   real(RD), allocatable :: S(:)
+   type(radint_t)        :: ri
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 3,{Syntax: make_radint specint_filename filter_filename radint_filename})
+
+   call get_arg(1, specint_filename)
+   call get_arg(2, filter_filename)
+   call get_arg(3, radint_filename)
+
+   ! Read the specint_t
+
+   hi = hdf5io_t(specint_filename, OPEN_FILE)
+   call read(hi, si)
+   call hi%final()
+
+   ! Read the filter file
+
+   call read_filter(filter_filename, lambda, S)
+
+   ! Create the radint_t
+
+   ri = radint_t(si, S, lambda)
+
+   ! Write it
+
+   hi = hdf5io_t(radint_filename, CREATE_FILE)
+   call write(hi, si)
+   call hi%final()
+
+   ! Finish
+
+contains
+
+   subroutine read_filter (filename, lambda, S)
+
+      character(*), intent(in)           :: filename
+      real(RD), allocatable, intent(out) :: lambda(:)
+      real(RD), allocatable, intent(out) :: S(:)
+
+      integer :: unit
+      integer :: n
+      integer :: i
+
+      ! Read the filter data
+
+      open(NEWUNIT=unit, FILE=filename, STATUS='OLD')
+
+      n = 0
+
+      count_loop : do
+         read(unit, *, END=100)
+         n = n + 1
+      end do count_loop
+      
+100   continue
+
+      rewind(unit)
+
+      allocate(lambda(n))
+      allocate(S(n))
+
+      read_loop : do i = 1, n
+         read(unit, *) lambda(i), S(i)
+      end do read_loop
+      
+      close(unit)
+
+      ! Finish
+
+      return
+
+   end subroutine read_filter
+
+end program make_radint
