@@ -71,7 +71,7 @@ program make_radint
    ! Write it
 
    hi = hdf5io_t(radint_filename, CREATE_FILE)
-   call write(hi, si)
+   call write(hi, ri)
    call hi%final()
 
    ! Finish
@@ -84,37 +84,16 @@ contains
       real(RD), allocatable, intent(out) :: lambda(:)
       real(RD), allocatable, intent(out) :: S(:)
 
-      integer :: unit
-      integer :: n
-      integer :: i
+      type(hdf5io_t) :: hi
 
       ! Read the filter data
 
-      open(NEWUNIT=unit, FILE=filename, STATUS='OLD')
+      hi = hdf5io_t(filename, OPEN_FILE)
 
-      n = 0
+      call hi%alloc_read_dset('lambda', lambda)
+      call hi%alloc_read_dset('S', S)
 
-      count_loop : do
-         read(unit, *, END=100)
-         n = n + 1
-      end do count_loop
-      
-100   continue
-
-      rewind(unit)
-
-      allocate(lambda(n))
-      allocate(S(n))
-
-      read_loop : do i = 1, n
-         read(unit, *) lambda(i), S(i)
-      end do read_loop
-      
-      close(unit)
-
-      ! Finish
-
-      return
+      call hi%final()
 
    end subroutine read_filter
 
