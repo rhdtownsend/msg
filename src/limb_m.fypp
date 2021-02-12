@@ -411,7 +411,7 @@ contains
       allocate(y(n_mu,n_w))
 
       w_loop : do k = 1, n_w
-         y(:,k) = I(:,k)/I_1(k)
+         y(:,k) = 1._RD - I(:,k)/I_1(k)
       end do w_loop
 
       ! Do the fit
