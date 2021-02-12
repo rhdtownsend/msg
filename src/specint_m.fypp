@@ -46,9 +46,18 @@ module specint_m
       integer               :: n_w
    contains
       private
-      procedure, public :: intensity
-      procedure, public :: flux
-      procedure         :: locate_
+      procedure             :: op_add_si_si_
+      generic, public       :: operator(+) => op_add_si_si_
+      procedure             :: op_sub_si_si_
+      generic, public       :: operator(/) => op_sub_si_si_
+      procedure             :: op_mul_si_rd_
+      procedure, pass(self) :: op_mul_rd_si_
+      generic, public       :: operator(*) => op_mul_si_rd_, op_mul_rd_si_
+      procedure             :: op_div_si_rd_
+      generic, public       :: operator(/) => op_div_si_rd_
+      procedure, public     :: intensity
+      procedure, public     :: flux
+      procedure             :: locate_
    end type specint_t
 
    ! Interfaces
@@ -234,13 +243,163 @@ contains
             
       ! Create the specint_t
 
-      si = specint_t(I_1, a, w_min_, dw_, si_in%li)
+      si = specint_t_(I_1, a, w_min_, dw_, si_in%li)
 
       ! Finish
 
       return
 
    end function specint_t_rebin_
+
+   !****
+
+   function op_add_si_si_ (self, other) result (si)
+
+      class(specint_t), intent(in) :: self
+      type(specint_t), intent(in)  :: other
+      type(specint_t)              :: si
+
+      integer               :: n_b
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+      integer               :: j
+
+      ! Add the specint_t's
+
+      @:ASSERT(self%li == other%li,mismatched limb-darkening laws)
+
+      @:ASSERT(self%w_0 == other%w_0,mismatched wavelength axis)
+      @:ASSERT(self%dw == other%dw,mismatched wavelength axis)
+      @:ASSERT(self%n_w == other%n_w,mismatched wavelength axis)
+
+      n_b = self%li%n_basis()
+
+      allocate(a(n_b,self%n_w))
+
+      I_1 = self%I_1 + other%I_1
+
+      do j = 1, n_b
+         a(j,:) = (self%I_1*self%a(j,:) + other%I_1*other%a(j,:))/I_1
+      end do
+
+      si = specint_t(I_1, a, self%w_0, self%dw, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_add_si_si_
+
+   !****
+
+   function op_sub_si_si_ (self, other) result (si)
+
+      class(specint_t), intent(in) :: self
+      type(specint_t), intent(in)  :: other
+      type(specint_t)              :: si
+
+      integer               :: n_b
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+      integer               :: j
+
+      ! Subtract the specint_t's
+
+      @:ASSERT(self%li == other%li,mismatched limb-darkening laws)
+
+      @:ASSERT(self%w_0 == other%w_0,mismatched wavelength axis)
+      @:ASSERT(self%dw == other%dw,mismatched wavelength axis)
+      @:ASSERT(self%n_w == other%n_w,mismatched wavelength axis)
+
+      n_b = self%li%n_basis()
+
+      allocate(a(n_b,self%n_w))
+
+      I_1 = self%I_1 - other%I_1
+
+      do j = 1, n_b
+         a(j,:) = (self%I_1*self%a(j,:) - other%I_1*other%a(j,:))/I_1
+      end do
+
+      si = specint_t(I_1, a, self%w_0, self%dw, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_sub_si_si_
+
+   !****
+
+   function op_mul_si_rd_ (self, other) result (si)
+
+      class(specint_t), intent(in) :: self
+      real(RD), intent(in)         :: other
+      type(specint_t)              :: si
+
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+
+      ! Multiply the specint_t
+
+      I_1 = self%I_1*other
+      a = self%a
+
+      si = specint_t(I_1, a, self%w_0, self%dw, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_mul_si_rd_
+
+   !****
+
+   function op_mul_rd_si_ (other, self) result (si)
+
+      real(RD), intent(in)         :: other
+      class(specint_t), intent(in) :: self
+      type(specint_t)              :: si
+
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+
+      ! Multiply the specint_t
+
+      I_1 = other*self%I_1
+      a = self%a
+
+      si = specint_t(I_1, a, self%w_0, self%dw, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_mul_rd_si_
+
+   !****
+
+   function op_div_si_rd_ (self, other) result (si)
+
+      class(specint_t), intent(in) :: self
+      real(RD), intent(in)         :: other
+      type(specint_t)              :: si
+
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+
+      ! Divide the specint_t
+
+      I_1 = self%I_1/other
+      a = self%a
+
+      si = specint_t(I_1, a, self%w_0, self%dw, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_div_si_rd_
 
    !****
 
@@ -266,7 +425,7 @@ contains
       call hi%read_attr('dw', dw)
 
       hi_li = hdf5io_t(hi, 'li')
-      call write(hi_li, li)
+      call read(hi_li, li)
       call hi_li%final()
 
       call hi%alloc_read_dset('I_1', I_1)
@@ -432,6 +591,9 @@ contains
       integer               :: n_b
       real(RD)              :: I_1
       real(RD), allocatable :: a(:)
+      integer               :: n_lambda
+      real(RD)              :: lambda_min
+      real(RD)              :: lambda_max
       integer               :: k
       real(RD)              :: w_a
       real(RD)              :: w_b
@@ -453,13 +615,23 @@ contains
       I_1 = 0._RD
       a = 0._RD
 
+      ! Determine bounds
+
+      n_lambda = SIZE(lambda)
+
+      lambda_min = lambda(1)
+      lambda_max = lambda(n_lambda)
+
       ! Do the convolution
 
-      conv_loop : do k = 1, SIZE(S)
+      conv_loop : do k = 1, n_lambda
 
          w_a = si%w_0 + (k-1)*si%dw
          w_b = si%w_0 + (k  )*si%dw
-         
+
+         if (exp(w_a) < lambda_min .OR. &
+              exp(w_b) > lambda_max) cycle conv_loop
+
          S_dlambda = integrate_lin(lambda, S, exp(w_a), exp(w_b))
 
          I_1 = I_1 + si%I_1(k)*S_dlambda

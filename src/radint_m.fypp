@@ -42,8 +42,17 @@ module radint_m
       real(RD), allocatable :: a(:)
    contains
       private
-      procedure, public :: intensity
-      procedure, public :: flux
+      procedure             :: op_add_ri_ri_
+      generic, public       :: operator(+) => op_add_ri_ri_
+      procedure             :: op_sub_ri_ri_
+      generic, public       :: operator(/) => op_sub_ri_ri_
+      procedure             :: op_mul_ri_rd_
+      procedure, pass(self) :: op_mul_rd_ri_
+      generic, public       :: operator(*) => op_mul_ri_rd_, op_mul_rd_ri_
+      procedure             :: op_div_ri_rd_
+      generic, public       :: operator(/) => op_div_ri_rd_
+      procedure, public     :: intensity
+      procedure, public     :: flux
    end type radint_t
 
    ! Interfaces
@@ -81,7 +90,6 @@ contains
       type(radint_t)           :: ri
 
       integer :: n_b
-      integer :: n_w
 
       ! Construct the radint_t from the supplied data
 
@@ -124,6 +132,130 @@ contains
       return
 
    end function radint_t_fit_
+
+   !****
+
+   function op_add_ri_ri_ (self, other) result (ri)
+
+      class(radint_t), intent(in) :: self
+      type(radint_t), intent(in)  :: other
+      type(radint_t)              :: ri
+
+      real(RD)              :: I_1
+      real(RD), allocatable :: a(:)
+
+      ! Add the radint_t's
+
+      @:ASSERT(self%li == other%li,mismatched limb-darkening laws)
+
+      I_1 = self%I_1 + other%I_1
+      a = (self%I_1*self%a + other%I_1*other%a)/I_1
+
+      ri = radint_t(I_1, a, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_add_ri_ri_
+
+   !****
+
+   function op_sub_ri_ri_ (self, other) result (ri)
+
+      class(radint_t), intent(in) :: self
+      type(radint_t), intent(in)  :: other
+      type(radint_t)              :: ri
+
+      real(RD)              :: I_1
+      real(RD), allocatable :: a(:)
+
+      ! Subtract the radint_t's
+
+      @:ASSERT(self%li == other%li,mismatched limb-darkening laws)
+
+      I_1 = self%I_1 - other%I_1
+      a = (self%I_1*self%a - other%I_1*other%a)/I_1
+
+      ri = radint_t(I_1, a, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_sub_ri_ri_
+
+   !****
+
+   function op_mul_ri_rd_ (self, other) result (ri)
+
+      class(radint_t), intent(in) :: self
+      real(RD), intent(in)        :: other
+      type(radint_t)              :: ri
+
+      real(RD)              :: I_1
+      real(RD), allocatable :: a(:)
+
+      ! Multiply the radint_t
+
+      I_1 = self%I_1*other
+      a = self%a
+
+      ri = radint_t(I_1, a, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_mul_ri_rd_
+
+   !****
+
+   function op_mul_rd_ri_ (other, self) result (ri)
+
+      real(RD), intent(in)        :: other
+      class(radint_t), intent(in) :: self
+      type(radint_t)              :: ri
+
+      real(RD)              :: I_1
+      real(RD), allocatable :: a(:)
+
+      ! Multiply the radint_t
+
+      I_1 = other*self%I_1
+      a = self%a
+
+      ri = radint_t(I_1, a, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_mul_rd_ri_
+
+   !****
+
+   function op_div_ri_rd_ (self, other) result (ri)
+
+      class(radint_t), intent(in) :: self
+      real(RD), intent(in)        :: other
+      type(radint_t)              :: ri
+
+      real(RD)              :: I_1
+      real(RD), allocatable :: a(:)
+
+      ! Divide the radint_t
+
+      I_1 = self%I_1/other
+      a = self%a
+
+      ri = radint_t(I_1, a, self%li)
+
+      ! Finish
+
+      return
+
+   end function op_div_ri_rd_
 
    !****
 
