@@ -46,6 +46,8 @@ module limb_m
       integer, public :: law
    contains
       private
+      procedure         :: op_eql_li_li_
+      generic, public   :: operator(==) => op_eql_li_li_
       procedure, public :: n_basis
       procedure, public :: intensity_basis
       procedure, public :: flux_basis
@@ -111,6 +113,24 @@ contains
       return
 
    end function limb_t_
+
+   !****
+
+   function op_eql_li_li_(self, other) result (eql)
+
+      class(limb_t), intent(in) :: self
+      type(limb_t), intent(in)  :: other
+      logical                   :: eql
+
+      ! See if the limb_t's are equal
+
+      eql = self%law == other%law
+
+      ! Finish
+
+      return
+
+   end function op_eql_li_li_
 
    !****
 
@@ -419,5 +439,7 @@ contains
       end function f_
 
    end subroutine fit_intensity_1_
+
+   !****
       
 end module limb_m
