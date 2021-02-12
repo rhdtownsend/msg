@@ -588,12 +588,13 @@ contains
       real(RD), intent(in)        :: lambda(:)
       type(radint_t)              :: ri
 
-      integer               :: n_b
-      real(RD)              :: I_1
-      real(RD), allocatable :: a(:)
       integer               :: n_lambda
       real(RD)              :: lambda_min
       real(RD)              :: lambda_max
+      integer               :: n_b
+      real(RD)              :: I_1
+      real(RD), allocatable :: a(:)
+      real(RD)              :: D
       integer               :: k
       real(RD)              :: w_a
       real(RD)              :: w_b
@@ -606,6 +607,13 @@ contains
       ! is the photon one, not the energy one (see Appendix A of
       ! Bessel & Murhphy 2013, PASP 124, 140).
 
+      ! Determine bounds
+
+      n_lambda = SIZE(lambda)
+
+      lambda_min = lambda(1)
+      lambda_max = lambda(n_lambda)
+
       ! Initialize arrays
 
       n_b = si%li%n_basis()
@@ -615,16 +623,11 @@ contains
       I_1 = 0._RD
       a = 0._RD
 
-      ! Determine bounds
-
-      n_lambda = SIZE(lambda)
-
-      lambda_min = lambda(1)
-      lambda_max = lambda(n_lambda)
+      D = 0._RD
 
       ! Do the convolution
 
-      conv_loop : do k = 1, n_lambda
+      conv_loop : do k = 1, si%n_w
 
          w_a = si%w_0 + (k-1)*si%dw
          w_b = si%w_0 + (k  )*si%dw
@@ -637,9 +640,12 @@ contains
          I_1 = I_1 + si%I_1(k)*S_dlambda
          a = a + si%I_1(k)*si%a(:,k)*S_dlambda
 
+         D = D + S_dlambda
+
       end do conv_loop
 
       a = a/I_1
+      I_1 = I_1/D
 
       ! Construct the radint_t
 
