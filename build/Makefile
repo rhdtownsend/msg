@@ -3,7 +3,7 @@
 
 # Variables
 
-TARGETS = test_math test_order test_fit make_specint make_radint
+TARGETS = test_math test_interp test_order test_fit make_specint make_radint make_radgrid
 
 make_specint_SRCS = \
   make_specint.f90 \
@@ -33,11 +33,35 @@ make_radint_SRCS = \
   system_m.f90 \
   hdf5io_m.f90
 
+make_radgrid_SRCS = \
+  make_radint.f90 \
+  specint_m.f90 \
+  radint_m.f90 \
+  radgrid_m.f90 \
+  radgrid_factory_m.f90 \
+  radnode_m.f90 \
+  interp_m.f90 \
+  fit_m.f90 \
+  kinds_m.f90 \
+  const_m.f90 \
+  limb_m.f90 \
+  math_m.f90 \
+  order_m.f90 \
+  system_m.f90 \
+  hdf5io_m.f90
+
 test_math_SRCS = \
   test_math.f90 \
   test_math_m.f90 \
   order_m.f90 \
   math_m.f90 \
+  kinds_m.f90
+
+test_interp_SRCS = \
+  test_interp.f90 \
+  test_interp_m.f90 \
+  interp_m.f90 \
+  order_m.f90 \
   kinds_m.f90
 
 test_order_SRCS = \
