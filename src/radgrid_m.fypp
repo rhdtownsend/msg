@@ -1,0 +1,289 @@
+! Module  : radgrid_m
+! Purpose : define radgrid_t type, for representing radiant intensity
+!           grids
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module radgrid_m
+
+   ! Uses
+   
+   use kinds_m
+   use hdf5io_m
+   use order_m
+
+   use interp_m
+   use radnode_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type radgrid_t
+      private
+      type(radnode_t), allocatable :: rn(:,:)
+      logical, allocatable         :: mask(:,:)
+      real(RD), allocatable        :: lnT(:)
+      real(RD), allocatable        :: lng(:)
+      integer                      :: n_lnT
+      integer                      :: n_lng
+   contains
+      private
+      procedure, public :: intensity
+      procedure, public :: flux
+   end type radgrid_t
+
+   ! Interfaces
+
+   interface radgrid_t
+      module procedure radgrid_t_
+   end interface radgrid_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: radgrid_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function radgrid_t_ (rn, mask, lnT, lng) result (rg)
+
+      type(radnode_t), intent(in) :: rn(:,:)
+      logical, intent(in)         :: mask(:,:)
+      real(RD), intent(in)        :: lnT(:)
+      real(RD), intent(in)        :: lng(:)
+      type(radgrid_t)             :: rg
+
+      @:CHECK_BOUNDS(SIZE(mask, 1), SIZE(rn, 1))
+      @:CHECK_BOUNDS(SIZE(mask, 2), SIZE(rn, 2))
+
+      @:CHECK_BOUNDS(SIZE(lnT), SIZE(rn, 1))
+      @:CHECK_BOUNDS(SIZE(lng), SIZE(rn, 2))
+
+      ! Costruct the radgrid_t
+
+      rg%rn = rn
+      rg%mask = mask
+
+      rg%lnT = lnT
+      rg%lng = lng
+
+      rg%n_lnT = SIZE(lnT)
+      rg%n_lng = SIZE(lng)
+
+      ! Finish
+
+      return
+
+   end function radgrid_t_
+
+   !****
+
+   subroutine read_(hi, rg)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(radgrid_t), intent(out)  :: rg
+
+      character(TYPE_LEN)          :: type
+      integer                      :: n_lnT
+      integer                      :: n_lng
+      type(radnode_t), allocatable :: rn(:,:)
+      logical, allocatable         :: mask(:,:)
+      real(RD), allocatable        :: lnT(:)
+      real(RD), allocatable        :: lng(:)
+      type(hdf5io_t)               :: hi_rn
+      integer                      :: i
+      integer                      :: j
+
+      ! Read the radgrid_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'radgrid_t',invalid type)
+
+      call hi%read_attr('n_lnT', n_lnT)
+      call hi%read_attr('n_lng', n_lng)
+
+      allocate(rn(n_lnT,n_lng))
+      allocate(mask(n_lnT,n_lng))
+
+      allocate(lnT(n_lnT))
+      allocate(lng(n_lng))
+
+      call hi%read_dset('mask', mask)
+
+      lnT_loop : do i = 1, n_lnT
+         lng_loop : do j = 1, n_lng
+
+            if (mask(i,j)) then
+               hi_rn = hdf5io_t(hi, rn_name_(i,j))
+               call read(hi_rn, rn(i,j))
+               call hi_rn%final()
+            end if
+
+         end do lng_loop
+      end do lnT_loop
+
+      call hi%read_dset('lnT', lnT)
+      call hi%read_dset('lng', lng)
+
+      rg = radgrid_t(rn, mask, lnT, lng)
+
+      ! Finish
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, rg)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(radgrid_t), intent(in )  :: rg
+
+      type(hdf5io_t) :: hi_rn
+      integer        :: i
+      integer        :: j
+
+      call hi%write_attr('TYPE', 'radgrid_t')
+
+      call hi%write_attr('n_lnT', rg%n_lnT)
+      call hi%write_attr('n_lng', rg%n_lng)
+
+      call hi%write_dset('mask', rg%mask)
+
+      lnT_loop : do i = 1, rg%n_lnT
+         lng_loop : do j = 1, rg%n_lng
+
+            if (rg%mask(i,j)) then
+               hi_rn = hdf5io_t(hi, rn_name_(i,j))
+               call write(hi_rn, rg%rn(i,j))
+               call hi_rn%final()
+            end if
+
+         end do lng_loop
+      end do lnT_loop
+
+      call hi%write_dset('lnT', rg%lnT)
+      call hi%write_dset('lng', rg%lng)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function rn_name_(i,j) result (name)
+
+      integer, intent(in) :: i
+      integer, intent(in) :: j
+      character(256)      :: name
+
+      write(name, 100) i, j
+100   format('rn(',I0,',',I0,')')
+
+   end function rn_name_
+
+   !****
+
+   function intensity(self, lnT, lng, mu, d_dlnT, d_dlng) result (I)
+
+      class(radgrid_t), intent(in)  :: self
+      real(RD), intent(in)          :: lnT
+      real(RD), intent(in)          :: lng
+      real(RD), intent(in)          :: mu
+      logical, intent(in), optional :: d_dlnT
+      logical, intent(in), optional :: d_dlng
+      real(RD)                      :: I
+
+      ! Interpolate the intensity
+
+      I = interp_bicubic(intensity_func_, self%lnT, self%lng, lnT, lng, d_dx=d_dlnT, d_dy=d_dlng)
+
+      ! Finsh
+
+      return
+
+   contains
+
+      function intensity_func_(i, j, d_dx, d_dy) result(f)
+
+         integer, intent(in)           :: i
+         integer, intent(in)           :: j
+         logical, intent(in), optional :: d_dx
+         logical, intent(in), optional :: d_dy
+         real(RD)                      :: f
+
+         f = self%rn(i, j)%intensity(mu, d_dlnT=d_dx, d_dlng=d_dy)
+
+      end function intensity_func_
+
+   end function intensity
+
+   !****
+
+   function flux(self, lnT, lng, d_dlnT, d_dlng) result (F)
+
+      class(radgrid_t), intent(in)  :: self
+      real(RD), intent(in)          :: lnT
+      real(RD), intent(in)          :: lng
+      logical, intent(in), optional :: d_dlnT
+      logical, intent(in), optional :: d_dlng
+      real(RD)                      :: F
+
+      ! Interpolate the flux
+
+      F = interp_bicubic(flux_func_, self%lnT, self%lng, lnT, lng, d_dx=d_dlnT, d_dy=d_dlng)
+
+      ! Finsh
+
+      return
+
+   contains
+
+      function flux_func_(i, j, d_dx, d_dy) result(f)
+
+         integer, intent(in)           :: i
+         integer, intent(in)           :: j
+         logical, intent(in), optional :: d_dx
+         logical, intent(in), optional :: d_dy
+         real(RD)                      :: f
+
+         f = self%rn(i, j)%flux(d_dlnT=d_dx, d_dlng=d_dy)
+
+      end function flux_func_
+
+   end function flux
+
+end module radgrid_m

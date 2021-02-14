@@ -1,0 +1,293 @@
+! Module   : radgrid_factory_m
+! Purpose  : factory procedures for radgrid_t type
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module radgrid_factory_m
+
+  ! Uses
+  
+   use kinds_m
+   
+   use radint_m
+   use radnode_m
+   use radgrid_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: radgrid_from_grid
+
+   ! Procedures
+
+contains
+
+   function radgrid_from_grid(ri, mask, lnT, lng) result (rg)
+
+      type(radint_t), intent(in) :: ri(:,:)
+      logical, intent(in)        :: mask(:,:)
+      real(RD), intent(in)       :: lnT(:)
+      real(RD), intent(in)       :: lng(:)
+      type(radgrid_t)            :: rg
+
+      integer                      :: n_lnT
+      integer                      :: n_lng
+      real(RD), allocatable        :: lnT_g(:)
+      real(RD), allocatable        :: lng_g(:)
+      type(radint_t), allocatable  :: ri_g(:,:)
+      logical, allocatable         :: mask_g(:,:)
+      type(radnode_t), allocatable :: rn(:,:)
+      integer                      :: i
+      integer                      :: j
+      type(radint_t)               :: dri_dlnT
+      type(radint_t)               :: dri_dlng
+      type(radint_t)               :: d2ri_dlnTdlng
+      
+      @:CHECK_BOUNDS(SIZE(mask, 1), SIZE(ri, 1))
+      @:CHECK_BOUNDS(SIZE(mask, 2), SIZE(ri, 2))
+
+      @:CHECK_BOUNDS(SIZE(lnT), SIZE(ri, 1))
+      @:CHECK_BOUNDS(SIZE(lng), SIZE(ri, 2))
+
+      ! Construct the radgrid_t from the grid of radint_t's
+
+      ! Add ghost zones to the grid
+
+      n_lnT = SIZE(lnT)
+      n_lng = SIZE(lng)
+
+      allocate(lnT_g(0:n_lnT+1))
+      allocate(lng_g(0:n_lng+1))
+
+      lnT_g(1:n_lnT) = lnT
+      lng_g(1:n_lng) = lng
+
+      allocate(ri_g(0:n_lnT+1,0:n_lng+1))
+      allocate(mask_g(0:n_lnT+1,0:n_lng+1))
+
+      ri_g(1:n_lnT,1:n_lng) = ri
+
+      mask_g(1:n_lnT,1:n_lng) = mask
+      mask_g(0,:) = .FALSE.
+      mask_g(n_lnT+1,:) = .FALSE.
+      mask_g(:,0) = .FALSE.
+      mask_g(:,n_lng+1) = .FALSE.
+
+      ! Allocate space for the radnode_t's
+
+      allocate(rn(n_lnT,n_lng))
+
+      ! For each masked-in node in the grid, set up the radnode_t
+
+      lnT_loop : do i = 1, n_lnT
+         lng_loop : do j = 1, n_lng
+
+            if (mask(i,j)) then
+
+               ! Evaluate derivatives
+
+               dri_dlnT = first_deriv_(ri_g(i-1:i+1,j), mask_g(i-1:i+1,j), lnT_g(i-1:i+1))
+               dri_dlng = first_deriv_(ri_g(i,j-1:j+1), mask_g(i,j-1:j+1), lnT_g(j-1:j+1))
+
+               d2ri_dlnTdlng = cross_deriv_(ri_g(i-1:i+1,j-1:j+1), mask_g(i-1:i+1,j-1:j+1), lnT_g(i-1:i+1), lng_g(j-1:j+1))
+
+               ! Set up the radnode
+
+               rn(i,j) = radnode_t(ri(i,j), dri_dlnT, dri_dlng, d2ri_dlnTdlng)
+
+            end if
+
+         end do lng_loop
+      end do lnT_loop
+
+      ! Construct the radgrid_t
+
+      rg = radgrid_t(rn, mask, lnT, lng)
+
+      ! Finish
+
+      return
+
+   end function radgrid_from_grid
+
+   !****
+
+   function first_deriv_ (ri, mask, x) result (dri_dx)
+
+      type(radint_t), intent(in) :: ri(:)
+      logical, intent(in)        :: mask(:)
+      real(RD), intent(in)       :: x(:)
+      type(radint_t)             :: dri_dx
+
+      logical        :: mask_fd(2)
+      type(radint_t) :: dri_fd(2)
+      real(RD)       :: u
+
+      ! Evaluate the first derivative
+
+      ! Set up finite differences
+
+      if (mask(1)) then
+         mask_fd(1) = .TRUE.
+         dri_fd(1) = (ri(2) - ri(1))/(x(2) - x(1))
+      else
+         mask_fd(1) = .FALSE.
+      endif
+
+      if (mask(3)) then
+         mask_fd(2) = .TRUE.
+         dri_fd(2) = (ri(2) - ri(1))/(x(2) - x(1))
+      else
+         mask_fd(1) = .FALSE.
+      endif
+
+      ! Blend them to create the first derivative
+
+      if (ALL(mask_fd)) then
+         u = (x(2) - x(1))/(x(3) - x(1))
+         dri_dx = (1._RD-u)*dri_fd(1) + u*dri_fd(2)
+      elseif (mask_fd(1)) then
+         dri_dx = dri_fd(1)
+      elseif (mask_fd(2)) then
+         dri_dx = dri_fd(2)
+      else
+         @:ABORT(insufficient points to form derivative)
+      end if
+
+      ! Finish
+
+      return
+
+   end function first_deriv_
+
+   !****
+
+   function cross_deriv_ (ri, mask, x, y) result (d2ri_dxdy)
+
+      type(radint_t), intent(in) :: ri(:,:)
+      logical, intent(in)        :: mask(:,:)
+      real(RD), intent(in)       :: x(:)
+      real(RD), intent(in)       :: y(:)
+      type(radint_t)             :: d2ri_dxdy
+
+      logical        :: mask_fd(4)
+      type(radint_t) :: d2ri_fd(4)
+      real(RD)       :: u
+      real(RD)       :: v
+
+      ! Evaluate the cross derivative
+
+      ! Set up finite differences
+
+      if (ALL(mask(1:2,1:2))) then
+         mask_fd(1) = .TRUE.
+         d2ri_fd(1) = (ri(1,1) + ri(2,2) - ri(2,1) - ri(1,2))/((x(2) - x(1))*(y(2) - y(1)))
+      else
+         mask_fd(1) = .FALSE.
+      endif
+
+      if (ALL(mask(2:3,1:2))) then
+         mask_fd(2) = .TRUE.
+         d2ri_fd(2) = (ri(2,1) + ri(3,2) - ri(3,1) - ri(2,2))/((x(3) - x(2))*(y(2) - y(1)))
+      else
+         mask_fd(2) = .FALSE.
+      endif
+
+      if (ALL(mask(1:2,2:3))) then
+         mask_fd(3) = .TRUE.
+         d2ri_fd(3) = (ri(1,2) + ri(2,3) - ri(2,2) - ri(1,3))/((x(2) - x(1))*(y(3) - y(2)))
+      else
+         mask_fd(3) = .FALSE.
+      endif
+
+      if (ALL(mask(2:3,2:3))) then
+         mask_fd(4) = .TRUE.
+         d2ri_fd(4) = (ri(2,2) + ri(3,3) - ri(3,2) - ri(2,3))/((x(3) - x(2))*(y(3) - y(2)))
+      else
+         mask_fd(4) = .FALSE.
+      endif
+
+      ! Blend them to create the first derivative
+
+      select case (COUNT(mask_fd))
+      case (1)
+         if (mask_fd(1)) then
+            d2ri_dxdy = d2ri_fd(1)
+         elseif (mask_fd(2)) then
+            d2ri_dxdy = d2ri_fd(2)
+         elseif (mask_fd(3)) then
+            d2ri_dxdy = d2ri_fd(3)
+         else
+            d2ri_dxdy = d2ri_fd(4)
+         endif
+      case (2)
+         if (mask_fd(1) .AND. mask_fd(2)) then
+            u = (x(2) - x(1))/(x(3) - x(1))
+            d2ri_dxdy = (1._RD-u)*d2ri_fd(1) + u*d2ri_fd(2)
+         elseif (mask_fd(3) .AND. mask_fd(4)) then
+            u = (x(2) - x(1))/(x(3) - x(1))
+            d2ri_dxdy = (1._RD-u)*d2ri_fd(3) + u*d2ri_fd(4)
+         elseif (mask_fd(1) .AND. mask_fd(3)) then
+            v = (y(2) - y(1))/(y(3) - y(1))
+            d2ri_dxdy = (1._RD-v)*d2ri_fd(1) + v*d2ri_fd(3)
+         elseif (mask_fd(2) .AND. mask_fd(4)) then
+            v = (y(2) - y(1))/(y(3) - y(1))
+            d2ri_dxdy = (1._RD-v)*d2ri_fd(2) + v*d2ri_fd(4)
+         else
+            @:ABORT(insufficient points to form derivative)
+         end if
+      case (3)
+         if (.NOT. mask_fd(1)) then
+            d2ri_dxdy = d2ri_fd(4)
+         elseif (.NOT. mask_fd(2)) then
+            d2ri_dxdy = d2ri_fd(3)
+         elseif (.NOT. mask_fd(3)) then
+            d2ri_dxdy = d2ri_fd(2)
+         else
+            d2ri_dxdy = d2ri_fd(1)
+         endif
+      case (4)
+         u = (x(2) - x(1))/(x(3) - x(1))
+         v = (y(2) - y(1))/(y(3) - y(1))
+         d2ri_dxdy = &
+              (1._RD-u)*(1._RD-v)*d2ri_fd(1) + &
+              (      u)*(1._RD-v)*d2ri_fd(2) + &
+              (1._RD-u)*(      v)*d2ri_fd(3) + &
+              (      u)*(      v)*d2ri_fd(4)
+      end select
+
+      ! Finish
+
+      return
+
+   end function cross_deriv_
+
+end module radgrid_factory_m
+         
+         
+         
+
+      
+
+      
