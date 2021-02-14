@@ -1,0 +1,222 @@
+#:include 'forum.inc'
+
+module test_interp_m
+
+  ! Uses
+
+  use kinds_m
+  use interp_m
+
+  use ISO_FORTRAN_ENV
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Access specifiers
+
+  private
+
+  public :: test
+
+contains
+ 
+   subroutine test ()
+
+      call test_interp_bicubic_()
+
+   end subroutine test
+
+   !****
+
+   subroutine test_interp_bicubic_ ()
+
+      integer, parameter :: n_x = 4
+      integer, parameter :: n_y = 6
+      integer, parameter :: n_over = 10
+      integer, parameter :: n_x_int = n_over*(n_x-1) + 1
+      integer, parameter :: n_y_int = n_over*(n_y-1) + 1
+      
+      real(RD) :: x(n_x)
+      real(RD) :: y(n_y)
+      real(RD) :: f(n_x,n_y)
+      real(RD) :: df_dx(n_x,n_y)
+      real(RD) :: df_dy(n_x,n_y)
+      real(RD) :: d2f_dxdy(n_x,n_y)
+      real(RD) :: x_int(n_x_int)
+      real(RD) :: y_int(n_y_int)
+      real(RD) :: f_int(n_x_int,n_y_int)
+      real(RD) :: df_dx_int(n_x_int,n_y_int)
+      real(RD) :: df_dy_int(n_x_int,n_y_int)
+      real(RD) :: d2f_dxdy_int(n_x_int,n_y_int)
+      real(RD) :: f_chk(n_x_int,n_y_int)
+      real(RD) :: df_dx_chk(n_x_int,n_y_int)
+      real(RD) :: df_dy_chk(n_x_int,n_y_int)
+      real(RD) :: d2f_dxdy_chk(n_x_int,n_y_int)
+
+      print *,'interp_bicubic'
+
+      call interp_bicubic_arrange_()
+      call interp_bicubic_act_()
+      call interp_bicubic_assert_()
+
+   contains
+
+      subroutine interp_bicubic_arrange_()
+
+         integer :: i
+         integer :: j
+
+         x = [(i-1,i=1,n_x)]
+         y = [(j-1,j=1,n_y)]**2
+
+         do i = 1, n_x
+            do j = 1, n_y
+               call interp_bicubic_eval_(x(i), y(j), &
+                    f(i,j), df_dx(i,j), df_dy(i,j), d2f_dxdy(i,j))
+            end do
+         end do
+
+      end subroutine interp_bicubic_arrange_
+
+      !****
+  
+      subroutine interp_bicubic_act_()
+
+         integer :: i
+         integer :: j
+         integer :: k
+
+         do i = 1, n_x-1
+            do k = 1, n_over
+               x_int(n_over*(i-1)+k) = x(i) + (x(i+1) - x(i))*(k-1)/n_over
+            end do
+         end do
+
+         do j = 1, n_y-1
+            do k = 1, n_over
+               y_int(n_over*(j-1)+k) = y(j) + (y(j+1) - y(j))*(k-1)/n_over
+            end do
+         end do
+
+         x_int(n_x_int) = x(n_x)
+         y_int(n_y_int) = y(n_y)
+
+         do i = 1, n_x_int
+            do j = 1,n_y_int
+               f_int(i,j) = interp_bicubic(interp_bicubic_func_, x, y, x_int(i), y_int(j))
+               df_dx_int(i,j) = interp_bicubic(interp_bicubic_func_, x, y, x_int(i), y_int(j), d_dx=.TRUE.)
+               df_dy_int(i,j) = interp_bicubic(interp_bicubic_func_, x, y, x_int(i), y_int(j), d_dy=.TRUE.)
+               d2f_dxdy_int(i,j) = interp_bicubic(interp_bicubic_func_, x, y, x_int(i), y_int(j), d_dx=.TRUE., d_dy=.TRUE.)
+               call interp_bicubic_eval_(x_int(i), y_int(j), f_chk(i,j), df_dx_chk(i,j), df_dy_chk(i,j), d2f_dxdy_chk(i,j))
+            end do
+         end do
+
+      end subroutine interp_bicubic_act_
+
+      !****
+
+      function interp_bicubic_func_ (i, j, d_dx, d_dy) result(func)
+
+         integer, intent(in)           :: i
+         integer, intent(in)           :: j
+         logical, intent(in), optional :: d_dx
+         logical, intent(in), optional :: d_dy
+         real(RD)                      :: func
+
+         logical :: d_dx_
+         logical :: d_dy_
+
+         if (PRESENT(d_dx)) then
+            d_dx_ = d_dx
+         else
+            d_dx_ = .FALSE.
+         endif
+
+         if (PRESENT(d_dy)) then
+            d_dy_ = d_dy
+         else
+            d_dy_ = .FALSE.
+         endif
+
+         if (d_dx_) then
+            if (d_dy_) then
+               func = d2f_dxdy(i,j)
+            else
+               func = df_dx(i,j)
+            endif
+         else
+            if (d_dy_) then
+               func = df_dy(i,j)
+            else
+               func = f(i,j)
+            endif
+         endif
+
+      end function interp_bicubic_func_
+
+      !****
+
+      subroutine interp_bicubic_eval_(x, y, f, df_dx, df_dy, d2f_dxdy)
+
+         real(RD), intent(in)  :: x
+         real(RD), intent(in)  :: y
+         real(RD), intent(out) :: f
+         real(RD), intent(out) :: df_dx
+         real(RD), intent(out) :: df_dy
+         real(RD), intent(out) :: d2f_dxdy
+
+         f = x**3 + x*y**3 + 2*y**2 + 4
+         df_dx = 3*x**2 + y**3
+         df_dy = 3*x*y**2 + 4*y
+         d2f_dxdy = 3*y**2
+
+      end subroutine interp_bicubic_eval_
+         
+      !****
+      
+      subroutine interp_bicubic_assert_()
+
+         real(RD), parameter :: tol = 1E-13_RD
+
+         real(RD), allocatable :: f_err(:,:)
+         real(RD), allocatable :: df_dx_err(:,:)
+         real(RD), allocatable :: df_dy_err(:,:)
+         real(RD), allocatable :: d2f_dxdy_err(:,:)
+
+         f_err = (f_int - f_chk)/f_chk
+         df_dx_err = (df_dx_int - df_dx_chk)/f_chk
+         df_dy_err = (df_dy_int - df_dy_chk)/f_chk
+         d2f_dxdy_err = (d2f_dxdy_int - d2f_dxdy_chk)/f_chk
+
+         if (ALL(ABS(f_err) < tol)) then
+            print *,'  PASS f'
+         else
+            print *,'  FAIL f:', f_err
+         end if
+
+         if (ALL(ABS(df_dx_err) < tol)) then
+            print *,'  PASS df_dx'
+         else
+            print *,'  FAIL df_dx:', df_dx_err
+         end if
+
+         if (ALL(ABS(df_dy_err) < tol)) then
+            print *,'  PASS df_dy'
+         else
+            print *,'  FAIL df_dy:', df_dy_err
+         end if
+
+         if (ALL(ABS(d2f_dxdy_err) < tol)) then
+            print *,'  PASS d2f_dxdy'
+         else
+            print *,'  FAIL d2f_dxdy:', d2f_dxdy_err
+         end if
+
+
+      end subroutine interp_bicubic_assert_
+
+   end subroutine test_interp_bicubic_
+
+end module test_interp_m
+ 

@@ -1,0 +1,15 @@
+program  test_interp_m
+
+  ! Uses
+
+  use test_interp_m
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Run the tests
+
+  call test()
+
+end program test_interp_m
