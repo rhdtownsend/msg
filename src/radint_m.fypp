@@ -45,7 +45,7 @@ module radint_m
       procedure             :: op_add_ri_ri_
       generic, public       :: operator(+) => op_add_ri_ri_
       procedure             :: op_sub_ri_ri_
-      generic, public       :: operator(/) => op_sub_ri_ri_
+      generic, public       :: operator(-) => op_sub_ri_ri_
       procedure             :: op_mul_ri_rd_
       procedure, pass(self) :: op_mul_rd_ri_
       generic, public       :: operator(*) => op_mul_ri_rd_, op_mul_rd_ri_
@@ -259,10 +259,45 @@ contains
 
    !****
 
+   function intensity(self, mu) result (I)
+
+      class(radint_t), intent(in) :: self
+      real(RD), intent(in)        :: mu
+      real(RD)                    :: I
+
+      ! Evaluate the intensity
+
+      I = self%li%intensity(self%I_1, self%a, mu)
+
+      ! Finish
+
+      return
+
+   end function intensity
+
+   !****
+
+   function flux (self) result(F)
+
+      class(radint_t), intent(in) :: self
+      real(RD)                    :: F
+
+      ! Evaluate the flux
+
+      F = self%li%flux(self%I_1, self%a)
+
+      ! Finish
+
+      return
+
+   end function flux
+
+   !****
+
    subroutine read_(hi, ri)
 
       type(hdf5io_t), intent(inout) :: hi
-      type(radint_t), intent(out)  :: ri
+      type(radint_t), intent(out)   :: ri
 
       character(TYPE_LEN)   :: type
       type(hdf5io_t)        :: hi_li
@@ -276,7 +311,7 @@ contains
       @:ASSERT(type == 'radint_t',invalid type)
 
       hi_li = hdf5io_t(hi, 'li')
-      call write(hi_li, li)
+      call read(hi_li, li)
       call hi_li%final()
 
       call hi%alloc_read_dset('I_1', I_1)
@@ -315,40 +350,5 @@ contains
       return
 
    end subroutine write_
-
-   !****
-
-   function intensity(self, mu) result (I)
-
-      class(radint_t), intent(in) :: self
-      real(RD), intent(in)        :: mu
-      real(RD)                    :: I
-
-      ! Evaluate the intensity
-
-      I = self%li%intensity(self%I_1, self%a, mu)
-
-      ! Finish
-
-      return
-
-   end function intensity
-
-   !****
-
-   function flux (self) result(F)
-
-      class(radint_t), intent(in) :: self
-      real(RD)                    :: F
-
-      ! Evaluate the flux
-
-      F = self%li%flux(self%I_1, self%a)
-
-      ! Finish
-
-      return
-
-   end function flux
 
 end module radint_m
