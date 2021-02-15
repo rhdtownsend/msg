@@ -58,11 +58,9 @@ contains
       type(radint_t), allocatable  :: ri_g(:,:)
       logical, allocatable         :: mask_g(:,:)
       type(radnode_t), allocatable :: rn(:,:)
+      logical, allocatable         :: mask_rn(:,:)
       integer                      :: i
       integer                      :: j
-      type(radint_t)               :: dri_dlnT
-      type(radint_t)               :: dri_dlng
-      type(radint_t)               :: d2ri_dlnTdlng
       
       @:CHECK_BOUNDS(SIZE(mask, 1), SIZE(ri, 1))
       @:CHECK_BOUNDS(SIZE(mask, 2), SIZE(ri, 2))
@@ -94,9 +92,12 @@ contains
       mask_g(:,0) = .FALSE.
       mask_g(:,n_lng+1) = .FALSE.
 
-      ! Allocate space for the radnode_t's
+      ! Allocate space for the radnode_t's and their mask
 
       allocate(rn(n_lnT,n_lng))
+      allocate(mask_rn(n_lnT,n_lng))
+
+      mask_rn = .FALSE.
 
       ! For each masked-in node in the grid, set up the radnode_t
 
@@ -107,23 +108,48 @@ contains
 
                ! Evaluate derivatives
 
-               dri_dlnT = first_deriv_(ri_g(i-1:i+1,j), mask_g(i-1:i+1,j), lnT_g(i-1:i+1))
-               dri_dlng = first_deriv_(ri_g(i,j-1:j+1), mask_g(i,j-1:j+1), lnT_g(j-1:j+1))
+               eval_block : block
 
-               d2ri_dlnTdlng = cross_deriv_(ri_g(i-1:i+1,j-1:j+1), mask_g(i-1:i+1,j-1:j+1), lnT_g(i-1:i+1), lng_g(j-1:j+1))
+                  logical        :: deriv_ok
+                  type(radint_t) :: dri_dlnT
+                  type(radint_t) :: dri_dlng
+                  type(radint_t) :: d2ri_dlnTdlng
+                  
+                  call eval_first_deriv_(ri_g(i-1:i+1,j), mask_g(i-1:i+1,j), lnT_g(i-1:i+1), dri_dlnT, deriv_ok)
+                  if (.NOT. deriv_ok) exit eval_block
 
-               ! Set up the radnode
+                  call eval_first_deriv_(ri_g(i,j-1:j+1), mask_g(i,j-1:j+1), lnT_g(j-1:j+1), dri_dlng, deriv_ok)
+                  if (.NOT. deriv_ok) exit eval_block
 
-               rn(i,j) = radnode_t(ri(i,j), dri_dlnT, dri_dlng, d2ri_dlnTdlng)
+                  call eval_cross_deriv_(ri_g(i-1:i+1,j-1:j+1), mask_g(i-1:i+1,j-1:j+1), &
+                       lnT_g(i-1:i+1), lng_g(j-1:j+1), d2ri_dlnTdlng, deriv_ok)
+                  if (.NOT. deriv_ok) exit eval_block
+
+                  ! Set up the radnode
+
+                  rn(i,j) = radnode_t(ri(i,j), dri_dlnT, dri_dlng, d2ri_dlnTdlng)
+                  mask_rn(i,j) = .TRUE.
+
+                end block eval_block
 
             end if
 
          end do lng_loop
       end do lnT_loop
 
+      ! Print out grid architecture
+
+      print 100, NINT(exp(lnT(1))), REPEAT(' ', n_lnT-9), NINT(exp(lnT(n_lnT)))
+100   format(5X,I4,A,I5)
+
+      do j = n_lng, 1, -1
+         print 110, lng(j)/log(10._RD), MERGE('X', '.', mask_rn(:,j))
+110      format(F4.2,1X,9999A1)
+      end do
+
       ! Construct the radgrid_t
 
-      rg = radgrid_t(rn, mask, lnT, lng)
+      rg = radgrid_t(rn, mask_rn, lnT, lng)
 
       ! Finish
 
@@ -133,12 +159,13 @@ contains
 
    !****
 
-   function first_deriv_ (ri, mask, x) result (dri_dx)
+   subroutine eval_first_deriv_ (ri, mask, x, dri_dx, deriv_ok)
 
-      type(radint_t), intent(in) :: ri(:)
-      logical, intent(in)        :: mask(:)
-      real(RD), intent(in)       :: x(:)
-      type(radint_t)             :: dri_dx
+      type(radint_t), intent(in)  :: ri(:)
+      logical, intent(in)         :: mask(:)
+      real(RD), intent(in)        :: x(:)
+      type(radint_t), intent(out) :: dri_dx
+      logical, intent(out)        :: deriv_ok
 
       logical        :: mask_fd(2)
       type(radint_t) :: dri_fd(2)
@@ -157,39 +184,45 @@ contains
 
       if (mask(3)) then
          mask_fd(2) = .TRUE.
-         dri_fd(2) = (ri(2) - ri(1))/(x(2) - x(1))
+         dri_fd(2) = (ri(3) - ri(2))/(x(3) - x(2))
       else
-         mask_fd(1) = .FALSE.
+         mask_fd(2) = .FALSE.
       endif
 
       ! Blend them to create the first derivative
 
-      if (ALL(mask_fd)) then
+      select case (COUNT(mask_fd))
+      case (1)
+         if (mask_fd(1)) then
+            dri_dx = dri_fd(1)
+         else
+            dri_dx = dri_fd(2)
+         endif
+         deriv_ok = .TRUE.
+      case (2)
          u = (x(2) - x(1))/(x(3) - x(1))
          dri_dx = (1._RD-u)*dri_fd(1) + u*dri_fd(2)
-      elseif (mask_fd(1)) then
-         dri_dx = dri_fd(1)
-      elseif (mask_fd(2)) then
-         dri_dx = dri_fd(2)
-      else
-         @:ABORT(insufficient points to form derivative)
-      end if
+         deriv_ok = .TRUE.
+      case default
+         deriv_ok = .FALSE.
+      end select
 
       ! Finish
 
       return
 
-   end function first_deriv_
+   end subroutine eval_first_deriv_
 
    !****
 
-   function cross_deriv_ (ri, mask, x, y) result (d2ri_dxdy)
+   subroutine eval_cross_deriv_ (ri, mask, x, y, d2ri_dxdy, deriv_ok)
 
-      type(radint_t), intent(in) :: ri(:,:)
-      logical, intent(in)        :: mask(:,:)
-      real(RD), intent(in)       :: x(:)
-      real(RD), intent(in)       :: y(:)
-      type(radint_t)             :: d2ri_dxdy
+      type(radint_t), intent(in)  :: ri(:,:)
+      logical, intent(in)         :: mask(:,:)
+      real(RD), intent(in)        :: x(:)
+      real(RD), intent(in)        :: y(:)
+      type(radint_t), intent(out) :: d2ri_dxdy
+      logical, intent(out)        :: deriv_ok
 
       logical        :: mask_fd(4)
       type(radint_t) :: d2ri_fd(4)
@@ -241,21 +274,26 @@ contains
          else
             d2ri_dxdy = d2ri_fd(4)
          endif
+         deriv_ok = .TRUE.
       case (2)
          if (mask_fd(1) .AND. mask_fd(2)) then
             u = (x(2) - x(1))/(x(3) - x(1))
             d2ri_dxdy = (1._RD-u)*d2ri_fd(1) + u*d2ri_fd(2)
+            deriv_ok = .TRUE.
          elseif (mask_fd(3) .AND. mask_fd(4)) then
             u = (x(2) - x(1))/(x(3) - x(1))
-            d2ri_dxdy = (1._RD-u)*d2ri_fd(3) + u*d2ri_fd(4)
+            d2ri_dxdy = (1._RD-u)*d2ri_fd(3) + u*d2ri_fd(4) 
+            deriv_ok = .TRUE.
          elseif (mask_fd(1) .AND. mask_fd(3)) then
             v = (y(2) - y(1))/(y(3) - y(1))
             d2ri_dxdy = (1._RD-v)*d2ri_fd(1) + v*d2ri_fd(3)
+            deriv_ok = .TRUE.
          elseif (mask_fd(2) .AND. mask_fd(4)) then
             v = (y(2) - y(1))/(y(3) - y(1))
             d2ri_dxdy = (1._RD-v)*d2ri_fd(2) + v*d2ri_fd(4)
+            deriv_ok = .TRUE.
          else
-            @:ABORT(insufficient points to form derivative)
+            deriv_ok =.FALSE.
          end if
       case (3)
          if (.NOT. mask_fd(1)) then
@@ -267,6 +305,7 @@ contains
          else
             d2ri_dxdy = d2ri_fd(1)
          endif
+         deriv_ok = .TRUE.
       case (4)
          u = (x(2) - x(1))/(x(3) - x(1))
          v = (y(2) - y(1))/(y(3) - y(1))
@@ -275,13 +314,16 @@ contains
               (      u)*(1._RD-v)*d2ri_fd(2) + &
               (1._RD-u)*(      v)*d2ri_fd(3) + &
               (      u)*(      v)*d2ri_fd(4)
+         deriv_ok = .TRUE.
+      case default
+         deriv_ok = .FALSE.
       end select
 
       ! Finish
 
       return
 
-   end function cross_deriv_
+    end subroutine eval_cross_deriv_
 
 end module radgrid_factory_m
          
