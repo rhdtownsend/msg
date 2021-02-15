@@ -43,7 +43,7 @@ module limb_m
 
    type limb_t
       private
-      integer, public :: law
+      integer, public :: law = 0
    contains
       private
       procedure         :: op_eql_li_li_
@@ -131,50 +131,6 @@ contains
       return
 
    end function op_eql_li_li_
-
-   !****
-
-   subroutine read_(hi, li)
-
-      type(hdf5io_t), intent(inout) :: hi
-      type(limb_t), intent(out)     :: li
-
-      character(TYPE_LEN) :: type
-      integer             :: law
-
-      ! Read the limb_t
-
-      call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'limb_t',invalid type)
-
-      call hi%read_attr('law', law)
-  
-      li = limb_t(law)
-
-      ! Finish
-
-      return
-
-   end subroutine read_
-
-   !****
-
-   subroutine write_ (hi, li)
-
-      type(hdf5io_t), intent(inout) :: hi
-      type(limb_t), intent(in)      :: li
-
-      ! Write the limb_t
-
-      call hi%write_attr('TYPE', 'limb_t')
-      
-      call hi%write_attr('law', li%law)
-
-      ! Finish
-
-      return
-
-   end subroutine write_
 
    !****
 
@@ -442,4 +398,46 @@ contains
 
    !****
       
+   subroutine read_(hi, li)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(limb_t), intent(out)     :: li
+
+      character(TYPE_LEN) :: type
+      integer             :: law
+
+      ! Read the limb_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'limb_t',invalid type)
+
+      call hi%read_attr('law', law)
+  
+      li = limb_t(law)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_ (hi, li)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(limb_t), intent(in)      :: li
+
+      ! Write the limb_t
+
+      call hi%write_attr('TYPE', 'limb_t')
+      
+      call hi%write_attr('law', li%law)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
 end module limb_m
