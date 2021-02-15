@@ -245,6 +245,8 @@ contains
          logical, intent(in), optional :: d_dy
          real(RD)                      :: f
 
+         @:ASSERT(self%mask(i,j), out-of-bounds interpolation)
+
          f = self%rn(i, j)%intensity(mu, d_dlnT=d_dx, d_dlng=d_dy)
 
       end function intensity_func_
@@ -279,6 +281,8 @@ contains
          logical, intent(in), optional :: d_dx
          logical, intent(in), optional :: d_dy
          real(RD)                      :: f
+
+         @:ASSERT(self%mask(i,j), out-of-bounds interpolation)
 
          f = self%rn(i, j)%flux(d_dlnT=d_dx, d_dlng=d_dy)
 
