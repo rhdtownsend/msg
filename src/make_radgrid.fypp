@@ -73,10 +73,10 @@ program make_radgrid
 
 contains
 
-   subroutine read_radint_grid (list_filename, ri, lnT, lng)
+   subroutine read_radint_grid (list_filename, ri, mask, lnT, lng)
 
       character(*), intent(in)                 :: list_filename
-      type(radint_t), allocatable, intent(out) :: ri(:)
+      type(radint_t), allocatable, intent(out) :: ri(:,:)
       logical, allocatable, intent(out)        :: mask(:,:)
       real(RD), allocatable, intent(out)       :: lnT(:)
       real(RD), allocatable, intent(out)       :: lng(:)
@@ -146,8 +146,8 @@ contains
 
       radint_loop : do k = 1, n_node
 
-         i = FINDLOC(lnT, node_lnT(k))
-         j = FINDLOC(lng, node_lng(k))
+         i = FINDLOC(lnT, node_lnT(k), DIM=1)
+         j = FINDLOC(lng, node_lng(k), DIM=1)
 
          @:ASSERT(i >= 1 .AND. i <= n_lnT, unable to locate node in grid)
          @:ASSERT(j >= 1 .AND. j <= n_lng, unable to locate node in grid)
