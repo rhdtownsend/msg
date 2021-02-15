@@ -34,7 +34,7 @@ make_radint_SRCS = \
   hdf5io_m.f90
 
 make_radgrid_SRCS = \
-  make_radint.f90 \
+  make_radgrid.f90 \
   specint_m.f90 \
   radint_m.f90 \
   radgrid_m.f90 \
