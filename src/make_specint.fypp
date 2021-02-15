@@ -43,7 +43,9 @@ program make_specint
    character(:), allocatable :: synspec_filename
    integer                   :: n_mu
    real(RD)                  :: mu_0
-   real(RD)                  :: R
+   real(RD)                  :: R  
+   real(RD)                  :: lambda_min 
+   real(RD)                  :: lambda_max
    character(:), allocatable :: limb_law
    character(:), allocatable :: specint_filename
 
@@ -61,14 +63,16 @@ program make_specint
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 6,{Syntax: make_specint synspec_filename n_mu mu_0 R limb_law specint_filename})
+   @:ASSERT(n_arg() == 8,{Syntax: make_specint synspec_filename n_mu mu_0 lambda_min lambda_max R limb_law specint_filename})
 
    call get_arg(1, synspec_filename)
    call get_arg(2, n_mu)
    call get_arg(3, mu_0)
-   call get_arg(4, R)
-   call get_arg(5, limb_law)
-   call get_arg(6, specint_filename)
+   call get_arg(4, lambda_min)
+   call get_arg(5, lambda_max)
+   call get_arg(6, R)
+   call get_arg(7, limb_law)
+   call get_arg(8, specint_filename)
 
    ! Set up the limb-darkening law
 
@@ -90,8 +94,8 @@ program make_specint
    ! Set up binning parameters
 
    dw = 1._RD/R
-   w_0 = LOG(lambda(1))
-   n_w = FLOOR((LOG(lambda(n_lambda)) - LOG(lambda(1)))/dw)
+   w_0 = LOG(lambda_min)
+   n_w = FLOOR((LOG(lambda_max) - LOG(lambda_min))/dw)
 
    ! Create the specint_t
 
