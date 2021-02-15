@@ -403,73 +403,6 @@ contains
 
    !****
 
-   subroutine read_(hi, si)
-
-      type(hdf5io_t), intent(inout) :: hi
-      type(specint_t), intent(out)  :: si
-
-      character(TYPE_LEN)   :: type
-      real(RD)              :: w_0
-      real(RD)              :: dw
-      type(hdf5io_t)        :: hi_li
-      type(limb_t)          :: li
-      real(RD), allocatable :: I_1(:)
-      real(RD), allocatable :: a(:,:)
-
-      ! Read the specint_t
-
-      call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'specint_t',invalid type)
-
-      call hi%read_attr('w_0', w_0)
-      call hi%read_attr('dw', dw)
-
-      hi_li = hdf5io_t(hi, 'li')
-      call read(hi_li, li)
-      call hi_li%final()
-
-      call hi%alloc_read_dset('I_1', I_1)
-      call hi%alloc_read_dset('a', a)
-
-      si = specint_t(I_1, a, w_0, dw, li)
-
-      ! Finish
-
-      return
-
-   end subroutine read_
-
-   !****
-
-   subroutine write_ (hi, si)
-
-      type(hdf5io_t), intent(inout) :: hi
-      type(specint_t), intent(in)   :: si
-
-      type(hdf5io_t) :: hi_li
-
-      ! Write the specint_t
-
-      call hi%write_attr('TYPE', 'specint_t')
-
-      call hi%write_attr('w_0', si%w_0)
-      call hi%write_attr('dw', si%dw)
-
-      hi_li = hdf5io_t(hi, 'li')
-      call write(hi_li, si%li)
-      call hi_li%final()
-
-      call hi%write_dset('I_1', si%I_1)
-      call hi%write_dset('a', si%a)
-
-      ! Finish
-
-      return
-
-   end subroutine write_
-
-   !****
-
    function intensity(self, mu, w_base, w_off, n_w) result (I)
 
       class(specint_t), intent(in) :: self
@@ -578,6 +511,73 @@ contains
       return
 
    end subroutine locate_
+
+   !****
+
+   subroutine read_(hi, si)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(specint_t), intent(out)  :: si
+
+      character(TYPE_LEN)   :: type
+      real(RD)              :: w_0
+      real(RD)              :: dw
+      type(hdf5io_t)        :: hi_li
+      type(limb_t)          :: li
+      real(RD), allocatable :: I_1(:)
+      real(RD), allocatable :: a(:,:)
+
+      ! Read the specint_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'specint_t',invalid type)
+
+      call hi%read_attr('w_0', w_0)
+      call hi%read_attr('dw', dw)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call read(hi_li, li)
+      call hi_li%final()
+
+      call hi%alloc_read_dset('I_1', I_1)
+      call hi%alloc_read_dset('a', a)
+
+      si = specint_t(I_1, a, w_0, dw, li)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_ (hi, si)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(specint_t), intent(in)   :: si
+
+      type(hdf5io_t) :: hi_li
+
+      ! Write the specint_t
+
+      call hi%write_attr('TYPE', 'specint_t')
+
+      call hi%write_attr('w_0', si%w_0)
+      call hi%write_attr('dw', si%dw)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, si%li)
+      call hi_li%final()
+
+      call hi%write_dset('I_1', si%I_1)
+      call hi%write_dset('a', si%a)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
 
    !****
 
