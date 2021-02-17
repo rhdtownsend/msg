@@ -38,7 +38,7 @@ export F9XC
 
 F9XC=gfortran
 
-FFLAGS:=${FFLAGS} -finit-real=snan -fbacktrace -fmax-errors=25
+FFLAGS:=${FFLAGS} -finit-real=snan -fbacktrace -fmax-errors=25 -fPIC
 
 ifeq (${FPE},yes)
   FFLAGS:=${FFLAGS} -ffpe-trap=invalid,overflow,zero
@@ -89,6 +89,8 @@ vpath %.inc ${SUBDIRS}
 	@echo FC $<
 	@${F9XC} ${F9XFLAGS} ${MODINCS} -c $<
 	@touch $*.mod
+
+%.dylib : LDFLAGS := $(LDFLAGS) -shared
 
 all : ${TARGETS}
 
