@@ -84,6 +84,9 @@ contains
       real(RD) :: df_du(2,2)
       real(RD) :: df_dv(2,2)
       real(RD) :: d2f_dudv(2,2)
+      real(RD) :: df_dx
+      real(RD) :: df_dy
+      real(RD) :: d2f_dxdy
       real(RD) :: A(4,4)
       real(RD) :: P(4)
       real(RD) :: Q(4)
@@ -139,23 +142,23 @@ contains
                if (stat /= STAT_OK) return
             endif
                   
-            call proc(i+k-1,j+l-1, df_du(k,l), stat, d_dx=.TRUE.)
+            call proc(i+k-1,j+l-1, df_dx, stat, d_dx=.TRUE.)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
-            df_du = df_du*delta_x
+            df_du(k,l) = df_dx*delta_x
                   
-            call proc(i+k-1,j+l-1, df_dv(k,l), stat, d_dy=.TRUE.)
+            call proc(i+k-1,j+l-1, df_dy, stat, d_dy=.TRUE.)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
-            df_dv = df_dv*delta_y
+            df_dv(k,l) = df_dy*delta_y
                   
-            call proc(i+k-1,j+l-1, d2f_dudv(k,l), stat, d_dx=.TRUE., d_dy=.TRUE.)
+            call proc(i+k-1,j+l-1, d2f_dxdy, stat, d_dx=.TRUE., d_dy=.TRUE.)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
-            d2f_dudv = d2f_dudv*delta_x*delta_y
+            d2f_dudv(k,l) = d2f_dxdy*delta_x*delta_y
 
          end do
       end do
