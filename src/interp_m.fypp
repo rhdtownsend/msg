@@ -24,6 +24,8 @@ module interp_m
    use kinds_m
    use order_m
 
+   use stat_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -46,25 +48,27 @@ module interp_m
 
 contains
 
-   function interp_bicubic_0_(func, x, y, x_int, y_int, d_dx, d_dy) result (f_int)
+   subroutine interp_bicubic_0_(proc, x, y, x_int, y_int, f_int, stat, d_dx, d_dy)
 
       interface
-         function func(i_x, i_y, d_dx, d_dy)
+         subroutine proc(i_x, i_y, f, stat, d_dx, d_dy)
             use kinds_m
-            integer, intent(in)           :: i_x
-            integer, intent(in)           :: i_y
-            logical, intent(in), optional :: d_dx
-            logical, intent(in), optional :: d_dy
-            real(RD)                      :: func
-         end function func
+            integer, intent(in)            :: i_x
+            integer, intent(in)            :: i_y
+            real(RD), intent(out)          :: f
+            integer, intent(out), optional :: stat
+            logical, intent(in), optional  :: d_dx
+            logical, intent(in), optional  :: d_dy
+         end subroutine proc
       end interface
-      real(RD), intent(in)          :: x(:)
-      real(RD), intent(in)          :: y(:)
-      real(RD), intent(in)          :: x_int
-      real(RD), intent(in)          :: y_int
-      logical, intent(in), optional :: d_dx
-      logical, intent(in), optional :: d_dy
-      real(RD)                      :: f_int
+      real(RD), intent(in)           :: x(:)
+      real(RD), intent(in)           :: y(:)
+      real(RD), intent(in)           :: x_int
+      real(RD), intent(in)           :: y_int
+      real(RD), intent(out)          :: f_int
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: d_dx
+      logical, intent(in), optional  :: d_dy
 
       logical  :: d_dx_
       logical  :: d_dy_
@@ -74,6 +78,8 @@ contains
       real(RD) :: delta_y
       real(RD) :: u
       real(RD) :: v
+      integer  :: k
+      integer  :: l
       real(RD) :: f(2,2)
       real(RD) :: df_du(2,2)
       real(RD) :: df_dv(2,2)
@@ -99,8 +105,23 @@ contains
       call locate(x, x_int, i)
       call locate(y, y_int, j)
 
-      @:ASSERT(i >= 1 .AND. i < SIZE(x), out-of-bounds interpolation)
-      @:ASSERT(j >= 1 .AND. j < SIZE(y), out-of-bounds interpolation)
+      if (i < 1 .OR. i >= SIZE(x)) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS
+            return
+         else
+            @:ABORT(out-of-bounds)
+         endif
+      endif
+
+      if (j < 1 .OR. j >= SIZE(y)) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS
+            return
+         else
+            @:ABORT(out-of-bounds)
+         endif
+      endif
 
       delta_x = x(i+1) - x(i)
       delta_y = y(j+1) - y(j)
@@ -108,29 +129,38 @@ contains
       u = (x_int - x(i))/delta_x
       v = (y_int - y(j))/delta_y
 
-      ! Evaluate the function and its derivatives
+      ! Evaluate the function and its derivatives at cell corners
 
-      f(1,1) = func(i  ,j  )
-      f(2,1) = func(i+1,j  )
-      f(1,2) = func(i  ,j+1)
-      f(2,2) = func(i+1,j+1)
+      do k = 1, 2
+         do l = 1,2
 
-      df_du(1,1) = func(i  ,j  , d_dx=.TRUE.)*delta_x
-      df_du(2,1) = func(i+1,j  , d_dx=.TRUE.)*delta_x
-      df_du(1,2) = func(i  ,j+1, d_dx=.TRUE.)*delta_x
-      df_du(2,2) = func(i+1,j+1, d_dx=.TRUE.)*delta_x
+            call proc(i+k-1,j+l-1, f(k,l), stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+                  
+            call proc(i+k-1,j+l-1, df_du(k,l), stat, d_dx=.TRUE.)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+            df_du = df_du*delta_x
+                  
+            call proc(i+k-1,j+l-1, df_dv(k,l), stat, d_dy=.TRUE.)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+            df_dv = df_dv*delta_y
+                  
+            call proc(i+k-1,j+l-1, d2f_dudv(k,l), stat, d_dx=.TRUE., d_dy=.TRUE.)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+            d2f_dudv = d2f_dudv*delta_x*delta_y
 
-      df_dv(1,1) = func(i  ,j  , d_dy=.TRUE.)*delta_y
-      df_dv(2,1) = func(i+1,j  , d_dy=.TRUE.)*delta_y
-      df_dv(1,2) = func(i  ,j+1, d_dy=.TRUE.)*delta_y
-      df_dv(2,2) = func(i+1,j+1, d_dy=.TRUE.)*delta_y
-
-      d2f_dudv(1,1) = func(i  ,j  , d_dx=.TRUE., d_dy=.TRUE.)*delta_x*delta_y
-      d2f_dudv(2,1) = func(i+1,j  , d_dx=.TRUE., d_dy=.TRUE.)*delta_x*delta_y
-      d2f_dudv(1,2) = func(i  ,j+1, d_dx=.TRUE., d_dy=.TRUE.)*delta_x*delta_y
-      d2f_dudv(2,2) = func(i+1,j+1, d_dx=.TRUE., d_dy=.TRUE.)*delta_x*delta_y
-
-      ! Evaluate the coefficients
+         end do
+      end do
+                  
+      ! Evaluate the interpolation coefficients
 
       call eval_coeffs_(f, df_du, df_dv, d2f_dudv, A)
 
@@ -170,7 +200,7 @@ contains
 
       return
 
-   end function interp_bicubic_0_
+   end subroutine interp_bicubic_0_
 
    !****
       

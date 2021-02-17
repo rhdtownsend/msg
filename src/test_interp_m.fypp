@@ -104,10 +104,10 @@ contains
 
          do i = 1, n_x_int
             do j = 1,n_y_int
-               f_int(i,j) = interp_bicubic(interp_bicubic_func_, x, y, x_int(i), y_int(j))
-               df_dx_int(i,j) = interp_bicubic(interp_bicubic_func_, x, y, x_int(i), y_int(j), d_dx=.TRUE.)
-               df_dy_int(i,j) = interp_bicubic(interp_bicubic_func_, x, y, x_int(i), y_int(j), d_dy=.TRUE.)
-               d2f_dxdy_int(i,j) = interp_bicubic(interp_bicubic_func_, x, y, x_int(i), y_int(j), d_dx=.TRUE., d_dy=.TRUE.)
+               call interp_bicubic(interp_bicubic_proc_, x, y, x_int(i), y_int(j), f_int(i,j))
+               call interp_bicubic(interp_bicubic_proc_, x, y, x_int(i), y_int(j), df_dx_int(i,j), d_dx=.TRUE.)
+               call interp_bicubic(interp_bicubic_proc_, x, y, x_int(i), y_int(j), df_dy_int(i,j), d_dy=.TRUE.)
+               call interp_bicubic(interp_bicubic_proc_, x, y, x_int(i), y_int(j), d2f_dxdy_int(i,j), d_dx=.TRUE., d_dy=.TRUE.)
                call interp_bicubic_eval_(x_int(i), y_int(j), f_chk(i,j), df_dx_chk(i,j), df_dy_chk(i,j), d2f_dxdy_chk(i,j))
             end do
          end do
@@ -116,13 +116,14 @@ contains
 
       !****
 
-      function interp_bicubic_func_ (i, j, d_dx, d_dy) result(func)
+      subroutine interp_bicubic_proc_ (i, j, func, stat, d_dx, d_dy)
 
-         integer, intent(in)           :: i
-         integer, intent(in)           :: j
-         logical, intent(in), optional :: d_dx
-         logical, intent(in), optional :: d_dy
-         real(RD)                      :: func
+         integer, intent(in)            :: i
+         integer, intent(in)            :: j
+         real(RD), intent(out)          :: func
+         integer, intent(out), optional :: stat
+         logical, intent(in), optional  :: d_dx
+         logical, intent(in), optional  :: d_dy
 
          logical :: d_dx_
          logical :: d_dy_
@@ -153,7 +154,7 @@ contains
             endif
          endif
 
-      end function interp_bicubic_func_
+      end subroutine interp_bicubic_proc_
 
       !****
 

@@ -1,0 +1,47 @@
+! Module  : stat_m
+! Purpose : status value definitions
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module stat_m
+
+   ! Uses
+
+   use kinds_m
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Parameter definitions
+
+   integer, parameter :: STAT_OK = 0
+
+   ! Interpolation
+
+   integer, parameter :: STAT_OUT_OF_BOUNDS = 1
+   integer, parameter :: STAT_INVALID_DATA = 2
+
+   ! Access specifiers
+
+   private
+
+   public :: STAT_OK
+   public :: STAT_OUT_OF_BOUNDS
+   public :: STAT_INVALID_DATA
+
+end module stat_m
