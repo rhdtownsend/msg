@@ -27,6 +27,7 @@ module radgrid_m
    use order_m
 
    use interp_m
+   use stat_m
    use radnode_m
 
    use ISO_FORTRAN_ENV
@@ -47,8 +48,8 @@ module radgrid_m
       integer                      :: n_lng
    contains
       private
-      procedure, public :: intensity
-      procedure, public :: flux
+      procedure, public :: interp_intensity
+      procedure, public :: interp_flux
    end type radgrid_t
 
    ! Interfaces
@@ -217,19 +218,20 @@ contains
 
    !****
 
-   function intensity(self, lnT, lng, mu, d_dlnT, d_dlng) result (I)
+   subroutine interp_intensity(self, lnT, lng, mu, I, stat, d_dlnT, d_dlng)
 
-      class(radgrid_t), intent(in)  :: self
-      real(RD), intent(in)          :: lnT
-      real(RD), intent(in)          :: lng
-      real(RD), intent(in)          :: mu
-      logical, intent(in), optional :: d_dlnT
-      logical, intent(in), optional :: d_dlng
-      real(RD)                      :: I
+      class(radgrid_t), intent(in)   :: self
+      real(RD), intent(in)           :: lnT
+      real(RD), intent(in)           :: lng
+      real(RD), intent(in)           :: mu
+      real(RD), intent(out)          :: I
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: d_dlnT
+      logical, intent(in), optional  :: d_dlng
 
       ! Interpolate the intensity
 
-      I = interp_bicubic(intensity_func_, self%lnT, self%lng, lnT, lng, d_dx=d_dlnT, d_dy=d_dlng)
+      call interp_bicubic(intensity_proc_, self%lnT, self%lng, lnT, lng, I, stat, d_dlnT, d_dlng)
 
       ! Finsh
 
@@ -237,36 +239,47 @@ contains
 
    contains
 
-      function intensity_func_(i, j, d_dx, d_dy) result(f)
+      subroutine intensity_proc_(i, j, f, stat, d_dx, d_dy)
 
-         integer, intent(in)           :: i
-         integer, intent(in)           :: j
-         logical, intent(in), optional :: d_dx
-         logical, intent(in), optional :: d_dy
-         real(RD)                      :: f
+         integer, intent(in)            :: i
+         integer, intent(in)            :: j
+         real(RD), intent(out)          :: f
+         integer, intent(out), optional :: stat
+         logical, intent(in), optional  :: d_dx
+         logical, intent(in), optional  :: d_dy
 
-         @:ASSERT(self%mask(i,j), out-of-bounds interpolation)
+         if (.NOT. self%mask(i,j)) then
+            if (PRESENT(stat)) then
+               stat = STAT_MISSING_DATA
+               return
+            else
+               @:ABORT(missing data)
+            endif
+         endif
 
          f = self%rn(i, j)%intensity(mu, d_dlnT=d_dx, d_dlng=d_dy)
 
-      end function intensity_func_
+         if (PRESENT(stat)) stat = STAT_OK
 
-   end function intensity
+      end subroutine intensity_proc_
+
+   end subroutine interp_intensity
 
    !****
 
-   function flux(self, lnT, lng, d_dlnT, d_dlng) result (F)
+   subroutine interp_flux(self, lnT, lng, F, stat, d_dlnT, d_dlng)
 
-      class(radgrid_t), intent(in)  :: self
-      real(RD), intent(in)          :: lnT
-      real(RD), intent(in)          :: lng
-      logical, intent(in), optional :: d_dlnT
-      logical, intent(in), optional :: d_dlng
-      real(RD)                      :: F
+      class(radgrid_t), intent(in)   :: self
+      real(RD), intent(in)           :: lnT
+      real(RD), intent(in)           :: lng
+      real(RD), intent(out)          :: F
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: d_dlnT
+      logical, intent(in), optional  :: d_dlng
 
       ! Interpolate the flux
 
-      F = interp_bicubic(flux_func_, self%lnT, self%lng, lnT, lng, d_dx=d_dlnT, d_dy=d_dlng)
+      call interp_bicubic(flux_proc_, self%lnT, self%lng, lnT, lng, F, stat, d_dlnT, d_dlng)
 
       ! Finsh
 
@@ -274,20 +287,30 @@ contains
 
    contains
 
-      function flux_func_(i, j, d_dx, d_dy) result(f)
+      subroutine flux_proc_(i, j, f, stat, d_dx, d_dy)
 
-         integer, intent(in)           :: i
-         integer, intent(in)           :: j
-         logical, intent(in), optional :: d_dx
-         logical, intent(in), optional :: d_dy
-         real(RD)                      :: f
+         integer, intent(in)            :: i
+         integer, intent(in)            :: j
+         real(RD), intent(out)          :: f
+         integer, intent(out), optional :: stat
+         logical, intent(in), optional  :: d_dx
+         logical, intent(in), optional  :: d_dy
 
-         @:ASSERT(self%mask(i,j), out-of-bounds interpolation)
+         if (.NOT. self%mask(i,j)) then
+            if (PRESENT(stat)) then
+               stat = STAT_MISSING_DATA
+               return
+            else
+               @:ABORT(missing data)
+            endif
+         endif
 
          f = self%rn(i, j)%flux(d_dlnT=d_dx, d_dlng=d_dy)
 
-      end function flux_func_
+         if (PRESENT(stat)) stat = STAT_OK
+         
+      end subroutine flux_proc_
 
-   end function flux
+   end subroutine interp_flux
 
 end module radgrid_m

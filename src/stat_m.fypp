@@ -34,7 +34,7 @@ module stat_m
    ! Interpolation
 
    integer, parameter :: STAT_OUT_OF_BOUNDS = 1
-   integer, parameter :: STAT_INVALID_DATA = 2
+   integer, parameter :: STAT_MISSING_DATA = 2
 
    ! Access specifiers
 
@@ -42,6 +42,6 @@ module stat_m
 
    public :: STAT_OK
    public :: STAT_OUT_OF_BOUNDS
-   public :: STAT_INVALID_DATA
+   public :: STAT_MISSING_DATA
 
 end module stat_m
