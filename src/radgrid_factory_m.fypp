@@ -118,7 +118,7 @@ contains
                   call eval_first_deriv_(ri_g(i-1:i+1,j), mask_g(i-1:i+1,j), lnT_g(i-1:i+1), dri_dlnT, deriv_ok)
                   if (.NOT. deriv_ok) exit eval_block
 
-                  call eval_first_deriv_(ri_g(i,j-1:j+1), mask_g(i,j-1:j+1), lnT_g(j-1:j+1), dri_dlng, deriv_ok)
+                  call eval_first_deriv_(ri_g(i,j-1:j+1), mask_g(i,j-1:j+1), lng_g(j-1:j+1), dri_dlng, deriv_ok)
                   if (.NOT. deriv_ok) exit eval_block
 
                   call eval_cross_deriv_(ri_g(i-1:i+1,j-1:j+1), mask_g(i-1:i+1,j-1:j+1), &
@@ -192,6 +192,8 @@ contains
       ! Blend them to create the first derivative
 
       select case (COUNT(mask_fd))
+      case (0)
+         deriv_ok = .FALSE.
       case (1)
          if (mask_fd(1)) then
             dri_dx = dri_fd(1)
@@ -203,8 +205,6 @@ contains
          u = (x(2) - x(1))/(x(3) - x(1))
          dri_dx = (1._RD-u)*dri_fd(1) + u*dri_fd(2)
          deriv_ok = .TRUE.
-      case default
-         deriv_ok = .FALSE.
       end select
 
       ! Finish
@@ -264,6 +264,8 @@ contains
       ! Blend them to create the first derivative
 
       select case (COUNT(mask_fd))
+      case (0)
+         deriv_ok = .FALSE.
       case (1)
          if (mask_fd(1)) then
             d2ri_dxdy = d2ri_fd(1)
@@ -315,8 +317,6 @@ contains
               (1._RD-u)*(      v)*d2ri_fd(3) + &
               (      u)*(      v)*d2ri_fd(4)
          deriv_ok = .TRUE.
-      case default
-         deriv_ok = .FALSE.
       end select
 
       ! Finish
