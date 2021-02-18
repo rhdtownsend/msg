@@ -162,7 +162,7 @@ contains
 
          end do
       end do
-                  
+
       ! Evaluate the interpolation coefficients
 
       call eval_coeffs_(f, df_du, df_dv, d2f_dudv, A)
@@ -198,6 +198,8 @@ contains
       ! Evaluate the interpolated function
 
       f_int = DOT_PRODUCT(P, MATMUL(A, Q))
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       ! Finish
 
