@@ -280,7 +280,11 @@ contains
       I_1 = self%I_1 + other%I_1
 
       do j = 1, n_b
-         a(j,:) = (self%I_1*self%a(j,:) + other%I_1*other%a(j,:))/I_1
+         where (I_1 /= 0)
+            a(j,:) = (self%I_1*self%a(j,:) + other%I_1*other%a(j,:))/I_1
+         elsewhere
+            a(j,:) = self%a(j,:) + other%a(j,:)
+         endwhere
       end do
 
       si = specint_t(I_1, a, self%w_0, self%dw, self%li)
@@ -319,7 +323,11 @@ contains
       I_1 = self%I_1 - other%I_1
 
       do j = 1, n_b
-         a(j,:) = (self%I_1*self%a(j,:) - other%I_1*other%a(j,:))/I_1
+         where (I_1 /= 0)
+            a(j,:) = (self%I_1*self%a(j,:) - other%I_1*other%a(j,:))/I_1
+         elsewhere
+            a(j,:) = self%a(j,:) - other%a(j,:)
+         endwhere
       end do
 
       si = specint_t(I_1, a, self%w_0, self%dw, self%li)

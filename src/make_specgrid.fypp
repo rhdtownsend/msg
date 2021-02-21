@@ -45,7 +45,7 @@ program make_specgrid
    logical, allocatable         :: mask(:,:)
    real(RD), allocatable        :: lnT(:)
    real(RD), allocatable        :: lng(:)
-   type(specgrid_t)             :: rg
+   type(specgrid_t)             :: sg
    type(hdf5io_t)               :: hi
 
    ! Read command-line arguments
@@ -59,16 +59,22 @@ program make_specgrid
 
    call read_specint_grid(list_filename, si, mask, lnT, lng)
 
+   print *,'done load nodes'
+
    ! Create the specgrid_t
 
-   rg = specgrid_from_grid(si, mask, lnT, lng)
+   sg = specgrid_from_grid(si, mask, lnT, lng)
+
+   print *,'done create sg'
 
    ! Write it
 
    hi = hdf5io_t(specgrid_filename, CREATE_FILE)
-   call write(hi, rg)
+   call write(hi, sg)
    call hi%final()
 
+   print *,'done write sg'
+   
    ! Finish
 
 contains

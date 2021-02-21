@@ -29,7 +29,6 @@ module specgrid_m
    use interp_m
    use stat_m
    use specnode_m
-   use dyn_specnode_m
 
    use ISO_FORTRAN_ENV
 
@@ -41,12 +40,12 @@ module specgrid_m
 
    type specgrid_t
       private
-      class(specnode_t), allocatable :: sn(:,:)
-      logical, allocatable           :: mask(:,:)
-      real(RD), allocatable          :: lnT(:)
-      real(RD), allocatable          :: lng(:)
-      integer                        :: n_lnT
-      integer                        :: n_lng
+      type(specnode_t), allocatable :: sn(:,:)
+      logical, allocatable          :: mask(:,:)
+      real(RD), allocatable         :: lnT(:)
+      real(RD), allocatable         :: lng(:)
+      integer                       :: n_lnT
+      integer                       :: n_lng
    contains
       private
       procedure, public :: interp_intensity
@@ -124,16 +123,16 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(specgrid_t), intent(out) :: sg
 
-      character(TYPE_LEN)               :: type
-      integer                           :: n_lnT
-      integer                           :: n_lng
-      type(dyn_specnode_t), allocatable :: sn(:,:)
-      logical, allocatable              :: mask(:,:)
-      real(RD), allocatable             :: lnT(:)
-      real(RD), allocatable             :: lng(:)
-      type(hdf5io_t)                    :: hi_sn
-      integer                           :: i
-      integer                           :: j
+      character(TYPE_LEN)           :: type
+      integer                       :: n_lnT
+      integer                       :: n_lng
+      type(specnode_t), allocatable :: sn(:,:)
+      logical, allocatable          :: mask(:,:)
+      real(RD), allocatable         :: lnT(:)
+      real(RD), allocatable         :: lng(:)
+      type(hdf5io_t)                :: hi_sn
+      integer                       :: i
+      integer                       :: j
 
       ! Read the specgrid_t
 
@@ -174,10 +173,10 @@ contains
 
    !****
 
-   subroutine write_(hi, rg)
+   subroutine write_(hi, sg)
 
       type(hdf5io_t), intent(inout) :: hi
-      type(specgrid_t), intent(in )  :: rg
+      type(specgrid_t), intent(in ) :: sg
 
       type(hdf5io_t) :: hi_sn
       integer        :: i
@@ -185,35 +184,25 @@ contains
 
       call hi%write_attr('TYPE', 'specgrid_t')
 
-      call hi%write_attr('n_lnT', rg%n_lnT)
-      call hi%write_attr('n_lng', rg%n_lng)
+      call hi%write_attr('n_lnT', sg%n_lnT)
+      call hi%write_attr('n_lng', sg%n_lng)
 
-      call hi%write_dset('mask', rg%mask)
+      call hi%write_dset('mask', sg%mask)
 
-      ! select type (sg%sn)
+      lnT_loop : do i = 1, sg%n_lnT
+         lng_loop : do j = 1, sg%n_lng
 
-      ! type is (dyn_specnode_t)
+            if (sg%mask(i,j)) then
+               hi_sn = hdf5io_t(hi, sn_name_(i,j))
+               call write(hi_sn, sg%sn(i,j))
+               call hi_sn%final()
+            end if
+            
+         end do lng_loop
+      end do lnT_loop
 
-      !    @:ABORT(cannot write dynamic grids)
-
-      ! type is (specnode_t)
-
-      !    lnT_loop : do i = 1, rg%n_lnT
-      !       lng_loop : do j = 1, rg%n_lng
-
-      !          if (rg%mask(i,j)) then
-      !             hi_sn = hdf5io_t(hi, sn_name_(i,j))
-      !             call write(hi_sn, rg%sn(i,j))
-      !             call hi_sn%final()
-      !          end if
-
-      !       end do lng_loop
-      !    end do lnT_loop
-
-      !    call hi%write_dset('lnT', rg%lnT)
-      !    call hi%write_dset('lng', rg%lng)
-
-      ! end select
+      call hi%write_dset('lnT', sg%lnT)
+      call hi%write_dset('lng', sg%lng)
 
       ! Finish
 
