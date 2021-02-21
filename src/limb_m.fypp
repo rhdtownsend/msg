@@ -51,9 +51,13 @@ module limb_m
       procedure, public :: n_basis
       procedure, public :: intensity_basis
       procedure, public :: flux_basis
+      procedure, public :: D_moment_basis
       procedure         :: intensity_0_
       procedure         :: intensity_1_
       generic, public   :: intensity => intensity_0_, intensity_1_
+      procedure         :: D_moment_0_
+      procedure         :: D_moment_1_
+      generic, public   :: D_moment => D_moment_0_, D_moment_1_
       procedure         :: flux_0_
       procedure         :: flux_1_
       generic, public   :: flux => flux_0_, flux_1_
@@ -197,6 +201,43 @@ contains
 
    !****
 
+   function D_moment_basis(self, l) result (b)
+
+      class(limb_t), intent(in) :: self
+      integer, intent(in)       :: l
+      real(RD), allocatable     :: b(:)
+
+      ! Construct the D-moment basis vector
+
+      select case (self%law)
+      case (LINEAR_LAW)
+         b = [                                &
+              D_ls(l, 1._RD) - D_ls(l, 2._RD) &
+              ]
+      case (QUAD_LAW)
+         b = [                                 &
+              D_ls(l, 1._RD) - D_ls(l, 2._RD), &
+              D_ls(l, 1._RD) - D_ls(l, 3._RD)  &
+              ]
+      case (CLARET_LAW)
+         b = [                                  &
+              D_ls(l, 1._RD) - D_ls(l, 1.5_RD), &
+              D_ls(l, 1._RD) - D_ls(l, 2._RD),  &
+              D_ls(l, 1._RD) - D_ls(l, 2.5_RD), &
+              D_ls(l, 1._RD) - D_ls(l, 3._RD)   &
+              ]
+      case default
+         @:ABORT(invalid law)
+      end select
+
+      ! Finish
+
+      return
+
+   end function D_moment_basis
+
+   !****
+
    function flux_basis(self) result (b)
 
       class(limb_t), intent(in) :: self
@@ -230,6 +271,34 @@ contains
       return
 
    end function flux_basis
+
+   !****
+
+   function D_ls(l, s)
+
+      integer, intent(in)  :: l
+      real(RD), intent(in) :: s
+      real(RD)             :: D_ls
+
+      integer :: l_0
+      integer :: k
+
+      ! Evaluate the integral mu^s Pl(mu) from 0 to 1, using the
+      ! expressions (42-44) from Townsend (2003)
+
+      l_0 = MOD(l, 2)
+
+      D_ls = 1._RD/(1._RD + s + l_0)
+
+      do k = l_0+2, l, 2
+         D_ls = (s - k)/(s + k + 3._RD)*D_ls
+      end do
+
+      ! Finish
+
+      return
+
+   end function D_ls
 
    !****
 
@@ -301,6 +370,43 @@ contains
          return
 
       end function flux_${rank}$_
+
+   #:endfor
+
+   !****
+
+   #:for rank in (0, 1)
+
+      function D_moment_${rank}$_(self, I_1, a, l) result(D)
+
+         class(limb_t), intent(in) :: self
+         real(RD), intent(in)      :: I_1${ARRAY_SPEC(rank)}$
+         real(RD), intent(in)      :: a${ARRAY_SPEC(rank+1)}$
+         integer, intent(in)       :: l
+         real(RD)                  :: D${ARRAY_SPEC(rank, 'SIZE(I_1, {0:d})')}$
+
+         real(RD), allocatable :: b(:)
+
+         #:if rank == 1
+            @:CHECK_BOUNDS(SIZE(a, 1), self%n_basis())
+            @:CHECK_BOUNDS(SIZE(a, 2), SIZE(I_1))
+         #:endif
+
+         ! Evaluate the D (disk-integration) moment
+
+         b = self%D_moment_basis(l)
+
+         #:if rank == 1
+            D = I_1*(D_ls(l, 1._RD) - MATMUL(b, a))
+         #:else
+            D = I_1*(D_ls(l, 1._RD) - DOT_PRODUCT(b, a))
+         #:endif
+
+         ! Finish
+
+         return
+
+      end function D_moment_${rank}$_
 
    #:endfor
 
