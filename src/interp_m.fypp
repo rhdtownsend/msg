@@ -36,6 +36,7 @@ module interp_m
 
    interface interp_bicubic
       module procedure interp_bicubic_0_
+      module procedure interp_bicubic_1_
    end interface interp_bicubic
 
    ! Access specifiers
@@ -51,10 +52,10 @@ contains
    subroutine interp_bicubic_0_(proc, x, y, x_int, y_int, f_int, stat, d_dx, d_dy)
 
       interface
-         subroutine proc(i_x, i_y, f, stat, d_dx, d_dy)
+         subroutine proc(i, j, f, stat, d_dx, d_dy)
             use kinds_m
-            integer, intent(in)            :: i_x
-            integer, intent(in)            :: i_y
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
             logical, intent(in), optional  :: d_dx
@@ -78,8 +79,8 @@ contains
       real(RD) :: delta_y
       real(RD) :: u
       real(RD) :: v
-      integer  :: k
       integer  :: l
+      integer  :: m
       real(RD) :: f(2,2)
       real(RD) :: df_du(2,2)
       real(RD) :: df_dv(2,2)
@@ -102,29 +103,13 @@ contains
       else
          d_dy_ = .FALSE.
       endif
-      
+
       ! Locate the cell within the grid
 
-      call locate(x, x_int, i)
-      call locate(y, y_int, j)
-
-      if (i < 1 .OR. i >= SIZE(x)) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS
-            return
-         else
-            @:ABORT(out-of-bounds)
-         endif
-      endif
-
-      if (j < 1 .OR. j >= SIZE(y)) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS
-            return
-         else
-            @:ABORT(out-of-bounds)
-         endif
-      endif
+      call locate_cell_(x, y, x_int, y_int, i, j, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       delta_x = x(i+1) - x(i)
       delta_y = y(j+1) - y(j)
@@ -134,38 +119,180 @@ contains
 
       ! Evaluate the function and its derivatives at cell corners
 
-      do k = 1, 2
-         do l = 1,2
+      do l = 1, 2
+         do m = 1,2
 
-            call proc(i+k-1,j+l-1, f(k,l), stat)
+            call proc(i+l-1,j+m-1, f(l,m), stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
                   
-            call proc(i+k-1,j+l-1, df_dx, stat, d_dx=.TRUE.)
+            call proc(i+l-1,j+m-1, df_dx, stat, d_dx=.TRUE.)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
-            df_du(k,l) = df_dx*delta_x
+            df_du(l,m) = df_dx*delta_x
                   
-            call proc(i+k-1,j+l-1, df_dy, stat, d_dy=.TRUE.)
+            call proc(i+l-1,j+m-1, df_dy, stat, d_dy=.TRUE.)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
-            df_dv(k,l) = df_dy*delta_y
+            df_dv(l,m) = df_dy*delta_y
                   
-            call proc(i+k-1,j+l-1, d2f_dxdy, stat, d_dx=.TRUE., d_dy=.TRUE.)
+            call proc(i+l-1,j+m-1, d2f_dxdy, stat, d_dx=.TRUE., d_dy=.TRUE.)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
-            d2f_dudv(k,l) = d2f_dxdy*delta_x*delta_y
+            d2f_dudv(l,m) = d2f_dxdy*delta_x*delta_y
 
          end do
       end do
 
+      ! Set up the basis vectors
+
+      if (d_dx_) then
+         P(1) = 0._RD
+         P(2) = 1._RD
+         P(3) = 2._RD*u
+         P(4) = 3._RD*u**2
+         P = P/delta_x
+      else
+         P(1) = 1._RD
+         P(2) = u
+         P(3) = u**2
+         P(4) = u**3
+      endif
+
+      if (d_dy_) then
+         Q(1) = 0._RD
+         Q(2) = 1._RD
+         Q(3) = 2._RD*v
+         Q(4) = 3._RD*v**2
+         Q = Q/delta_y
+      else
+         Q(1) = 1._RD
+         Q(2) = v
+         Q(3) = v**2
+         Q(4) = v**3
+      endif
+
       ! Evaluate the interpolation coefficients
 
       call eval_coeffs_(f, df_du, df_dv, d2f_dudv, A)
+
+      ! Evaluate the interpolated function
+
+      f_int = DOT_PRODUCT(P, MATMUL(A, Q))
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   end subroutine interp_bicubic_0_
+
+   !****
+
+   subroutine interp_bicubic_1_(proc, x, y, x_int, y_int, f_int, stat, d_dx, d_dy)
+
+      interface
+         subroutine proc(i, j, f, stat, d_dx, d_dy)
+            use kinds_m
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            real(RD), intent(out)          :: f(:)
+            integer, intent(out), optional :: stat
+            logical, intent(in), optional  :: d_dx
+            logical, intent(in), optional  :: d_dy
+         end subroutine proc
+      end interface
+      real(RD), intent(in)           :: x(:)
+      real(RD), intent(in)           :: y(:)
+      real(RD), intent(in)           :: x_int
+      real(RD), intent(in)           :: y_int
+      real(RD), intent(out)          :: f_int(:)
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: d_dx
+      logical, intent(in), optional  :: d_dy
+
+      logical  :: d_dx_
+      logical  :: d_dy_
+      integer  :: i
+      integer  :: j
+      real(RD) :: delta_x
+      real(RD) :: delta_y
+      real(RD) :: u
+      real(RD) :: v
+      integer  :: l
+      integer  :: m
+      real(RD) :: f(2,2,SIZE(f_int))
+      real(RD) :: df_du(2,2,SIZE(f_int))
+      real(RD) :: df_dv(2,2,SIZE(f_int))
+      real(RD) :: d2f_dudv(2,2,SIZE(f_int))
+      real(RD) :: df_dx(SIZE(f_int))
+      real(RD) :: df_dy(SIZE(f_int))
+      real(RD) :: d2f_dxdy(SIZE(f_int))
+      integer  :: k
+      real(RD) :: A(4,4)
+      real(RD) :: P(4)
+      real(RD) :: Q(4)
+
+      if (PRESENT(d_dx)) then
+         d_dx_ = d_dx
+      else
+         d_dx_ = .FALSE.
+      endif
+
+      if (PRESENT(d_dy)) then
+         d_dy_ = d_dy
+      else
+         d_dy_ = .FALSE.
+      endif
+
+      ! Locate the cell within the grid
+
+      call locate_cell_(x, y, x_int, y_int, i, j, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      delta_x = x(i+1) - x(i)
+      delta_y = y(j+1) - y(j)
+
+      u = (x_int - x(i))/delta_x
+      v = (y_int - y(j))/delta_y
+
+      ! Evaluate the function and its derivatives at cell corners
+
+      do l = 1, 2
+         do m = 1,2
+
+            call proc(i+l-1,j+m-1, f(l,m,:), stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+            call proc(i+l-1,j+m-1, df_dx, stat, d_dx=.TRUE.)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+            df_du(l,m,:) = df_dx*delta_x
+
+            call proc(i+l-1,j+m-1, df_dy, stat, d_dy=.TRUE.)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+            df_dv(l,m,:) = df_dy*delta_y
+
+            call proc(i+l-1,j+m-1, d2f_dxdy, stat, d_dx=.TRUE., d_dy=.TRUE.)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+            d2f_dudv(l,m,:) = d2f_dxdy*delta_x*delta_y
+
+         end do
+      end do
 
       ! Set up the basis vectors
 
@@ -195,9 +322,19 @@ contains
          Q(4) = v**3
       endif
 
-      ! Evaluate the interpolated function
+      ! Loop through points
 
-      f_int = DOT_PRODUCT(P, MATMUL(A, Q))
+      do k = 1, SIZE(f_int)
+
+         ! Evaluate the interpaolation coefficients
+
+         call eval_coeffs_(f(:,:,k), df_du(:,:,k), df_dv(:,:,k), d2f_dudv(:,:,k), A)
+
+         ! Evaluate the interpolated function
+
+         f_int(k) = DOT_PRODUCT(P, MATMUL(A, Q))
+
+      end do
 
       if (PRESENT(stat)) stat = STAT_OK
 
@@ -205,7 +342,48 @@ contains
 
       return
 
-   end subroutine interp_bicubic_0_
+   end subroutine interp_bicubic_1_
+
+   !****
+
+   subroutine locate_cell_(x, y, x_int, y_int, i, j, stat)
+
+      real(RD), intent(in)           :: x(:)
+      real(RD), intent(in)           :: y(:)
+      real(RD), intent(in)           :: x_int
+      real(RD), intent(in)           :: y_int
+      integer, intent(out)           :: i
+      integer, intent(out)           :: j
+      integer, intent(out), optional :: stat
+
+      ! Locate the cell within the grid
+
+      call locate(x, x_int, i)
+      call locate(y, y_int, j)
+
+      if (i < 1 .OR. i >= SIZE(x)) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS
+            return
+         else
+            @:ABORT(out-of-bounds x)
+         endif
+      endif
+
+      if (j < 1 .OR. j >= SIZE(y)) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS
+            return
+         else
+            @:ABORT(out-of-bounds y)
+         endif
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine locate_cell_
 
    !****
       
