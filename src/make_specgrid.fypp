@@ -1,0 +1,168 @@
+! Module   : make_specgrid
+! Purpose  : create specgrid files from specint files
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program make_specgrid
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use order_m
+   use system_m
+
+   use specint_m
+   use specgrid_m
+   use specgrid_factory_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: list_filename
+   character(:), allocatable :: specgrid_filename
+
+   type(specint_t), allocatable :: si(:,:)
+   logical, allocatable         :: mask(:,:)
+   real(RD), allocatable        :: lnT(:)
+   real(RD), allocatable        :: lng(:)
+   type(specgrid_t)             :: rg
+   type(hdf5io_t)               :: hi
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 2,{Syntax: make_specgrid list_filename specgrid_filename})
+
+   call get_arg(1, list_filename)
+   call get_arg(2, specgrid_filename)
+
+   ! Read the specint_t grid
+
+   call read_specint_grid(list_filename, si, mask, lnT, lng)
+
+   ! Create the specgrid_t
+
+   rg = specgrid_from_grid(si, mask, lnT, lng)
+
+   ! Write it
+
+   hi = hdf5io_t(specgrid_filename, CREATE_FILE)
+   call write(hi, rg)
+   call hi%final()
+
+   ! Finish
+
+contains
+
+   subroutine read_specint_grid (list_filename, si, mask, lnT, lng)
+
+      character(*), intent(in)                  :: list_filename
+      type(specint_t), allocatable, intent(out) :: si(:,:)
+      logical, allocatable, intent(out)         :: mask(:,:)
+      real(RD), allocatable, intent(out)        :: lnT(:)
+      real(RD), allocatable, intent(out)        :: lng(:)
+
+      integer                     :: unit
+      integer                     :: n_node
+      character(256), allocatable :: node_filename(:)
+      real(RD), allocatable       :: node_lnT(:)
+      real(RD), allocatable       :: node_lng(:)
+      integer                     :: k
+      real(RD)                    :: Teff
+      real(RD)                    :: logg
+      integer                     :: n_lnT
+      integer                     :: n_lng
+      integer                     :: i
+      integer                     :: j
+      type(hdf5io_t)              :: hi
+
+      ! Open the file listing the grid nodes
+
+      open(NEWUNIT=unit, FILE=list_filename, STATUS='OLD')
+
+      ! Count lines
+
+      n_node = 0
+
+      count_loop : do
+         read(unit, *, END=100)
+         n_node = n_node + 1
+      end do count_loop
+
+100   continue
+
+      ! Read data
+
+      rewind(unit)
+
+      allocate(node_filename(n_node))
+
+      allocate(node_lnT(n_node))
+      allocate(node_lng(n_node))
+
+      read_loop : do k = 1, n_node
+         read(unit, *) Teff, logg, node_filename(k)
+         node_lnT(k) = LOG(Teff)
+         node_lng(k) = logg*LOG(10._RD)
+      end do read_loop
+
+      close(unit)
+
+      ! Extract the lnT and lng axes
+
+      lnT = node_lnT(unique_indices(node_lnT))
+      lng = node_lng(unique_indices(node_lng))
+
+      ! Allocate arrays
+
+      n_lnT = SIZE(lnT)
+      n_lng = SIZE(lng)
+
+      allocate(si(n_lnT,n_lng))
+      allocate(mask(n_lnT,n_lng))
+
+      mask = .FALSE.
+
+      ! Read in the specint_t's
+
+      specint_loop : do k = 1, n_node
+
+         i = FINDLOC(lnT, node_lnT(k), DIM=1)
+         j = FINDLOC(lng, node_lng(k), DIM=1)
+
+         @:ASSERT(i >= 1 .AND. i <= n_lnT, unable to locate node in grid)
+         @:ASSERT(j >= 1 .AND. j <= n_lng, unable to locate node in grid)
+         @:ASSERT(.NOT. mask(i,j), duplicate node)
+
+         hi = hdf5io_t(node_filename(k), OPEN_FILE)
+         call read(hi, si(i,j))
+         call hi%final()
+
+         mask(i,j) = .TRUE.
+
+      end do specint_loop
+
+      ! Finish
+
+   end subroutine read_specint_grid
+
+end program make_specgrid

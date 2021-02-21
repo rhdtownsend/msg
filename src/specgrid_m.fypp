@@ -1,0 +1,351 @@
+! Module  : specgrid_m
+! Purpose : define specgrid_t type, for representing spectral intensity
+!           grids
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module specgrid_m
+
+   ! Uses
+   
+   use kinds_m
+   use hdf5io_m
+   use order_m
+
+   use interp_m
+   use stat_m
+   use specnode_m
+   use dyn_specnode_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type specgrid_t
+      private
+      class(specnode_t), allocatable :: sn(:,:)
+      logical, allocatable           :: mask(:,:)
+      real(RD), allocatable          :: lnT(:)
+      real(RD), allocatable          :: lng(:)
+      integer                        :: n_lnT
+      integer                        :: n_lng
+   contains
+      private
+      procedure, public :: interp_intensity
+      procedure, public :: interp_D_moment
+      procedure, public :: interp_flux
+   end type specgrid_t
+
+   ! Interfaces
+
+   interface specgrid_t
+      module procedure specgrid_t_
+   end interface specgrid_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: specgrid_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function specgrid_t_ (sn, mask, lnT, lng) result (sg)
+
+      class(specnode_t), intent(in) :: sn(:,:)
+      logical, intent(in)           :: mask(:,:)
+      real(RD), intent(in)          :: lnT(:)
+      real(RD), intent(in)          :: lng(:)
+      type(specgrid_t)              :: sg
+
+      integer :: n_lnT
+      integer :: n_lng
+
+      @:CHECK_BOUNDS(SIZE(sn, 1), SIZE(sn, 1))
+      @:CHECK_BOUNDS(SIZE(sn, 2), SIZE(sn, 2))
+
+      @:CHECK_BOUNDS(SIZE(lnT), SIZE(sn, 1))
+      @:CHECK_BOUNDS(SIZE(lng), SIZE(sn, 2))
+
+      ! Costruct the specgrid_t
+
+      n_lnT = SIZE(lnT)
+      n_lng = SIZE(lng)
+
+      sg%sn = sn
+      sg%mask = mask
+
+      sg%lnT = lnT
+      sg%lng = lng
+
+      sg%n_lnT = n_lnT
+      sg%n_lng = n_lng
+
+      ! Finish
+
+      return
+
+   end function specgrid_t_
+
+   !****
+
+   subroutine read_(hi, sg)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(specgrid_t), intent(out) :: sg
+
+      character(TYPE_LEN)               :: type
+      integer                           :: n_lnT
+      integer                           :: n_lng
+      type(dyn_specnode_t), allocatable :: sn(:,:)
+      logical, allocatable              :: mask(:,:)
+      real(RD), allocatable             :: lnT(:)
+      real(RD), allocatable             :: lng(:)
+      type(hdf5io_t)                    :: hi_sn
+      integer                           :: i
+      integer                           :: j
+
+      ! Read the specgrid_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'specgrid_t',invalid type)
+
+      call hi%read_attr('n_lnT', n_lnT)
+      call hi%read_attr('n_lng', n_lng)
+
+      allocate(sn(n_lnT,n_lng))
+      allocate(mask(n_lnT,n_lng))
+
+      allocate(lnT(n_lnT))
+      allocate(lng(n_lng))
+
+      call hi%read_dset('mask', mask)
+
+      lnT_loop : do i = 1, n_lnT
+         lng_loop : do j = 1, n_lng
+
+            if (mask(i,j)) then
+               hi_sn = hdf5io_t(hi, sn_name_(i,j))
+               call read(hi_sn, sn(i,j))
+               call hi_sn%final()
+            end if
+
+         end do lng_loop
+      end do lnT_loop
+
+      call hi%read_dset('lnT', lnT)
+      call hi%read_dset('lng', lng)
+
+      sg = specgrid_t(sn, mask, lnT, lng)
+
+      ! Finish
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, rg)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(specgrid_t), intent(in )  :: rg
+
+      type(hdf5io_t) :: hi_sn
+      integer        :: i
+      integer        :: j
+
+      call hi%write_attr('TYPE', 'specgrid_t')
+
+      call hi%write_attr('n_lnT', rg%n_lnT)
+      call hi%write_attr('n_lng', rg%n_lng)
+
+      call hi%write_dset('mask', rg%mask)
+
+      ! select type (sg%sn)
+
+      ! type is (dyn_specnode_t)
+
+      !    @:ABORT(cannot write dynamic grids)
+
+      ! type is (specnode_t)
+
+      !    lnT_loop : do i = 1, rg%n_lnT
+      !       lng_loop : do j = 1, rg%n_lng
+
+      !          if (rg%mask(i,j)) then
+      !             hi_sn = hdf5io_t(hi, sn_name_(i,j))
+      !             call write(hi_sn, rg%sn(i,j))
+      !             call hi_sn%final()
+      !          end if
+
+      !       end do lng_loop
+      !    end do lnT_loop
+
+      !    call hi%write_dset('lnT', rg%lnT)
+      !    call hi%write_dset('lng', rg%lng)
+
+      ! end select
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function sn_name_(i,j) result (name)
+
+      integer, intent(in) :: i
+      integer, intent(in) :: j
+      character(256)      :: name
+
+      write(name, 100) i, j
+100   format('sn(',I0,',',I0,')')
+
+   end function sn_name_
+
+   !****
+
+   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                              ('D_moment', 'D', 'l', 'integer'))
+
+      subroutine interp_${var}$(self, lnT, lng, ${arg_name}$, w_base, w_off, n_w, ${var_name}$, stat, d_dlnT, d_dlng)
+
+         class(specgrid_t), intent(inout) :: self
+         real(RD), intent(in)             :: lnT
+         real(RD), intent(in)             :: lng
+         ${arg_type}$, intent(in)         :: ${arg_name}$
+         real(RD), intent(in)             :: w_base
+         real(RD), intent(in)             :: w_off
+         integer, intent(in)              :: n_w
+         real(RD), intent(out)            :: ${var_name}$(:)
+         integer, intent(out), optional   :: stat
+         logical, intent(in), optional    :: d_dlnT
+         logical, intent(in), optional    :: d_dlng
+
+         @:CHECK_BOUNDS(SIZE(${var_name}$), n_w)
+
+         ! Interpolate the intensity
+
+         call interp_bicubic(proc_, self%lnT, self%lng, lnT, lng, ${var_name}$, stat, d_dlnT, d_dlng)
+
+         ! Finsh
+
+         return
+
+      contains
+
+         subroutine proc_(i, j, f, stat, d_dx, d_dy)
+
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            real(RD), intent(out)          :: f(:)
+            integer, intent(out), optional :: stat
+            logical, intent(in), optional  :: d_dx
+            logical, intent(in), optional  :: d_dy
+
+            if (.NOT. self%mask(i,j)) then
+               if (PRESENT(stat)) then
+                  stat = STAT_MISSING_DATA
+                  return
+               else
+                  @:ABORT(missing data)
+               endif
+            endif
+
+            f = self%sn(i, j)%${var}$(${arg_name}$, w_base, w_off, n_w, d_dlnT=d_dx, d_dlng=d_dy)
+
+            if (PRESENT(stat)) stat = STAT_OK
+
+         end subroutine proc_
+
+      end subroutine interp_${var}$
+
+   #:endfor
+
+   !****
+
+   #:for var, var_name in (('flux', 'F'), )
+
+      subroutine interp_${var}$(self, lnT, lng, w_base, w_off, n_w, ${var_name}$, stat, d_dlnT, d_dlng)
+
+         class(specgrid_t), intent(inout) :: self
+         real(RD), intent(in)             :: lnT
+         real(RD), intent(in)             :: lng
+         real(RD), intent(in)             :: w_base
+         real(RD), intent(in)             :: w_off
+         integer, intent(in)              :: n_w
+         real(RD), intent(out)            :: ${var_name}$(:)
+         integer, intent(out), optional   :: stat
+         logical, intent(in), optional    :: d_dlnT
+         logical, intent(in), optional    :: d_dlng
+
+         ! Interpolate the flux
+
+         call interp_bicubic(proc_, self%lnT, self%lng, lnT, lng, ${var_name}$, stat, d_dlnT, d_dlng)
+
+         ! Finsh
+
+         return
+
+      contains
+
+         subroutine proc_(i, j, f, stat, d_dx, d_dy)
+
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            real(RD), intent(out)          :: f(:)
+            integer, intent(out), optional :: stat
+            logical, intent(in), optional  :: d_dx
+            logical, intent(in), optional  :: d_dy
+
+            if (.NOT. self%mask(i,j)) then
+               if (PRESENT(stat)) then
+                  stat = STAT_MISSING_DATA
+                  return
+               else
+                  @:ABORT(missing data)
+               endif
+            endif
+
+            f = self%sn(i, j)%${var}$(w_base, w_off, n_w, d_dlnT=d_dx, d_dlng=d_dy)
+            
+            if (PRESENT(stat)) stat = STAT_OK
+         
+         end subroutine proc_
+      
+      end subroutine interp_${var}$
+
+   #:endfor
+
+end module specgrid_m

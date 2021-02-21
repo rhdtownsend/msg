@@ -1,0 +1,169 @@
+! Module  : dyn_specnode_m
+! Purpose : define dyn_specnode_t type, providing dynamic loading behavior
+!           for specnode_t type
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module dyn_specnode_m
+
+   ! Uses
+   
+   use kinds_m
+   use hdf5io_m
+
+   use specnode_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(specnode_t) :: dyn_specnode_t
+      private
+      type(hdf5io_t) :: hi
+      logical        :: loaded
+   contains
+      private
+      procedure, public :: intensity
+      procedure, public :: D_moment
+      procedure, public :: flux
+      procedure         :: load_
+   end type dyn_specnode_t
+
+   ! Interfaces
+
+   interface read
+      module procedure read_
+   end interface read
+
+   ! Access specifiers
+
+   private
+
+   public :: dyn_specnode_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                               ('D_moment', 'D', 'l', 'integer'))
+
+      function ${var}$(self, ${arg_name}$, w_base, w_off, n_w, d_dlnT, d_dlng) result(${var_name}$)
+
+         class(dyn_specnode_t), intent(inout), target :: self
+         ${arg_type}$, intent(in)                     :: ${arg_name}$
+         real(RD), intent(in)                         :: w_base
+         real(RD), intent(in)                         :: w_off
+         integer, intent(in)                          :: n_w
+         logical, intent(in), optional                :: d_dlnT
+         logical, intent(in), optional                :: d_dlng
+         real(RD)                                     :: ${var_name}$(n_w)
+
+         ! Load data
+
+         call self%load_()
+
+         ! Evaluate ${var_name}$ or its derivative
+
+         ${var_name}$ = self%specnode_t%${var}$(${arg_name}$, w_base, w_off, n_w, d_dlnT, d_dlng)
+
+         ! Finish
+
+         return
+
+      end function ${var}$
+
+   #:endfor
+
+   !****
+
+   #:for var, var_name in (('flux', 'F'), )
+
+      function ${var}$(self, w_base, w_off, n_w, d_dlnT, d_dlng) result(${var_name}$)
+
+         class(dyn_specnode_t), intent(inout), target :: self
+         real(RD), intent(in)                         :: w_base
+         real(RD), intent(in)                         :: w_off
+         integer, intent(in)                          :: n_w
+         logical, intent(in), optional                :: d_dlnT
+         logical, intent(in), optional                :: d_dlng
+         real(RD)                                     :: ${var_name}$(n_w)
+
+         ! Load data
+
+         call self%load_()
+
+         ! Evaluate ${var_name}$ or its derivative
+
+         ${var_name}$ = self%specnode_t%${var}$(w_base, w_off, n_w, d_dlnT, d_dlng)
+
+         ! Finish
+
+         return
+
+      end function ${var}$
+
+   #:endfor
+
+   !****
+
+   subroutine load_(self)
+
+      class(dyn_specnode_t), intent(inout) :: self
+
+      ! If the node isn't already loaded, load it
+
+      if (.NOT. self%loaded) then
+
+         call read(self%hi, self%specnode_t)
+
+         self%loaded = .TRUE.
+
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine load_
+
+   !****
+
+   subroutine read_(hi, dn)
+
+      type(hdf5io_t), intent(inout)     :: hi
+      type(dyn_specnode_t), intent(out) :: dn
+
+      ! Read the dyn_specnode_t
+
+      dn%hi = hdf5io_t(hi, '.')
+
+      dn%loaded = .FALSE.
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+end module dyn_specnode_m

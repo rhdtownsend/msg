@@ -1,0 +1,290 @@
+! Module  : specnode_m
+! Purpose : define specnode_t type, for representing spectral intensity
+!           grid nodes
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module specnode_m
+
+   ! Uses
+   
+   use kinds_m
+   use hdf5io_m
+
+   use specint_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type specnode_t
+      private
+      type(specint_t) :: si
+      type(specint_t) :: dsi_dlnT
+      type(specint_t) :: dsi_dlng
+      type(specint_t) :: d2si_dlnTdlng
+   contains
+      private
+      procedure, public :: intensity
+      procedure, public :: D_moment
+      procedure, public :: flux
+   end type specnode_t
+
+   ! Interfaces
+
+   interface specnode_t
+      module procedure specnode_t_
+   end interface specnode_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: specnode_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function specnode_t_(si, dsi_dlnT, dsi_dlng, d2si_dlnTdlng) result(sn)
+
+      type(specint_t), intent(in) :: si
+      type(specint_t), intent(in) :: dsi_dlnT
+      type(specint_t), intent(in) :: dsi_dlng
+      type(specint_t), intent(in) :: d2si_dlnTdlng
+      type(specnode_t)            :: sn
+
+      ! Costruct the specnode_t
+      
+      sn%si = si
+      sn%dsi_dlnT = dsi_dlnT
+      sn%dsi_dlng = dsi_dlng
+      sn%d2si_dlnTdlng = d2si_dlnTdlng
+
+      ! Finish
+
+      return
+
+   end function specnode_t_
+
+   !****
+
+   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                              ('D_moment', 'D', 'l', 'integer'))
+
+      function ${var}$(self, ${arg_name}$, w_base, w_off, n_w, d_dlnT, d_dlng) result(${var_name}$)
+
+         class(specnode_t), intent(inout), target :: self
+         ${arg_type}$, intent(in)                 :: ${arg_name}$
+         real(RD), intent(in)                     :: w_base
+         real(RD), intent(in)                     :: w_off
+         integer, intent(in)                      :: n_w
+         logical, intent(in), optional            :: d_dlnT
+         logical, intent(in), optional            :: d_dlng
+         real(RD)                                 :: ${var_name}$(n_w)
+
+         logical                  :: d_dlnT_
+         logical                  :: d_dlng_
+         type(specint_t), pointer :: si
+
+         if (PRESENT(d_dlnT)) then
+            d_dlnT_ = d_dlnT
+         else
+            d_dlnT_ = .FALSE.
+         endif
+
+         if (PRESENT(d_dlng)) then
+            d_dlng_ = d_dlng
+         else
+            d_dlng_ = .FALSE.
+         endif
+
+         ! Evaluate ${var_name}$ or its derivative
+
+         if (d_dlnT_) then
+            if (d_dlng_) then
+               si => self%d2si_dlnTdlng
+            else
+               si => self%dsi_dlnT
+            endif
+         else
+            if (d_dlng_) then
+               si => self%dsi_dlng
+            else
+               si => self%si
+            endif
+         endif
+
+         ${var_name}$ = si%${var}$(${arg_name}$, w_base, w_off, n_w)
+
+         ! Finish
+
+         return
+
+      end function ${var}$
+
+   #:endfor
+
+   !****
+
+   #:for var, var_name in (('flux', 'F'), )
+
+      function ${var}$(self, w_base, w_off, n_w, d_dlnT, d_dlng) result(${var_name}$)
+
+         class(specnode_t), intent(inout), target :: self
+         real(RD), intent(in)                     :: w_base
+         real(RD), intent(in)                     :: w_off
+         integer, intent(in)                      :: n_w
+         logical, intent(in), optional            :: d_dlnT
+         logical, intent(in), optional            :: d_dlng
+         real(RD)                                 :: ${var_name}$(n_w)
+
+         logical                  :: d_dlnT_
+         logical                  :: d_dlng_
+         type(specint_t), pointer :: si
+
+         if (PRESENT(d_dlnT)) then
+            d_dlnT_ = d_dlnT
+         else
+            d_dlnT_ = .FALSE.
+         endif
+
+         if (PRESENT(d_dlng)) then
+            d_dlng_ = d_dlng
+         else
+            d_dlng_ = .FALSE.
+         endif
+
+         ! Evaluate ${var_name}$ or its derivative
+
+         if (d_dlnT_) then
+            if (d_dlng_) then
+               si => self%d2si_dlnTdlng
+            else
+               si => self%dsi_dlnT
+            endif
+         else
+            if (d_dlng_) then
+               si => self%dsi_dlng
+            else
+               si => self%si
+            endif
+         endif
+
+         ${var_name}$ = si%${var}$(w_base, w_off, n_w)
+
+         ! Finish
+
+         return
+
+      end function ${var}$
+
+   #:endfor
+      
+   !****
+
+   subroutine read_(hi, sn)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(specnode_t), intent(out) :: sn
+
+      character(TYPE_LEN) :: type
+      type(hdf5io_t)      :: hi_si
+      type(specint_t)     :: si
+      type(specint_t)     :: dsi_dlnT
+      type(specint_t)     :: dsi_dlng
+      type(specint_t)     :: d2si_dlnTdlng
+
+      ! Read the specnode_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'specnode_t',invalid type)
+
+      hi_si = hdf5io_t(hi, 'si')
+      call read(hi_si, si)
+      call hi_si%final()
+
+      hi_si = hdf5io_t(hi, 'dsi_dlnT')
+      call read(hi_si, dsi_dlnT)
+      call hi_si%final()
+
+      hi_si = hdf5io_t(hi, 'dsi_dlng')
+      call read(hi_si, dsi_dlng)
+      call hi_si%final()
+
+      hi_si = hdf5io_t(hi, 'd2si_dlnTdlng')
+      call read(hi_si, d2si_dlnTdlng)
+      call hi_si%final()
+
+      sn = specnode_t(si, dsi_dlnT, dsi_dlng, d2si_dlnTdlng)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, sn)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(specnode_t), intent(in)  :: sn
+
+      type(hdf5io_t) :: hi_si
+
+      ! Write the specnode_t
+
+      call hi%write_attr('TYPE', 'specnode_t')
+
+      hi_si = hdf5io_t(hi, 'si')
+      call write(hi_si, sn%si)
+      call hi_si%final()
+
+      hi_si = hdf5io_t(hi, 'dsi_dlnT')
+      call write(hi_si, sn%dsi_dlnT)
+      call hi_si%final()
+
+      hi_si = hdf5io_t(hi, 'dsi_dlng')
+      call write(hi_si, sn%dsi_dlng)
+      call hi_si%final()
+
+      hi_si = hdf5io_t(hi, 'd2si_dlnTdlng')
+      call write(hi_si, sn%d2si_dlnTdlng)
+      call hi_si%final()
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+end module specnode_m
