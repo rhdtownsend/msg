@@ -56,6 +56,7 @@ module specint_m
       procedure             :: op_div_si_rd_
       generic, public       :: operator(/) => op_div_si_rd_
       procedure, public     :: intensity
+      procedure, public     :: D_moment
       procedure, public     :: flux
       procedure             :: locate_
    end type specint_t
@@ -403,7 +404,8 @@ contains
 
    !****
 
-   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), )
+   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                               ('D_moment', 'D', 'l', 'integer'))
 
       function ${var}$(self, ${arg_name}$, w_base, w_off, n_w) result(${var_name}$)
 
