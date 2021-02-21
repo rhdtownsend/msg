@@ -52,6 +52,7 @@ module radint_m
       procedure             :: op_div_ri_rd_
       generic, public       :: operator(/) => op_div_ri_rd_
       procedure, public     :: intensity
+      procedure, public     :: D_moment
       procedure, public     :: flux
    end type radint_t
 
@@ -259,39 +260,48 @@ contains
 
    !****
 
-   function intensity(self, mu) result (I)
+   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                               ('D_moment', 'D', 'l', 'integer'))
 
-      class(radint_t), intent(in) :: self
-      real(RD), intent(in)        :: mu
-      real(RD)                    :: I
+      function ${var}$(self, ${arg_name}$) result(${var_name}$)
 
-      ! Evaluate the intensity
+         class(radint_t), intent(in) :: self
+         ${arg_type}$, intent(in)    :: ${arg_name}$
+         real(RD)                    :: ${var_name}$
 
-      I = self%li%intensity(self%I_1, self%a, mu)
+         ! Evaluate ${var_name}$
 
-      ! Finish
+         ${var_name}$ = self%li%${var}$(self%I_1, self%a, ${arg_name}$)
 
-      return
+         ! Finish
 
-   end function intensity
+         return
 
+      end function ${var}$
+
+   #:endfor
+      
    !****
 
-   function flux (self) result(F)
+   #:for var, var_name in (('flux', 'F'), )
 
-      class(radint_t), intent(in) :: self
-      real(RD)                    :: F
+      function ${var}$(self) result(${var_name}$)
 
-      ! Evaluate the flux
+         class(radint_t), intent(in) :: self
+         real(RD)                    :: ${var_name}$
 
-      F = self%li%flux(self%I_1, self%a)
+         ! Evaluate ${var_name}$
 
-      ! Finish
+         ${var_name}$ = self%li%${var}$(self%I_1, self%a)
 
-      return
+         ! Finish
 
-   end function flux
+         return
 
+      end function ${var}$
+
+   #:endfor
+      
    !****
 
    subroutine read_(hi, ri)

@@ -44,6 +44,7 @@ module radnode_m
    contains
       private
       procedure, public :: intensity
+      procedure, public :: D_moment
       procedure, public :: flux
    end type radnode_t
 
@@ -96,103 +97,112 @@ contains
 
    !****
 
-   function intensity (self, mu, d_dlnT, d_dlng) result (I)
+   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                               ('D_moment', 'D', 'l', 'integer'))
 
-      class(radnode_t), intent(in), target :: self
-      real(RD), intent(in)                :: mu
-      logical, intent(in), optional       :: d_dlnT
-      logical, intent(in), optional       :: d_dlng
-      real(RD)                            :: I
+      function ${var}$(self, ${arg_name}$, d_dlnT, d_dlng) result(${var_name}$)
 
-      logical                 :: d_dlnT_
-      logical                 :: d_dlng_
-      type(radint_t), pointer :: ri
+         class(radnode_t), intent(in), target :: self
+         ${arg_type}$, intent(in)             :: ${arg_name}$
+         logical, intent(in), optional        :: d_dlnT
+         logical, intent(in), optional        :: d_dlng
+         real(RD)                             :: ${var_name}$
 
-      if (PRESENT(d_dlnT)) then
-         d_dlnT_ = d_dlnT
-      else
-         d_dlnT_ = .FALSE.
-      endif
+         logical                 :: d_dlnT_
+         logical                 :: d_dlng_
+         type(radint_t), pointer :: ri
 
-      if (PRESENT(d_dlng)) then
-         d_dlng_ = d_dlng
-      else
-         d_dlng_ = .FALSE.
-      endif
-
-      ! Evaluate the intensity or its derivative
-
-      if (d_dlnT_) then
-         if (d_dlng_) then
-            ri => self%d2ri_dlnTdlng
+         if (PRESENT(d_dlnT)) then
+            d_dlnT_ = d_dlnT
          else
-            ri => self%dri_dlnT
+            d_dlnT_ = .FALSE.
          endif
-      else
-         if (d_dlng_) then
-            ri => self%dri_dlng
+
+         if (PRESENT(d_dlng)) then
+            d_dlng_ = d_dlng
          else
-            ri => self%ri
+            d_dlng_ = .FALSE.
          endif
-      endif
 
-      I = ri%intensity(mu)
+         ! Evaluate ${var_name}$ or its derivative
 
-      ! Finish
+         if (d_dlnT_) then
+            if (d_dlng_) then
+               ri => self%d2ri_dlnTdlng
+            else
+               ri => self%dri_dlnT
+            endif
+         else
+            if (d_dlng_) then
+               ri => self%dri_dlng
+            else
+               ri => self%ri
+            endif
+         endif
 
-      return
+         ${var_name}$ = ri%${var}$(${arg_name}$)
 
-   end function intensity
+         ! Finish
+
+         return
+
+      end function ${var}$
+
+   #:endfor
 
    !****
 
-   function flux (self, d_dlnT, d_dlng) result (F)
+   #:for var, var_name in (('flux', 'F'), )
 
-      class(radnode_t), intent(in), target :: self
-      logical, intent(in), optional        :: d_dlnT
-      logical, intent(in), optional        :: d_dlng
-      real(RD)                             :: F
+      function ${var}$(self, d_dlnT, d_dlng) result(${var_name}$)
+         
+         class(radnode_t), intent(in), target :: self
+         logical, intent(in), optional        :: d_dlnT
+         logical, intent(in), optional        :: d_dlng
+         real(RD)                             :: ${var_name}$
 
-      logical                 :: d_dlnT_
-      logical                 :: d_dlng_
-      type(radint_t), pointer :: ri
+         logical                 :: d_dlnT_
+         logical                 :: d_dlng_
+         type(radint_t), pointer :: ri
 
-      if (PRESENT(d_dlnT)) then
-         d_dlnT_ = d_dlnT
-      else
-         d_dlnT_ = .FALSE.
-      endif
-
-      if (PRESENT(d_dlng)) then
-         d_dlng_ = d_dlng
-      else
-         d_dlng_ = .FALSE.
-      endif
-
-      ! Evaluate the flux or its derivative
-
-      if (d_dlnT_) then
-         if (d_dlng_) then
-            ri => self%d2ri_dlnTdlng
+         if (PRESENT(d_dlnT)) then
+            d_dlnT_ = d_dlnT
          else
-            ri => self%dri_dlnT
+            d_dlnT_ = .FALSE.
          endif
-      else
-         if (d_dlng_) then
-            ri => self%dri_dlng
+
+         if (PRESENT(d_dlng)) then
+            d_dlng_ = d_dlng
          else
-            ri => self%ri
+            d_dlng_ = .FALSE.
          endif
-      endif
 
-      F = ri%flux()
+         ! Evaluate ${var_name}$ or its derivative
 
-      ! Finish
+         if (d_dlnT_) then
+            if (d_dlng_) then
+               ri => self%d2ri_dlnTdlng
+            else
+               ri => self%dri_dlnT
+            endif
+         else
+            if (d_dlng_) then
+               ri => self%dri_dlng
+            else
+               ri => self%ri
+            endif
+         endif
 
-      return
+         ${var_name}$ = ri%${var}$()
 
-   end function flux
+         ! Finish
 
+         return
+
+      end function ${var}$
+
+   #:endfor
+      
    !****
 
    subroutine read_(hi, rn)
