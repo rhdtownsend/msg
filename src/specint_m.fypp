@@ -403,78 +403,86 @@ contains
 
    !****
 
-   function intensity(self, mu, w_base, w_off, n_w) result (I)
+   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), )
 
-      class(specint_t), intent(in) :: self
-      real(RD), intent(in)        :: mu
-      real(RD), intent(in)        :: w_base
-      real(RD), intent(in)        :: w_off
-      integer, intent(in)         :: n_w
-      real(RD)                    :: I(n_w)
+      function ${var}$(self, ${arg_name}$, w_base, w_off, n_w) result(${var_name}$)
 
-      integer  :: k
-      real(RD) :: u
-      integer  :: k_a
-      integer  :: k_b
-      real(RD) :: I_x(n_w+1)
+         class(specint_t), intent(in) :: self
+         ${arg_type}$, intent(in)     :: ${arg_name}$
+         real(RD), intent(in)         :: w_base
+         real(RD), intent(in)         :: w_off
+         integer, intent(in)          :: n_w
+         real(RD)                     :: ${var_name}$(n_w)
 
-      ! Set up interpolation starting index and weight
+         integer  :: k
+         real(RD) :: u
+         integer  :: k_a
+         integer  :: k_b
+         real(RD) :: ${var_name}$_x(n_w+1)
 
-      call self%locate_(w_base, w_off, k, u)
+         ! Set up interpolation starting index and weight
 
-      k_a = k
-      k_b = k + n_w
+         call self%locate_(w_base, w_off, k, u)
 
-      @:ASSERT(k_a >= 1 .AND. k_b <= self%n_w, out-of-bounds interpolation)
+         k_a = k
+         k_b = k + n_w
 
-      ! Evaluate the intensity
+         @:ASSERT(k_a >= 1 .AND. k_b <= self%n_w, out-of-bounds interpolation)
 
-      I_x = self%li%intensity(self%I_1(k_a:k_b), self%a(:,k_a:k_b), mu)
+         ! Evaluate ${var_name}$
 
-      I = (1._RD-u)*I_x(1:n_w) + u*I_x(2:n_w+1)
+         ${var_name}$_x = self%li%${var}$(self%I_1(k_a:k_b), self%a(:,k_a:k_b), ${arg_name}$)
 
-      ! Finish
+         ${var_name}$ = (1._RD-u)*${var_name}$_x(1:n_w) + u*${var_name}$_x(2:n_w+1)
 
-      return
+         ! Finish
 
-   end function intensity
+         return
 
+      end function ${var}$
+
+   #:endfor
+      
    !****
 
-   function flux (self, w_base, w_off, n_w) result(F)
+   #:for var, var_name in (('flux', 'F'), )
 
-      class(specint_t), intent(in) :: self
-      real(RD), intent(in)        :: w_base
-      real(RD), intent(in)        :: w_off
-      integer, intent(in)         :: n_w
-      real(RD)                    :: F(n_w)
+      function ${var}$(self, w_base, w_off, n_w) result(${var_name}$)
 
-      integer  :: k
-      real(RD) :: u
-      integer  :: k_a
-      integer  :: k_b
-      real(RD) :: F_x(n_w+1)
+         class(specint_t), intent(in) :: self
+         real(RD), intent(in)         :: w_base
+         real(RD), intent(in)         :: w_off
+         integer, intent(in)          :: n_w
+         real(RD)                     :: ${var_name}$(n_w)
 
-      ! Set up interpolation starting index and weight
+         integer  :: k
+         real(RD) :: u
+         integer  :: k_a
+         integer  :: k_b
+         real(RD) :: ${var_name}$_x(n_w+1)
 
-      call self%locate_(w_base, w_off, k, u)
+         ! Set up interpolation starting index and weight
 
-      k_a = k
-      k_b = k + n_w
+         call self%locate_(w_base, w_off, k, u)
 
-      @:ASSERT(k_a >= 1 .AND. k_b <= self%n_w, out-of-bounds interpolation)
+         k_a = k
+         k_b = k + n_w
 
-      ! Evaluate the flux
+         @:ASSERT(k_a >= 1 .AND. k_b <= self%n_w, out-of-bounds interpolation)
 
-      F_x = self%li%flux(self%I_1(k_a:k_b), self%a(:,k_a:k_b))
+         ! Evaluate ${var_name}$
 
-      F = (1._RD-u)*F_x(1:n_w) + u*F_x(2:n_w+1)
+         ${var_name}$_x = self%li%${var}$(self%I_1(k_a:k_b), self%a(:,k_a:k_b))
 
-      ! Finish
+         ${var_name}$ = (1._RD-u)*${var_name}$_x(1:n_w) + u*${var_name}$_x(2:n_w+1)
 
-      return
+         ! Finish
 
-   end function flux
+         return
+
+      end function ${var}$
+
+   #:endfor
 
    !****
 
