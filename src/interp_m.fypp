@@ -35,80 +35,223 @@ module interp_m
 
    private
 
-   public :: bicubic_setup
+   public :: eval_deriv_kernel
+   public :: eval_cross_kernel
    public :: bicubic_interp
 
    ! Procedures
 
 contains
 
-   subroutine bicubic_setup(x, y, f, df, mask, stat)
+   subroutine eval_deriv_kernel (x, kern, mask, stat)
 
       real(RD), intent(in)           :: x(:)
-      real(RD), intent(in)           :: y(:)
-      real(RD), intent(in)           :: f(:,:)
-      real(RD), intent(out)          :: df(:,:,:,:)
-      logical, intent(in), optional  :: mask(:,:)
+      real(RD), intent(out)          :: kern(:)
+      logical, intent(in), optional  :: mask(:)
       integer, intent(out), optional :: stat
 
-      logical :: mask_(4,4)
-      integer :: stat_
-      integer :: i
-      integer :: j
+      logical  :: mask_(3)
+      integer  :: stat_
+      logical  :: fd_mask(2)
+      real(RD) :: fd_kern(3,2)
+      real(RD) :: u
 
-      @:CHECK_BOUNDS(SIZE(x), 4)
-      @:CHECK_BOUNDS(SIZE(y), 4)
+      @:CHECK_BOUNDS(SIZE(x), 3)
 
-      @:CHECK_BOUNDS(SIZE(f, 1), 4)
-      @:CHECK_BOUNDS(SIZE(f, 2), 4)
-
-      @:CHECK_BOUNDS(SIZE(df, 1), 2)
-      @:CHECK_BOUNDS(SIZE(df, 2), 2)
-      @:CHECK_BOUNDS(SIZE(df, 3), 2)
-      @:CHECK_BOUNDS(SIZE(df, 4), 2)
+      @:CHECK_BOUNDS(SIZE(kern), 3)
 
       if (PRESENT(mask)) then
-         @:CHECK_BOUNDS(SIZE(mask, 1), 4)
-         @:CHECK_BOUNDS(SIZE(mask, 2), 4)
+         @:CHECK_BOUNDS(SIZE(mask), 3)
          mask_ = mask
       else
          mask_ = .TRUE.
       endif
 
-      ! Set up values for bicubic interpolation. The returned
-      ! df array stores function and derivative values at the four
-      ! corners of the center cell:
-      !   df(:,:,1,1) = f
-      !   df(:,:,2,1) = df/dx
-      !   df(:,:,1,2) = df/dy
-      !   df(:,:,2,2) = d2f/dxdy
+      ! Evaluate the kernel for derivative calculation
 
-      i_loop : do i = 2,3
-         j_loop : do j = 2,3
+      ! Set up finite difference (fd) kernels
 
-            if (mask_(i,j)) then
-               df(i-1,j-1,1,1) = f(i,j)
-            else
-               stat_ = STAT_MISSING_DATA
-               exit i_loop
-            endif
+      if (mask_(1) .AND. mask_(2)) then
+         fd_mask(1) = .TRUE.
+         fd_kern(:,1) = [-1._RD,1._RD,0._RD]/(x(2) - x(1))
+      else
+         fd_mask(1) = .FALSE.
+      endif
 
-            call eval_first_deriv_(f(i-1:i+1,j), mask_(i-1:i+1,j), x(i-1:i+1), df(i-1,j-1,2,1), stat_)
-            if (stat_ /= STAT_OK) exit i_loop
-            
-            call eval_first_deriv_(f(i,j-1:j+1), mask_(i,j-1:j+1), y(j-1:j+1), df(i-1,j-1,1,2), stat_)
-            if (stat_ /= STAT_OK) exit i_loop
+      if (mask_(2) .AND. mask_(3)) then
+         fd_mask(2) = .TRUE.
+         fd_kern(:,2) = [0._RD,-1._RD,1._RD]/(x(3) - x(2))
+      else
+         fd_mask(2) = .FALSE.
+      endif
 
-            call eval_cross_deriv_(f(i-1:i+1,j-1:j+1), mask_(i-1:i+1,j-1:j+1), x(i-1:i+1), y(j-1:j+1), df(i-1,j-1,2,2), stat_)
-            if (stat_ /= STAT_OK) exit i_loop
+      ! Blend them
 
-         end do j_loop
-      end do i_loop
-
-      if (stat_ /= STAT_OK) then
-         if (PRESENT(stat)) then
-            stat = stat_
+      select case (COUNT(fd_mask))
+      case (0)
+         stat_ = STAT_MISSING_DATA
+      case (1)
+         if (fd_mask(1)) then
+            kern = fd_kern(:,1)
          else
+            kern = fd_kern(:,2)
+         endif
+         stat_ = STAT_OK
+      case (2)
+         u = (x(2) - x(1))/(x(3) - x(1))
+         kern = (1._RD-u)*fd_kern(:,1) + u*fd_kern(:,2)
+         stat_ = STAT_OK
+      end select
+
+      ! If necessary, set up stat
+      
+      if (PRESENT(stat)) then
+         stat = stat_
+      else
+         if (stat_ /= STAT_OK) then
+            @:ABORT(missing data)
+         endif
+      endif
+      
+      ! Finish
+
+      return
+
+   end subroutine eval_deriv_kernel
+
+   !****
+
+   subroutine eval_cross_kernel(x, y, kern, mask, stat)
+
+      real(RD), intent(in)           :: x(:)
+      real(RD), intent(in)           :: y(:)
+      real(RD), intent(out)          :: kern(:,:)
+      logical, intent(in), optional  :: mask(:,:)
+      integer, intent(out), optional :: stat
+
+      logical  :: mask_(3,3)
+      integer  :: stat_
+      logical  :: fd_mask(2,2)
+      real(RD) :: fd_kern(3,3,2,2)
+      real(RD) :: u
+      real(RD) :: v
+
+      @:CHECK_BOUNDS(SIZE(x), 3)
+      @:CHECK_BOUNDS(SIZE(y), 3)
+
+      @:CHECK_BOUNDS(SIZE(kern, 1), 3)
+      @:CHECK_BOUNDS(SIZE(kern, 2), 3)
+
+      if (PRESENT(mask)) then
+         @:CHECK_BOUNDS(SIZE(mask, 1), 3)
+         @:CHECK_BOUNDS(SIZE(mask, 2), 3)
+         mask_ = mask
+      else
+         mask_ = .TRUE.
+      endif
+
+      ! Evaluate the kernel for cross derivative calculation
+
+      ! Set up finite difference (fd) kernels
+      
+      if (ALL(mask_(1:2,1:2))) then
+         fd_mask(1,1) = .TRUE.
+         fd_kern(:,1,1,1) = [1._RD,-1._RD,0._RD]/((x(2) - x(1))*(y(2) - y(1)))
+         fd_kern(:,2,1,1) = [-1._RD,1._RD,0._RD]/((x(2) - x(1))*(y(2) - y(1)))
+         fd_kern(:,3,1,1) = 0._RD
+      else
+         fd_mask(1,1) = .FALSE.
+      endif
+      
+      if (ALL(mask_(2:3,1:2))) then
+         fd_mask(2,1) = .TRUE.
+         fd_kern(:,1,2,1) = [0._RD,1._RD,-1._RD]/((x(3) - x(2))*(y(2) - y(1)))
+         fd_kern(:,2,2,1) = [0._RD,-1._RD,1._RD]/((x(3) - x(2))*(y(2) - y(1)))
+         fd_kern(:,3,2,1) = 0._RD
+      else
+         fd_mask(2,1) = .FALSE.
+      endif
+
+      if (ALL(mask_(1:2,2:3))) then
+         fd_mask(1,2) = .TRUE.
+         fd_kern(:,1,1,2) = 0._RD
+         fd_kern(:,2,1,2) = [1._RD,-1._RD,0._RD]/((x(2) - x(1))*(y(3) - y(2)))
+         fd_kern(:,3,1,2) = [-1._RD,1._RD,0._RD]/((x(2) - x(1))*(y(3) - y(2)))
+      else
+         fd_mask(1,2) = .FALSE.
+      endif
+
+      if (ALL(mask_(2:3,2:3))) then
+         fd_mask(2,2) = .TRUE.
+         fd_kern(:,1,2,2) = 0._RD
+         fd_kern(:,2,2,2) = [0._RD,1._RD,-1._RD]/((x(3) - x(2))*(y(3) - y(2)))
+         fd_kern(:,3,2,2) = [0._RD,-1._RD,1._RD]/((x(3) - x(2))*(y(3) - y(2)))
+      else
+         fd_mask(2,2) = .FALSE.
+      endif
+
+      ! Blend them to create the first derivative
+
+      select case (COUNT(fd_mask))
+      case (0)
+         stat_ = STAT_MISSING_DATA
+      case (1)
+         if (fd_mask(1,1)) then
+            kern = fd_kern(:,:,1,1)
+         elseif (fd_mask(2,1)) then
+            kern = fd_kern(:,:,2,1)
+         elseif (fd_mask(1,2)) then
+            kern = fd_kern(:,:,1,2)
+         else
+            kern = fd_kern(:,:,2,2)
+         endif
+         stat_ = STAT_OK
+      case (2)
+         if (fd_mask(1,1) .AND. fd_mask(2,1)) then
+            u = (x(2) - x(1))/(x(3) - x(1))
+            kern = (1._RD-u)*fd_kern(:,:,1,1) + u*fd_kern(:,:,2,1)
+            stat_ = STAT_OK
+         elseif (fd_mask(1,2) .AND. fd_mask(2,2)) then
+            u = (x(2) - x(1))/(x(3) - x(1))
+            kern = (1._RD-u)*fd_kern(:,:,1,2) + u*fd_kern(:,:,2,2) 
+            stat_ = STAT_OK
+         elseif (fd_mask(1,1) .AND. fd_mask(1,2)) then
+            v = (y(2) - y(1))/(y(3) - y(1))
+            kern = (1._RD-v)*fd_kern(:,:,1,1) + v*fd_kern(:,:,1,2)
+            stat_ = STAT_OK
+         elseif (fd_mask(2,1) .AND. fd_mask(2,2)) then
+            v = (y(2) - y(1))/(y(3) - y(1))
+            kern = (1._RD-v)*fd_kern(:,:,2,1) + v*fd_kern(:,:,2,2)
+            stat_ = STAT_OK
+         else
+            stat_ = STAT_MISSING_DATA
+         end if
+      case (3)
+         if (.NOT. fd_mask(1,1)) then
+            kern = fd_kern(:,:,2,2)
+         elseif (.NOT. fd_mask(2,1)) then
+            kern = fd_kern(:,:,1,2)
+         elseif (.NOT. fd_mask(1,2)) then
+            kern = fd_kern(:,:,2,1)
+         else
+            kern = fd_kern(:,:,1,1)
+         endif
+         stat_ = STAT_OK
+      case (4)
+         u = (x(2) - x(1))/(x(3) - x(1))
+         v = (y(2) - y(1))/(y(3) - y(1))
+         kern = &
+              (1._RD-u)*(1._RD-v)*fd_kern(:,:,1,1) + &
+              (      u)*(1._RD-v)*fd_kern(:,:,2,1) + &
+              (1._RD-u)*(      v)*fd_kern(:,:,1,2) + &
+              (      u)*(      v)*fd_kern(:,:,2,2)
+         stat_ = STAT_OK
+      end select
+
+      if (PRESENT(stat)) then
+         stat = stat_
+      else
+         if (stat_ /= STAT_OK) then
             @:ABORT(missing data)
          endif
       endif
@@ -117,184 +260,23 @@ contains
 
       return
 
-   contains
-
-      subroutine eval_first_deriv_ (f, mask, x, df_dx, stat)
-
-         real(RD), intent(in)  :: f(:)
-         logical, intent(in)   :: mask(:)
-         real(RD), intent(in)  :: x(:)
-         real(RD), intent(out) :: df_dx
-         integer, intent(out)  :: stat
-
-         logical  :: mask_fd(2)
-         real(RD) :: df_fd(2)
-         real(RD) :: u
-
-         ! Evaluate the first derivative
-
-         ! Set up finite differences (fd)
-
-         if (mask(1) .AND. mask(2)) then
-            mask_fd(1) = .TRUE.
-            df_fd(1) = (f(2) - f(1))/(x(2) - x(1))
-         else
-            mask_fd(1) = .FALSE.
-         endif
-
-         if (mask(2) .AND. mask(3)) then
-            mask_fd(2) = .TRUE.
-            df_fd(2) = (f(3) - f(2))/(x(3) - x(2))
-         else
-            mask_fd(2) = .FALSE.
-         endif
-
-         ! Blend them to create the first defvative
-
-         select case (COUNT(mask_fd))
-         case (0)
-            stat = STAT_MISSING_DATA
-         case (1)
-            if (mask_fd(1)) then
-               df_dx = df_fd(1)
-            else
-               df_dx = df_fd(2)
-            endif
-            stat = STAT_OK
-         case (2)
-            u = (x(2) - x(1))/(x(3) - x(1))
-            df_dx = (1._RD-u)*df_fd(1) + u*df_fd(2)
-            stat = STAT_OK
-         end select
-
-         ! Finish
-
-         return
-
-      end subroutine eval_first_deriv_
-
-      subroutine eval_cross_deriv_ (f, mask, x, y, d2f_dxdy, stat)
-
-         real(RD), intent(in)   :: f(:,:)
-         logical, intent(in)    :: mask(:,:)
-         real(RD), intent(in)   :: x(:)
-         real(RD), intent(in)   :: y(:)
-         real(RD), intent(out)  :: d2f_dxdy
-         integer, intent(inout) :: stat
-
-         logical  :: mask_fd(2,2)
-         real(RD) :: d2f_fd(2,2)
-         real(RD) :: u
-         real(RD) :: v
-
-         ! Evaluate the cross derivative
-
-         ! Set up finite differences (fd)
-
-         if (ALL(mask(1:2,1:2))) then
-            mask_fd(1,1) = .TRUE.
-            d2f_fd(1,1) = (f(1,1) + f(2,2) - f(2,1) - f(1,2))/((x(2) - x(1))*(y(2) - y(1)))
-         else
-            mask_fd(1,1) = .FALSE.
-         endif
-
-         if (ALL(mask(2:3,1:2))) then
-            mask_fd(2,1) = .TRUE.
-            d2f_fd(2,1) = (f(2,1) + f(3,2) - f(3,1) - f(2,2))/((x(3) - x(2))*(y(2) - y(1)))
-         else
-            mask_fd(2,1) = .FALSE.
-         endif
-
-         if (ALL(mask(1:2,2:3))) then
-            mask_fd(1,2) = .TRUE.
-            d2f_fd(1,2) = (f(1,2) + f(2,3) - f(2,2) - f(1,3))/((x(2) - x(1))*(y(3) - y(2)))
-         else
-            mask_fd(1,2) = .FALSE.
-         endif
-
-         if (ALL(mask(2:3,2:3))) then
-            mask_fd(2,2) = .TRUE.
-            d2f_fd(2,2) = (f(2,2) + f(3,3) - f(3,2) - f(2,3))/((x(3) - x(2))*(y(3) - y(2)))
-         else
-            mask_fd(2,2) = .FALSE.
-         endif
-
-         ! Blend them to create the first derivative
-
-         select case (COUNT(mask_fd))
-         case (0)
-            stat = STAT_MISSING_DATA
-         case (1)
-            if (mask_fd(1,1)) then
-               d2f_dxdy = d2f_fd(1,1)
-            elseif (mask_fd(2,1)) then
-               d2f_dxdy = d2f_fd(2,1)
-            elseif (mask_fd(1,2)) then
-               d2f_dxdy = d2f_fd(1,2)
-            else
-               d2f_dxdy = d2f_fd(2,2)
-            endif
-            stat = STAT_OK
-         case (2)
-            if (mask_fd(1,1) .AND. mask_fd(2,1)) then
-               u = (x(2) - x(1))/(x(3) - x(1))
-               d2f_dxdy = (1._RD-u)*d2f_fd(1,1) + u*d2f_fd(2,1)
-               stat = STAT_OK
-            elseif (mask_fd(1,2) .AND. mask_fd(2,2)) then
-               u = (x(2) - x(1))/(x(3) - x(1))
-               d2f_dxdy = (1._RD-u)*d2f_fd(1,2) + u*d2f_fd(2,2) 
-               stat = STAT_OK
-            elseif (mask_fd(1,1) .AND. mask_fd(1,2)) then
-               v = (y(2) - y(1))/(y(3) - y(1))
-               d2f_dxdy = (1._RD-v)*d2f_fd(1,1) + v*d2f_fd(1,2)
-               stat = STAT_OK
-            elseif (mask_fd(2,1) .AND. mask_fd(2,2)) then
-               v = (y(2) - y(1))/(y(3) - y(1))
-               d2f_dxdy = (1._RD-v)*d2f_fd(2,1) + v*d2f_fd(2,2)
-               stat = STAT_OK
-            else
-               stat = STAT_MISSING_DATA
-            end if
-         case (3)
-            if (.NOT. mask_fd(1,1)) then
-               d2f_dxdy = d2f_fd(2,2)
-            elseif (.NOT. mask_fd(2,1)) then
-               d2f_dxdy = d2f_fd(1,2)
-            elseif (.NOT. mask_fd(1,2)) then
-               d2f_dxdy = d2f_fd(2,1)
-            else
-               d2f_dxdy = d2f_fd(1,1)
-            endif
-            stat = STAT_OK
-         case (4)
-            u = (x(2) - x(1))/(x(3) - x(1))
-            v = (y(2) - y(1))/(y(3) - y(1))
-            d2f_dxdy = &
-                 (1._RD-u)*(1._RD-v)*d2f_fd(1,1) + &
-                 (      u)*(1._RD-v)*d2f_fd(2,1) + &
-                 (1._RD-u)*(      v)*d2f_fd(1,2) + &
-                 (      u)*(      v)*d2f_fd(2,2)
-            stat = STAT_OK
-         end select
-
-         ! Finish
-
-         return
-
-      end subroutine eval_cross_deriv_
-
-   end subroutine bicubic_setup
+   end subroutine eval_cross_kernel
 
    !****
-   
-   subroutine bicubic_interp(df, dx, dy, u, v, df_int)
 
-      real(RD), intent(in)  :: df(:,:,:,:)
-      real(RD), intent(in)  :: dx
-      real(RD), intent(in)  :: dy
-      real(RD), intent(in)  :: u
-      real(RD), intent(in)  :: v
-      real(RD), intent(out) :: df_int(:,:)
+   subroutine bicubic_interp(f, df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int, d_dx, d_dy)
+
+      real(RD), intent(in)          :: f(:,:)
+      real(RD), intent(in)          :: df_dx(:,:)
+      real(RD), intent(in)          :: df_dy(:,:)
+      real(RD), intent(in)          :: d2f_dxdy(:,:)
+      real(RD), intent(in)          :: dx
+      real(RD), intent(in)          :: dy
+      real(RD), intent(in)          :: u
+      real(RD), intent(in)          :: v
+      real(RD), intent(out)         :: f_int
+      logical, intent(in), optional :: d_dx
+      logical, intent(in), optional :: d_dy
 
       real(RD), parameter :: C(4,4) = RESHAPE([ &
            1, 0, 0, 0, &
@@ -302,37 +284,61 @@ contains
            -3, 3, -2, -1, &
            2, -2, 1, 1], SHAPE(C))
 
+      logical  :: d_dx_
+      logical  :: d_dy_
       real(RD) :: B(4,4)
       real(RD) :: A(4,4)
-      real(RD) :: P(2,4)
-      real(RD) :: Q(4,2)
+      real(RD) :: P(4)
+      real(RD) :: Q(4)
 
-      @:CHECK_BOUNDS(SIZE(df, 1), 2)
-      @:CHECK_BOUNDS(SIZE(df, 2), 2)
-      @:CHECK_BOUNDS(SIZE(df, 3), 2)
-      @:CHECK_BOUNDS(SIZE(df, 4), 2)
+      @:CHECK_BOUNDS(SIZE(f, 1), 2)
+      @:CHECK_BOUNDS(SIZE(f, 2), 2)
       
-      @:CHECK_BOUNDS(SIZE(df_int, 1), 2)
-      @:CHECK_BOUNDS(SIZE(df_int, 2), 2)
-
+      @:CHECK_BOUNDS(SIZE(df_dx, 1), 2)
+      @:CHECK_BOUNDS(SIZE(df_dx, 2), 2)
+      
+      @:CHECK_BOUNDS(SIZE(df_dy, 1), 2)
+      @:CHECK_BOUNDS(SIZE(df_dy, 2), 2)
+      
+      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 1), 2)
+      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 2), 2)
+      
+      if (PRESENT(d_dx)) then
+         d_dx_ = d_dx
+      else
+         d_dx_ = .FALSE.
+      endif
+      
+      if (PRESENT(d_dy)) then
+         d_dy_ = d_dy
+      else
+         d_dy_ = .FALSE.
+      endif
+      
       ! Evaluate the interpolation coefficients
 
-      B(1:2,1:2) = df(:,:,1,1)
-      B(3:4,1:2) = df(:,:,2,1)*dx
-      B(1:2,3:4) = df(:,:,1,2)*dy
-      B(3:4,3:4) = df(:,:,2,2)*dx*dy
+      B(1:2,1:2) = f
+      B(3:4,1:2) = df_dx*dx
+      B(1:2,3:4) = df_dy*dy
+      B(3:4,3:4) = d2f_dxdy*dx*dy
 
       A = MATMUL(TRANSPOSE(C), MATMUL(B, C))
 
       ! Evaluate the interpolated values
 
-      P(1,:) = [1._RD, u, u**2, u**3]
-      P(2,:) = [0._RD, 1._RD, 2._RD*u, 3._RD*u**2]/dx
-      
-      Q(:,1) = [1._RD, v, v**2, v**3]
-      Q(:,2) = [0._RD, 1._RD, 2._RD*v, 3._RD*v**2]/dy
+      if (d_dx_) then
+         P = [0._RD, 1._RD, 2._RD*u, 3._RD*u**2]/dx
+      else
+         P = [1._RD, u, u**2, u**3]
+      endif
 
-      df_int = MATMUL(P, MATMUL(A, Q))
+      if (d_dy_) then
+         Q = [0._RD, 1._RD, 2._RD*v, 3._RD*v**2]/dy
+      else
+         Q = [1._RD, v, v**2, v**3]
+      endif
+
+      f_int = DOT_PRODUCT(P, MATMUL(A, Q))
 
       ! Finish
 

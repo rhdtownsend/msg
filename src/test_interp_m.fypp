@@ -24,14 +24,14 @@ contains
  
    subroutine test()
 
-      call test_bicubic_setup_()
+      call test_eval_kernels_()
       call test_bicubic_interp_()
 
    end subroutine test
 
    !****
 
-   subroutine test_bicubic_setup_()
+   subroutine test_eval_kernels_()
 
       integer, parameter :: n_x = 4
       integer, parameter :: n_y = 6
@@ -39,18 +39,22 @@ contains
       real(RD) :: x(n_x)
       real(RD) :: y(n_y)
       real(RD) :: f(n_x,n_y)
-      real(RD) :: df(n_x-3,n_y-3,2,2,2,2)
-      real(RD) :: df_chk(n_x-3,n_y-3,2,2,2,2)
+      real(RD) :: df_dx(n_x-2,n_y-2)
+      real(RD) :: df_dy(n_x-2,n_y-2)
+      real(RD) :: d2f_dxdy(n_x-2,n_y-2)
+      real(RD) :: df_dx_chk(n_x-2,n_y-2)
+      real(RD) :: df_dy_chk(n_x-2,n_y-2)
+      real(RD) :: d2f_dxdy_chk(n_x-2,n_y-2)
 
-      print *,'bicubic_setup'
+      print *,'eval_kernels'
 
-      call bicubic_setup_arrange_()
-      call bicubic_setup_act_()
-      call bicubic_setup_assert_()
+      call eval_kernels_arrange_()
+      call eval_kernels_act_()
+      call eval_kernels_assert_()
 
    contains      
       
-      subroutine bicubic_setup_arrange_()
+      subroutine eval_kernels_arrange_()
 
          integer :: i
          integer :: j
@@ -64,71 +68,77 @@ contains
             end do
          end do
 
-      end subroutine bicubic_setup_arrange_
+      end subroutine eval_kernels_arrange_
 
       !****
   
-      subroutine bicubic_setup_act_()
+      subroutine eval_kernels_act_()
 
          integer  :: i
          integer  :: j
+         integer  :: l
+         integer  :: m
+         real(RD) :: kern_1(3)
+         real(RD) :: kern_2(3,3)
+         real(RD) :: f_
 
-         do i = 1, n_x-3
-            do j = 1, n_y-3
+         do i = 2, n_x-1
+            do j = 2, n_y-1
 
-               call bicubic_setup(x(i:i+3), y(j:j+3), f(i:i+3,j:j+3), df(i,j,:,:,:,:))
-
-               call eval_biquadratic_(x(i+1), y(j+1), &
-                    df_chk(i,j,1,1,1,1), df_chk(i,j,1,1,2,1), df_chk(i,j,1,1,1,2), df_chk(i,j,1,1,2,2))
-               call eval_biquadratic_(x(i+2), y(j+1), &
-                    df_chk(i,j,2,1,1,1), df_chk(i,j,2,1,2,1), df_chk(i,j,2,1,1,2), df_chk(i,j,2,1,2,2))
-               call eval_biquadratic_(x(i+1), y(j+2), &
-                    df_chk(i,j,1,2,1,1), df_chk(i,j,1,2,2,1), df_chk(i,j,1,2,1,2), df_chk(i,j,1,2,2,2))
-               call eval_biquadratic_(x(i+2), y(j+2), &
-                    df_chk(i,j,2,2,1,1), df_chk(i,j,2,2,2,1), df_chk(i,j,2,2,1,2), df_chk(i,j,2,2,2,2))
+               l = i-1
+               m = j-1
+               
+               call eval_deriv_kernel(x(i-1:i+1), kern_1)
+               df_dx(l,m) = SUM(kern_1*f(i-1:i+1,j))
+               
+               call eval_deriv_kernel(y(j-1:j+1), kern_1)
+               df_dy(l,m) = SUM(kern_1*f(i,j-1:j+1))
+               
+               call eval_cross_kernel(x(i-1:i+1), y(j-1:j+1), kern_2)
+               d2f_dxdy(l,m) = SUM(kern_2*f(i-1:i+1,j-1:j+1))
+               
+               call eval_biquadratic_(x(i), y(j), f_, df_dx_chk(l,m), df_dy_chk(l,m), d2f_dxdy_chk(l,m))
 
             end do
          end do
 
-      end subroutine bicubic_setup_act_
+      end subroutine eval_kernels_act_
 
       !****
       
-      subroutine bicubic_setup_assert_()
+      subroutine eval_kernels_assert_()
 
          real(RD), parameter :: tol = 1E-13_RD
 
-         real(RD), allocatable :: df_err(:,:,:,:,:,:)
+         real(RD), allocatable :: df_dx_err(:,:)
+         real(RD), allocatable :: df_dy_err(:,:)
+         real(RD), allocatable :: d2f_dxdy_err(:,:)
 
-         df_err = (df - df_chk)/df_chk
+         df_dx_err = (df_dx - df_dx_chk)/df_dx_chk
+         df_dy_err = (df_dy - df_dy_chk)/df_dy_chk
+         d2f_dxdy_err = (d2f_dxdy - d2f_dxdy_chk)/d2f_dxdy_chk
 
-         if (ALL(ABS(df_err(:,:,:,:,1,1)) < tol)) then
-            print *,'  PASS df(1,1)'
+         if (ALL(ABS(df_dx_err) < tol)) then
+            print *,'  PASS df_dx'
          else
-            print *,'  FAIL df(1,1):', MAXVAL(ABS(df_err(:,:,:,:,1,1))), '>', tol
+            print *,'  FAIL df_dx:', MAXVAL(ABS(df_dx_err)), '>', tol
          end if
 
-         if (ALL(ABS(df_err(:,:,:,:,2,1)) < tol)) then
-            print *,'  PASS df(2,1)'
+         if (ALL(ABS(df_dy_err) < tol)) then
+            print *,'  PASS df_dy'
          else
-            print *,'  FAIL df(2,1):', MAXVAL(ABS(df_err(:,:,:,:,2,1))), '>', tol
+            print *,'  FAIL df_dy:', MAXVAL(ABS(df_dy_err)), '>', tol
          end if
 
-         if (ALL(ABS(df_err(:,:,:,:,1,2)) < tol)) then
-            print *,'  PASS df(1,2)'
+         if (ALL(ABS(d2f_dxdy_err) < tol)) then
+            print *,'  PASS d2f_dxdy'
          else
-            print *,'  FAIL df(1,2):', MAXVAL(ABS(df_err(:,:,:,:,1,2))), '>', tol
+            print *,'  FAIL d2f_dxdy:', MAXVAL(ABS(d2f_dxdy_err)), '>', tol
          end if
 
-         if (ALL(ABS(df_err(:,:,:,:,2,2)) < tol)) then
-            print *,'  PASS df(2,2)'
-         else
-            print *,'  FAIL df(2,2):', MAXVAL(ABS(df_err(:,:,:,:,2,2))), '>', tol
-         end if
+      end subroutine eval_kernels_assert_
 
-      end subroutine bicubic_setup_assert_
-
-   end subroutine test_bicubic_setup_
+   end subroutine test_eval_kernels_
 
    !****
 
@@ -143,7 +153,9 @@ contains
       real(RD) :: x(n_x)
       real(RD) :: y(n_y)
       real(RD) :: f(n_x,n_y)
-      real(RD) :: df(n_x,n_y,2,2)
+      real(RD) :: df_dx(n_x,n_y)
+      real(RD) :: df_dy(n_x,n_y)
+      real(RD) :: d2f_dxdy(n_x,n_y)
       real(RD) :: x_int(n_x_int)
       real(RD) :: y_int(n_y_int)
       real(RD) :: f_int(n_x_int,n_y_int)
@@ -173,7 +185,7 @@ contains
 
          do i = 1, n_x
             do j = 1, n_y
-               call eval_bicubic_(x(i), y(j), df(i,j,1,1), df(i,j,2,1), df(i,j,1,2), df(i,j,2,2))
+               call eval_bicubic_(x(i), y(j), f(i,j), df_dx(i,j), df_dy(i,j), d2f_dxdy(i,j))
             end do
          end do
 
@@ -185,14 +197,12 @@ contains
 
          integer  :: i
          integer  :: j
-         integer  :: k
          integer  :: l
          integer  :: m
          real(RD) :: dx
          real(RD) :: dy
          real(RD) :: u
          real(RD) :: v
-         real(RD) :: df_int(2,2)
 
          do i = 1, n_x-1
             do m = 1, n_over
@@ -212,21 +222,26 @@ contains
          do i = 1, n_x_int
             do j = 1,n_y_int
 
-               call locate(x, x_int(i), k)
-               call locate(y, y_int(j), l)
+               call locate(x, x_int(i), l)
+               call locate(y, y_int(j), m)
 
-               dx = x(k+1) - x(k)
-               dy = y(l+1) - y(l)
+               dx = x(l+1) - x(l)
+               dy = y(m+1) - y(m)
                
-               u = (x_int(i) - x(k))/dx
-               v = (y_int(j) - y(l))/dy
+               u = (x_int(i) - x(l))/dx
+               v = (y_int(j) - y(m))/dy
 
-               call bicubic_interp(df(k:k+1,l:l+1,:,:), dx, dy, u, v, df_int)
+               call bicubic_interp(f(l:l+1,m:m+1), df_dx(l:l+1,m:m+1), df_dy(l:l+1,m:m+1), d2f_dxdy(l:l+1,m:m+1), &
+                    dx, dy, u, v, f_int(i,j))
 
-               f_int(i,j) = df_int(1,1)
-               df_dx_int(i,j) = df_int(2,1)
-               df_dy_int(i,j) = df_int(1,2)
-               d2f_dxdy_int(i,j) = df_int(2,2)
+               call bicubic_interp(f(l:l+1,m:m+1), df_dx(l:l+1,m:m+1), df_dy(l:l+1,m:m+1), d2f_dxdy(l:l+1,m:m+1), &
+                    dx, dy, u, v, df_dx_int(i,j), d_dx=.TRUE.)
+
+               call bicubic_interp(f(l:l+1,m:m+1), df_dx(l:l+1,m:m+1), df_dy(l:l+1,m:m+1), d2f_dxdy(l:l+1,m:m+1), &
+                    dx, dy, u, v, df_dy_int(i,j), d_dy=.TRUE.)
+
+               call bicubic_interp(f(l:l+1,m:m+1), df_dx(l:l+1,m:m+1), df_dy(l:l+1,m:m+1), d2f_dxdy(l:l+1,m:m+1), &
+                    dx, dy, u, v, d2f_dxdy_int(i,j), d_dx=.TRUE., d_dy=.TRUE.)
 
                call eval_bicubic_(x_int(i), y_int(j), f_chk(i,j), df_dx_chk(i,j), df_dy_chk(i,j), d2f_dxdy_chk(i,j))
 
