@@ -27,8 +27,8 @@ module radgrid_m
    use order_m
 
    use interp_m
+   use radint_m
    use stat_m
-   use radnode_m
 
    use ISO_FORTRAN_ENV
 
@@ -40,14 +40,15 @@ module radgrid_m
 
    type radgrid_t
       private
-      type(radnode_t), allocatable :: rn(:,:)
-      logical, allocatable         :: mask(:,:)
-      real(RD), allocatable        :: lnT(:)
-      real(RD), allocatable        :: lng(:)
-      integer                      :: n_lnT
-      integer                      :: n_lng
+      type(radint_t), allocatable :: ri(:,:)
+      logical, allocatable        :: mask(:,:)
+      real(RD), allocatable       :: logT(:)
+      real(RD), allocatable       :: logg(:)
+      integer                     :: n_logT
+      integer                     :: n_logg
    contains
       private
+      procedure         :: interp_proc_
       procedure, public :: interp_intensity
       procedure, public :: interp_D_moment
       procedure, public :: interp_flux
@@ -79,30 +80,36 @@ module radgrid_m
 
 contains
 
-   function radgrid_t_ (rn, mask, lnT, lng) result (rg)
+   function radgrid_t_ (ri, mask, logT, logg) result (rg)
 
-      type(radnode_t), intent(in) :: rn(:,:)
-      logical, intent(in)         :: mask(:,:)
-      real(RD), intent(in)        :: lnT(:)
-      real(RD), intent(in)        :: lng(:)
-      type(radgrid_t)             :: rg
+      type(radint_t), intent(in) :: ri(:,:)
+      logical, intent(in)        :: mask(:,:)
+      real(RD), intent(in)       :: logT(:)
+      real(RD), intent(in)       :: logg(:)
+      type(radgrid_t)            :: rg
 
-      @:CHECK_BOUNDS(SIZE(mask, 1), SIZE(rn, 1))
-      @:CHECK_BOUNDS(SIZE(mask, 2), SIZE(rn, 2))
+      integer :: n_logT
+      integer :: n_logg
 
-      @:CHECK_BOUNDS(SIZE(lnT), SIZE(rn, 1))
-      @:CHECK_BOUNDS(SIZE(lng), SIZE(rn, 2))
+      @:CHECK_BOUNDS(SIZE(mask, 1), SIZE(ri, 1))
+      @:CHECK_BOUNDS(SIZE(mask, 2), SIZE(ri, 2))
+
+      @:CHECK_BOUNDS(SIZE(logT), SIZE(ri, 1))
+      @:CHECK_BOUNDS(SIZE(logg), SIZE(ri, 2))
 
       ! Costruct the radgrid_t
 
-      rg%rn = rn
+      n_logT = SIZE(logT)
+      n_logg = SIZE(logg)
+
+      rg%ri = ri
       rg%mask = mask
 
-      rg%lnT = lnT
-      rg%lng = lng
+      rg%logT = logT
+      rg%logg = logg
 
-      rg%n_lnT = SIZE(lnT)
-      rg%n_lng = SIZE(lng)
+      rg%n_logT = n_logT
+      rg%n_logg = n_logg
 
       ! Finish
 
@@ -117,49 +124,45 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(radgrid_t), intent(out)  :: rg
 
-      character(TYPE_LEN)          :: type
-      integer                      :: n_lnT
-      integer                      :: n_lng
-      type(radnode_t), allocatable :: rn(:,:)
-      logical, allocatable         :: mask(:,:)
-      real(RD), allocatable        :: lnT(:)
-      real(RD), allocatable        :: lng(:)
-      type(hdf5io_t)               :: hi_rn
-      integer                      :: i
-      integer                      :: j
+      character(TYPE_LEN)         :: type
+      integer                     :: n_logT
+      integer                     :: n_logg
+      type(radint_t), allocatable :: ri(:,:)
+      logical, allocatable        :: mask(:,:)
+      real(RD), allocatable       :: logT(:)
+      real(RD), allocatable       :: logg(:)
+      type(hdf5io_t)              :: hi_ri
+      integer                     :: i
+      integer                     :: j
 
       ! Read the radgrid_t
 
       call hi%read_attr('TYPE', type)
       @:ASSERT(type == 'radgrid_t',invalid type)
 
-      call hi%read_attr('n_lnT', n_lnT)
-      call hi%read_attr('n_lng', n_lng)
+      call hi%read_attr('n_logT', n_logT)
+      call hi%read_attr('n_logg', n_logg)
 
-      allocate(rn(n_lnT,n_lng))
-      allocate(mask(n_lnT,n_lng))
+      call hi%alloc_read_dset('logT', logT)
+      call hi%alloc_read_dset('logg', logg)
 
-      allocate(lnT(n_lnT))
-      allocate(lng(n_lng))
+      call hi%alloc_read_dset('mask', mask)
 
-      call hi%read_dset('mask', mask)
+      allocate(ri(n_logT,n_logg))
 
-      lnT_loop : do i = 1, n_lnT
-         lng_loop : do j = 1, n_lng
+      logT_loop : do i = 1, n_logT
+         logg_loop : do j = 1, n_logg
 
             if (mask(i,j)) then
-               hi_rn = hdf5io_t(hi, rn_name_(i,j))
-               call read(hi_rn, rn(i,j))
-               call hi_rn%final()
+               hi_ri = hdf5io_t(hi, ri_name_(i,j))
+               call read(hi_ri, ri(i,j))
+               call hi_ri%final()
             end if
 
-         end do lng_loop
-      end do lnT_loop
+         end do logg_loop
+      end do logT_loop
 
-      call hi%read_dset('lnT', lnT)
-      call hi%read_dset('lng', lng)
-
-      rg = radgrid_t(rn, mask, lnT, lng)
+      rg = radgrid_t(ri, mask, logT, logg)
 
       ! Finish
 
@@ -172,31 +175,31 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(radgrid_t), intent(in )  :: rg
 
-      type(hdf5io_t) :: hi_rn
+      type(hdf5io_t) :: hi_ri
       integer        :: i
       integer        :: j
 
       call hi%write_attr('TYPE', 'radgrid_t')
 
-      call hi%write_attr('n_lnT', rg%n_lnT)
-      call hi%write_attr('n_lng', rg%n_lng)
+      call hi%write_attr('n_logT', rg%n_logT)
+      call hi%write_attr('n_logg', rg%n_logg)
+
+      call hi%write_dset('logT', rg%logT)
+      call hi%write_dset('logg', rg%logg)
 
       call hi%write_dset('mask', rg%mask)
 
-      lnT_loop : do i = 1, rg%n_lnT
-         lng_loop : do j = 1, rg%n_lng
+      logT_loop : do i = 1, rg%n_logT
+         logg_loop : do j = 1, rg%n_logg
 
             if (rg%mask(i,j)) then
-               hi_rn = hdf5io_t(hi, rn_name_(i,j))
-               call write(hi_rn, rg%rn(i,j))
-               call hi_rn%final()
+               hi_ri = hdf5io_t(hi, ri_name_(i,j))
+               call write(hi_ri, rg%ri(i,j))
+               call hi_ri%final()
             end if
-
-         end do lng_loop
-      end do lnT_loop
-
-      call hi%write_dset('lnT', rg%lnT)
-      call hi%write_dset('lng', rg%lng)
+            
+         end do logg_loop
+      end do logT_loop
 
       ! Finish
 
@@ -206,120 +209,288 @@ contains
 
    !****
 
-   function rn_name_(i,j) result (name)
+   function ri_name_(i,j) result (name)
 
       integer, intent(in) :: i
       integer, intent(in) :: j
       character(256)      :: name
 
       write(name, 100) i, j
-100   format('rn(',I0,',',I0,')')
+100   format('ri(',I0,',',I0,')')
 
-   end function rn_name_
+   end function ri_name_
 
    !****
 
-   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                               ('D_moment', 'D', 'l', 'integer'))
+   subroutine interp_proc_(self, proc, logT, logg, k_a, k_b, f_int, stat, d_dlogT, d_dlogg)
 
-      subroutine interp_${var}$(self, lnT, lng, ${arg_name}$, ${var_name}$, stat, d_dlnT, d_dlng)
+      class(radgrid_t), intent(inout) :: self
+      interface
+         subroutine proc(i, j, k_a, k_b, f, stat)
+            use kinds_m
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            integer, intent(in)            :: k_a
+            integer, intent(in)            :: k_b
+            real(RD), intent(out)          :: f(:)
+            integer, intent(out), optional :: stat
+         end subroutine proc
+      end interface
+      real(RD), intent(in)             :: logT
+      real(RD), intent(in)             :: logg
+      integer, intent(in)              :: k_a
+      integer, intent(in)              :: k_b
+      real(RD), intent(out)            :: f_int(:)
+      integer, intent(out), optional   :: stat
+      logical, intent(in), optional    :: d_dlogT
+      logical, intent(in), optional    :: d_dlogg
 
-         class(radgrid_t), intent(in)   :: self
-         real(RD), intent(in)           :: lnT
-         real(RD), intent(in)           :: lng
-         ${arg_type}$, intent(in)       :: ${arg_name}$
-         real(RD), intent(out)          :: ${var_name}$
-         integer, intent(out), optional :: stat
-         logical, intent(in), optional  :: d_dlnT
-         logical, intent(in), optional  :: d_dlng
+      integer               :: i_cl
+      integer               :: j_cl
+      integer               :: i
+      integer               :: j
+      integer               :: l
+      integer               :: m
+      real(RD)              :: x(4)
+      real(RD)              :: y(4)
+      logical               :: mask(4,4)
+      real(RD)              :: dx
+      real(RD)              :: dy
+      real(RD)              :: u
+      real(RD)              :: v
+      real(RD)              :: dx_kern(3,2,2)
+      real(RD)              :: dy_kern(3,2,2)
+      real(RD)              :: dxdy_kern(3,3,2,2)
+      integer               :: n_k
+      integer               :: k
+      real(RD), allocatable :: f(:,:,:)
+      real(RD)              :: df_dx(4,4)
+      real(RD)              :: df_dy(4,4)
+      real(RD)              :: d2f_dxdy(4,4)
 
-         ! Interpolate ${var_name}$
+      @:CHECK_BOUNDS(SIZE(f), k_b-k_a+1)
 
-         call interp_bicubic(proc_, self%lnT, self%lng, lnT, lng, ${var_name}$, stat, d_dlnT, d_dlng)
+      ! Locate the interpolation cell
 
-         ! Finsh
+      call locate(self%logT, logT, i_cl)
 
-         return
+      if (i_cl < 1 .OR. i_cl >= self%n_logT) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS
+            return
+         else
+            @:ABORT(out-of-bounds interpolation)
+         endif
+      endif
+
+      call locate(self%logg, logg, j_cl)
+
+      if (j_cl < 1 .OR. j_cl >= self%n_logg) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS
+            return
+         else
+            @:ABORT(out-of-bounds interpolation)
+         endif
+      endif
+
+      ! Set up the stencil
+
+      ! First do the mask
+
+      do l = 1, 4
+         i = i_cl + l - 2
+         do m = 1, 4
+            j = j_cl + m - 2
+            if (i < 1 .OR. i > self%n_logT .OR. &
+                j < 1 .OR. j > self%n_logg) then
+               mask(l,m) = .FALSE.
+            else
+               mask(l,m) = self%mask(i,j)
+            endif
+         end do
+      end do
+
+      if (.NOT. ALL(mask(2:3,2:3))) then
+         if (PRESENT(stat)) then
+            stat = STAT_MISSING_DATA
+            return
+         else
+            @:ABORT(missing data)
+         endif
+      end if
+
+      ! Next the x-axis
+
+      do l = 1, 4
+         i = i_cl + l - 2
+         if (i < 1) then
+            x(l) = -HUGE(0._RD)
+         elseif (i > self%n_logT) then
+            x(l) = HUGE(0._RD)
+         else
+            x(l) = self%logT(i)
+         endif
+      end do
+
+      dx = x(3) - x(2)
+      u = (logT - x(2))/dx
+
+      ! Finally the y-axis
+
+      do m = 1, 4
+         j = j_cl + m - 2
+         if (j < 1) then
+            y(m) = -HUGE(0._RD)
+         elseif (j > self%n_logg) then
+            y(m) = HUGE(0._RD)
+         else
+            y(m) = self%logg(i)
+         endif
+      end do
+
+      dy = y(3) - y(2)
+      v = (logg - y(2))/dy
+
+      ! Set up derivative-evaluation kernels
+
+      do l = 2, 3
+         do m = 2, 3
+            call eval_deriv_kernel(x(l-1:l+1), dx_kern(:,l-1,m-1), mask(l-1:l+1,m))
+            call eval_deriv_kernel(y(m-1:m+1), dy_kern(:,l-1,m-1), mask(l,m-1:m+1))
+            call eval_cross_kernel(x(l-1:l+1), y(m-1:m+1), dxdy_kern(:,:,l-1,m-1), mask(l-1:l+1,m-1:m+1))
+         end do
+      end do
+
+      ! Evaluate data at the 16 nodes
+
+      n_k = k_b - k_a + 1
+
+      allocate(f(4,4,n_k))
+
+      do l = 1, 4
+         i = i_cl + l - 2
+         do m = 1, 4
+            j = j_cl + m - 2
+            if (mask(l,m)) then
+               call proc(i, j, k_a, k_b, f(l,m,:), stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               endif
+            endif
+         end do
+      end do
+
+      ! Loop over k
+
+      k_loop : do k = 1, n_k
+
+         ! Evaluate derivatives
+
+         do m = 2, 3
+            do l = 2, 3
+               df_dx(l-1,m-1) = SUM(f(l-1:l+1,m,k)*dx_kern(:,l-1,m-1), mask(l-1:l+1,m))
+               df_dy(l-1,m-1) = SUM(f(l,m-1:m+1,k)*dy_kern(:,l-1,m-1), mask(l,m-1:m+1))
+               d2f_dxdy(l-1,m-1) = SUM(f(l-1:l+1,m-1:m+1,k)*dxdy_kern(:,:,l-1,m-1), mask(l-1:l+1,m-1:m+1))
+            end do
+         end do
+
+         ! Do the interpolation
+
+         call bicubic_interp(f(2:3,2:3,k), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int(k))
+
+      end do k_loop
+
+      ! Finish
+
+      return
+
+   end subroutine interp_proc_
+
+   !****
+
+   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                          ('D_moment', 'D', 'l', 'integer'))
+
+      subroutine interp_${name}$(self, logT, logg, ${arg_var}$, k_a, k_b, ${var}$, stat, d_dlogT, d_dlogg)
+
+         class(radgrid_t), intent(inout) :: self
+         real(RD), intent(in)            :: logT
+         real(RD), intent(in)            :: logg
+         ${arg_type}$, intent(in)        :: ${arg_var}$
+         integer, intent(in)             :: k_a
+         integer, intent(in)             :: k_b
+         real(RD), intent(out)           :: ${var}$(:)
+         integer, intent(out), optional  :: stat
+         logical, intent(in), optional   :: d_dlogT
+         logical, intent(in), optional   :: d_dlogg
+
+         ! Interpolate the ${name}$
+
+         call self%interp_proc_(proc_, logT, logg, k_a, k_b, ${var}$, stat, d_dlogT, d_dlogg)
+
+         ! Finish
 
       contains
 
-         subroutine proc_(i, j, f, stat, d_dx, d_dy)
+         subroutine proc_(i, j, k_a, k_b, f, stat)
 
             integer, intent(in)            :: i
             integer, intent(in)            :: j
-            real(RD), intent(out)          :: f
+            integer, intent(in)            :: k_a
+            integer, intent(in)            :: k_b
+            real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
-            logical, intent(in), optional  :: d_dx
-            logical, intent(in), optional  :: d_dy
 
-            if (.NOT. self%mask(i,j)) then
-               if (PRESENT(stat)) then
-                  stat = STAT_MISSING_DATA
-                  return
-               else
-                  @:ABORT(missing data)
-               endif
-            endif
+            call self%ri(i,j)%eval_${name}$(${arg_var}$, k_a, k_b, f, stat)
 
-            f = self%rn(i, j)%${var}$(${arg_name}$, d_dlnT=d_dx, d_dlng=d_dy)
-
-            if (PRESENT(stat)) stat = STAT_OK
+            return
 
          end subroutine proc_
 
-      end subroutine interp_${var}$
+      end subroutine interp_${name}$
 
    #:endfor
 
-   !****
 
-   #:for var, var_name in (('flux', 'F'), )
+   #:for name, var in (('flux', 'F'), )
 
-      subroutine interp_${var}$(self, lnT, lng, ${var_name}$, stat, d_dlnT, d_dlng)
+      subroutine interp_${name}$(self, logT, logg, k_a, k_b, ${var}$, stat, d_dlogT, d_dlogg)
 
-         class(radgrid_t), intent(in)   :: self
-         real(RD), intent(in)           :: lnT
-         real(RD), intent(in)           :: lng
-         real(RD), intent(out)          :: ${var_name}$
-         integer, intent(out), optional :: stat
-         logical, intent(in), optional  :: d_dlnT
-         logical, intent(in), optional  :: d_dlng
+         class(radgrid_t), intent(inout) :: self
+         real(RD), intent(in)            :: logT
+         real(RD), intent(in)            :: logg
+         integer, intent(in)             :: k_a
+         integer, intent(in)             :: k_b
+         real(RD), intent(out)           :: ${var}$(:)
+         integer, intent(out), optional  :: stat
+         logical, intent(in), optional   :: d_dlogT
+         logical, intent(in), optional   :: d_dlogg
 
-         ! Interpolate ${var_name}$
+         ! Interpolate the ${name}$
 
-         call interp_bicubic(proc_, self%lnT, self%lng, lnT, lng, ${var_name}$, stat, d_dlnT, d_dlng)
+         call self%interp_proc_(proc_, logT, logg, k_a, k_b, ${var}$, stat, d_dlogT, d_dlogg)
 
-         ! Finsh
-
-         return
+         ! Finish
 
       contains
 
-         subroutine proc_(i, j, f, stat, d_dx, d_dy)
+         subroutine proc_(i, j, k_a, k_b, f, stat)
 
             integer, intent(in)            :: i
             integer, intent(in)            :: j
-            real(RD), intent(out)          :: f
+            integer, intent(in)            :: k_a
+            integer, intent(in)            :: k_b
+            real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
-            logical, intent(in), optional  :: d_dx
-            logical, intent(in), optional  :: d_dy
 
-            if (.NOT. self%mask(i,j)) then
-               if (PRESENT(stat)) then
-                  stat = STAT_MISSING_DATA
-                  return
-               else
-                  @:ABORT(missing data)
-               endif
-            endif
+            call self%ri(i,j)%eval_${name}$(k_a, k_b, f, stat)
 
-            f = self%rn(i, j)%${var}$(d_dlnT=d_dx, d_dlng=d_dy)
+            return
 
-            if (PRESENT(stat)) stat = STAT_OK
-         
          end subroutine proc_
 
-      end subroutine interp_${var}$
+      end subroutine interp_${name}$
 
    #:endfor
 

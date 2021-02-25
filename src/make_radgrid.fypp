@@ -28,7 +28,6 @@ program make_radgrid
 
    use radint_m
    use radgrid_m
-   use radgrid_factory_m
 
    use ISO_FORTRAN_ENV
 
@@ -43,8 +42,8 @@ program make_radgrid
 
    type(radint_t), allocatable :: ri(:,:)
    logical, allocatable        :: mask(:,:)
-   real(RD), allocatable       :: lnT(:)
-   real(RD), allocatable       :: lng(:)
+   real(RD), allocatable       :: logT(:)
+   real(RD), allocatable       :: logg(:)
    type(radgrid_t)             :: rg
    type(hdf5io_t)              :: hi
 
@@ -57,11 +56,11 @@ program make_radgrid
 
    ! Read the radint_t grid
 
-   call read_radint_grid(list_filename, ri, mask, lnT, lng)
+   call read_radint_grid(list_filename, ri, mask, logT, logg)
 
    ! Create the radgrid_t
 
-   rg = radgrid_from_grid(ri, mask, lnT, lng)
+   rg = radgrid_t(ri, mask, logT, logg)
 
    ! Write it
 
@@ -73,27 +72,27 @@ program make_radgrid
 
 contains
 
-   subroutine read_radint_grid (list_filename, ri, mask, lnT, lng)
+   subroutine read_radint_grid (list_filename, ri, mask, logT, logg)
 
       character(*), intent(in)                 :: list_filename
       type(radint_t), allocatable, intent(out) :: ri(:,:)
       logical, allocatable, intent(out)        :: mask(:,:)
-      real(RD), allocatable, intent(out)       :: lnT(:)
-      real(RD), allocatable, intent(out)       :: lng(:)
+      real(RD), allocatable, intent(out)       :: logT(:)
+      real(RD), allocatable, intent(out)       :: logg(:)
 
       integer                     :: unit
       integer                     :: n_node
       character(256), allocatable :: node_filename(:)
-      real(RD), allocatable       :: node_lnT(:)
-      real(RD), allocatable       :: node_lng(:)
-      integer                     :: k
+      real(RD), allocatable       :: node_logT(:)
+      real(RD), allocatable       :: node_logg(:)
+      integer                     :: l
       real(RD)                    :: Teff
-      real(RD)                    :: logg
-      integer                     :: n_lnT
-      integer                     :: n_lng
+      integer                     :: n_logT
+      integer                     :: n_logg
       integer                     :: i
       integer                     :: j
       type(hdf5io_t)              :: hi
+      integer                     :: n_k
 
       ! Open the file listing the grid nodes
 
@@ -116,46 +115,51 @@ contains
 
       allocate(node_filename(n_node))
 
-      allocate(node_lnT(n_node))
-      allocate(node_lng(n_node))
+      allocate(node_logT(n_node))
+      allocate(node_logg(n_node))
 
-      read_loop : do k = 1, n_node
-         read(unit, *) Teff, logg, node_filename(k)
-         node_lnT(k) = LOG(Teff)
-         node_lng(k) = logg*LOG(10._RD)
+      read_loop : do l = 1, n_node
+         read(unit, *) Teff, node_logg(l), node_filename(l)
+         node_logT(l) = LOG10(Teff)
       end do read_loop
 
       close(unit)
 
-      ! Extract the lnT and lng axes
+      ! Extract the logT and logg axes
 
-      lnT = node_lnT(unique_indices(node_lnT))
-      lng = node_lng(unique_indices(node_lng))
+      logT = node_logT(unique_indices(node_logT))
+      logg = node_logg(unique_indices(node_logg))
 
       ! Allocate arrays
 
-      n_lnT = SIZE(lnT)
-      n_lng = SIZE(lng)
+      n_logT = SIZE(logT)
+      n_logg = SIZE(logg)
 
-      allocate(ri(n_lnT,n_lng))
-      allocate(mask(n_lnT,n_lng))
+      allocate(ri(n_logT,n_logg))
+      allocate(mask(n_logT,n_logg))
 
       mask = .FALSE.
 
       ! Read in the radint_t's
 
-      radint_loop : do k = 1, n_node
+      radint_loop : do l = 1, n_node
 
-         i = FINDLOC(lnT, node_lnT(k), DIM=1)
-         j = FINDLOC(lng, node_lng(k), DIM=1)
+         i = FINDLOC(logT, node_logT(l), DIM=1)
+         j = FINDLOC(logg, node_logg(l), DIM=1)
 
-         @:ASSERT(i >= 1 .AND. i <= n_lnT, unable to locate node in grid)
-         @:ASSERT(j >= 1 .AND. j <= n_lng, unable to locate node in grid)
+         @:ASSERT(i >= 1 .AND. i <= n_logT, unable to locate node in grid)
+         @:ASSERT(j >= 1 .AND. j <= n_logg, unable to locate node in grid)
          @:ASSERT(.NOT. mask(i,j), duplicate node)
 
-         hi = hdf5io_t(node_filename(k), OPEN_FILE)
+         hi = hdf5io_t(node_filename(l), OPEN_FILE)
          call read(hi, ri(i,j))
          call hi%final()
+
+         if (l == 1) then
+            n_k = ri(i,j)%n_k
+         else
+            @:ASSERT(ri(i,j)%n_k == n_k, length mismatch)
+         endif
 
          mask(i,j) = .TRUE.
 

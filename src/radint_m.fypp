@@ -25,7 +25,7 @@ module radint_m
    use hdf5io_m
 
    use limb_m
-   use math_m
+   use stat_m
 
    use ISO_FORTRAN_ENV
 
@@ -38,22 +38,14 @@ module radint_m
    type radint_t
       private
       type(limb_t)          :: li
-      real(RD)              :: I_1
-      real(RD), allocatable :: a(:)
+      real(RD), allocatable :: c(:,:)
+      integer               :: n_b
+      integer, public       :: n_k
    contains
       private
-      procedure             :: op_add_ri_ri_
-      generic, public       :: operator(+) => op_add_ri_ri_
-      procedure             :: op_sub_ri_ri_
-      generic, public       :: operator(-) => op_sub_ri_ri_
-      procedure             :: op_mul_ri_rd_
-      procedure, pass(self) :: op_mul_rd_ri_
-      generic, public       :: operator(*) => op_mul_ri_rd_, op_mul_rd_ri_
-      procedure             :: op_div_ri_rd_
-      generic, public       :: operator(/) => op_div_ri_rd_
-      procedure, public     :: intensity
-      procedure, public     :: D_moment
-      procedure, public     :: flux
+      procedure, public :: eval_intensity
+      procedure, public :: eval_D_moment
+      procedure, public :: eval_flux
    end type radint_t
 
    ! Interfaces
@@ -83,25 +75,27 @@ module radint_m
 
 contains
 
-   function radint_t_(I_1, a, li) result (ri)
+   function radint_t_(c, li) result (ri)
 
-      real(RD), intent(in)     :: I_1
-      real(RD), intent(in)     :: a(:)
+      real(RD), intent(in)     :: c(:,:)
       type(limb_t), intent(in) :: li
       type(radint_t)           :: ri
 
       integer :: n_b
+      integer :: n_k
 
       ! Construct the radint_t from the supplied data
 
       n_b = li%n_basis()
+      n_k = SIZE(c, 2)
 
-      @:CHECK_BOUNDS(SIZE(a), n_b)
+      @:CHECK_BOUNDS(SIZE(a, 1), n_b)
 
       ri%li = li
+      ri%c = c
 
-      ri%I_1 = I_1
-      ri%a = a
+      ri%n_b = n_b
+      ri%n_k = n_k
 
       ! Finish
 
@@ -113,20 +107,19 @@ contains
 
    function radint_t_fit_(I, mu, li) result (ri)
 
-      real(RD), intent(in)     :: I(:)
+      real(RD), intent(in)     :: I(:,:)
       real(RD), intent(in)     :: mu(:)
       type(limb_t), intent(in) :: li
       type(radint_t)           :: ri
 
-      real(RD)              :: I_1
-      real(RD), allocatable :: a(:)
+      real(RD), allocatable :: c(:,:)
 
-      ! Construct the radint_t by fitting the supplied I(mu)
+      ! Construct the radint_t by fitting the supplied I(mu,k)
       ! intensity data
 
-      call li%fit_intensity(I, mu, I_1, a)
+      call li%fit_intensity(I, mu, c)
 
-      ri = radint_t(I_1, a, li)
+      ri = radint_t(c, li)
 
       ! Finish
 
@@ -136,172 +129,74 @@ contains
 
    !****
 
-   function op_add_ri_ri_ (self, other) result (ri)
+   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                          ('D_moment', 'D', 'l', 'integer'))
 
-      class(radint_t), intent(in) :: self
-      type(radint_t), intent(in)  :: other
-      type(radint_t)              :: ri
+      subroutine eval_${name}$(self, ${arg_var}$, k_a, k_b, ${var}$, stat)
 
-      real(RD)              :: I_1
-      real(RD), allocatable :: a(:)
+         class(radint_t), intent(in)    :: self
+         ${arg_type}$, intent(in)       :: ${arg_var}$
+         integer, intent(in)            :: k_a
+         integer, intent(in)            :: k_b
+         real(RD)                       :: ${var}$(:)
+         integer, intent(out), optional :: stat
 
-      ! Add the radint_t's
+         real(RD) :: b(self%n_b)
 
-      @:ASSERT(self%li == other%li,mismatched limb-darkening laws)
+         @:CHECK_BOUNDS(SIZE(${var}$), k_b-k_a+1)
 
-      I_1 = self%I_1 + other%I_1
-      a = (self%I_1*self%a + other%I_1*other%a)/I_1
+         ! Set up the basis functions
 
-      ri = radint_t(I_1, a, self%li)
+         b = self%li%${name}$_basis(${arg_var}$)
 
-      ! Finish
+         ! Evaluate the ${name}$
 
-      return
-
-   end function op_add_ri_ri_
-
-   !****
-
-   function op_sub_ri_ri_ (self, other) result (ri)
-
-      class(radint_t), intent(in) :: self
-      type(radint_t), intent(in)  :: other
-      type(radint_t)              :: ri
-
-      real(RD)              :: I_1
-      real(RD), allocatable :: a(:)
-
-      ! Subtract the radint_t's
-
-      @:ASSERT(self%li == other%li,mismatched limb-darkening laws)
-
-      I_1 = self%I_1 - other%I_1
-      a = (self%I_1*self%a - other%I_1*other%a)/I_1
-
-      ri = radint_t(I_1, a, self%li)
-
-      ! Finish
-
-      return
-
-   end function op_sub_ri_ri_
-
-   !****
-
-   function op_mul_ri_rd_ (self, other) result (ri)
-
-      class(radint_t), intent(in) :: self
-      real(RD), intent(in)        :: other
-      type(radint_t)              :: ri
-
-      real(RD)              :: I_1
-      real(RD), allocatable :: a(:)
-
-      ! Multiply the radint_t
-
-      I_1 = self%I_1*other
-      a = self%a
-
-      ri = radint_t(I_1, a, self%li)
-
-      ! Finish
-
-      return
-
-   end function op_mul_ri_rd_
-
-   !****
-
-   function op_mul_rd_ri_ (other, self) result (ri)
-
-      real(RD), intent(in)        :: other
-      class(radint_t), intent(in) :: self
-      type(radint_t)              :: ri
-
-      real(RD)              :: I_1
-      real(RD), allocatable :: a(:)
-
-      ! Multiply the radint_t
-
-      I_1 = other*self%I_1
-      a = self%a
-
-      ri = radint_t(I_1, a, self%li)
-
-      ! Finish
-
-      return
-
-   end function op_mul_rd_ri_
-
-   !****
-
-   function op_div_ri_rd_ (self, other) result (ri)
-
-      class(radint_t), intent(in) :: self
-      real(RD), intent(in)        :: other
-      type(radint_t)              :: ri
-
-      real(RD)              :: I_1
-      real(RD), allocatable :: a(:)
-
-      ! Divide the radint_t
-
-      I_1 = self%I_1/other
-      a = self%a
-
-      ri = radint_t(I_1, a, self%li)
-
-      ! Finish
-
-      return
-
-   end function op_div_ri_rd_
-
-   !****
-
-   #:for var, var_name, arg_name, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                               ('D_moment', 'D', 'l', 'integer'))
-
-      function ${var}$(self, ${arg_name}$) result(${var_name}$)
-
-         class(radint_t), intent(in) :: self
-         ${arg_type}$, intent(in)    :: ${arg_name}$
-         real(RD)                    :: ${var_name}$
-
-         ! Evaluate ${var_name}$
-
-         ${var_name}$ = self%li%${var}$(self%I_1, self%a, ${arg_name}$)
+         ${var}$ = MATMUL(b, self%c(:,k_a:k_b))
 
          ! Finish
 
+         stat = STAT_OK
+
          return
 
-      end function ${var}$
+      end subroutine eval_${name}$
 
    #:endfor
       
    !****
 
-   #:for var, var_name in (('flux', 'F'), )
+   #:for name, var in (('flux', 'F'), )
 
-      function ${var}$(self) result(${var_name}$)
+      subroutine eval_${name}$(self, k_a, k_b, ${var}$, stat)
 
-         class(radint_t), intent(in) :: self
-         real(RD)                    :: ${var_name}$
+         class(radint_t), intent(in)    :: self
+         integer, intent(in)            :: k_a
+         integer, intent(in)            :: k_b
+         real(RD)                       :: ${var}$(:)
+         integer, intent(out), optional :: stat
 
-         ! Evaluate ${var_name}$
+         real(RD) :: b(self%n_b)
 
-         ${var_name}$ = self%li%${var}$(self%I_1, self%a)
+         @:CHECK_BOUNDS(SIZE(${var}$), k_b-k_a+1)
+
+         ! Set up the basis functions
+
+         b = self%li%${name}$_basis()
+
+         ! Evaluate the ${name}$
+
+         ${var}$ = MATMUL(b, self%c(:,k_a:k_b))
 
          ! Finish
 
+         stat = STAT_OK
+
          return
 
-      end function ${var}$
+      end subroutine eval_${name}$
 
    #:endfor
-      
+
    !****
 
    subroutine read_(hi, ri)
@@ -310,24 +205,22 @@ contains
       type(radint_t), intent(out)   :: ri
 
       character(TYPE_LEN)   :: type
+      real(RD), allocatable :: c(:,:)
       type(hdf5io_t)        :: hi_li
       type(limb_t)          :: li
-      real(RD), allocatable :: I_1
-      real(RD), allocatable :: a(:)
 
       ! Read the radint_t
 
       call hi%read_attr('TYPE', type)
       @:ASSERT(type == 'radint_t',invalid type)
 
+      call hi%alloc_read_dset('c', c)
+
       hi_li = hdf5io_t(hi, 'li')
       call read(hi_li, li)
       call hi_li%final()
 
-      call hi%alloc_read_dset('I_1', I_1)
-      call hi%alloc_read_dset('a', a)
-
-      ri = radint_t(I_1, a, li)
+      ri = radint_t(c, li)
 
       ! Finish
 
@@ -348,12 +241,11 @@ contains
 
       call hi%write_attr('TYPE', 'radint_t')
 
+      call hi%write_dset('c', ri%c)
+
       hi_li = hdf5io_t(hi, 'li')
       call write(hi_li, ri%li)
       call hi_li%final()
-
-      call hi%write_dset('I_1', ri%I_1)
-      call hi%write_dset('a', ri%a)
 
       ! Finish
 

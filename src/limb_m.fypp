@@ -46,21 +46,10 @@ module limb_m
       integer, public :: law = 0
    contains
       private
-      procedure         :: op_eql_li_li_
-      generic, public   :: operator(==) => op_eql_li_li_
       procedure, public :: n_basis
       procedure, public :: intensity_basis
       procedure, public :: flux_basis
       procedure, public :: D_moment_basis
-      procedure         :: intensity_0_
-      procedure         :: intensity_1_
-      generic, public   :: intensity => intensity_0_, intensity_1_
-      procedure         :: D_moment_0_
-      procedure         :: D_moment_1_
-      generic, public   :: D_moment => D_moment_0_, D_moment_1_
-      procedure         :: flux_0_
-      procedure         :: flux_1_
-      generic, public   :: flux => flux_0_, flux_1_
       procedure         :: fit_intensity_0_
       procedure         :: fit_intensity_1_
       generic, public   :: fit_intensity => fit_intensity_0_, fit_intensity_1_
@@ -120,38 +109,20 @@ contains
 
    !****
 
-   function op_eql_li_li_(self, other) result (eql)
-
-      class(limb_t), intent(in) :: self
-      type(limb_t), intent(in)  :: other
-      logical                   :: eql
-
-      ! See if the limb_t's are equal
-
-      eql = self%law == other%law
-
-      ! Finish
-
-      return
-
-   end function op_eql_li_li_
-
-   !****
-
    function n_basis (self)
 
       class(limb_t), intent(in) :: self
       integer                   :: n_basis
 
-      ! Return the basis dimension
+      ! Return the number of basis functions
 
       select case (self%law)
       case (LINEAR_LAW)
-         n_basis = 1
-      case (QUAD_LAW)
          n_basis = 2
+      case (QUAD_LAW)
+         n_basis = 3
       case (CLARET_LAW)
-         n_basis = 4
+         n_basis = 5
       case default
          @:ABORT(invalid law)
       end select
@@ -170,24 +141,27 @@ contains
       real(RD), intent(in)      :: mu
       real(RD), allocatable     :: b(:)
 
-      ! Construct the intensity basis vector
+      ! Construct the intensity basis functions
 
       select case (self%law)
       case (LINEAR_LAW)
          b = [           &
-              1._RD - mu &
+              1._RD,     &
+              mu - 1._RD &
               ]
       case (QUAD_LAW)
          b = [              &
-              1._RD - mu,   &
-              1._RD - mu*mu &
+              1._RD,        &
+              mu - 1._RD,   &
+              mu**2 - 1._RD &
               ]
       case (CLARET_LAW)
          b = [                     &
-              1._RD - sqrt(mu),    &
-              1._RD - mu,          &
-              1._RD - sqrt(mu)*mu, &
-              1._RD - mu*mu        &
+              1._RD,               &
+              sqrt(mu) - 1._RD,    &
+              mu - 1._RD,          &
+              sqrt(mu)*mu - 1._RD, &
+              mu**2 - 1._RD        &
               ]
       case default
          @:ABORT(invalid law)
@@ -207,24 +181,27 @@ contains
       integer, intent(in)       :: l
       real(RD), allocatable     :: b(:)
 
-      ! Construct the D-moment basis vector
+      ! Evaluate the D-moment basis functions
 
       select case (self%law)
       case (LINEAR_LAW)
          b = [                                &
-              D_ls(l, 1._RD) - D_ls(l, 2._RD) &
+              D_ls(l, 1._RD),                 &
+              D_ls(l, 2._RD) - D_ls(l, 1._RD) &
               ]
       case (QUAD_LAW)
          b = [                                 &
-              D_ls(l, 1._RD) - D_ls(l, 2._RD), &
-              D_ls(l, 1._RD) - D_ls(l, 3._RD)  &
+              D_ls(l, 1._RD),                  &
+              D_ls(l, 2._RD) - D_ls(l, 1._RD), &
+              D_ls(l, 3._RD) - D_ls(l, 1._RD)  &
               ]
       case (CLARET_LAW)
          b = [                                  &
-              D_ls(l, 1._RD) - D_ls(l, 1.5_RD), &
-              D_ls(l, 1._RD) - D_ls(l, 2._RD),  &
-              D_ls(l, 1._RD) - D_ls(l, 2.5_RD), &
-              D_ls(l, 1._RD) - D_ls(l, 3._RD)   &
+              D_ls(l, 1._RD),                   &
+              D_ls(l, 1.5_RD) - D_ls(l, 1._RD), &
+              D_ls(l, 2._RD) - D_ls(l, 1._RD),  &
+              D_ls(l, 2.5_RD) - D_ls(l, 1._RD), &
+              D_ls(l, 3._RD) - D_ls(l, 1._RD)   &
               ]
       case default
          @:ABORT(invalid law)
@@ -243,24 +220,27 @@ contains
       class(limb_t), intent(in) :: self
       real(RD), allocatable     :: b(:)
 
-      ! Construct the flux basis vector
+      ! Evaluate the flux basis functions
 
       select case (self%law)
       case (LINEAR_LAW)
-         b = [            &
-              1._RD/6._RD &
+         b = TWOPI*[       &
+              1._RD/2._RD, &
+              -1._RD/6._RD &
               ]
       case (QUAD_LAW)
-         b = [             &
-              1._RD/6._RD, &
-              1._RD/4._RD  &
+         b = [              &
+              -1._RD/2._RD, &
+              -1._RD/6._RD, &
+              -1._RD/4._RD  &
               ]
       case (CLARET_LAW)
-         b = [              &
-              1._RD/10._RD, &
-              1._RD/6._RD,  &
-              3._RD/14._RD, &
-              1._RD/4._RD   &
+         b = [               &
+              1._RD/2._RD,   &
+              -1._RD/10._RD, &
+              -1._RD/6._RD,  &
+              -3._RD/14._RD, &
+              -1._RD/4._RD   &
               ]
       case default
          @:ABORT(invalid law)
@@ -281,7 +261,7 @@ contains
       real(RD)             :: D_ls
 
       integer :: l_0
-      integer :: k
+      integer :: m
 
       ! Evaluate the integral mu^s Pl(mu) from 0 to 1, using the
       ! expressions (42-44) from Townsend (2003)
@@ -290,8 +270,8 @@ contains
 
       D_ls = 1._RD/(1._RD + s + l_0)
 
-      do k = l_0+2, l, 2
-         D_ls = (s - k)/(s + k + 3._RD)*D_ls
+      do m = l_0+2, l, 2
+         D_ls = (s - m)/(s + m + 3._RD)*D_ls
       end do
 
       ! Finish
@@ -302,127 +282,15 @@ contains
 
    !****
 
-   #:for rank in (0, 1)
-
-      function intensity_${rank}$_(self, I_1, a, mu) result(I)
-
-         class(limb_t), intent(in) :: self
-         real(RD), intent(in)      :: I_1${ARRAY_SPEC(rank)}$
-         real(RD), intent(in)      :: a${ARRAY_SPEC(rank+1)}$
-         real(RD), intent(in)      :: mu
-         real(RD)                  :: I${ARRAY_SPEC(rank, 'SIZE(I_1, {0:d})')}$
-
-         real(RD), allocatable :: b(:)
-
-         #:if rank == 1
-            @:CHECK_BOUNDS(SIZE(a, 1), self%n_basis())
-            @:CHECK_BOUNDS(SIZE(a, 2), SIZE(I_1))
-         #:endif
-
-         ! Evaluate the intensity
-
-         b = self%intensity_basis(mu)
-
-         #:if rank == 1
-            I = I_1*(1._RD - MATMUL(b, a))
-         #:else
-            I = I_1*(1._RD - DOT_PRODUCT(b, a))
-         #:endif
-
-         ! Finish
-
-         return
-
-      end function intensity_${rank}$_
-
-   #:endfor
-
-   !****
-
-   #:for rank in (0, 1)
-
-      function flux_${rank}$_(self, I_1, a) result(F)
-
-         class(limb_t), intent(in) :: self
-         real(RD), intent(in)      :: I_1${ARRAY_SPEC(rank)}$
-         real(RD), intent(in)      :: a${ARRAY_SPEC(rank+1)}$
-         real(RD)                  :: F${ARRAY_SPEC(rank, 'SIZE(I_1, {0:d})')}$
-
-         real(RD), allocatable :: b(:)
-
-         #:if rank == 1
-            @:CHECK_BOUNDS(SIZE(a, 1), self%n_basis())
-            @:CHECK_BOUNDS(SIZE(a, 2), SIZE(I_1))
-         #:endif
-            
-         ! Evaluate the flux
-
-         b = self%flux_basis()
-
-         #:if rank == 1
-            F = I_1*TWOPI*(0.5_RD - MATMUL(b, a))
-         #:else
-            F = I_1*TWOPI*(0.5_RD - DOT_PRODUCT(b, a))
-         #:endif
-
-         ! Finish
-
-         return
-
-      end function flux_${rank}$_
-
-   #:endfor
-
-   !****
-
-   #:for rank in (0, 1)
-
-      function D_moment_${rank}$_(self, I_1, a, l) result(D)
-
-         class(limb_t), intent(in) :: self
-         real(RD), intent(in)      :: I_1${ARRAY_SPEC(rank)}$
-         real(RD), intent(in)      :: a${ARRAY_SPEC(rank+1)}$
-         integer, intent(in)       :: l
-         real(RD)                  :: D${ARRAY_SPEC(rank, 'SIZE(I_1, {0:d})')}$
-
-         real(RD), allocatable :: b(:)
-
-         #:if rank == 1
-            @:CHECK_BOUNDS(SIZE(a, 1), self%n_basis())
-            @:CHECK_BOUNDS(SIZE(a, 2), SIZE(I_1))
-         #:endif
-
-         ! Evaluate the D (disk-integration) moment
-
-         b = self%D_moment_basis(l)
-
-         #:if rank == 1
-            D = I_1*(D_ls(l, 1._RD) - MATMUL(b, a))
-         #:else
-            D = I_1*(D_ls(l, 1._RD) - DOT_PRODUCT(b, a))
-         #:endif
-
-         ! Finish
-
-         return
-
-      end function D_moment_${rank}$_
-
-   #:endfor
-
-   !****
-
-   subroutine fit_intensity_0_ (self, I, mu, I_1, a)
+   subroutine fit_intensity_0_ (self, I, mu, c)
 
       class(limb_t), intent(in)          :: self
       real(RD), intent(in)               :: I(:)
       real(RD), intent(in)               :: mu(:)
-      real(RD), intent(out)              :: I_1
-      real(RD), allocatable, intent(out) :: a(:)
+      real(RD), allocatable, intent(out) :: c(:)
 
       real(RD), allocatable :: I_(:,:)
-      real(RD), allocatable :: I_1_(:)
-      real(RD), allocatable :: a_(:,:)
+      real(RD), allocatable :: c_(:,:)
 
       ! Fit the limb-darkening law to the intensity data
 
@@ -430,10 +298,9 @@ contains
 
       I_(:,1) = I
 
-      call self%fit_intensity(I_, mu, I_1_, a_)
+      call self%fit_intensity(I_, mu, c_)
 
-      I_1 = I_1_(1)
-      a = a_(:,1)
+      c = c_(:,1)
 
       ! Finish
 
@@ -443,46 +310,49 @@ contains
 
    !****
 
-   subroutine fit_intensity_1_ (self, I, mu, I_1, a)
+   subroutine fit_intensity_1_ (self, I, mu, c)
 
       class(limb_t), intent(in)          :: self
       real(RD), intent(in)               :: I(:,:)
       real(RD), intent(in)               :: mu(:)
-      real(RD), allocatable, intent(out) :: I_1(:)
-      real(RD), allocatable, intent(out) :: a(:,:)
+      real(RD), allocatable, intent(out) :: c(:,:)
 
       integer               :: n_mu
-      integer               :: n_w
-      real(RD), allocatable :: y(:,:)
+      integer               :: n_k
       integer               :: k
+      real(RD)              :: y(SIZE(I, 1),SIZE(I, 2))
       integer               :: n_b
+      real(RD), allocatable :: a(:,:)
       
       @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
 
       ! Fit the limb-darkening law to the intensity data
 
-      ! Store the normal intensity
-
-      n_mu = SIZE(I, 1)
-      n_w = SIZE(I, 2)
-
-      I_1 = I(n_mu,:)
-
       ! Set up the fit data
 
-      allocate(y(n_mu,n_w))
+      n_mu = SIZE(I, 1)
+      n_k = SIZE(I, 2)
 
-      w_loop : do k = 1, n_w
-         y(:,k) = 1._RD - I(:,k)/I_1(k)
-      end do w_loop
+      y_loop : do k = 1, n_k
+         y(:,k) = 1._RD - I(:,k)/I(n_mu,k)
+      end do y_loop
 
-      ! Do the fit
+      ! Fit the a-coefficients
 
       n_b = self%n_basis()
 
-      allocate(a(n_b,n_w))
+      allocate(a(n_b-1,n_k))
 
       call gls_fit(mu, y, f_, a)
+
+      ! Tranform to c-coefficients
+
+      allocate(c(n_b,n_k))
+
+      c_loop : do k = 1, n_k
+         c(1,k) = I(n_mu,k)
+         c(2:,k) = -I(n_mu,k)*a(:,k)
+      end do c_loop
 
       ! Finish
 
