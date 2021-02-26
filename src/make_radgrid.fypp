@@ -44,6 +44,9 @@ program make_radgrid
    logical, allocatable        :: mask(:,:)
    real(RD), allocatable       :: logT(:)
    real(RD), allocatable       :: logg(:)
+   integer                     :: n_logT
+   integer                     :: n_logg
+   integer                     :: j
    type(radgrid_t)             :: rg
    type(hdf5io_t)              :: hi
 
@@ -57,6 +60,19 @@ program make_radgrid
    ! Read the radint_t grid
 
    call read_radint_grid(list_filename, ri, mask, logT, logg)
+
+   ! Print out grid architecture
+
+   n_logT = SIZE(logT)
+   n_logg = SIZE(logg)
+
+   print 100, NINT(10**logT(1)), REPEAT(' ', n_logT-9), NINT(10**logT(n_logT))
+100 format(5X,I4,A,I5)
+
+   do j = n_logg, 1, -1
+      print 110, logg(j), MERGE('X', '.', mask(:,j))
+110   format(F4.2,1X,9999A1)
+   end do
 
    ! Create the radgrid_t
 
