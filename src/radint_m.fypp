@@ -134,7 +134,7 @@ contains
 
       subroutine eval_${name}$(self, ${arg_var}$, k_a, k_b, ${var}$, stat)
 
-         class(radint_t), intent(in)    :: self
+         class(radint_t), intent(inout) :: self
          ${arg_type}$, intent(in)       :: ${arg_var}$
          integer, intent(in)            :: k_a
          integer, intent(in)            :: k_b
@@ -192,7 +192,7 @@ contains
 
       subroutine eval_${name}$(self, k_a, k_b, ${var}$, stat)
 
-         class(radint_t), intent(in)    :: self
+         class(radint_t), intent(inout) :: self
          integer, intent(in)            :: k_a
          integer, intent(in)            :: k_b
          real(RD)                       :: ${var}$(:)
