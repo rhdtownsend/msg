@@ -89,7 +89,7 @@ contains
       n_b = li%n_basis()
       n_k = SIZE(c, 2)
 
-      @:CHECK_BOUNDS(SIZE(a, 1), n_b)
+      @:CHECK_BOUNDS(SIZE(c, 1), n_b)
 
       ri%li = li
       ri%c = c
@@ -145,17 +145,40 @@ contains
 
          @:CHECK_BOUNDS(SIZE(${var}$), k_b-k_a+1)
 
+         ! Check the k range
+
+         if (k_a < 1 .OR. k_a > self%n_k) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS
+               return
+            else
+               @:ABORT(out-of-bounds)
+            endif
+         endif
+
+         if (k_b < 1 .OR. k_b > self%n_k) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS
+               return
+            else
+               @:ABORT(out-of-bounds)
+            endif
+         endif
+
          ! Set up the basis functions
 
-         b = self%li%${name}$_basis(${arg_var}$)
+         call self%li%eval_${name}$_basis(${arg_var}$, b, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
 
          ! Evaluate the ${name}$
 
          ${var}$ = MATMUL(b, self%c(:,k_a:k_b))
 
-         ! Finish
+         if (PRESENT(stat)) stat = STAT_OK
 
-         stat = STAT_OK
+         ! Finish
 
          return
 
@@ -181,15 +204,18 @@ contains
 
          ! Set up the basis functions
 
-         b = self%li%${name}$_basis()
+         call self%li%eval_${name}$_basis(b, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
 
          ! Evaluate the ${name}$
 
          ${var}$ = MATMUL(b, self%c(:,k_a:k_b))
 
-         ! Finish
+         if (PRESENT(stat)) stat = STAT_OK
 
-         stat = STAT_OK
+         ! Finish
 
          return
 
