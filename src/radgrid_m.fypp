@@ -264,11 +264,11 @@ contains
       integer               :: n_k
       integer               :: k
       real(RD), allocatable :: f(:,:,:)
-      real(RD)              :: df_dx(4,4)
-      real(RD)              :: df_dy(4,4)
-      real(RD)              :: d2f_dxdy(4,4)
+      real(RD)              :: df_dx(2,2)
+      real(RD)              :: df_dy(2,2)
+      real(RD)              :: d2f_dxdy(2,2)
 
-      @:CHECK_BOUNDS(SIZE(f), k_b-k_a+1)
+      @:CHECK_BOUNDS(SIZE(f_int), k_b-k_a+1)
 
       ! Locate the interpolation cell
 
@@ -345,7 +345,7 @@ contains
          elseif (j > self%n_logg) then
             y(m) = HUGE(0._RD)
          else
-            y(m) = self%logg(i)
+            y(m) = self%logg(j)
          endif
       end do
 
@@ -400,6 +400,8 @@ contains
          call bicubic_interp(f(2:3,2:3,k), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int(k))
 
       end do k_loop
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       ! Finish
 
