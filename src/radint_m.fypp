@@ -206,15 +206,60 @@ contains
 
       character(TYPE_LEN)   :: type
       real(RD), allocatable :: c(:,:)
+      real(RD), allocatable :: a_f(:)
+      real(RD)              :: I_1_f
+      real(RD), allocatable :: a(:,:)
+      real(RD), allocatable :: I_1(:)
+      integer               :: n_b
+      integer               :: n_k
+      integer               :: k
       type(hdf5io_t)        :: hi_li
       type(limb_t)          :: li
 
       ! Read the radint_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'radint_t',invalid type)
 
-      call hi%alloc_read_dset('c', c)
+      if (type == 'radint_t') then
+
+         if (hi%dset_exists('c')) then
+
+            call hi%alloc_read_dset('c', c)
+
+         else
+
+            call hi%alloc_read_dset('a', a_f)
+            call hi%read_dset('I_1', I_1_f)
+
+            n_b = SIZE(a_f) + 1
+
+            allocate(c(n_b,1))
+
+            c(1,1) = I_1_f
+            c(2:,1) = -I_1_f*a_f
+
+         endif
+
+      else if(type == 'specint_t') then
+
+         call hi%alloc_read_dset('a', a)
+         call hi%alloc_read_dset('I_1', I_1)
+
+         n_b = SIZE(a, 1) + 1
+         n_k = SIZE(a, 2)
+
+         allocate(c(n_b,n_k))
+
+         c_loop : do k = 1, n_k
+            c(1,k) = I_1(k)
+            c(2:,k) = -I_1(k)*a(:,k)
+         end do c_loop
+
+       else
+
+         @:ABORT(invalid type)
+
+      endif
 
       hi_li = hdf5io_t(hi, 'li')
       call read(hi_li, li)
