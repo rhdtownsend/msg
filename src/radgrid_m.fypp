@@ -28,6 +28,7 @@ module radgrid_m
 
    use interp_m
    use radint_m
+   use dyn_radint_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -40,13 +41,13 @@ module radgrid_m
 
    type radgrid_t
       private
-      type(radint_t), allocatable :: ri(:,:)
-      logical, allocatable        :: mask(:,:)
-      real(RD), allocatable       :: logT(:)
-      real(RD), allocatable       :: logg(:)
-      integer                     :: n_logT
-      integer                     :: n_logg
-      integer                     :: n_k
+      class(radint_t), allocatable :: ri(:,:)
+      logical, allocatable         :: mask(:,:)
+      real(RD), allocatable        :: logT(:)
+      real(RD), allocatable        :: logg(:)
+      integer                      :: n_logT
+      integer                      :: n_logg
+      integer                      :: n_k
    contains
       private
       procedure         :: interp_proc_
@@ -83,11 +84,11 @@ contains
 
    function radgrid_t_ (ri, mask, logT, logg) result (rg)
 
-      type(radint_t), intent(in) :: ri(:,:)
-      logical, intent(in)        :: mask(:,:)
-      real(RD), intent(in)       :: logT(:)
-      real(RD), intent(in)       :: logg(:)
-      type(radgrid_t)            :: rg
+      class(radint_t), intent(in) :: ri(:,:)
+      logical, intent(in)         :: mask(:,:)
+      real(RD), intent(in)        :: logT(:)
+      real(RD), intent(in)        :: logg(:)
+      type(radgrid_t)             :: rg
 
       integer :: n_logT
       integer :: n_logg
@@ -124,9 +125,10 @@ contains
       
       @:ASSERT(n_k > 0,invalid dimension)
 
-      ! Costruct the radgrid_t
+      ! Construct the radgrid_t
 
-      rg%ri = ri
+      allocate(rg%ri, SOURCE=ri)
+
       rg%mask = mask
 
       rg%logT = logT
@@ -426,16 +428,16 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(radgrid_t), intent(out)  :: rg
 
-      character(TYPE_LEN)         :: type
-      real(RD), allocatable       :: logT(:)
-      real(RD), allocatable       :: logg(:)
-      logical, allocatable        :: mask(:,:)
-      integer                     :: n_logT
-      integer                     :: n_logg
-      type(radint_t), allocatable :: ri(:,:)
-      type(hdf5io_t)              :: hi_ri
-      integer                     :: i
-      integer                     :: j
+      character(TYPE_LEN)             :: type
+      real(RD), allocatable           :: logT(:)
+      real(RD), allocatable           :: logg(:)
+      logical, allocatable            :: mask(:,:)
+      integer                         :: n_logT
+      integer                         :: n_logg
+      type(dyn_radint_t), allocatable :: ri(:,:)
+      type(hdf5io_t)                  :: hi_ri
+      integer                         :: i
+      integer                         :: j
 
       ! Read the radgrid_t
 
@@ -464,7 +466,11 @@ contains
          end do logg_loop
       end do logT_loop
 
+      print *,'done read go init'
+
       rg = radgrid_t(ri, mask, logT, logg)
+
+      print *,'done init'
 
       ! Finish
 
@@ -481,28 +487,38 @@ contains
       integer        :: i
       integer        :: j
 
-      call hi%write_attr('TYPE', 'radgrid_t')
+      select type (ri => rg%ri)
 
-      call hi%write_attr('n_logT', rg%n_logT)
-      call hi%write_attr('n_logg', rg%n_logg)
-      call hi%write_attr('n_k', rg%n_k)
+      type is (radint_t)
 
-      call hi%write_dset('logT', rg%logT)
-      call hi%write_dset('logg', rg%logg)
+         call hi%write_attr('TYPE', 'radgrid_t')
 
-      call hi%write_dset('mask', rg%mask)
+         call hi%write_attr('n_logT', rg%n_logT)
+         call hi%write_attr('n_logg', rg%n_logg)
+         call hi%write_attr('n_k', rg%n_k)
 
-      logT_loop : do i = 1, rg%n_logT
-         logg_loop : do j = 1, rg%n_logg
+         call hi%write_dset('logT', rg%logT)
+         call hi%write_dset('logg', rg%logg)
 
-            if (rg%mask(i,j)) then
-               hi_ri = hdf5io_t(hi, ri_name_(i,j))
-               call write(hi_ri, rg%ri(i,j))
-               call hi_ri%final()
-            end if
+         call hi%write_dset('mask', rg%mask)
+
+         logT_loop : do i = 1, rg%n_logT
+            logg_loop : do j = 1, rg%n_logg
+
+               if (rg%mask(i,j)) then
+                  hi_ri = hdf5io_t(hi, ri_name_(i,j))
+                  call write(hi_ri, ri(i,j))
+                  call hi_ri%final()
+               end if
             
-         end do logg_loop
-      end do logT_loop
+            end do logg_loop
+         end do logT_loop
+
+      type is (dyn_radint_t)
+
+         @:ABORT(cannot write dyn_radint_t)
+
+      end select
 
       ! Finish
 
