@@ -35,6 +35,7 @@ module stat_m
 
    integer, parameter :: STAT_OUT_OF_BOUNDS = 1
    integer, parameter :: STAT_MISSING_DATA = 2
+   integer, parameter :: STAT_INVALID_ARGUMENT = 3
 
    ! Access specifiers
 
@@ -43,5 +44,6 @@ module stat_m
    public :: STAT_OK
    public :: STAT_OUT_OF_BOUNDS
    public :: STAT_MISSING_DATA
+   public :: STAT_INVALID_ARGUMENT
 
 end module stat_m
