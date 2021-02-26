@@ -46,6 +46,7 @@ module radgrid_m
       real(RD), allocatable       :: logg(:)
       integer                     :: n_logT
       integer                     :: n_logg
+      integer                     :: n_k
    contains
       private
       procedure         :: interp_proc_
@@ -90,6 +91,9 @@ contains
 
       integer :: n_logT
       integer :: n_logg
+      integer :: n_k
+      integer :: i
+      integer :: j
 
       @:CHECK_BOUNDS(SIZE(mask, 1), SIZE(ri, 1))
       @:CHECK_BOUNDS(SIZE(mask, 2), SIZE(ri, 2))
@@ -97,10 +101,30 @@ contains
       @:CHECK_BOUNDS(SIZE(logT), SIZE(ri, 1))
       @:CHECK_BOUNDS(SIZE(logg), SIZE(ri, 2))
 
-      ! Costruct the radgrid_t
+      ! Check that the radints are conformable
 
       n_logT = SIZE(logT)
       n_logg = SIZE(logg)
+
+      n_k = 0
+
+      do i = 1, n_logT
+         do j = 1, n_logg
+
+            if (mask(i,j)) then
+               if (n_k > 0) then
+                  @:ASSERT(ri(i,j)%n_k == n_k, dimension mismatch)
+               else
+                  n_k = ri(i,j)%n_k
+               endif
+
+            end if
+         end do
+      end do
+      
+      @:ASSERT(n_k > 0,invalid dimension)
+
+      ! Costruct the radgrid_t
 
       rg%ri = ri
       rg%mask = mask
@@ -110,6 +134,7 @@ contains
 
       rg%n_logT = n_logT
       rg%n_logg = n_logg
+      rg%n_k = n_k
 
       ! Finish
 
@@ -125,12 +150,12 @@ contains
       type(radgrid_t), intent(out)  :: rg
 
       character(TYPE_LEN)         :: type
+      real(RD), allocatable       :: logT(:)
+      real(RD), allocatable       :: logg(:)
+      logical, allocatable        :: mask(:,:)
       integer                     :: n_logT
       integer                     :: n_logg
       type(radint_t), allocatable :: ri(:,:)
-      logical, allocatable        :: mask(:,:)
-      real(RD), allocatable       :: logT(:)
-      real(RD), allocatable       :: logg(:)
       type(hdf5io_t)              :: hi_ri
       integer                     :: i
       integer                     :: j
@@ -140,14 +165,14 @@ contains
       call hi%read_attr('TYPE', type)
       @:ASSERT(type == 'radgrid_t',invalid type)
 
-      call hi%read_attr('n_logT', n_logT)
-      call hi%read_attr('n_logg', n_logg)
-
       call hi%alloc_read_dset('logT', logT)
       call hi%alloc_read_dset('logg', logg)
 
       call hi%alloc_read_dset('mask', mask)
 
+      n_logT = SIZE(logT)
+      n_logg = SIZE(logg)
+      
       allocate(ri(n_logT,n_logg))
 
       logT_loop : do i = 1, n_logT
@@ -183,6 +208,7 @@ contains
 
       call hi%write_attr('n_logT', rg%n_logT)
       call hi%write_attr('n_logg', rg%n_logg)
+      call hi%write_attr('n_k', rg%n_k)
 
       call hi%write_dset('logT', rg%logT)
       call hi%write_dset('logg', rg%logg)
