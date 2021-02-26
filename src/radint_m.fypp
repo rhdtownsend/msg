@@ -312,6 +312,9 @@ contains
 
       call hi%write_attr('TYPE', 'radint_t')
 
+      call hi%write_attr('n_b', ri%n_b)
+      call hi%write_attr('n_k', ri%n_k)
+
       call hi%write_dset('c', ri%c)
 
       hi_li = hdf5io_t(hi, 'li')
