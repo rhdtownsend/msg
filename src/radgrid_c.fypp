@@ -1,0 +1,165 @@
+! Module  : radgrid_c
+! Purpose : C interfaces for radgrid_m
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module radgrid_c
+
+   ! Uses
+
+   use kinds_m
+   use cinter_m
+   use hdf5io_m
+
+   use radgrid_m
+
+   use ISO_FORTRAN_ENV
+   use ISO_C_BINDING
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: load_radgrid
+   public :: unload_radgrid
+   public :: interp_intensity
+   public :: interp_flux
+
+   ! Procedures
+
+contains
+
+   function load_radgrid(filename) result(p_rg) bind(C)
+
+      character(C_CHAR) :: filename(*)
+      type(C_PTR)       :: p_rg
+
+      type(radgrid_t), pointer :: rg
+      type(hdf5io_t)           :: hi
+
+      ! Allocate the radgrid
+
+      allocate(rg)
+
+      ! Load it from the file
+
+      hi = hdf5io_t(c_f_string(filename), OPEN_FILE)
+      call read(hi, rg)
+      call hi%final()
+
+      ! Set up the C pointer
+
+      p_rg = C_LOC(rg)
+
+      ! Finish
+
+      return
+
+   end function load_radgrid
+
+   !****
+
+   subroutine unload_radgrid(p_rg) bind(C)
+
+      type(C_PTR), value :: p_rg
+
+      type(radgrid_t), pointer :: rg
+
+      ! Set up the Fortran pointer
+
+      call c_f_pointer(p_rg, rg)
+
+      ! Deallocate the radgrid
+
+      if (ASSOCIATED(rg)) deallocate(rg)
+
+      ! Finish
+
+      return
+
+   end subroutine unload_radgrid
+
+   !****
+
+   subroutine interp_intensity(p_rg, logT, logg, mu, k, I, stat, d_dlogT, d_dlogg) bind(C)
+
+      type(C_PTR), value     :: p_rg
+      real(C_DOUBLE), value  :: logT
+      real(C_DOUBLE), value  :: logg
+      real(C_DOUBLE), value  :: mu
+      integer(C_INT), value  :: k
+      real(C_DOUBLE)         :: I
+      integer(C_INT)         :: stat
+      logical(C_BOOL), value :: d_dlogT
+      logical(C_BOOL), value :: d_dlogg
+
+      type(radgrid_t), pointer :: rg
+      real(RD)                 :: I_2(1)
+
+      ! Set up the Fortran pointer
+
+      call c_f_pointer(p_rg, rg)
+
+      ! Interpolate the intensity
+
+      call rg%interp_intensity(logT, logg, mu, k, k, I_2, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+
+      I = I_2(1)
+
+      ! Finish
+
+      return
+
+   end subroutine interp_intensity
+
+   !****
+
+   subroutine interp_flux(p_rg, logT, logg, k, F, stat, d_dlogT, d_dlogg) bind(C)
+
+      type(C_PTR), value     :: p_rg
+      real(C_DOUBLE), value  :: logT
+      real(C_DOUBLE), value  :: logg
+      integer(C_INT), value  :: k
+      real(C_DOUBLE)         :: F
+      integer(C_INT)         :: stat
+      logical(C_BOOL), value :: d_dlogT
+      logical(C_BOOL), value :: d_dlogg
+
+      type(radgrid_t), pointer :: rg
+      real(RD)                 :: F_2(1)
+
+      ! Set up the Fortran pointer
+
+      call c_f_pointer(p_rg, rg)
+
+      ! Interpolate the flux
+
+      call rg%interp_flux(logg, logg, k, k, F_2, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+
+      F = F_2(1)
+
+      ! Finish
+
+      return
+
+   end subroutine interp_flux
+
+end module radgrid_c
