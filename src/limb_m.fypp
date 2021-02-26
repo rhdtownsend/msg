@@ -26,6 +26,7 @@ module limb_m
 
    use const_m
    use fit_m
+   use stat_m
 
    use ISO_FORTRAN_ENV
 
@@ -47,9 +48,9 @@ module limb_m
    contains
       private
       procedure, public :: n_basis
-      procedure, public :: intensity_basis
-      procedure, public :: flux_basis
-      procedure, public :: D_moment_basis
+      procedure, public :: eval_intensity_basis
+      procedure, public :: eval_flux_basis
+      procedure, public :: eval_D_moment_basis
       procedure         :: fit_intensity_0_
       procedure         :: fit_intensity_1_
       generic, public   :: fit_intensity => fit_intensity_0_, fit_intensity_1_
@@ -135,13 +136,25 @@ contains
 
    !****
 
-   function intensity_basis(self, mu) result (b)
+   subroutine eval_intensity_basis(self, mu, b, stat)
 
-      class(limb_t), intent(in) :: self
-      real(RD), intent(in)      :: mu
-      real(RD), allocatable     :: b(:)
+      class(limb_t), intent(in)      :: self
+      real(RD), intent(in)           :: mu
+      real(RD)                       :: b(:)
+      integer, intent(out), optional :: stat
 
-      ! Construct the intensity basis functions
+      @:CHECK_BOUNDS(SIZE(b),self%n_basis())
+
+      ! Evaluate the intensity basis functions
+
+      if (mu < 0._RD .OR. mu > 1._RD) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT(invalid argument)
+         endif
+      endif
 
       select case (self%law)
       case (LINEAR_LAW)
@@ -167,21 +180,35 @@ contains
          @:ABORT(invalid law)
       end select
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       ! Finish
 
       return
 
-   end function intensity_basis
+   end subroutine eval_intensity_basis
 
    !****
 
-   function D_moment_basis(self, l) result (b)
+   subroutine eval_D_moment_basis(self, l, b, stat)
 
-      class(limb_t), intent(in) :: self
-      integer, intent(in)       :: l
-      real(RD), allocatable     :: b(:)
+      class(limb_t), intent(in)      :: self
+      integer, intent(in)            :: l
+      real(RD)                       :: b(:)
+      integer, intent(out), optional :: stat
+
+      @:CHECK_BOUNDS(SIZE(b),self%n_basis())
 
       ! Evaluate the D-moment basis functions
+
+      if (l < 0) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT(invalid argument)
+         endif
+      endif
 
       select case (self%law)
       case (LINEAR_LAW)
@@ -207,18 +234,23 @@ contains
          @:ABORT(invalid law)
       end select
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       ! Finish
 
       return
 
-   end function D_moment_basis
+   end subroutine eval_D_moment_basis
 
    !****
 
-   function flux_basis(self) result (b)
+   subroutine eval_flux_basis(self, b, stat)
 
-      class(limb_t), intent(in) :: self
-      real(RD), allocatable     :: b(:)
+      class(limb_t), intent(in)      :: self
+      real(RD)                       :: b(:)
+      integer, intent(out), optional :: stat
+
+      @:CHECK_BOUNDS(SIZE(b),self%n_basis())
 
       ! Evaluate the flux basis functions
 
@@ -246,11 +278,13 @@ contains
          @:ABORT(invalid law)
       end select
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       ! Finish
 
       return
 
-   end function flux_basis
+   end subroutine eval_flux_basis
 
    !****
 
@@ -366,7 +400,7 @@ contains
          integer, intent(in)  :: n
          real(RD)             :: f_(n)
 
-         f_ = self%intensity_basis(mu)
+         call self%eval_intensity_basis(mu, f_)
 
       end function f_
 
