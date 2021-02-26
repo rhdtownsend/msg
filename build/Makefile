@@ -5,7 +5,7 @@
 
 #TARGETS = test_math test_interp test_order test_fit make_specint make_radint make_specgrid make_radgrid libradgrid.dylib test_hdf5io
 #TARGETS = test_interp
-TARGETS = make_radgrid
+TARGETS = make_radgrid libradgrid.dylib test_radgrid
 
 make_specint_SRCS = \
   make_specint.f90 \
@@ -73,16 +73,32 @@ make_radgrid_SRCS = \
   hdf5io_m.f90 \
   cinter_m.f90
 
-libradgrid.dylib_SRCS = \
+test_radgrid_SRCS = \
+  test_radgrid.f90 \
   radgrid_c.f90 \
   radgrid_m.f90 \
-  radnode_m.f90 \
   radint_m.f90 \
   interp_m.f90 \
   fit_m.f90 \
   kinds_m.f90 \
   const_m.f90 \
-b  limb_m.f90 \
+  limb_m.f90 \
+  math_m.f90 \
+  cinter_m.f90 \
+  order_m.f90 \
+  system_m.f90 \
+  hdf5io_m.f90 \
+  cinter_m.f90
+
+libradgrid.dylib_SRCS = \
+  radgrid_c.f90 \
+  radgrid_m.f90 \
+  radint_m.f90 \
+  interp_m.f90 \
+  fit_m.f90 \
+  kinds_m.f90 \
+  const_m.f90 \
+  limb_m.f90 \
   math_m.f90 \
   cinter_m.f90 \
   order_m.f90 \
