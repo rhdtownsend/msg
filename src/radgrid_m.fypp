@@ -144,110 +144,6 @@ contains
 
    !****
 
-   subroutine read_(hi, rg)
-
-      type(hdf5io_t), intent(inout) :: hi
-      type(radgrid_t), intent(out)  :: rg
-
-      character(TYPE_LEN)         :: type
-      real(RD), allocatable       :: logT(:)
-      real(RD), allocatable       :: logg(:)
-      logical, allocatable        :: mask(:,:)
-      integer                     :: n_logT
-      integer                     :: n_logg
-      type(radint_t), allocatable :: ri(:,:)
-      type(hdf5io_t)              :: hi_ri
-      integer                     :: i
-      integer                     :: j
-
-      ! Read the radgrid_t
-
-      call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'radgrid_t',invalid type)
-
-      call hi%alloc_read_dset('logT', logT)
-      call hi%alloc_read_dset('logg', logg)
-
-      call hi%alloc_read_dset('mask', mask)
-
-      n_logT = SIZE(logT)
-      n_logg = SIZE(logg)
-      
-      allocate(ri(n_logT,n_logg))
-
-      logT_loop : do i = 1, n_logT
-         logg_loop : do j = 1, n_logg
-
-            if (mask(i,j)) then
-               hi_ri = hdf5io_t(hi, ri_name_(i,j))
-               call read(hi_ri, ri(i,j))
-               call hi_ri%final()
-            end if
-
-         end do logg_loop
-      end do logT_loop
-
-      rg = radgrid_t(ri, mask, logT, logg)
-
-      ! Finish
-
-   end subroutine read_
-
-   !****
-
-   subroutine write_(hi, rg)
-
-      type(hdf5io_t), intent(inout) :: hi
-      type(radgrid_t), intent(in )  :: rg
-
-      type(hdf5io_t) :: hi_ri
-      integer        :: i
-      integer        :: j
-
-      call hi%write_attr('TYPE', 'radgrid_t')
-
-      call hi%write_attr('n_logT', rg%n_logT)
-      call hi%write_attr('n_logg', rg%n_logg)
-      call hi%write_attr('n_k', rg%n_k)
-
-      call hi%write_dset('logT', rg%logT)
-      call hi%write_dset('logg', rg%logg)
-
-      call hi%write_dset('mask', rg%mask)
-
-      logT_loop : do i = 1, rg%n_logT
-         logg_loop : do j = 1, rg%n_logg
-
-            if (rg%mask(i,j)) then
-               hi_ri = hdf5io_t(hi, ri_name_(i,j))
-               call write(hi_ri, rg%ri(i,j))
-               call hi_ri%final()
-            end if
-            
-         end do logg_loop
-      end do logT_loop
-
-      ! Finish
-
-      return
-
-   end subroutine write_
-
-   !****
-
-   function ri_name_(i,j) result (name)
-
-      integer, intent(in) :: i
-      integer, intent(in) :: j
-      character(256)      :: name
-
-      write(name, 100) i, j
-100   format('ri(',I0,',',I0,')')
-
-   end function ri_name_
-
-   !****
-
    subroutine interp_proc_(self, proc, logT, logg, k_a, k_b, f_int, stat, d_dlogT, d_dlogg)
 
       class(radgrid_t), intent(inout) :: self
@@ -480,6 +376,7 @@ contains
 
    #:endfor
 
+   !****
 
    #:for name, var in (('flux', 'F'), )
 
@@ -521,5 +418,109 @@ contains
       end subroutine interp_${name}$
 
    #:endfor
+
+   !****
+
+   subroutine read_(hi, rg)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(radgrid_t), intent(out)  :: rg
+
+      character(TYPE_LEN)         :: type
+      real(RD), allocatable       :: logT(:)
+      real(RD), allocatable       :: logg(:)
+      logical, allocatable        :: mask(:,:)
+      integer                     :: n_logT
+      integer                     :: n_logg
+      type(radint_t), allocatable :: ri(:,:)
+      type(hdf5io_t)              :: hi_ri
+      integer                     :: i
+      integer                     :: j
+
+      ! Read the radgrid_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'radgrid_t',invalid type)
+
+      call hi%alloc_read_dset('logT', logT)
+      call hi%alloc_read_dset('logg', logg)
+
+      call hi%alloc_read_dset('mask', mask)
+
+      n_logT = SIZE(logT)
+      n_logg = SIZE(logg)
+      
+      allocate(ri(n_logT,n_logg))
+
+      logT_loop : do i = 1, n_logT
+         logg_loop : do j = 1, n_logg
+
+            if (mask(i,j)) then
+               hi_ri = hdf5io_t(hi, ri_name_(i,j))
+               call read(hi_ri, ri(i,j))
+               call hi_ri%final()
+            end if
+
+         end do logg_loop
+      end do logT_loop
+
+      rg = radgrid_t(ri, mask, logT, logg)
+
+      ! Finish
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, rg)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(radgrid_t), intent(in )  :: rg
+
+      type(hdf5io_t) :: hi_ri
+      integer        :: i
+      integer        :: j
+
+      call hi%write_attr('TYPE', 'radgrid_t')
+
+      call hi%write_attr('n_logT', rg%n_logT)
+      call hi%write_attr('n_logg', rg%n_logg)
+      call hi%write_attr('n_k', rg%n_k)
+
+      call hi%write_dset('logT', rg%logT)
+      call hi%write_dset('logg', rg%logg)
+
+      call hi%write_dset('mask', rg%mask)
+
+      logT_loop : do i = 1, rg%n_logT
+         logg_loop : do j = 1, rg%n_logg
+
+            if (rg%mask(i,j)) then
+               hi_ri = hdf5io_t(hi, ri_name_(i,j))
+               call write(hi_ri, rg%ri(i,j))
+               call hi_ri%final()
+            end if
+            
+         end do logg_loop
+      end do logT_loop
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function ri_name_(i,j) result (name)
+
+      integer, intent(in) :: i
+      integer, intent(in) :: j
+      character(256)      :: name
+
+      write(name, 100) i, j
+100   format('ri(',I0,',',I0,')')
+
+   end function ri_name_
 
 end module radgrid_m
