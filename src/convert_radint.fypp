@@ -94,6 +94,8 @@ contains
       call read(hi_li, li)
       call hi_li%final()
 
+      ri = radint_t(c, li)
+
       ! Finish
 
       return
