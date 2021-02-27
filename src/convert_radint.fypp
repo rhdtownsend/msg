@@ -65,7 +65,7 @@ contains
             allocate(c(n_b,1))
 
             c(1,1) = I_1_f
-            c(2:,1) = -I_1_f*a_f
+            c(2:,1) = I_1_f*a_f
 
          endif
 
@@ -81,7 +81,7 @@ contains
 
          c_loop : do k = 1, n_k
             c(1,k) = I_1(k)
-            c(2:,k) = -I_1(k)*a(:,k)
+            c(2:,k) = I_1(k)*a(:,k)
          end do c_loop
 
        else
