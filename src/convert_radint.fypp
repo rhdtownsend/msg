@@ -1,0 +1,116 @@
+#:include 'forum.inc'
+
+program convert_radint
+
+   use kinds_m
+   use hdf5io_m
+   use system_m
+
+   use limb_m
+   use radint_m
+
+   use ISO_FORTRAN_ENV
+
+   implicit none
+
+   character(:), allocatable :: in_filename
+   character(:), allocatable :: out_filename
+   type(radint_t)            :: ri
+
+   @:ASSERT(n_arg() == 2,syntax: convert_radint in_filename out_filename)
+
+   call get_arg(1, in_filename)
+   call get_arg(2, out_filename)
+
+   call read_(in_filename, ri)
+   call write_(out_filename, ri)
+
+contains
+
+   subroutine read_(filename, ri)
+
+      character(*), intent(in)    :: filename
+      type(radint_t), intent(out) :: ri
+
+      type(hdf5io_t)        :: hi
+      character(TYPE_LEN)   :: type
+      real(RD), allocatable :: c(:,:)
+      real(RD), allocatable :: a_f(:)
+      real(RD)              :: I_1_f
+      real(RD), allocatable :: a(:,:)
+      real(RD), allocatable :: I_1(:)
+      integer               :: n_b
+      integer               :: n_k
+      integer               :: k
+      type(hdf5io_t)        :: hi_li
+      type(limb_t)          :: li
+
+      hi = hdf5io_t(filename, OPEN_FILE)
+
+      call hi%read_attr('TYPE', type)
+
+      if (type == 'radint_t') then
+
+         if (hi%dset_exists('c')) then
+
+            call hi%alloc_read_dset('c', c)
+
+         else
+
+            call hi%alloc_read_dset('a', a_f)
+            call hi%read_dset('I_1', I_1_f)
+
+            n_b = SIZE(a_f) + 1
+
+            allocate(c(n_b,1))
+
+            c(1,1) = I_1_f
+            c(2:,1) = -I_1_f*a_f
+
+         endif
+
+      else if(type == 'specint_t') then
+
+         call hi%alloc_read_dset('a', a)
+         call hi%alloc_read_dset('I_1', I_1)
+
+         n_b = SIZE(a, 1) + 1
+         n_k = SIZE(a, 2)
+
+         allocate(c(n_b,n_k))
+
+         c_loop : do k = 1, n_k
+            c(1,k) = I_1(k)
+            c(2:,k) = -I_1(k)*a(:,k)
+         end do c_loop
+
+       else
+
+         @:ABORT(invalid type)
+
+      endif
+
+      hi_li = hdf5io_t(hi, 'li')
+      call read(hi_li, li)
+      call hi_li%final()
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   subroutine write_(filename, ri)
+
+      character(*), intent(in)   :: filename
+      type(radint_t), intent(in) :: ri
+      
+      type(hdf5io_t) :: hi
+
+      hi = hdf5io_t(filename, CREATE_FILE)
+      call write(hi, ri)
+      call hi%final()
+
+   end subroutine write_
+
+end program convert_radint
