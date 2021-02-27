@@ -130,8 +130,6 @@ contains
 
       call read(self%hi, self%radint_t)
 
-      print *,'Loaded node!'
-
       self%loaded = .TRUE.
 
       ! Finish
@@ -147,17 +145,13 @@ contains
       type(hdf5io_t), intent(inout)   :: hi
       type(dyn_radint_t), intent(out) :: ri
 
-      ! Read the dyn_radint_t (this does nothing apart from stash the
-      ! hdf5io_t and n_k)
+      ! Read the dyn_radint_t (this does nothing apart from set the hi and n_k components)
 
       ri%hi = hdf5io_t(hi, '.')
 
-      !call ri%hi%read_attr('n_k', ri%n_k)
-      ri%n_k = 1
+      call ri%hi%read_attr('n_k', ri%n_k)
 
       ri%loaded = .FALSE.
-
-      print *,'comp read'
 
       ! Finish
 
