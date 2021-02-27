@@ -1,0 +1,36 @@
+program test_radgrid
+
+   use kinds_m
+   use hdf5io_m
+
+   use radgrid_m
+   use stat_m
+
+   implicit none
+
+   integer, parameter :: n = 1
+   
+   type(radgrid_t) :: rg
+   type(hdf5io_t)  :: hi
+   real(RD)        :: I(n)
+   integer         :: j
+   integer         :: stat
+
+   hi = hdf5io_t('rg_kepler.h5', OPEN_FILE)
+   call read(hi, rg)
+   call hi%final()
+
+   print *,'grid loaded'
+
+   call rg%interp_intensity(4._RD, 4._RD, 0.5_RD, 1, n, I, stat)
+   if (stat /= STAT_OK) then
+      print *,'Stat is:',stat
+      stop
+   end if
+
+   do j = 1, n
+      print *,j,I(j)
+   end do
+
+end program test_radgrid
+   
