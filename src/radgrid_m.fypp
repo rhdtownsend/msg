@@ -425,10 +425,11 @@ contains
 
    subroutine read_(hi, rg)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(radgrid_t), intent(out)  :: rg
+      type(hdf5io_t), intent(inout)      :: hi
+      type(radgrid_t), intent(out)       :: rg
+      character(*), intent(in), optional :: type
 
-      character(TYPE_LEN)             :: type
+      character(TYPE_LEN)             :: file_type
       real(RD), allocatable           :: logT(:)
       real(RD), allocatable           :: logg(:)
       logical, allocatable            :: mask(:,:)
@@ -441,8 +442,12 @@ contains
 
       ! Read the radgrid_t
 
-      call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'radgrid_t',invalid type)
+      call hi%read_attr('TYPE', file_type)
+      if (PRESENT(type)) then
+         @:ASSERT(file_type == type, invalid type)
+      else
+         @:ASSERT(file_type == 'radgrid_t', invalid type)
+      endif
 
       call hi%alloc_read_dset('logT', logT)
       call hi%alloc_read_dset('logg', logg)
