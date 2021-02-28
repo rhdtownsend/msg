@@ -109,6 +109,7 @@ contains
       integer                     :: j
       type(hdf5io_t)              :: hi
       integer                     :: n_k
+      integer                     :: node_n_k
 
       ! Open the file listing the grid nodes
 
@@ -168,13 +169,17 @@ contains
          @:ASSERT(.NOT. mask(i,j), duplicate node)
 
          hi = hdf5io_t(node_filename(l), OPEN_FILE)
+
          call read(hi, ri(i,j))
+
+         node_n_k = ri(i,j)%n_k
+
          call hi%final()
 
          if (l == 1) then
-            n_k = ri(i,j)%n_k
+            n_k = node_n_k
          else
-            @:ASSERT(ri(i,j)%n_k == n_k, length mismatch)
+            @:ASSERT(node_n_k == n_k, n_k mismatch)
          endif
 
          mask(i,j) = .TRUE.
