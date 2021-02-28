@@ -82,17 +82,17 @@ module radgrid_m
 
 contains
 
-   function radgrid_t_ (ri, mask, logT, logg) result (rg)
+   function radgrid_t_ (ri, mask, logT, logg, n_k) result (rg)
 
       class(radint_t), intent(in) :: ri(:,:)
       logical, intent(in)         :: mask(:,:)
       real(RD), intent(in)        :: logT(:)
       real(RD), intent(in)        :: logg(:)
+      integer, intent(in)         :: n_k
       type(radgrid_t)             :: rg
 
       integer :: n_logT
       integer :: n_logg
-      integer :: n_k
       integer :: i
       integer :: j
 
@@ -107,24 +107,16 @@ contains
       n_logT = SIZE(logT)
       n_logg = SIZE(logg)
 
-      n_k = 0
-
       do i = 1, n_logT
          do j = 1, n_logg
 
             if (mask(i,j)) then
-               if (n_k > 0) then
-                  @:ASSERT(ri(i,j)%n_k == n_k, dimension mismatch)
-               else
-                  n_k = ri(i,j)%n_k
-               endif
-
+               @:ASSERT(ri(i,j)%n_k == n_k, dimension mismatch)
             end if
+
          end do
       end do
       
-      @:ASSERT(n_k > 0,invalid dimension)
-
       ! Construct the radgrid_t
 
       allocate(rg%ri, SOURCE=ri)
@@ -449,6 +441,8 @@ contains
          @:ASSERT(file_type == 'radgrid_t', invalid type)
       endif
 
+      call hi%read_attr('n_k', n_k)
+
       call hi%alloc_read_dset('logT', logT)
       call hi%alloc_read_dset('logg', logg)
 
@@ -471,7 +465,7 @@ contains
          end do logg_loop
       end do logT_loop
 
-      rg = radgrid_t(ri, mask, logT, logg)
+      rg = radgrid_t(ri, mask, logT, logg, n_k)
 
       ! Finish
 
