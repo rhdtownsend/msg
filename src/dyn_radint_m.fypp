@@ -145,7 +145,8 @@ contains
       type(hdf5io_t), intent(inout)   :: hi
       type(dyn_radint_t), intent(out) :: ri
 
-      ! Read the dyn_radint_t (this does nothing apart from set the hi and n_k components)
+      ! Read the dyn_radint_t (this does nothing apart from set the hi
+      ! and n_k components)
 
       ri%hi = hdf5io_t(hi, '.')
 
