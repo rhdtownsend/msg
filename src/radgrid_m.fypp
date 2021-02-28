@@ -466,11 +466,7 @@ contains
          end do logg_loop
       end do logT_loop
 
-      print *,'done read go init'
-
       rg = radgrid_t(ri, mask, logT, logg)
-
-      print *,'done init'
 
       ! Finish
 
