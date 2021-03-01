@@ -37,8 +37,9 @@ module dyn_radint_m
 
    type, extends(radint_t) :: dyn_radint_t
       private
-      type(hdf5io_t) :: hi
-      logical        :: loaded
+      procedure(process_radint), nopass, pointer :: process => null()
+      type(hdf5io_t)                             :: hi
+      logical                                    :: loaded
    contains
       private
       procedure, public :: eval_intensity
@@ -128,7 +129,7 @@ contains
 
       ! Load the radint
 
-      call read(self%hi, self%radint_t)
+      call read(self%hi, self%radint_t, self%process)
 
       self%loaded = .TRUE.
 
@@ -140,13 +141,16 @@ contains
 
    !****
 
-   subroutine read_(hi, ri)
+   subroutine read_(hi, ri, process)
 
-      type(hdf5io_t), intent(inout)   :: hi
-      type(dyn_radint_t), intent(out) :: ri
+      type(hdf5io_t), intent(inout)       :: hi
+      type(dyn_radint_t), intent(out)     :: ri
+      procedure(process_radint), optional :: process
 
-      ! Read the dyn_radint_t (this does nothing apart from set the hi
-      ! and n_k components)
+      ! Read the dyn_radint_t (this only sets variables used in a
+      ! later call to load_)
+
+      if (PRESENT(process)) ri%process => process
 
       ri%hi = hdf5io_t(hi, '.')
 
