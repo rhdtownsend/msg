@@ -51,9 +51,10 @@ module radgrid_m
    contains
       private
       procedure         :: interp_proc_
-      procedure, public :: interp_intensity
-      procedure, public :: interp_D_moment
-      procedure, public :: interp_flux
+      #:for name in ('intensity', 'D_moment', 'flux')
+         procedure         :: interp_${name}$_k_
+         generic, public   :: interp_${name}$ => interp_${name}$_k_
+      #:endfor
    end type radgrid_t
 
    ! Interfaces
@@ -330,7 +331,7 @@ contains
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
                                           ('D_moment', 'D', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, logT, logg, ${arg_var}$, k_a, k_b, ${var}$, stat, d_dlogT, d_dlogg)
+      subroutine interp_${name}$_k_(self, logT, logg, ${arg_var}$, k_a, k_b, ${var}$, stat, d_dlogT, d_dlogg)
 
          class(radgrid_t), intent(inout) :: self
          real(RD), intent(in)            :: logT
@@ -366,7 +367,7 @@ contains
 
          end subroutine proc_
 
-      end subroutine interp_${name}$
+      end subroutine interp_${name}$_k_
 
    #:endfor
 
@@ -374,7 +375,7 @@ contains
 
    #:for name, var in (('flux', 'F'), )
 
-      subroutine interp_${name}$(self, logT, logg, k_a, k_b, ${var}$, stat, d_dlogT, d_dlogg)
+      subroutine interp_${name}$_k_(self, logT, logg, k_a, k_b, ${var}$, stat, d_dlogT, d_dlogg)
 
          class(radgrid_t), intent(inout) :: self
          real(RD), intent(in)            :: logT
@@ -409,17 +410,18 @@ contains
 
          end subroutine proc_
 
-      end subroutine interp_${name}$
+      end subroutine interp_${name}$_k_
 
    #:endfor
 
    !****
 
-   subroutine read_(hi, rg, type)
+   subroutine read_(hi, rg, type, process)
 
-      type(hdf5io_t), intent(inout)      :: hi
-      type(radgrid_t), intent(out)       :: rg
-      character(*), intent(in), optional :: type
+      type(hdf5io_t), intent(inout)       :: hi
+      type(radgrid_t), intent(out)        :: rg
+      character(*), intent(in), optional  :: type
+      procedure(process_radint), optional :: process
 
       character(TYPE_LEN)             :: file_type
       integer                         :: n_k
@@ -459,7 +461,7 @@ contains
 
             if (mask(i,j)) then
                hi_ri = hdf5io_t(hi, ri_name_(i,j))
-               call read(hi_ri, ri(i,j))
+               call read(hi_ri, ri(i,j), process)
                call hi_ri%final()
             end if
 
@@ -474,10 +476,11 @@ contains
 
    !****
 
-   subroutine write_(hi, rg)
+   subroutine write_(hi, rg, type)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(radgrid_t), intent(in )  :: rg
+      type(hdf5io_t), intent(inout)      :: hi
+      type(radgrid_t), intent(in)        :: rg
+      character(*), intent(in), optional :: type
 
       type(hdf5io_t) :: hi_ri
       integer        :: i
@@ -487,7 +490,11 @@ contains
 
       type is (radint_t)
 
-         call hi%write_attr('TYPE', 'radgrid_t')
+         if (PRESENT(type)) then
+            call hi%write_attr('TYPE', type)
+         else
+            call hi%write_attr('TYPE', 'radgrid_t')
+         endif
 
          call hi%write_attr('n_logT', rg%n_logT)
          call hi%write_attr('n_logg', rg%n_logg)
