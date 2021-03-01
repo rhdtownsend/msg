@@ -8,7 +8,7 @@ program test_radgrid
 
    implicit none
 
-   integer, parameter :: n = 1
+   integer, parameter :: n = 160000
    
    type(radgrid_t) :: rg
    type(hdf5io_t)  :: hi
@@ -16,11 +16,9 @@ program test_radgrid
    integer         :: j
    integer         :: stat
 
-   hi = hdf5io_t('rg_kepler.h5', OPEN_FILE)
+   hi = hdf5io_t('rg.h5', OPEN_FILE)
    call read(hi, rg)
    call hi%final()
-
-   print *,'grid loaded'
 
    call rg%interp_intensity(4._RD, 4._RD, 0.5_RD, 1, n, I, stat)
    if (stat /= STAT_OK) then
@@ -28,9 +26,9 @@ program test_radgrid
       stop
    end if
 
-   do j = 1, n
-      print *,j,I(j)
-   end do
+!   do j = 1, n
+!      print *,j,I(j)
+!   end do
 
 end program test_radgrid
    
