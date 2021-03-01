@@ -1,5 +1,5 @@
-! Module   : make_specint
-! Purpose  : create specint files from synspec files
+! Module   : synspec_to_radint
+! Purpose  : create radint files from synspec files
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-program make_specint
+program synspec_to_radint
 
    ! Uses
 
@@ -29,8 +29,8 @@ program make_specint
 
    use const_m
    use limb_m
-   use specint_m
-   use specint_factory_m
+   use radint_m
+   use radint_factory_m
 
    use ISO_FORTRAN_ENV
 
@@ -41,13 +41,15 @@ program make_specint
    ! Variables
 
    character(:), allocatable :: synspec_filename
+   real(RD)                  :: Teff
+   real(RD)                  :: logg
    integer                   :: n_mu
    real(RD)                  :: mu_0
-   real(RD)                  :: R  
-   real(RD)                  :: lambda_min 
+   real(RD)                  :: R
+   real(RD)                  :: lambda_min
    real(RD)                  :: lambda_max
    character(:), allocatable :: limb_law
-   character(:), allocatable :: specint_filename
+   character(:), allocatable :: radint_filename
 
    type(limb_t)          :: li
    real(RD), allocatable :: I(:,:)
@@ -58,21 +60,23 @@ program make_specint
    integer               :: n_w
    integer               :: j
    real(RD), allocatable :: mu(:)
-   type(specint_t)       :: si
+   type(radint_t)        :: ri
    type(hdf5io_t)        :: hi
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 8,{Syntax: make_specint synspec_filename n_mu mu_0 lambda_min lambda_max R limb_law specint_filename})
+   @:ASSERT(n_arg() == 8,{Syntax: synspec_to_radint synspec_filename Teff logg n_mu mu_0 lambda_min lambda_max R limb_law radint_filename})
 
    call get_arg(1, synspec_filename)
-   call get_arg(2, n_mu)
-   call get_arg(3, mu_0)
-   call get_arg(4, lambda_min)
-   call get_arg(5, lambda_max)
-   call get_arg(6, R)
-   call get_arg(7, limb_law)
-   call get_arg(8, specint_filename)
+   call get_arg(2, Teff)
+   call get_arg(3, logg)
+   call get_arg(4, n_mu)
+   call get_arg(5, mu_0)
+   call get_arg(6, lambda_min)
+   call get_arg(7, lambda_max)
+   call get_arg(8, R)
+   call get_arg(9, limb_law)
+   call get_arg(10, radint_filename)
 
    ! Set up the limb-darkening law
 
@@ -97,16 +101,24 @@ program make_specint
    w_0 = LOG(lambda_min)
    n_w = FLOOR((LOG(lambda_max) - LOG(lambda_min))/dw)
 
-   ! Create the specint_t
+   ! Create the radint_t
 
    mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
 
-   si = specint_from_table(I, mu, lambda, w_0, dw, n_w, li)
+   ri = radint_from_table(I, mu, lambda, w_0, dw, n_w, li)
 
-   ! Write the specint_t
+   ! Write the radint_t (with additional metadata)
 
-   hi = hdf5io_t(specint_filename, CREATE_FILE, comp_level=9)
-   call write(hi, si)
+   hi = hdf5io_t(radint_filename, CREATE_FILE, comp_level=9)
+
+   call write(hi, ri)
+
+   call hi%write_attr('w_0', w_0)
+   call hi%write_attr('dw', dw)
+
+   call hi%write_attr('logT', log10(Teff))
+   call hi%write_attr('logg', logg)
+
    call hi%final()
 
    ! Finish
@@ -234,4 +246,4 @@ contains
 
    end subroutine read_data
 
-end program make_specint
+end program synspec_to_radint
