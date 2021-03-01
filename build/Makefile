@@ -5,7 +5,7 @@
 
 #TARGETS = test_math test_interp test_order test_fit make_specint make_radint make_specgrid make_radgrid libradgrid.dylib test_hdf5io
 #TARGETS = test_interp
-TARGETS = make_radgrid libradgrid.dylib test_radgrid convert_radint
+TARGETS = make_radint make_specgrid make_radgrid libradgrid.dylib test_radgrid
 
 make_specint_SRCS = \
   make_specint.f90 \
@@ -25,26 +25,24 @@ make_specint_SRCS = \
 
 make_radint_SRCS = \
   make_radint.f90 \
-  specint_m.f90 \
   radint_m.f90 \
+  radint_factory_m.f90 \
   fit_m.f90 \
   kinds_m.f90 \
   const_m.f90 \
   limb_m.f90 \
   math_m.f90 \
+  memory_m.f90 \
   order_m.f90 \
   system_m.f90 \
   hdf5io_m.f90 \
   cinter_m.f90
 
-make_specgrid_SRCS = \
-  make_specgrid.f90 \
-  specint_m.f90 \
-  specgrid_m.f90 \
-  specgrid_factory_m.f90 \
-  specnode_m.f90 \
+make_radgrid_SRCS = \
+  make_radgrid.f90 \
   radint_m.f90 \
-  dyn_specnode_m.f90 \
+  dyn_radint_m.f90 \
+  radgrid_m.f90 \
   interp_m.f90 \
   stat_m.f90 \
   fit_m.f90 \
@@ -57,11 +55,12 @@ make_specgrid_SRCS = \
   hdf5io_m.f90 \
   cinter_m.f90
 
-make_radgrid_SRCS = \
-  make_radgrid.f90 \
+make_specgrid_SRCS = \
+  make_specgrid.f90 \
   radint_m.f90 \
   dyn_radint_m.f90 \
   radgrid_m.f90 \
+  specgrid_m.f90 \
   interp_m.f90 \
   stat_m.f90 \
   fit_m.f90 \
