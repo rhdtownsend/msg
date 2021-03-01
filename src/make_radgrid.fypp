@@ -44,6 +44,7 @@ program make_radgrid
    logical, allocatable        :: mask(:,:)
    real(RD), allocatable       :: logT(:)
    real(RD), allocatable       :: logg(:)
+   integer                     :: n_k
    integer                     :: n_logT
    integer                     :: n_logg
    integer                     :: j
@@ -59,7 +60,7 @@ program make_radgrid
 
    ! Read the radint_t grid
 
-   call read_radint_grid(list_filename, ri, mask, logT, logg)
+   call read_radint_grid(list_filename, ri, mask, logT, logg, n_k)
 
    ! Print out grid architecture
 
@@ -76,7 +77,7 @@ program make_radgrid
 
    ! Create the radgrid_t
 
-   rg = radgrid_t(ri, mask, logT, logg)
+   rg = radgrid_t(ri, mask, logT, logg, n_k)
 
    ! Write it
 
@@ -88,13 +89,14 @@ program make_radgrid
 
 contains
 
-   subroutine read_radint_grid (list_filename, ri, mask, logT, logg)
+   subroutine read_radint_grid (list_filename, ri, mask, logT, logg, n_k)
 
       character(*), intent(in)                 :: list_filename
       type(radint_t), allocatable, intent(out) :: ri(:,:)
       logical, allocatable, intent(out)        :: mask(:,:)
       real(RD), allocatable, intent(out)       :: logT(:)
       real(RD), allocatable, intent(out)       :: logg(:)
+      integer, intent(out)                     :: n_k
 
       integer                     :: unit
       integer                     :: n_node
@@ -108,7 +110,6 @@ contains
       integer                     :: i
       integer                     :: j
       type(hdf5io_t)              :: hi
-      integer                     :: n_k
       integer                     :: node_n_k
 
       ! Open the file listing the grid nodes
