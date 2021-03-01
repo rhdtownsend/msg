@@ -207,10 +207,11 @@ contains
 
    !****
 
-   subroutine read_(hi, sg)
+   subroutine read_(hi, sg, process)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(specgrid_t), intent(out) :: sg
+      type(hdf5io_t), intent(inout)       :: hi
+      type(specgrid_t), intent(out)       :: sg
+      procedure(process_radint), optional :: process
 
       type(radgrid_t) :: rg
       real(RD)        :: w_0
@@ -218,14 +219,16 @@ contains
 
       ! Read the specgrid_t
 
-      call read(hi, rg, type='specgrid_t')
-
       call hi%read_attr('w_0', w_0)
       call hi%read_attr('dw', dw)
+
+      call read(hi, rg, type='specgrid_t', process=process)
 
       sg = specgrid_t(rg, w_0, dw)
 
       ! Finish
+
+      return
 
    end subroutine read_
 
