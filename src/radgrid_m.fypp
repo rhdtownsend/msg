@@ -415,13 +415,14 @@ contains
 
    !****
 
-   subroutine read_(hi, rg)
+   subroutine read_(hi, rg, type)
 
       type(hdf5io_t), intent(inout)      :: hi
       type(radgrid_t), intent(out)       :: rg
       character(*), intent(in), optional :: type
 
       character(TYPE_LEN)             :: file_type
+      integer                         :: n_k
       real(RD), allocatable           :: logT(:)
       real(RD), allocatable           :: logg(:)
       logical, allocatable            :: mask(:,:)
