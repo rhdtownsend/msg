@@ -38,7 +38,7 @@ program make_specgrid
 
    ! Variables
 
-   character(:), allocatable :: list_filename
+   integer                   :: n_node
    character(:), allocatable :: specgrid_filename
 
    type(radint_t), allocatable :: ri(:,:)
@@ -56,14 +56,14 @@ program make_specgrid
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 2,{Syntax: make_specgrid list_filename specgrid_filename})
+   @:ASSERT(n_arg() >= 2,{Syntax: make_specgrid radint_filename [radint_filename...] specgrid_filename})
 
-   call get_arg(1, list_filename)
-   call get_arg(2, specgrid_filename)
+   n_node = n_arg()-1
+   call get_arg(n_node+1, specgrid_filename)
 
    ! Read the radint_t grid
 
-   call read_radint_grid(list_filename, ri, mask, logT, logg, n_k, w_0, dw)
+   call read_radint_grid(n_node, ri, mask, logT, logg, n_k, w_0, dw)
 
    ! Print out grid architecture
 
@@ -92,9 +92,9 @@ program make_specgrid
 
 contains
 
-   subroutine read_radint_grid (list_filename, ri, mask, logT, logg, n_k, w_0, dw)
+   subroutine read_radint_grid (n_node, ri, mask, logT, logg, n_k, w_0, dw)
 
-      character(*), intent(in)                 :: list_filename
+      integer, intent(in)                      :: n_node
       type(radint_t), allocatable, intent(out) :: ri(:,:)
       logical, allocatable, intent(out)        :: mask(:,:)
       real(RD), allocatable, intent(out)       :: logT(:)
@@ -103,54 +103,40 @@ contains
       real(RD), intent(out)                    :: w_0
       real(RD), intent(out)                    :: dw
 
-      integer                     :: unit
-      integer                     :: n_node
-      character(256), allocatable :: node_filename(:)
-      real(RD), allocatable       :: node_logT(:)
-      real(RD), allocatable       :: node_logg(:)
-      integer                     :: l
-      real(RD)                    :: Teff
-      integer                     :: n_logT
-      integer                     :: n_logg
-      integer                     :: i
-      integer                     :: j
-      type(hdf5io_t)              :: hi
-      integer                     :: node_n_k
-      real(RD)                    :: node_w_0
-      real(RD)                    :: node_dw
+      character(:), allocatable :: node_filename
+      integer                   :: l
+      type(hdf5io_t)            :: hi
+      real(RD), allocatable     :: node_logT(:)
+      real(RD), allocatable     :: node_logg(:)
+      real(RD)                  :: Teff
+      integer                   :: n_logT
+      integer                   :: n_logg
+      integer                   :: i
+      integer                   :: j
+      integer                   :: node_n_k
+      real(RD)                  :: node_w_0
+      real(RD)                  :: node_dw
 
-      ! Open the file listing the grid nodes
-
-      open(NEWUNIT=unit, FILE=list_filename, STATUS='OLD')
-
-      ! Count lines
-
-      n_node = 0
-
-      count_loop : do
-         read(unit, *, END=100)
-         n_node = n_node + 1
-      end do count_loop
-
-100   continue
-
-      ! Read data
-
-      rewind(unit)
-
-      allocate(node_filename(n_node))
+      ! Do a first sweep through the files to determine the axes
 
       allocate(node_logT(n_node))
       allocate(node_logg(n_node))
 
-      read_loop : do l = 1, n_node
-         read(unit, *) Teff, node_logg(l), node_filename(l)
-         node_logT(l) = LOG10(Teff)
-      end do read_loop
+      read_axis_loop : do l = 1, n_node
 
-      close(unit)
+         call get_arg(l, node_filename)
 
-      ! Extract the logT and logg axes
+         hi = hdf5io_t(node_filename, OPEN_FILE)
+
+         @:ASSERT(hi%attr_exists('logT'), radint file lacks logT data)
+         @:ASSERT(hi%attr_exists('logg'), radint file lacks logg data)
+         
+         call hi%read_attr('logT', node_logT(l))
+         call hi%read_attr('logg', node_logg(l))
+
+         call hi%final()
+
+      end do read_axis_loop
 
       logT = node_logT(unique_indices(node_logT))
       logg = node_logg(unique_indices(node_logg))
@@ -167,7 +153,7 @@ contains
 
       ! Read in the radint_t's
 
-      radint_loop : do l = 1, n_node
+      read_radint_loop : do l = 1, n_node
 
          i = FINDLOC(logT, node_logT(l), DIM=1)
          j = FINDLOC(logg, node_logg(l), DIM=1)
@@ -176,7 +162,9 @@ contains
          @:ASSERT(j >= 1 .AND. j <= n_logg, unable to locate node in grid)
          @:ASSERT(.NOT. mask(i,j), duplicate node)
 
-         hi = hdf5io_t(node_filename(l), OPEN_FILE)
+         call get_arg(l, node_filename)
+
+         hi = hdf5io_t(node_filename, OPEN_FILE)
 
          @:ASSERT(hi%attr_exists('w_0'), radint file lacks w_0 data)
          @:ASSERT(hi%attr_exists('dw'), radint file lacks dw data)
@@ -202,7 +190,7 @@ contains
 
          mask(i,j) = .TRUE.
 
-      end do radint_loop
+      end do read_radint_loop
 
       ! Finish
 
