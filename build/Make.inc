@@ -119,5 +119,5 @@ ${TARGETS}: $$(subst .f90,.o,$$($$@_SRCS))
 	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS}
 
 %.d : $$($$*_SRCS)
-	@echo DEPEND $@ $^
+	@echo DEPEND $@
 	@./makedepf90_deps $@ $^ > $@

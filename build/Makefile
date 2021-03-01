@@ -4,10 +4,10 @@
 # Variables
 
 #TARGETS = test_math test_interp test_order test_fit
-TARGETS = make_radint make_radgrid make_specgrid libradgrid.dylib test_radgrid
+TARGETS = synspec_to_radint make_radgrid make_specgrid libradgrid.dylib test_radgrid
 
-make_radint_SRCS = \
-  make_radint.f90 \
+synspec_to_radint_SRCS = \
+  synspec_to_radint.f90 \
   radint_m.f90 \
   radint_factory_m.f90 \
   fit_m.f90 \
