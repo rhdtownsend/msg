@@ -56,6 +56,13 @@ module radint_m
       module procedure radint_t_convolve_
    end interface radint_t
 
+   abstract interface
+      subroutine process_radint(ri)
+         import radint_t
+         type(radint_t), intent(inout) :: ri
+      end subroutine process_radint
+   end interface
+      
    interface read
       module procedure read_
    end interface read
@@ -69,6 +76,7 @@ module radint_m
    private
 
    public :: radint_t
+   public :: process_radint
    public :: read
    public :: write
 
@@ -130,19 +138,19 @@ contains
 
    !****
 
-   function radint_t_convolve_ (ri_in, func, n_k) result (ri)
+   function radint_t_convolve_ (ri_in, conv_func, n_k) result (ri)
 
       type(radint_t), intent(in) :: ri_in
       interface
-         function func(k_in,k)
+         function conv_func(k_in,k)
             use kinds_m
             integer, intent(in) :: k_in
             integer, intent(in) :: k
-            real(RD)            :: func
-         end function func
+            real(RD)            :: conv_func
+         end function conv_func
       end interface
-      integer        :: n_k
-      type(radint_t) :: ri
+      integer                    :: n_k
+      type(radint_t)             :: ri
 
       integer               :: n_b
       real(RD), allocatable :: c(:,:)
@@ -150,7 +158,7 @@ contains
       integer               :: k_in
 
       ! Construct the radint_t by convolving ri_in with the function
-      ! func(k_in,k)
+      ! conv_func(k_in,k)
 
       ! Allocate space for coefficients
 
@@ -165,7 +173,7 @@ contains
          c(:,k) = 0._RD
 
          k_in_loop : do k_in = 1, ri_in%n_k
-            c(:,k) = c(:,k) + func(k_in,k)*ri_in%c(:,k_in)
+            c(:,k) = c(:,k) + conv_func(k_in,k)*ri_in%c(:,k_in)
          end do k_in_loop
 
       end do k_loop
@@ -274,10 +282,11 @@ contains
 
    !****
 
-   subroutine read_(hi, ri)
+   subroutine read_(hi, ri, process)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(radint_t), intent(out)   :: ri
+      type(hdf5io_t), intent(inout)       :: hi
+      type(radint_t), intent(out)         :: ri
+      procedure(process_radint), optional :: process
 
       character(TYPE_LEN)   :: type
       real(RD), allocatable :: c(:,:)
@@ -296,6 +305,10 @@ contains
       call hi_li%final()
 
       ri = radint_t(c, li)
+
+      if (PRESENT(process)) then
+         call process(ri)
+      endif
 
       ! Finish
 
