@@ -53,6 +53,7 @@ module radint_m
    interface radint_t
       module procedure radint_t_
       module procedure radint_t_fit_
+      module procedure radint_t_convolve_
    end interface radint_t
 
    interface read
@@ -126,6 +127,54 @@ contains
       return
 
    end function radint_t_fit_
+
+   !****
+
+   function radint_t_convolve_ (ri_in, func, n_k) result (ri)
+
+      type(radint_t), intent(in) :: ri_in
+      interface
+         function func(k_in,k)
+            use kinds_m
+            integer, intent(in) :: k_in
+            integer, intent(in) :: k
+            real(RD)            :: func
+         end function func
+      end interface
+      integer        :: n_k
+      type(radint_t) :: ri
+
+      integer               :: n_b
+      real(RD), allocatable :: c(:,:)
+      integer               :: k
+      integer               :: k_in
+
+      ! Construct the radint_t by convolving ri_in with the function
+      ! func(k_in,k)
+
+      ! Allocate space for coefficients
+
+      n_b = ri_in%n_b
+
+      allocate(c(n_b,n_k))
+
+      ! Perform the convolution
+
+      k_loop : do k = 1, n_k
+
+         c(:,k) = 0._RD
+
+         k_in_loop : do k_in = 1, ri_in%n_k
+            c(:,k) = c(:,k) + func(k_in,k)*ri_in%c(:,k_in)
+         end do k_in_loop
+
+      end do k_loop
+
+      ri = radint_t(c, ri_in%li)
+
+      ! Finish
+
+   end function radint_t_convolve_
 
    !****
 
