@@ -49,7 +49,6 @@ module specgrid_m
          procedure         :: interp_${name}$_w_
          generic, public   :: interp_${name}$ => interp_${name}$_w_
       #:endfor
-      procedure :: locate_w_
    end type specgrid_t
 
    ! Interfaces
@@ -60,6 +59,7 @@ module specgrid_m
 
    interface read
       module procedure read_
+      module procedure read_rebin_
    end interface read
 
    interface write
@@ -123,7 +123,7 @@ contains
 
          ! Interpolate the ${name}$
 
-         call self%locate_w_(w_0, k_a, u)
+         call locate_w_(self%w_0, self%dw, w_0, k_a, u)
          k_b = k_a + n_w
 
          call self%interp_${name}$(logT, logg, ${arg_var}$, k_a, k_b, ${var}$_x, stat, d_dlogT, d_dlogg)
@@ -162,8 +162,7 @@ contains
 
          ! Interpolate the ${name}$
 
-         call self%locate_w_(w_0, k_a, u)
-
+         call locate_w_(self%w_0, self%dw, w_0, k_a, u)
          k_b = k_a + n_w
 
          call self%interp_${name}$(logT, logg, k_a, k_b, ${var}$_x, stat, d_dlogT, d_dlogg)
@@ -179,25 +178,26 @@ contains
 
    !****
 
-   subroutine locate_w_(self, w, k, u)
+   subroutine locate_w_(w_0, dw, w, k, u)
 
-      class(specgrid_t), intent(in) :: self
-      real(RD), intent(in)          :: w
-      integer, intent(out)          :: k
-      real(RD), intent(out)         :: u
+      real(RD), intent(in)  :: w_0
+      real(RD), intent(in)  :: dw
+      real(RD), intent(in)  :: w
+      integer, intent(out)  :: k
+      real(RD), intent(out) :: u
 
       real(RD) :: w_pri
 
-      ! Locate k such that (k-1)*self%dw <= w < k*self%dw,
+      ! Locate k such that (k-1)*self%dw <= w' < k*self%dw,
       ! where w' = w - self%w_0
 
-      w_pri = w - self%w_0
+      w_pri = w - w_0
 
-      k = FLOOR(w_pri/self%dw) + 1
+      k = FLOOR(w_pri/dw) + 1
 
       ! Set up the associated interpolation weight
 
-      u = w_pri/self%dw - (k-1)
+      u = w_pri/dw - (k-1)
 
       ! Finish
 
@@ -234,6 +234,112 @@ contains
 
    !****
 
+   subroutine read_rebin_(hi, sg, n_w, w_0, dw, process)
+
+      type(hdf5io_t), intent(inout)       :: hi
+      type(specgrid_t), intent(out)       :: sg
+      integer, intent(in)                 :: n_w
+      real(RD), intent(in)                :: w_0
+      real(RD), intent(in)                :: dw
+      procedure(process_radint), optional :: process
+
+      type(radgrid_t) :: rg
+      integer         :: n_k_in
+      real(RD)        :: w_0_in
+      real(RD)        :: dw_in
+
+      ! Read the specgrid_t
+
+      call hi%read_attr('n_k', n_k_in)
+      call hi%read_attr('w_0', w_0_in)
+      call hi%read_attr('dw', dw_in)
+
+      call read(hi, rg, type='specgrid_t', process=rebin_process_)
+
+      sg = specgrid_t(rg, w_0, dw)
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine rebin_process_(ri)
+
+         type(radint_t), intent(inout) :: ri
+
+         ! Rebin the radint_t
+
+         ri = radint_t(ri, rebin_func_, n_w)
+
+         if (PRESENT(process)) then
+            call process(ri)
+         endif
+
+         ! Finish
+
+         return
+
+      end subroutine rebin_process_
+
+      !****
+
+      function rebin_func_(k_in, k) result(C)
+
+         integer, intent(in) :: k_in
+         integer, intent(in) :: k
+         real(RD)            :: C
+
+         real(RD) :: w_a
+         real(RD) :: w_b
+         integer  :: k_in_a
+         integer  :: k_in_b
+         real(RD) :: u_a
+         real(RD) :: u_b
+         real(RD) :: delta_in
+         real(RD) :: delta
+
+         ! Set up w-bounds of the k'th cell in ri
+         
+         w_a = w_0 + (k-1)*dw
+         w_b = w_0 + (k  )*dw
+
+         ! Locate where these bounds occur in ri_in
+
+         call locate_w_(w_0_in, dw_in, w_a, k_in_a, u_a)
+         call locate_w_(w_0_in, dw_in, w_b, k_in_b, u_b)
+
+         ! Evaluate the contribution from the k_in cell
+
+         if (k_in == k_in_a .AND. k_in == k_in_b) then
+            C = u_b - u_a
+         elseif (k_in == k_in_a) then
+            C = 1._RD - u_a
+         elseif (k_in == k_in_b) then
+            C = u_b
+         elseif (k_in > k_in_a .AND. k_in < k_in_b) then
+            C = 1._RD
+         else
+            C = 0._RD
+         endif
+            
+         ! Rescale by cell widths (done this way to avoid rounding issues)
+
+         delta_in = (w_0_in + (k_in+1)*dw_in) - (w_0_in + (k_in  )*dw)
+         delta = w_b - w_a
+
+         C = C*delta_in/delta
+
+         ! Finish
+
+         return
+
+      end function rebin_func_
+
+   end subroutine read_rebin_
+         
+   !****
+
    subroutine write_(hi, sg)
 
       type(hdf5io_t), intent(inout) :: hi
@@ -242,7 +348,7 @@ contains
       call write(hi, sg%radgrid_t, type='specgrid_t')
 
       call hi%write_attr('w_0', sg%w_0)
-      call hi%write_attr('w_0', sg%dw)
+      call hi%write_attr('dw', sg%dw)
 
       ! Finish
 
