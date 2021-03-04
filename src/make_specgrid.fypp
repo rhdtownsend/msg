@@ -26,6 +26,7 @@ program make_specgrid
    use order_m
    use system_m
 
+   use grid_m
    use specint_m
    use specgrid_m
 
@@ -44,9 +45,6 @@ program make_specgrid
    logical, allocatable         :: mask(:,:)
    real(RD), allocatable        :: logT(:)
    real(RD), allocatable        :: logg(:)
-   integer                      :: n_k
-   real(RD)                     :: w_0
-   real(RD)                     :: dw
    integer                      :: n_logT
    integer                      :: n_logg
    integer                      :: j
@@ -55,14 +53,14 @@ program make_specgrid
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() >= 2,{Syntax: make_specgrid radint_filename [radint_filename...] specgrid_filename})
+   @:ASSERT(n_arg() >= 2,{Syntax: make_specgrid specint_filename [specint_filename...] specgrid_filename})
 
    n_node = n_arg()-1
    call get_arg(n_node+1, specgrid_filename)
 
-   ! Read the radint_t grid
+   ! Read the specint_t grid
 
-   call read_radint_grid(n_node, ri, mask, logT, logg, n_k, w_0, dw)
+   call read_specint_grid(n_node, si, mask, logT, logg)
 
    ! Print out grid architecture
 
@@ -79,7 +77,7 @@ program make_specgrid
 
    ! Create the specgrid_t
 
-   sg = specgrid_t(radgrid_t(ri, mask, logT, logg, n_k), w_0, dw)
+   sg = specgrid_t(grid_t(mask, logT, logg), si)
 
    ! Write it
 
@@ -91,16 +89,13 @@ program make_specgrid
 
 contains
 
-   subroutine read_radint_grid (n_node, ri, mask, logT, logg, n_k, w_0, dw)
+   subroutine read_specint_grid (n_node, si, mask, logT, logg)
 
-      integer, intent(in)                      :: n_node
-      type(radint_t), allocatable, intent(out) :: ri(:,:)
-      logical, allocatable, intent(out)        :: mask(:,:)
-      real(RD), allocatable, intent(out)       :: logT(:)
-      real(RD), allocatable, intent(out)       :: logg(:)
-      integer, intent(out)                     :: n_k
-      real(RD), intent(out)                    :: w_0
-      real(RD), intent(out)                    :: dw
+      integer, intent(in)                       :: n_node
+      type(specint_t), allocatable, intent(out) :: si(:,:)
+      logical, allocatable, intent(out)         :: mask(:,:)
+      real(RD), allocatable, intent(out)        :: logT(:)
+      real(RD), allocatable, intent(out)        :: logg(:)
 
       character(:), allocatable :: node_filename
       integer                   :: l
@@ -112,9 +107,6 @@ contains
       integer                   :: n_logg
       integer                   :: i
       integer                   :: j
-      integer                   :: node_n_k
-      real(RD)                  :: node_w_0
-      real(RD)                  :: node_dw
 
       ! Do a first sweep through the files to determine the axes
 
@@ -127,8 +119,8 @@ contains
 
          hi = hdf5io_t(node_filename, OPEN_FILE)
 
-         @:ASSERT(hi%attr_exists('logT'), radint file lacks logT data)
-         @:ASSERT(hi%attr_exists('logg'), radint file lacks logg data)
+         @:ASSERT(hi%attr_exists('logT'), specint file lacks logT data)
+         @:ASSERT(hi%attr_exists('logg'), specint file lacks logg data)
          
          call hi%read_attr('logT', node_logT(l))
          call hi%read_attr('logg', node_logg(l))
@@ -145,14 +137,14 @@ contains
       n_logT = SIZE(logT)
       n_logg = SIZE(logg)
 
-      allocate(ri(n_logT,n_logg))
+      allocate(si(n_logT,n_logg))
       allocate(mask(n_logT,n_logg))
 
       mask = .FALSE.
 
-      ! Read in the radint_t's
+      ! Read in the specint_t's
 
-      read_radint_loop : do l = 1, n_node
+      read_specint_loop : do l = 1, n_node
 
          i = FINDLOC(logT, node_logT(l), DIM=1)
          j = FINDLOC(logg, node_logg(l), DIM=1)
@@ -164,35 +156,15 @@ contains
          call get_arg(l, node_filename)
 
          hi = hdf5io_t(node_filename, OPEN_FILE)
-
-         @:ASSERT(hi%attr_exists('w_0'), radint file lacks w_0 data)
-         @:ASSERT(hi%attr_exists('dw'), radint file lacks dw data)
-
-         call hi%read_attr('w_0', node_w_0)
-         call hi%read_attr('dw', node_dw)
-
-         call read(hi, ri(i,j))
-
-         node_n_k = ri(i,j)%n_k
-
+         call read(hi, si(i,j))
          call hi%final()
-
-         if (l == 1) then
-            n_k = node_n_k
-            w_0 = node_w_0
-            dw = node_dw
-         else
-            @:ASSERT(node_n_k == n_k, n_k mismatch)
-            @:ASSERT(node_w_0 == w_0, w_0 mismatch)
-            @:ASSERT(node_dw == dw, dw mismatch)
-         endif
 
          mask(i,j) = .TRUE.
 
-      end do read_radint_loop
+      end do read_specint_loop
 
       ! Finish
 
-   end subroutine read_radint_grid
+   end subroutine read_specint_grid
 
 end program make_specgrid
