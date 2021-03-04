@@ -269,6 +269,8 @@ contains
       integer        :: i
       integer        :: j
 
+      ! Write the specgrid_t
+
       select type (si => sg%si)
 
       type is (specint_t)
