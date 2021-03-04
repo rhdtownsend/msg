@@ -37,8 +37,11 @@ module limb_m
    ! Parameter definitions
 
    integer, parameter :: LINEAR_LAW = 1
-   integer, parameter :: QUAD_LAW = 2
-   integer, parameter :: CLARET_LAW = 3
+   integer, parameter :: SQRT_LAW = 2
+   integer, parameter :: QUAD_LAW = 3
+   integer, parameter :: CLARET_LAW = 4
+
+   integer, parameter :: STR_LEN = 16
 
    ! Derived-type definitions
 
@@ -75,6 +78,7 @@ module limb_m
    private
 
    public :: LINEAR_LAW
+   public :: SQRT_LAW
    public :: QUAD_LAW
    public :: CLARET_LAW
    public :: limb_t
@@ -85,28 +89,79 @@ module limb_m
 
 contains
 
-   function limb_t_(law) result (li)
+   function limb_t_(str) result (li)
 
-      integer, intent(in) :: law
-      type(limb_t)        :: li
+      character(*), intent(in) :: str
+      type(limb_t)             :: li
+
+      integer :: law
 
       ! Construct the limb_t from the supplied data
 
-      select case (law)
-      case (LINEAR_LAW)
-      case (QUAD_LAW)
-      case (CLARET_LAW)
-      case default
-         @:ABORT(invalid law)
-      end select
-
-      li%law = law
+      li%law = str_to_law_(str)
 
       ! Finish
 
       return
 
    end function limb_t_
+
+   !****
+
+   function law_to_str_(law) result(str)
+
+      integer, intent(in) :: law
+      character(STR_LEN)  :: str
+
+      ! Convert the law index into a string
+
+      select case (law)
+      case (LINEAR_LAW)
+         str = 'LINEAR'
+      case (SQRT_LAW)
+         str = 'SQRT'
+      case (QUAD_LAW)
+         str = 'QUAD'
+      case (CLARET_LAW)
+         str = 'CLARET'
+      case default
+         @:ABORT(invalid law index)
+      end select
+
+      ! Finish
+
+      return
+
+   end function law_to_str_
+      
+
+   !****
+
+   function str_to_law_(str) result(law)
+
+      character(*), intent(in) :: str
+      integer                  :: law
+
+      ! Convert the string into a law index
+
+      select case (str)
+      case ('LINEAR')
+         law = LINEAR_LAW
+      case ('SQRT')
+         law = SQRT_LAW
+      case ('QUAD')
+         law = QUAD_LAW
+      case ('CLARET')
+         law = CLARET_LAW
+      case default
+         @:ABORT(invalid string)
+      end select
+
+      ! Finish
+
+      return
+
+   end function str_to_law_
 
    !****
 
@@ -120,6 +175,8 @@ contains
       select case (self%law)
       case (LINEAR_LAW)
          n_basis = 2
+      case (SQRT_LAW)
+         n_basis = 3
       case (QUAD_LAW)
          n_basis = 3
       case (CLARET_LAW)
@@ -161,6 +218,12 @@ contains
          b = [           &
               1._RD,     &
               mu - 1._RD &
+              ]
+      case (SQRT_LAW)
+         b = [                  &
+              1._RD,            &
+              sqrt(mu) - 1._RD, &
+              mu - 1._RD        &
               ]
       case (QUAD_LAW)
          b = [              &
@@ -216,6 +279,12 @@ contains
               D_ls(l, 1._RD),                 &
               D_ls(l, 2._RD) - D_ls(l, 1._RD) &
               ]
+      case (SQRT_LAW)
+         b = [                                  &
+              D_ls(l, 1._RD),                   &
+              D_ls(l, 1.5_RD) - D_ls(l, 1._RD), &
+              D_ls(l, 2._RD) - D_ls(l, 1._RD)   &
+              ]
       case (QUAD_LAW)
          b = [                                 &
               D_ls(l, 1._RD),                  &
@@ -259,6 +328,12 @@ contains
          b = TWOPI*[       &
               1._RD/2._RD, &
               -1._RD/6._RD &
+              ]
+      case (SQRT_LAW)
+         b = [               &
+              1._RD/2._RD,   &
+              -1._RD/10._RD, &
+              -1._RD/6._RD   &
               ]
       case (QUAD_LAW)
          b = [              &
@@ -414,16 +489,16 @@ contains
       type(limb_t), intent(out)     :: li
 
       character(TYPE_LEN) :: type
-      integer             :: law
+      character(STR_LEN)  :: str
 
       ! Read the limb_t
 
       call hi%read_attr('TYPE', type)
       @:ASSERT(type == 'limb_t',invalid type)
 
-      call hi%read_attr('law', law)
+      call hi%read_attr('law', str)
   
-      li = limb_t(law)
+      li = limb_t(str)
 
       ! Finish
 
@@ -442,7 +517,7 @@ contains
 
       call hi%write_attr('TYPE', 'limb_t')
       
-      call hi%write_attr('law', li%law)
+      call hi%write_attr('law', law_to_str_(li%law))
 
       ! Finish
 
