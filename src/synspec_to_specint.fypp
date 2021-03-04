@@ -65,7 +65,7 @@ program synspec_to_specint
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 8,{Syntax: synspec_to_specint synspec_filename Teff logg n_mu mu_0 lambda_min lambda_max R limb_law specint_filename})
+   @:ASSERT(n_arg() == 10,{Syntax: synspec_to_specint synspec_filename Teff logg n_mu mu_0 lambda_min lambda_max R limb_law specint_filename})
 
    call get_arg(1, synspec_filename)
    call get_arg(2, Teff)
