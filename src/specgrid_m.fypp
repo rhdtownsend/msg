@@ -24,11 +24,10 @@ module specgrid_m
    
    use kinds_m
    use hdf5io_m
-   use order_m
 
-   use radint_m
-   use dyn_radint_m
-   use radgrid_m
+   use grid_m
+   use specint_m
+   use dyn_specint_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -39,15 +38,13 @@ module specgrid_m
 
    ! Derived-type definitions
 
-   type, extends(radgrid_t) :: specgrid_t
+   type, extends(grid_t) :: specgrid_t
       private
-      real(RD) :: w_0
-      real(RD) :: dw
+      class(specint_t), allocatable :: si(:,:)
    contains
       private
       #:for name in ('intensity', 'D_moment', 'flux')
-         procedure         :: interp_${name}$_w_
-         generic, public   :: interp_${name}$ => interp_${name}$_w_
+         procedure, public :: interp_${name}$
       #:endfor
    end type specgrid_t
 
@@ -78,19 +75,23 @@ module specgrid_m
 
 contains
 
-   function specgrid_t_ (rg, w_0, dw) result (sg)
+   function specgrid_t_ (gr, si) result (sg)
 
-      type(radgrid_t), intent(in) :: rg
-      real(RD), intent(in)        :: w_0
-      real(RD), intent(in)        :: dw
-      type(specgrid_t)            :: sg
+      type(grid_t), intent(in)     :: gr
+      class(specint_t), intent(in) :: si(:,:)
+      type(specgrid_t)             :: sg
+
+      integer :: i
+      integer :: j
+
+      @:CHECK_BOUNDS(SIZE(ri, 1), gr%n_logT)
+      @:CHECK_BOUNDS(SIZE(ri, 1), gr%n_logg)
 
       ! Construct the specgrid_t
 
-      sg%radgrid_t = rg
-
-      sg%w_0 = w_0
-      sg%dw = dw
+      sg%grid_t = gr
+ 
+      allocate(sg%si, SOURCE=si)
 
       ! Finish
 
@@ -103,39 +104,40 @@ contains
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
                                           ('D_moment', 'D', 'l', 'integer'))
 
-      subroutine interp_${name}$_w_(self, logT, logg, ${arg_var}$, w_0, n_w, ${var}$, stat, d_dlogT, d_dlogg)
+      subroutine interp_${name}$(self, logT, logg, ${arg_var}$, w_0, ${var}$, stat, d_dlogT, d_dlogg)
 
          class(specgrid_t), intent(inout) :: self
          real(RD), intent(in)             :: logT
          real(RD), intent(in)             :: logg
          ${arg_type}$, intent(in)         :: ${arg_var}$
          real(RD), intent(in)             :: w_0
-         integer, intent(in)              :: n_w
          real(RD), intent(out)            :: ${var}$(:)
          integer, intent(out), optional   :: stat
          logical, intent(in), optional    :: d_dlogT
          logical, intent(in), optional    :: d_dlogg
 
-         integer  :: k_a
-         integer  :: k_b
-         real(RD) :: u
-         real(RD) :: ${var}$_x(n_w+1)
-
          ! Interpolate the ${name}$
 
-         call locate_w_(self%w_0, self%dw, w_0, k_a, u)
-         k_b = k_a + n_w
-
-         call self%interp_${name}$(logT, logg, ${arg_var}$, k_a, k_b, ${var}$_x, stat, d_dlogT, d_dlogg)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
-
-         ${var}$ = (1._RD-u)*${var}$_x(1:n_w-1) + u*${var}$_x(2:n_w)
+         call self%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
 
          ! Finish
 
-      end subroutine interp_${name}$_w_
+      contains
+
+         subroutine proc_(i, j, f, stat)
+
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            real(RD), intent(out)          :: f(:)
+            integer, intent(out), optional :: stat
+
+            call self%si(i,j)%interp_${name}$(${arg_var}$, w_0, f, stat)
+
+            return
+
+         end subroutine proc_
+
+      end subroutine interp_${name}$
 
    #:endfor
 
@@ -143,217 +145,171 @@ contains
 
    #:for name, var in (('flux', 'F'), )
 
-      subroutine interp_${name}$_w_(self, logT, logg, w_0, n_w, ${var}$, stat, d_dlogT, d_dlogg)
+      subroutine interp_${name}$(self, logT, logg, w_0, ${var}$, stat, d_dlogT, d_dlogg)
 
          class(specgrid_t), intent(inout) :: self
          real(RD), intent(in)             :: logT
          real(RD), intent(in)             :: logg
          real(RD), intent(in)             :: w_0
-         integer, intent(in)              :: n_w
          real(RD), intent(out)            :: ${var}$(:)
          integer, intent(out), optional   :: stat
          logical, intent(in), optional    :: d_dlogT
          logical, intent(in), optional    :: d_dlogg
 
-         integer  :: k_a
-         integer  :: k_b
-         real(RD) :: u
-         real(RD) :: ${var}$_x(n_w+1)
-
          ! Interpolate the ${name}$
 
-         call locate_w_(self%w_0, self%dw, w_0, k_a, u)
-         k_b = k_a + n_w
+         call self%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
 
-         call self%interp_${name}$(logT, logg, k_a, k_b, ${var}$_x, stat, d_dlogT, d_dlogg)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
+         ! Finish
 
-         ${var}$ = (1._RD-u)*${var}$_x(1:n_w-1) + u*${var}$_x(2:n_w)
+      contains
 
-      end subroutine interp_${name}$_w_
+         subroutine proc_(i, j, f, stat)
+
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            real(RD), intent(out)          :: f(:)
+            integer, intent(out), optional :: stat
+
+            call self%si(i,j)%interp_${name}$(w_0, f, stat)
+
+            return
+
+         end subroutine proc_
+
+      end subroutine interp_${name}$
 
    #:endfor
 
    !****
 
-   subroutine locate_w_(w_0, dw, w, k, u)
+   subroutine read_(hi, sg)
 
-      real(RD), intent(in)  :: w_0
-      real(RD), intent(in)  :: dw
-      real(RD), intent(in)  :: w
-      integer, intent(out)  :: k
-      real(RD), intent(out) :: u
+      type(hdf5io_t), intent(inout) :: hi
+      type(specgrid_t), intent(out) :: sg
 
-      real(RD) :: w_pri
-
-      ! Locate k such that (k-1)*self%dw <= w' < k*self%dw,
-      ! where w' = w - self%w_0
-
-      w_pri = w - w_0
-
-      k = FLOOR(w_pri/dw) + 1
-
-      ! Set up the associated interpolation weight
-
-      u = w_pri/dw - (k-1)
-
-      ! Finish
-
-      return
-
-   end subroutine locate_w_
-
-   !****
-
-   subroutine read_(hi, sg, process)
-
-      type(hdf5io_t), intent(inout)       :: hi
-      type(specgrid_t), intent(out)       :: sg
-      procedure(process_radint), optional :: process
-
-      type(radgrid_t) :: rg
-      real(RD)        :: w_0
-      real(RD)        :: dw
+      type(grid_t)                     :: gr
+      type(dyn_specint_t), allocatable :: si(:,:)
+      type(hdf5io_t)                   :: hi_si
+      integer                          :: i
+      integer                          :: j
 
       ! Read the specgrid_t
 
-      call hi%read_attr('w_0', w_0)
-      call hi%read_attr('dw', dw)
+      call read(hi, gr, type='specgrid_t')
 
-      call read(hi, rg, type='specgrid_t', process=process)
+      allocate(si(gr%n_logT,gr%n_logg))
 
-      sg = specgrid_t(rg, w_0, dw)
+      logT_loop : do i = 1, gr%n_logT
+         logg_loop : do j = 1, gr%n_logg
+
+            if (gr%mask(i,j)) then
+               hi_si = hdf5io_t(hi, si_name_(i,j))
+               call read(hi_si, si(i,j))
+               call hi_si%final()
+            end if
+            
+         end do logg_loop
+      end do logT_loop
+      
+      sg = specgrid_t(gr, si)
 
       ! Finish
-
-      return
 
    end subroutine read_
 
    !****
 
-   subroutine read_rebin_(hi, sg, n_w, w_0, dw, process)
+   subroutine read_rebin_(hi, sg, w_0, dw, n_w)
 
-      type(hdf5io_t), intent(inout)       :: hi
-      type(specgrid_t), intent(out)       :: sg
-      integer, intent(in)                 :: n_w
-      real(RD), intent(in)                :: w_0
-      real(RD), intent(in)                :: dw
-      procedure(process_radint), optional :: process
+      type(hdf5io_t), intent(inout) :: hi
+      type(specgrid_t), intent(out) :: sg
+      real(RD), intent(in)          :: w_0
+      real(RD), intent(in)          :: dw
+      integer, intent(in)           :: n_w
 
-      type(radgrid_t) :: rg
-      integer         :: n_k_in
-      real(RD)        :: w_0_in
-      real(RD)        :: dw_in
+      type(grid_t)                     :: gr
+      type(dyn_specint_t), allocatable :: si(:,:)
+      type(hdf5io_t)                   :: hi_si
+      integer                          :: i
+      integer                          :: j
 
       ! Read the specgrid_t
 
-      call hi%read_attr('n_k', n_k_in)
-      call hi%read_attr('w_0', w_0_in)
-      call hi%read_attr('dw', dw_in)
+      call read(hi, gr, type='specgrid_t')
 
-      call read(hi, rg, type='specgrid_t', process=rebin_process_)
+      allocate(si(gr%n_logT,gr%n_logg))
 
-      sg = specgrid_t(rg, w_0, dw)
+      logT_loop : do i = 1, gr%n_logT
+         logg_loop : do j = 1, gr%n_logg
+
+            if (gr%mask(i,j)) then
+               hi_si = hdf5io_t(hi, si_name_(i,j))
+               call read(hi_si, si(i,j), w_0, dw, n_w)
+               call hi_si%final()
+            end if
+            
+         end do logg_loop
+      end do logT_loop
+      
+      sg = specgrid_t(gr, si)
 
       ! Finish
 
-      return
-
-   contains
-
-      subroutine rebin_process_(ri)
-
-         type(radint_t), intent(inout) :: ri
-
-         ! Rebin the radint_t
-
-         ri = radint_t(ri, rebin_func_, n_w)
-
-         if (PRESENT(process)) then
-            call process(ri)
-         endif
-
-         ! Finish
-
-         return
-
-      end subroutine rebin_process_
-
-      !****
-
-      function rebin_func_(k_in, k) result(C)
-
-         integer, intent(in) :: k_in
-         integer, intent(in) :: k
-         real(RD)            :: C
-
-         real(RD) :: w_a
-         real(RD) :: w_b
-         integer  :: k_in_a
-         integer  :: k_in_b
-         real(RD) :: u_a
-         real(RD) :: u_b
-         real(RD) :: delta_in
-         real(RD) :: delta
-
-         ! Set up w-bounds of the k'th cell in ri
-         
-         w_a = w_0 + (k-1)*dw
-         w_b = w_0 + (k  )*dw
-
-         ! Locate where these bounds occur in ri_in
-
-         call locate_w_(w_0_in, dw_in, w_a, k_in_a, u_a)
-         call locate_w_(w_0_in, dw_in, w_b, k_in_b, u_b)
-
-         ! Evaluate the contribution from the k_in cell
-
-         if (k_in == k_in_a .AND. k_in == k_in_b) then
-            C = u_b - u_a
-         elseif (k_in == k_in_a) then
-            C = 1._RD - u_a
-         elseif (k_in == k_in_b) then
-            C = u_b
-         elseif (k_in > k_in_a .AND. k_in < k_in_b) then
-            C = 1._RD
-         else
-            C = 0._RD
-         endif
-            
-         ! Rescale by cell widths (done this way to avoid rounding issues)
-
-         delta_in = (w_0_in + (k_in+1)*dw_in) - (w_0_in + (k_in  )*dw)
-         delta = w_b - w_a
-
-         C = C*delta_in/delta
-
-         ! Finish
-
-         return
-
-      end function rebin_func_
-
    end subroutine read_rebin_
-         
+
    !****
 
    subroutine write_(hi, sg)
 
       type(hdf5io_t), intent(inout) :: hi
-      type(specgrid_t), intent(in ) :: sg
+      type(specgrid_t), intent(in)  :: sg
 
-      call write(hi, sg%radgrid_t, type='specgrid_t')
+      type(hdf5io_t) :: hi_si
+      integer        :: i
+      integer        :: j
 
-      call hi%write_attr('w_0', sg%w_0)
-      call hi%write_attr('dw', sg%dw)
+      select type (si => sg%si)
+
+      type is (specint_t)
+
+         call write(hi, sg%grid_t, type='specgrid_t')
+
+         logT_loop : do i = 1, sg%n_logT
+            logg_loop : do j = 1, sg%n_logg
+
+               if (sg%mask(i,j)) then
+                  hi_si = hdf5io_t(hi, si_name_(i,j))
+                  call write(hi_si, si(i,j))
+                  call hi_si%final()
+               end if
+            
+            end do logg_loop
+         end do logT_loop
+
+      type is (dyn_specint_t)
+
+         @:ABORT(cannot write dyn_specint_t)
+
+      end select
 
       ! Finish
 
       return
 
    end subroutine write_
+
+   !****
+
+   function si_name_(i,j) result (name)
+
+      integer, intent(in) :: i
+      integer, intent(in) :: j
+      character(256)      :: name
+
+      write(name, 100) i, j
+100   format('si(',I0,',',I0,')')
+
+   end function si_name_
 
 end module specgrid_m

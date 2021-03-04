@@ -1,0 +1,45 @@
+program test_specgrid
+
+   use kinds_m
+   use hdf5io_m
+
+   use specgrid_m
+   use stat_m
+
+   implicit none
+
+   integer, parameter :: n = 800
+
+   real(RD) :: w_0
+   real(RD) :: dw
+   integer  :: n_w
+   
+   type(specgrid_t) :: sg
+   type(hdf5io_t)   :: hi
+   real(RD)         :: I(n)
+   integer          :: j
+   integer          :: stat
+
+   n_w = 1000
+
+   w_0 = LOG(5000._RD)
+   dw = (LOG(6000._RD) - LOG(5000._RD))/n_w
+
+   hi = hdf5io_t('sg.h5', OPEN_FILE)
+   call read(hi, sg, w_0, dw, n_w)
+   call hi%final()
+
+   print *,'Grid loaded'
+
+   call sg%interp_intensity(4._RD, 4._RD, 0.5_RD, LOG(5100._RD), I, stat)
+   if (stat /= STAT_OK) then
+      print *,'Stat is:',stat
+      stop
+   end if
+
+!   do j = 1, n
+!      print *,j,I(j)
+!   end do
+
+end program test_specgrid
+   

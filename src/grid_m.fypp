@@ -1,0 +1,541 @@
+! Module  : grid_m
+! Purpose : define grid_t type, a simple base type for logT-logg grids
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module grid_m
+
+   ! Uses
+   
+   use kinds_m
+   use hdf5io_m
+   use order_m
+
+   use interp_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type grid_t
+      logical, allocatable  :: mask(:,:)
+      real(RD), allocatable :: logT(:)
+      real(RD), allocatable :: logg(:)
+      integer               :: n_logT
+      integer               :: n_logg
+   contains
+      private
+      procedure       :: interp_0_
+      procedure       :: interp_1_
+      generic, public :: interp => interp_0_, interp_1_
+      procedure       :: locate_cell_
+      procedure       :: setup_stencil_
+      procedure       :: setup_kernels_
+   end type grid_t
+
+   ! Interfaces
+
+   interface grid_t
+      module procedure grid_t_
+   end interface grid_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: grid_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function grid_t_ (mask, logT, logg) result (gr)
+
+      logical, intent(in)  :: mask(:,:)
+      real(RD), intent(in) :: logT(:)
+      real(RD), intent(in) :: logg(:)
+      type(grid_t)         :: gr
+
+      integer :: i
+      integer :: j
+
+      @:CHECK_BOUNDS(SIZE(logT), SIZE(mask, 1))
+      @:CHECK_BOUNDS(SIZE(logg), SIZE(mask, 2))
+
+      ! Construct the grid_t
+
+      gr%mask = mask
+
+      gr%logT = logT
+      gr%logg = logg
+
+      gr%n_logT = SIZE(logT)
+      gr%n_logg = SIZE(logg)
+
+      ! Finish
+
+      return
+
+   end function grid_t_
+
+   !****
+
+   subroutine interp_0_(self, proc, logT, logg, f_int, stat, d_dlogT, d_dlogg)
+
+         class(grid_t), intent(inout) :: self
+         interface
+            subroutine proc(i, j, f, stat)
+               use kinds_m
+               integer, intent(in)            :: i
+               integer, intent(in)            :: j
+               real(RD), intent(out)          :: f
+               integer, intent(out), optional :: stat
+            end subroutine proc
+         end interface
+      real(RD), intent(in)             :: logT
+      real(RD), intent(in)             :: logg
+      real(RD), intent(out)            :: f_int
+      integer, intent(out), optional   :: stat
+      logical, intent(in), optional    :: d_dlogT
+      logical, intent(in), optional    :: d_dlogg
+
+      integer  :: i_cl
+      integer  :: j_cl
+      logical  :: mask(4,4)
+      real(RD) :: x(4)
+      real(RD) :: y(4)
+      real(RD) :: dx_kern(3,2,2)
+      real(RD) :: dy_kern(3,2,2)
+      real(RD) :: dxdy_kern(3,3,2,2)
+      integer  :: l
+      integer  :: m
+      real(RD) :: dx
+      real(RD) :: dy
+      real(RD) :: u
+      real(RD) :: v
+      real(RD) :: f(4,4)
+      real(RD) :: df_dx(2,2)
+      real(RD) :: df_dy(2,2)
+      real(RD) :: d2f_dxdy(2,2)
+
+      ! Interpolate a scalar value
+
+      ! Locate the interpolation cell
+
+      call self%locate_cell_(logT, logg, i_cl, j_cl, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Set up the interpolation stencil
+
+      call self%setup_stencil_(i_cl, j_cl, mask, x, y, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Set up derivative kernels
+
+      call self%setup_kernels_(mask, x, y, dx_kern, dy_kern, dxdy_kern)
+
+      ! Evaluate the function at the stencil points
+
+      do l = 1, 4
+         do m = 1, 4
+            if (mask(l,m)) then
+               call proc(i_cl+l-2, j_cl+l-2, f(l,m), stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               endif
+            endif
+         end do
+      end do
+
+      ! Set up interpolation weights
+
+      dx = x(3) - x(2)
+      u = (logT - x(2))/dx
+
+      dy = y(3) - y(2)
+      v = (logg - y(2))/dy
+
+      ! Evaluate derivatives
+
+      do m = 2, 3
+         do l = 2, 3
+            df_dx(l-1,m-1) = SUM(f(l-1:l+1,m)*dx_kern(:,l-1,m-1), mask(l-1:l+1,m))
+            df_dy(l-1,m-1) = SUM(f(l,m-1:m+1)*dy_kern(:,l-1,m-1), mask(l,m-1:m+1))
+            d2f_dxdy(l-1,m-1) = SUM(f(l-1:l+1,m-1:m+1)*dxdy_kern(:,:,l-1,m-1), mask(l-1:l+1,m-1:m+1))
+         end do
+      end do
+
+      ! Perform the interpolation
+
+      call bicubic_interp(f(2:3,2:3), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int)
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   end subroutine interp_0_
+
+   !****
+
+   subroutine interp_1_(self, proc, logT, logg, f_int, stat, d_dlogT, d_dlogg)
+
+         class(grid_t), intent(inout) :: self
+         interface
+            subroutine proc(i, j, f, stat)
+               use kinds_m
+               integer, intent(in)            :: i
+               integer, intent(in)            :: j
+               real(RD), intent(out)          :: f(:)
+               integer, intent(out), optional :: stat
+            end subroutine proc
+         end interface
+      real(RD), intent(in)             :: logT
+      real(RD), intent(in)             :: logg
+      real(RD), intent(out)            :: f_int(:)
+      integer, intent(out), optional   :: stat
+      logical, intent(in), optional    :: d_dlogT
+      logical, intent(in), optional    :: d_dlogg
+
+      integer               :: i_cl
+      integer               :: j_cl
+      logical               :: mask(4,4)
+      real(RD)              :: x(4)
+      real(RD)              :: y(4)
+      real(RD)              :: dx_kern(3,2,2)
+      real(RD)              :: dy_kern(3,2,2)
+      real(RD)              :: dxdy_kern(3,3,2,2)
+      integer               :: n_k
+      integer               :: k
+      integer               :: l
+      integer               :: m
+      real(RD)              :: dx
+      real(RD)              :: dy
+      real(RD)              :: u
+      real(RD)              :: v
+      real(RD), allocatable :: f(:,:,:)
+      real(RD)              :: df_dx(2,2)
+      real(RD)              :: df_dy(2,2)
+      real(RD)              :: d2f_dxdy(2,2)
+
+      ! Locate the interpolation cell
+
+      call self%locate_cell_(logT, logg, i_cl, j_cl, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Set up the interpolation stencil
+
+      call self%setup_stencil_(i_cl, j_cl, mask, x, y, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Set up derivative kernels
+
+      call self%setup_kernels_(mask, x, y, dx_kern, dy_kern, dxdy_kern)
+
+      ! Evaluate the function at the stencil points
+
+      n_k = SIZE(f_int)
+
+      allocate(f(4,4,n_k))
+
+      do l = 1, 4
+         do m = 1, 4
+            if (mask(l,m)) then
+               call proc(i_cl+l-2, j_cl+l-2, f(l,m,:), stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               endif
+            endif
+         end do
+      end do
+
+      ! Set up interpolation weights
+
+      dx = x(3) - x(2)
+      u = (logT - x(2))/dx
+
+      dy = y(3) - y(2)
+      v = (logg - y(2))/dy
+
+      ! Scan through k
+      
+      k_loop : do k = 1, n_k
+
+         ! Evaluate derivatives
+
+         do m = 2, 3
+            do l = 2, 3
+               df_dx(l-1,m-1) = SUM(f(l-1:l+1,m,k)*dx_kern(:,l-1,m-1), mask(l-1:l+1,m))
+               df_dy(l-1,m-1) = SUM(f(l,m-1:m+1,k)*dy_kern(:,l-1,m-1), mask(l,m-1:m+1))
+               d2f_dxdy(l-1,m-1) = SUM(f(l-1:l+1,m-1:m+1,k)*dxdy_kern(:,:,l-1,m-1), mask(l-1:l+1,m-1:m+1))
+            end do
+         end do
+
+         ! Perform the interpolation
+
+         call bicubic_interp(f(2:3,2:3,k), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int(k))
+
+      end do k_loop
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   end subroutine interp_1_
+
+   !****
+
+   subroutine locate_cell_(self, logT, logg, i_cl, j_cl, stat)
+
+      class(grid_t), intent(in)      :: self
+      real(RD), intent(in)           :: logT
+      real(RD), intent(in)           :: logg
+      integer, intent(out)           :: i_cl
+      integer, intent(out)           :: j_cl
+      integer, intent(out), optional :: stat
+
+      ! Locate the interpolation cell
+
+      call locate(self%logT, logT, i_cl)
+
+      if (i_cl < 1 .OR. i_cl >= self%n_logT) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS
+            return
+         else
+            @:ABORT(out-of-bounds interpolation)
+         endif
+      endif
+
+      call locate(self%logg, logg, j_cl)
+
+      if (j_cl < 1 .OR. j_cl >= self%n_logg) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS
+            return
+         else
+            @:ABORT(out-of-bounds interpolation)
+         endif
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine locate_cell_
+
+   !****
+
+   subroutine setup_stencil_(self, i_cl, j_cl, mask, x, y, stat)
+
+      class(grid_t), intent(in)      :: self
+      integer, intent(in)            :: i_cl
+      integer, intent(in)            :: j_cl
+      logical, intent(out)           :: mask(:,:)
+      real(RD), intent(out)          :: x(:)
+      real(RD), intent(out)          :: y(:)
+      integer, intent(out), optional :: stat
+
+      integer :: i
+      integer :: j
+      integer :: l
+      integer :: m
+
+      ! Set up the interpolation stencil
+
+      ! First do the mask
+
+      do l = 1, 4
+         i = i_cl + l - 2
+         do m = 1, 4
+            j = j_cl + m - 2
+            if (i < 1 .OR. i > self%n_logT .OR. &
+                j < 1 .OR. j > self%n_logg) then
+               mask(l,m) = .FALSE.
+            else
+               mask(l,m) = self%mask(i,j)
+            endif
+         end do
+      end do
+
+      if (.NOT. ALL(mask(2:3,2:3))) then
+         if (PRESENT(stat)) then
+            stat = STAT_MISSING_DATA
+            return
+         else
+            @:ABORT(missing data)
+         endif
+      end if
+
+      ! Next the x-axis
+
+      do l = 1, 4
+         i = i_cl + l - 2
+         if (i < 1) then
+            x(l) = -HUGE(0._RD)
+         elseif (i > self%n_logT) then
+            x(l) = HUGE(0._RD)
+         else
+            x(l) = self%logT(i)
+         endif
+      end do
+
+      ! Finally the y-axis
+
+      do m = 1, 4
+         j = j_cl + m - 2
+         if (j < 1) then
+            y(m) = -HUGE(0._RD)
+         elseif (j > self%n_logg) then
+            y(m) = HUGE(0._RD)
+         else
+            y(m) = self%logg(j)
+         endif
+      end do
+
+      ! Finish
+
+      return
+
+   end subroutine setup_stencil_
+
+   !****
+
+   subroutine setup_kernels_(self, mask, x, y, dx_kern, dy_kern, dxdy_kern)
+
+      class(grid_t), intent(in) :: self
+      logical, intent(in)       :: mask(:,:)
+      real(RD), intent(in)      :: x(:)
+      real(RD), intent(in)      :: y(:)
+      real(RD), intent(out)     :: dx_kern(:,:,:)
+      real(RD), intent(out)     :: dy_kern(:,:,:)
+      real(RD), intent(out)     :: dxdy_kern(:,:,:,:)
+
+      integer :: l
+      integer :: m
+
+      ! Set up derivative kernels
+
+      do l = 2, 3
+         do m = 2, 3
+            call eval_deriv_kernel(x(l-1:l+1), dx_kern(:,l-1,m-1), mask(l-1:l+1,m))
+            call eval_deriv_kernel(y(m-1:m+1), dy_kern(:,l-1,m-1), mask(l,m-1:m+1))
+            call eval_cross_kernel(x(l-1:l+1), y(m-1:m+1), dxdy_kern(:,:,l-1,m-1), mask(l-1:l+1,m-1:m+1))
+         end do
+      end do
+
+      ! Finish
+
+      return
+
+   end subroutine setup_kernels_
+      
+  !****
+
+   subroutine read_(hi, gr, type)
+
+      type(hdf5io_t), intent(inout)      :: hi
+      type(grid_t), intent(out)          :: gr
+      character(*), intent(in), optional :: type
+
+      character(TYPE_LEN)             :: file_type
+      real(RD), allocatable           :: logT(:)
+      real(RD), allocatable           :: logg(:)
+      logical, allocatable            :: mask(:,:)
+      integer                         :: n_logT
+      integer                         :: n_logg
+      type(hdf5io_t)                  :: hi_ri
+      integer                         :: i
+      integer                         :: j
+
+      ! Read the grid_t
+
+      call hi%read_attr('TYPE', file_type)
+      if (PRESENT(type)) then
+         @:ASSERT(file_type == type, invalid type)
+      else
+         @:ASSERT(file_type == 'grid_t', invalid type)
+      endif
+
+      call hi%alloc_read_dset('logT', logT)
+      call hi%alloc_read_dset('logg', logg)
+
+      call hi%alloc_read_dset('mask', mask)
+
+      gr = grid_t(mask, logT, logg)
+
+      ! Finish
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, gr, type)
+
+      type(hdf5io_t), intent(inout)      :: hi
+      type(grid_t), intent(in)           :: gr
+      character(*), intent(in), optional :: type
+
+      ! Write the grid_t
+      
+      if (PRESENT(type)) then
+         call hi%write_attr('TYPE', type)
+      else
+         call hi%write_attr('TYPE', 'grid_t')
+      endif
+
+      call hi%write_attr('n_logT', gr%n_logT)
+      call hi%write_attr('n_logg', gr%n_logg)
+
+      call hi%write_dset('logT', gr%logT)
+      call hi%write_dset('logg', gr%logg)
+
+      call hi%write_dset('mask', gr%mask)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+end module grid_m

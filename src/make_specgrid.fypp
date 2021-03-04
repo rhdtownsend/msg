@@ -1,5 +1,5 @@
 ! Module   : make_specgrid
-! Purpose  : create specgrid files from radint files
+! Purpose  : create specgrid files from specint files
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -26,8 +26,7 @@ program make_specgrid
    use order_m
    use system_m
 
-   use radint_m
-   use radgrid_m
+   use specint_m
    use specgrid_m
 
    use ISO_FORTRAN_ENV
@@ -41,18 +40,18 @@ program make_specgrid
    integer                   :: n_node
    character(:), allocatable :: specgrid_filename
 
-   type(radint_t), allocatable :: ri(:,:)
-   logical, allocatable        :: mask(:,:)
-   real(RD), allocatable       :: logT(:)
-   real(RD), allocatable       :: logg(:)
-   integer                     :: n_k
-   real(RD)                    :: w_0
-   real(RD)                    :: dw
-   integer                     :: n_logT
-   integer                     :: n_logg
-   integer                     :: j
-   type(specgrid_t)            :: sg
-   type(hdf5io_t)              :: hi
+   type(specint_t), allocatable :: si(:,:)
+   logical, allocatable         :: mask(:,:)
+   real(RD), allocatable        :: logT(:)
+   real(RD), allocatable        :: logg(:)
+   integer                      :: n_k
+   real(RD)                     :: w_0
+   real(RD)                     :: dw
+   integer                      :: n_logT
+   integer                      :: n_logg
+   integer                      :: j
+   type(specgrid_t)             :: sg
+   type(hdf5io_t)               :: hi
 
    ! Read command-line arguments
 

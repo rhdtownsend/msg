@@ -1,0 +1,193 @@
+! Module  : dyn_specint_m
+! Purpose : define dyn_specint_t type, for adding dynamic loading to the
+!           specint_t type
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module dyn_specint_m
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+
+   use specint_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(specint_t) :: dyn_specint_t
+      private
+      type(hdf5io_t) :: hi
+      real(RD)       :: w_0_rebin
+      real(RD)       :: dw_rebin
+      integer        :: n_w_rebin
+      logical        :: rebin
+      logical        :: loaded
+   contains
+      private
+      procedure, public :: interp_intensity
+      procedure, public :: interp_D_moment
+      procedure, public :: interp_flux
+      procedure         :: load_
+   end type dyn_specint_t
+
+   ! Interfaces
+
+   interface read
+      module procedure read_
+      module procedure read_rebin_
+   end interface read
+
+   ! Access specifiers
+
+   private
+
+   public :: dyn_specint_t
+   public :: read
+
+   ! Procedures
+
+contains
+
+   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                          ('D_moment', 'D', 'l', 'integer'))
+
+      subroutine interp_${name}$(self, ${arg_var}$, w_0, ${var}$, stat)
+
+         class(dyn_specint_t), intent(inout) :: self
+         ${arg_type}$, intent(in)            :: ${arg_var}$
+         real(RD), intent(in)                :: w_0
+         real(RD), intent(out)               :: ${var}$(:)
+         integer, intent(out), optional      :: stat
+
+         ! If necessary, load
+
+         if (.NOT. self%loaded) call self%load_()
+         
+         ! Pass
+
+         call self%specint_t%interp_${name}$(${arg_var}$, w_0, ${var}$, stat)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+      
+   !****
+
+   #:for name, var in (('flux', 'F'), )
+
+      subroutine interp_${name}$(self, w_0, ${var}$, stat)
+
+         class(dyn_specint_t), intent(inout) :: self
+         real(RD), intent(in)                :: w_0
+         real(RD), intent(out)               :: ${var}$(:)
+         integer, intent(out), optional      :: stat
+
+         ! If necessary, load
+
+         if (.NOT. self%loaded) call self%load_()
+         
+         ! Pass
+
+         call self%specint_t%interp_${name}$(w_0, ${var}$, stat)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine load_ (self)
+      
+      class(dyn_specint_t), intent(inout) :: self
+
+      ! Load the specint
+
+      call read(self%hi, self%specint_t)
+
+      if (self%rebin) then
+         self%specint_t = specint_t(self%specint_t, self%w_0_rebin, self%dw_rebin, self%n_w_rebin)
+      endif
+
+      self%loaded = .TRUE.
+
+      ! Finish
+
+      return
+
+   end subroutine load_
+
+   !****
+
+   subroutine read_(hi, si)
+
+      type(hdf5io_t), intent(inout)    :: hi
+      type(dyn_specint_t), intent(out) :: si
+
+      ! Read the dyn_specint_t (this only sets variables used in a
+      ! later call to load_)
+
+      si%hi = hdf5io_t(hi, '.')
+
+      si%loaded = .FALSE.
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine read_rebin_(hi, si, w_0, dw, n_w)
+
+      type(hdf5io_t), intent(inout)    :: hi
+      type(dyn_specint_t), intent(out) :: si
+      real(RD), intent(in)             :: w_0
+      real(RD), intent(in)             :: dw
+      integer, intent(in)              :: n_w
+
+      ! Read the dyn_specint_t with deferred rebinning (this only sets
+      ! variables used in a later call to load_)
+
+      call read(hi, si)
+
+      si%w_0_rebin = w_0
+      si%dw_rebin = dw
+      si%n_w_rebin = n_w
+
+      ! Finish
+
+      return
+
+   end subroutine read_rebin_
+
+end module dyn_specint_m
