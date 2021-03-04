@@ -1,0 +1,170 @@
+! Module   : make_photgrid
+! Purpose  : create photgrid files from photint files
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program make_photgrid
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use order_m
+   use system_m
+
+   use grid_m
+   use photint_m
+   use photgrid_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   integer                   :: n_node
+   character(:), allocatable :: photgrid_filename
+
+   type(photint_t), allocatable :: pi(:,:)
+   logical, allocatable         :: mask(:,:)
+   real(RD), allocatable        :: logT(:)
+   real(RD), allocatable        :: logg(:)
+   integer                      :: n_logT
+   integer                      :: n_logg
+   integer                      :: j
+   type(photgrid_t)             :: pg
+   type(hdf5io_t)               :: hi
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() >= 2,{Syntax: make_photgrid photint_filename [photint_filename...] photgrid_filename})
+
+   n_node = n_arg()-1
+   call get_arg(n_node+1, photgrid_filename)
+
+   ! Read the photint_t grid
+
+   call read_photint_grid(n_node, pi, mask, logT, logg)
+
+   ! Print out grid architecture
+
+   n_logT = SIZE(logT)
+   n_logg = SIZE(logg)
+
+   print 100, NINT(10**logT(1)), REPEAT(' ', n_logT-9), NINT(10**logT(n_logT))
+100 format(5X,I4,A,I5)
+
+   do j = n_logg, 1, -1
+      print 110, logg(j), MERGE('X', '.', mask(:,j))
+110   format(F4.2,1X,9999A1)
+   end do
+
+   ! Create the photgrid_t
+
+   pg = photgrid_t(grid_t(mask, logT, logg), pi)
+
+   ! Write it
+
+   hi = hdf5io_t(photgrid_filename, CREATE_FILE)
+   call write(hi, pg)
+   call hi%final()
+
+   ! Finish
+
+contains
+
+   subroutine read_photint_grid (n_node, pi, mask, logT, logg)
+
+      integer, intent(in)                       :: n_node
+      type(photint_t), allocatable, intent(out) :: pi(:,:)
+      logical, allocatable, intent(out)         :: mask(:,:)
+      real(RD), allocatable, intent(out)        :: logT(:)
+      real(RD), allocatable, intent(out)        :: logg(:)
+
+      character(:), allocatable :: node_filename
+      integer                   :: l
+      type(hdf5io_t)            :: hi
+      real(RD), allocatable     :: node_logT(:)
+      real(RD), allocatable     :: node_logg(:)
+      real(RD)                  :: Teff
+      integer                   :: n_logT
+      integer                   :: n_logg
+      integer                   :: i
+      integer                   :: j
+
+      ! Do a first sweep through the files to determine the axes
+
+      allocate(node_logT(n_node))
+      allocate(node_logg(n_node))
+
+      read_axis_loop : do l = 1, n_node
+
+         call get_arg(l, node_filename)
+
+         hi = hdf5io_t(node_filename, OPEN_FILE)
+
+         @:ASSERT(hi%attr_exists('logT'), photint file lacks logT data)
+         @:ASSERT(hi%attr_exists('logg'), photint file lacks logg data)
+         
+         call hi%read_attr('logT', node_logT(l))
+         call hi%read_attr('logg', node_logg(l))
+
+         call hi%final()
+
+      end do read_axis_loop
+
+      logT = node_logT(unique_indices(node_logT))
+      logg = node_logg(unique_indices(node_logg))
+
+      ! Allocate arrays
+
+      n_logT = SIZE(logT)
+      n_logg = SIZE(logg)
+
+      allocate(pi(n_logT,n_logg))
+      allocate(mask(n_logT,n_logg))
+
+      mask = .FALSE.
+
+      ! Read in the photint_t's
+
+      read_photint_loop : do l = 1, n_node
+
+         i = FINDLOC(logT, node_logT(l), DIM=1)
+         j = FINDLOC(logg, node_logg(l), DIM=1)
+
+         @:ASSERT(i >= 1 .AND. i <= n_logT, unable to locate node in grid)
+         @:ASSERT(j >= 1 .AND. j <= n_logg, unable to locate node in grid)
+         @:ASSERT(.NOT. mask(i,j), duplicate node)
+
+         call get_arg(l, node_filename)
+
+         hi = hdf5io_t(node_filename, OPEN_FILE)
+         call read(hi, pi(i,j))
+         call hi%final()
+
+         mask(i,j) = .TRUE.
+
+      end do read_photint_loop
+
+      ! Finish
+
+   end subroutine read_photint_grid
+
+end program make_photgrid

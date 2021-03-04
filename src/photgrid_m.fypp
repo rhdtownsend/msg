@@ -1,0 +1,263 @@
+! Module  : photgrid_m
+! Purpose : define photgrid_t type, for representing spectral intensity
+!           grids
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module photgrid_m
+
+   ! Uses
+   
+   use kinds_m
+   use hdf5io_m
+
+   use grid_m
+   use photint_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(grid_t) :: photgrid_t
+      private
+      class(photint_t), allocatable :: pi(:,:)
+   contains
+      private
+      #:for name in ('intensity', 'D_moment', 'flux')
+         procedure, public :: interp_${name}$
+      #:endfor
+   end type photgrid_t
+
+   ! Interfaces
+
+   interface photgrid_t
+      module procedure photgrid_t_
+   end interface photgrid_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access photifiers
+
+   private
+
+   public :: photgrid_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function photgrid_t_ (gr, pi) result (pg)
+
+      type(grid_t), intent(in)     :: gr
+      class(photint_t), intent(in) :: pi(:,:)
+      type(photgrid_t)             :: pg
+
+      integer :: i
+      integer :: j
+
+      @:CHECK_BOUNDS(SIZE(ri, 1), gr%n_logT)
+      @:CHECK_BOUNDS(SIZE(ri, 1), gr%n_logg)
+
+      ! Construct the photgrid_t
+
+      pg%grid_t = gr
+ 
+      allocate(pg%pi, SOURCE=pi)
+
+      ! Finish
+
+      return
+
+   end function photgrid_t_
+
+   !****
+
+   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                          ('D_moment', 'D', 'l', 'integer'))
+
+      subroutine interp_${name}$(self, logT, logg, ${arg_var}$, ${var}$, stat, d_dlogT, d_dlogg)
+
+         class(photgrid_t), intent(inout) :: self
+         real(RD), intent(in)             :: logT
+         real(RD), intent(in)             :: logg
+         ${arg_type}$, intent(in)         :: ${arg_var}$
+         real(RD), intent(out)            :: ${var}$
+         integer, intent(out), optional   :: stat
+         logical, intent(in), optional    :: d_dlogT
+         logical, intent(in), optional    :: d_dlogg
+
+         ! Interpolate the ${name}$
+
+         call self%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+
+         ! Finish
+
+      contains
+
+         subroutine proc_(i, j, f, stat)
+
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            real(RD), intent(out)          :: f
+            integer, intent(out), optional :: stat
+
+            call self%pi(i,j)%interp_${name}$(${arg_var}$, f, stat)
+
+            return
+
+         end subroutine proc_
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   #:for name, var in (('flux', 'F'), )
+
+      subroutine interp_${name}$(self, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+
+         class(photgrid_t), intent(inout) :: self
+         real(RD), intent(in)             :: logT
+         real(RD), intent(in)             :: logg
+         real(RD), intent(out)            :: ${var}$
+         integer, intent(out), optional   :: stat
+         logical, intent(in), optional    :: d_dlogT
+         logical, intent(in), optional    :: d_dlogg
+
+         ! Interpolate the ${name}$
+
+         call self%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+
+         ! Finish
+
+      contains
+
+         subroutine proc_(i, j, f, stat)
+
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            real(RD), intent(out)          :: f
+            integer, intent(out), optional :: stat
+
+            call self%pi(i,j)%interp_${name}$(f, stat)
+
+            return
+
+         end subroutine proc_
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine read_(hi, pg)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(photgrid_t), intent(out) :: pg
+
+      type(grid_t)                 :: gr
+      type(photint_t), allocatable :: pi(:,:)
+      type(hdf5io_t)               :: hi_pi
+      integer                      :: i
+      integer                      :: j
+
+      ! Read the photgrid_t
+
+      call read(hi, gr, type='photgrid_t')
+
+      allocate(pi(gr%n_logT,gr%n_logg))
+
+      logT_loop : do i = 1, gr%n_logT
+         logg_loop : do j = 1, gr%n_logg
+
+            if (gr%mask(i,j)) then
+               hi_pi = hdf5io_t(hi, pi_name_(i,j))
+               call read(hi_pi, pi(i,j))
+               call hi_pi%final()
+            end if
+            
+         end do logg_loop
+      end do logT_loop
+      
+      pg = photgrid_t(gr, pi)
+
+      ! Finish
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, pg)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(photgrid_t), intent(in)  :: pg
+
+      type(hdf5io_t) :: hi_pi
+      integer        :: i
+      integer        :: j
+
+      ! Write the photgrid_t
+
+      call write(hi, pg%grid_t, type='photgrid_t')
+
+      logT_loop : do i = 1, pg%n_logT
+         logg_loop : do j = 1, pg%n_logg
+
+            if (pg%mask(i,j)) then
+               hi_pi = hdf5io_t(hi, pi_name_(i,j))
+               call write(hi_pi, pg%pi(i,j))
+               call hi_pi%final()
+            end if
+            
+         end do logg_loop
+      end do logT_loop
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function pi_name_(i,j) result (name)
+
+      integer, intent(in) :: i
+      integer, intent(in) :: j
+      character(256)      :: name
+
+      write(name, 100) i, j
+100   format('pi(',I0,',',I0,')')
+
+   end function pi_name_
+
+end module photgrid_m

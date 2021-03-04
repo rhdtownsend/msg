@@ -1,0 +1,254 @@
+! Module  : photint_m
+! Purpose : define photint_t type, for representing photometric intensity
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module photint_m
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use order_m
+
+   use limb_m
+   use math_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type photint_t
+      private
+      type(limb_t)          :: li
+      real(RD), allocatable :: c(:)
+      integer               :: n_b
+   contains
+      private
+      procedure, public :: interp_intensity
+      procedure, public :: interp_D_moment
+      procedure, public :: interp_flux
+   end type photint_t
+
+   ! Interfaces
+
+   interface photint_t
+      module procedure photint_t_
+      module procedure photint_t_fit_
+   end interface photint_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: photint_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function photint_t_(c, li) result (pi)
+
+      real(RD), intent(in)     :: c(:)
+      type(limb_t), intent(in) :: li
+      type(photint_t)          :: pi
+
+      integer :: n_b
+
+      ! Construct the photint_t from the supplied data
+
+      n_b = li%n_basis()
+
+      @:CHECK_BOUNDS(SIZE(c), n_b)
+
+      pi%li = li
+      pi%c = c
+
+      pi%n_b = n_b
+      
+      ! Finish
+
+      return
+
+   end function photint_t_
+
+   !****
+
+   function photint_t_fit_(I, mu, li) result (pi)
+
+      real(RD), intent(in)     :: I(:)
+      real(RD), intent(in)     :: mu(:)
+      type(limb_t), intent(in) :: li
+      type(photint_t)          :: pi
+
+      real(RD), allocatable :: c(:)
+
+      ! Construct the photint_t by fitting the supplied I(mu)
+      ! intensity data
+
+      call li%fit_intensity(I, mu, c)
+
+      pi = photint_t(c, li)
+
+      ! Finish
+
+      return
+
+   end function photint_t_fit_
+
+   !****
+
+   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                          ('D_moment', 'D', 'l', 'integer'))
+
+      subroutine interp_${name}$(self, ${arg_var}$, ${var}$, stat)
+
+         class(photint_t), intent(inout) :: self
+         ${arg_type}$, intent(in)        :: ${arg_var}$
+         real(RD), intent(out)           :: ${var}$
+         integer, intent(out), optional  :: stat
+
+         real(RD) :: b(self%n_b)
+
+         ! Set up the basis functions
+
+         call self%li%eval_${name}$_basis(${arg_var}$, b, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+
+         ! Interpolate ${name}$
+
+         ${var}$ = DOT_PRODUCT(b, self%c)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+      
+   !****
+
+   #:for name, var in (('flux', 'F'), )
+
+      subroutine interp_${name}$(self, ${var}$, stat)
+
+         class(photint_t), intent(inout) :: self
+         real(RD), intent(out)           :: ${var}$
+         integer, intent(out), optional  :: stat
+
+         real(RD) :: b(self%n_b)
+
+         ! Set up the basis functions
+
+         call self%li%eval_${name}$_basis(b, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+
+         ! Interpolate ${name}$
+
+         ${var}$ = DOT_PRODUCT(b, self%c)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine read_(hi, pi)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(photint_t), intent(out)  :: pi
+
+      character(TYPE_LEN)   :: type
+      real(RD), allocatable :: c(:)
+      type(hdf5io_t)        :: hi_li
+      type(limb_t)          :: li
+
+      ! Read the photint_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'photint_t',invalid type)
+
+      call hi%alloc_read_dset('c', c)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call read(hi_li, li)
+      call hi_li%final()
+
+      pi = photint_t(c, li)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_ (hi, pi)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(photint_t), intent(in)   :: pi
+
+      type(hdf5io_t) :: hi_li
+
+      ! Write the photint_t
+
+      call hi%write_attr('TYPE', 'photint_t')
+
+      call hi%write_attr('n_b', pi%n_b)
+
+      call hi%write_dset('c', pi%c)
+
+      hi_li = hdf5io_t(hi, 'li')
+      call write(hi_li, pi%li)
+      call hi_li%final()
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+end module photint_m
