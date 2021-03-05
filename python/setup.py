@@ -5,9 +5,8 @@ extensions = [
     Extension(
         'msg',
         ['msg/msg.pyx'],
-        library_dirs=['/Users/townsend/devel/msg/build'],
-        libraries=['cmsg'],
-        extra_link_args=['-mmacosx-version-min=10.16']
+        library_dirs=['../build'],
+        libraries=['cmsg']
         )
     ]
 
