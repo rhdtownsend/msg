@@ -1,0 +1,4 @@
+msg/*.c
+build
+*.so
+*.dylib
