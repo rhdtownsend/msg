@@ -4,7 +4,7 @@
 # Variables
 
 #TARGETS = test_math test_interp test_order test_fit
-TARGETS = synspec_to_specint make_specgrid test_specgrid make_photgrid libcmsg.dylib
+TARGETS = synspec_to_specint make_specgrid test_specgrid make_photgrid libcmsg.${SHARED_LIB_EXT}
 
 synspec_to_specint_SRCS = \
   synspec_to_specint.f90 \
@@ -93,7 +93,7 @@ test_photgrid_SRCS = \
   cinter_m.f90 \
   stat_m.f90
 
-libcmsg.dylib_SRCS = \
+libcmsg.{SHARED_LIB_EXT}_SRCS = \
   libcmsg.f90 \
   grid_m.f90 \
   specint_m.f90 \

@@ -32,6 +32,14 @@ OPTS=DEBUG OMP
 
 FYPPFLAGS:=${FYPPFLAGS} $(foreach subdir,$(subst :, ,${SUBDIRS}),-I${subdir}) $(foreach opt,${OPTS},$(if $(filter yes,${${opt}}),-D${opt}))
 
+# Shared library extension
+
+ifeq ($(shell uname -s),Darwin)
+  SHARED_LIB_EXT=dylib
+else
+  SHARED_LIB_EXT=so
+endif
+
 # Compiler settings
 
 export F9XC
@@ -90,7 +98,7 @@ vpath %.inc ${SUBDIRS}
 	@${F9XC} ${F9XFLAGS} ${MODINCS} -c $<
 	@touch $*.mod
 
-%.dylib : LDFLAGS := $(LDFLAGS) -shared
+%.${SHARED_LIB_EXT} : LDFLAGS := $(LDFLAGS) -shared
 
 all : ${TARGETS}
 
