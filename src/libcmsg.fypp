@@ -1,0 +1,270 @@
+! Module  : libcmsg
+! Purpose : C interfaces for MSG modules
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module libcmsg_m
+
+   ! Uses
+
+   use kinds_m
+   use cinter_m
+   use hdf5io_m
+
+   use specgrid_m
+   use photgrid_m
+
+   use ISO_FORTRAN_ENV
+   use ISO_C_BINDING
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   #:for prefix in ('specgrid', 'photgrid')
+      public :: ${prefix}$_load
+      public :: ${prefix}$_unload
+      public :: ${prefix}$_interp_intensity
+      public :: ${prefix}$_interp_D_moment
+      public :: ${prefix}$_interp_flux
+  #:endfor
+
+   public :: specgrid_load_rebin
+
+   ! Procedures
+
+contains
+
+   #:for prefix, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
+
+      function ${prefix}$_load(filename) result(ptr) bind(C)
+
+         character(C_CHAR) :: filename(*)
+         type(C_PTR)       :: ptr
+
+         type(${type}$), pointer :: gr
+         type(hdf5io_t)          :: hi
+
+         ! Allocate the grid
+
+         allocate(gr)
+
+         ! Load it from the file
+
+         hi = hdf5io_t(c_f_string(filename), OPEN_FILE_RO)
+         call read(hi, gr)
+         call hi%final()
+         
+         ! Set up the C pointer
+
+         ptr = C_LOC(gr)
+
+         ! Finish
+
+         return
+
+      end function ${prefix}$_load
+
+      !****
+
+      subroutine ${prefix}$_unload(ptr) bind(C)
+
+         type(C_PTR), value :: ptr
+
+         type(${type}$), pointer :: gr
+
+         ! Set up the Fortran pointer
+
+         call c_f_pointer(ptr, gr)
+
+         ! Deallocate the grid
+
+         if (ASSOCIATED(gr)) deallocate(gr)
+
+         ! Finish
+
+         return
+
+      end subroutine ${prefix}$_unload
+
+   #:endfor
+
+   !****
+
+   function specgrid_load_rebin(filename, w_0, dw, n_w) result(ptr) bind(C)
+
+      character(C_CHAR)     :: filename(*)
+      real(C_DOUBLE), value :: w_0
+      real(C_DOUBLE), value :: dw
+      integer(C_INT), value :: n_w
+      type(C_PTR)           :: ptr
+
+      type(specgrid_t), pointer :: gr
+      type(hdf5io_t)            :: hi
+
+      ! Allocate the grid
+
+      allocate(gr)
+
+      ! Load it from the file
+
+      hi = hdf5io_t(c_f_string(filename), OPEN_FILE_RO)
+      call read(hi, gr, w_0, dw, n_w)
+      call hi%final()
+         
+      ! Set up the C pointer
+
+      ptr = C_LOC(gr)
+
+      ! Finish
+
+      return
+
+   end function specgrid_load_rebin
+
+   !****
+
+   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(C_DOUBLE)'), &
+                                          ('D_moment', 'D', 'l', 'integer(C_INT)'))
+
+      subroutine specgrid_interp_${name}$(ptr, logT, logg, ${arg_var}$, w_0, n_w, ${var}$, stat, d_dlogT, d_dlogg) bind(C)
+
+         type(C_PTR), value     :: ptr
+         real(C_DOUBLE), value  :: logT
+         real(C_DOUBLE), value  :: logg
+         ${arg_type}$, value    :: ${arg_var}$
+         real(C_DOUBLE), value  :: w_0
+         integer(C_INT), value  :: n_w
+         real(C_DOUBLE)         :: ${var}$(n_w)
+         integer(C_INT)         :: stat
+         logical(C_BOOL), value :: d_dlogT
+         logical(C_BOOL), value :: d_dlogg
+
+         type(specgrid_t), pointer :: sg
+
+         ! Set up the Fortran pointer
+
+         call c_f_pointer(ptr, sg)
+
+         ! Interpolate the ${name}$
+
+         call sg%interp_${name}$(logT, logg, ${arg_var}$, w_0, ${var}$, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+
+         ! Finish
+
+         return
+
+      end subroutine specgrid_interp_${name}$
+
+      !****
+
+      subroutine photgrid_interp_${name}$(ptr, logT, logg, ${arg_var}$, ${var}$, stat, d_dlogT, d_dlogg) bind(C)
+
+         type(C_PTR), value     :: ptr
+         real(C_DOUBLE), value  :: logT
+         real(C_DOUBLE), value  :: logg
+         ${arg_type}$, value    :: ${arg_var}$
+         real(C_DOUBLE)         :: ${var}$
+         integer(C_INT)         :: stat
+         logical(C_BOOL), value :: d_dlogT
+         logical(C_BOOL), value :: d_dlogg
+
+         type(photgrid_t), pointer :: pg
+
+         ! Set up the Fortran pointer
+
+         call c_f_pointer(ptr, pg)
+
+         ! Interpolate the ${name}$
+
+         call pg%interp_${name}$(logT, logg, ${arg_var}$, ${var}$, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+
+         ! Finish
+
+         return
+
+      end subroutine photgrid_interp_${name}$
+
+   #:endfor
+
+   !****
+      
+   #:for name, var in (('flux', 'F'),)
+
+      subroutine specgrid_interp_${name}$(ptr, logT, logg, w_0, n_w, ${var}$, stat, d_dlogT, d_dlogg) bind(C)
+
+         type(C_PTR), value     :: ptr
+         real(C_DOUBLE), value  :: logT
+         real(C_DOUBLE), value  :: logg
+         real(C_DOUBLE), value  :: w_0
+         integer(C_INT), value  :: n_w
+         real(C_DOUBLE)         :: ${var}$(n_w)
+         integer(C_INT)         :: stat
+         logical(C_BOOL), value :: d_dlogT
+         logical(C_BOOL), value :: d_dlogg
+
+         type(specgrid_t), pointer :: sg
+
+         ! Set up the Fortran pointer
+
+         call c_f_pointer(ptr, sg)
+
+         ! Interpolate the ${name}$
+
+         call sg%interp_${name}$(logT, logg, w_0, ${var}$, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+
+         ! Finish
+
+         return
+
+      end subroutine specgrid_interp_${name}$
+
+      !****
+
+      subroutine photgrid_interp_${name}$(ptr, logT, logg, ${var}$, stat, d_dlogT, d_dlogg) bind(C)
+
+         type(C_PTR), value     :: ptr
+         real(C_DOUBLE), value  :: logT
+         real(C_DOUBLE), value  :: logg
+         real(C_DOUBLE)         :: ${var}$
+         integer(C_INT)         :: stat
+         logical(C_BOOL), value :: d_dlogT
+         logical(C_BOOL), value :: d_dlogg
+
+         type(photgrid_t), pointer :: pg
+
+         ! Set up the Fortran pointer
+
+         call c_f_pointer(ptr, pg)
+
+         ! Interpolate the ${name}$
+
+         call pg%interp_${name}$(logT, logg, ${var}$, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+
+         ! Finish
+
+         return
+
+      end subroutine photgrid_interp_${name}$
+
+   #:endfor
+
+end module libcmsg_m
