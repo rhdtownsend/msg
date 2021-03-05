@@ -93,7 +93,7 @@ test_photgrid_SRCS = \
   cinter_m.f90 \
   stat_m.f90
 
-libcmsg.{SHARED_LIB_EXT}_SRCS = \
+libcmsg.so_SRCS = \
   libcmsg.f90 \
   grid_m.f90 \
   specint_m.f90 \
@@ -113,6 +113,8 @@ libcmsg.{SHARED_LIB_EXT}_SRCS = \
   hdf5io_m.f90 \
   cinter_m.f90 \
   stat_m.f90
+
+libcmsg.dylib_SRCS = ${libcmsg.so_SRCS}
 
 test_hdf5io_SRCS = \
   test_hdf5io.f90 \
