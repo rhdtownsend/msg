@@ -117,7 +117,7 @@ contains
 
          call get_arg(l, node_filename)
 
-         hi = hdf5io_t(node_filename, OPEN_FILE)
+         hi = hdf5io_t(node_filename, OPEN_FILE_RO)
 
          @:ASSERT(hi%attr_exists('logT'), photint file lacks logT data)
          @:ASSERT(hi%attr_exists('logg'), photint file lacks logg data)
@@ -155,7 +155,7 @@ contains
 
          call get_arg(l, node_filename)
 
-         hi = hdf5io_t(node_filename, OPEN_FILE)
+         hi = hdf5io_t(node_filename, OPEN_FILE_RO)
          call read(hi, pi(i,j))
          call hi%final()
 

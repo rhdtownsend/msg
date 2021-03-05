@@ -30,20 +30,31 @@ module stat_m
    ! Parameter definitions
 
    integer, parameter :: STAT_OK = 0
-
-   ! Interpolation
-
-   integer, parameter :: STAT_OUT_OF_BOUNDS = 1
-   integer, parameter :: STAT_MISSING_DATA = 2
-   integer, parameter :: STAT_INVALID_ARGUMENT = 3
+   integer, parameter :: STAT_OUT_OF_BOUNDS_LOGT_LO = 1
+   integer, parameter :: STAT_OUT_OF_BOUNDS_LOGT_HI = 2
+   integer, parameter :: STAT_OUT_OF_BOUNDS_LOGG_LO = 3
+   integer, parameter :: STAT_OUT_OF_BOUNDS_LOGG_HI = 4
+   integer, parameter :: STAT_OUT_OF_BOUNDS_W_LO = 5
+   integer, parameter :: STAT_OUT_OF_BOUNDS_W_HI = 6
+   integer, parameter :: STAT_OUT_OF_BOUNDS_MU_LO = 7
+   integer, parameter :: STAT_OUT_OF_BOUNDS_MU_HI = 8
+   integer, parameter :: STAT_INVALID_L = 9
+   integer, parameter :: STAT_UNAVAILABLE_DATA = 10
 
    ! Access specifiers
 
    private
 
    public :: STAT_OK
-   public :: STAT_OUT_OF_BOUNDS
-   public :: STAT_MISSING_DATA
-   public :: STAT_INVALID_ARGUMENT
+   public :: STAT_OUT_OF_BOUNDS_LOGT_LO
+   public :: STAT_OUT_OF_BOUNDS_LOGT_HI
+   public :: STAT_OUT_OF_BOUNDS_LOGG_LO
+   public :: STAT_OUT_OF_BOUNDS_LOGG_HI
+   public :: STAT_OUT_OF_BOUNDS_W_LO
+   public :: STAT_OUT_OF_BOUNDS_W_HI
+   public :: STAT_OUT_OF_BOUNDS_MU_LO
+   public :: STAT_OUT_OF_BOUNDS_MU_HI
+   public :: STAT_INVALID_L
+   public :: STAT_UNAVAILABLE_DATA
 
 end module stat_m

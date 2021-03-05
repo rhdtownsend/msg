@@ -125,7 +125,7 @@ contains
       case (CLARET_LAW)
          str = 'CLARET'
       case default
-         @:ABORT(invalid law index)
+         @:ABORT(invalid law)
       end select
 
       ! Finish
@@ -204,12 +204,21 @@ contains
 
       ! Evaluate the intensity basis functions
 
-      if (mu < 0._RD .OR. mu > 1._RD) then
+      if (mu < 0._RD) then
          if (PRESENT(stat)) then
-            stat = STAT_INVALID_ARGUMENT
+            stat = STAT_OUT_OF_BOUNDS_MU_LO
             return
          else
-            @:ABORT(invalid argument)
+            @:ABORT(out-of-bounds (lo) mu)
+         endif
+      endif
+
+      if (mu > 1._RD) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_MU_HI
+            return
+         else
+            @:ABORT(out-of-bounds (hi) mu)
          endif
       endif
 
@@ -266,7 +275,7 @@ contains
 
       if (l < 0) then
          if (PRESENT(stat)) then
-            stat = STAT_INVALID_ARGUMENT
+            stat = STAT_INVALID_L
             return
          else
             @:ABORT(invalid argument)

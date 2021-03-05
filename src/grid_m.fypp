@@ -200,7 +200,7 @@ contains
 
       ! Perform the interpolation
 
-      call bicubic_interp(f(2:3,2:3), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int)
+      call bicubic_interp(f(2:3,2:3), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int, d_dlogT, d_dlogg)
 
       if (PRESENT(stat)) stat = STAT_OK
 
@@ -252,6 +252,8 @@ contains
       real(RD)              :: df_dy(2,2)
       real(RD)              :: d2f_dxdy(2,2)
 
+      ! Interpolate an array value
+
       ! Locate the interpolation cell
 
       call self%locate_cell_(logT, logg, i_cl, j_cl, stat)
@@ -279,7 +281,7 @@ contains
       do l = 1, 4
          do m = 1, 4
             if (mask(l,m)) then
-               call proc(i_cl+l-2, j_cl+l-2, f(l,m,:), stat)
+               call proc(i_cl+l-2, j_cl+m-2, f(l,m,:), stat)
                if (PRESENT(stat)) then
                   if (stat /= STAT_OK) return
                endif
@@ -311,7 +313,7 @@ contains
 
          ! Perform the interpolation
 
-         call bicubic_interp(f(2:3,2:3,k), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int(k))
+         call bicubic_interp(f(2:3,2:3,k), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int(k), d_dlogT, d_dlogg)
 
       end do k_loop
 
@@ -338,25 +340,45 @@ contains
 
       call locate(self%logT, logT, i_cl)
 
-      if (i_cl < 1 .OR. i_cl >= self%n_logT) then
+      if (i_cl < 1) then
          if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS
+            stat = STAT_OUT_OF_BOUNDS_LOGT_LO
             return
          else
-            @:ABORT(out-of-bounds interpolation)
+            @:ABORT(out-of-bounds (lo) logT)
+         endif
+      endif
+
+      if (i_cl >= self%n_logT) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LOGT_HI
+            return
+         else
+            @:ABORT(out-of-bounds (hi) logT)
          endif
       endif
 
       call locate(self%logg, logg, j_cl)
 
-      if (j_cl < 1 .OR. j_cl >= self%n_logg) then
+      if (j_cl < 1) then
          if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS
+            stat = STAT_OUT_OF_BOUNDS_LOGG_LO
             return
          else
-            @:ABORT(out-of-bounds interpolation)
+            @:ABORT(out-of-bounds (lo) logg)
          endif
       endif
+
+      if (j_cl >= self%n_logg) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LOGG_HI
+            return
+         else
+            @:ABORT(out-of-bounds (hi) logg)
+         endif
+      endif
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       ! Finish
 
@@ -400,10 +422,10 @@ contains
 
       if (.NOT. ALL(mask(2:3,2:3))) then
          if (PRESENT(stat)) then
-            stat = STAT_MISSING_DATA
+            stat = STAT_UNAVAILABLE_DATA
             return
          else
-            @:ABORT(missing data)
+            @:ABORT(unavailable data)
          endif
       end if
 

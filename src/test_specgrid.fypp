@@ -25,13 +25,13 @@ program test_specgrid
    w_0 = LOG(5000._RD)
    dw = (LOG(6000._RD) - LOG(5000._RD))/n_w
 
-   hi = hdf5io_t('sg.h5', OPEN_FILE)
+   hi = hdf5io_t('sg.h5', OPEN_FILE_RO)
    call read(hi, sg, w_0, dw, n_w)
    call hi%final()
 
    print *,'Grid loaded'
 
-   call sg%interp_intensity(4._RD, 4._RD, 0.5_RD, LOG(5100._RD), I, stat)
+   call sg%interp_intensity(log10(14660._RD), 2.80_RD, 0.5_RD, LOG(5100._RD), I, stat)
    if (stat /= STAT_OK) then
       print *,'Stat is:',stat
       stop

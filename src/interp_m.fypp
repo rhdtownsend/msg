@@ -89,7 +89,7 @@ contains
 
       select case (COUNT(fd_mask))
       case (0)
-         stat_ = STAT_MISSING_DATA
+         stat_ = STAT_UNAVAILABLE_DATA
       case (1)
          if (fd_mask(1)) then
             kern = fd_kern(:,1)
@@ -109,7 +109,7 @@ contains
          stat = stat_
       else
          if (stat_ /= STAT_OK) then
-            @:ABORT(missing data)
+            @:ABORT(unavailable data)
          endif
       endif
       
@@ -194,7 +194,7 @@ contains
 
       select case (COUNT(fd_mask))
       case (0)
-         stat_ = STAT_MISSING_DATA
+         stat_ = STAT_UNAVAILABLE_DATA
       case (1)
          if (fd_mask(1,1)) then
             kern = fd_kern(:,:,1,1)
@@ -224,7 +224,7 @@ contains
             kern = (1._RD-v)*fd_kern(:,:,2,1) + v*fd_kern(:,:,2,2)
             stat_ = STAT_OK
          else
-            stat_ = STAT_MISSING_DATA
+            stat_ = STAT_UNAVAILABLE_DATA
          end if
       case (3)
          if (.NOT. fd_mask(1,1)) then
@@ -252,7 +252,7 @@ contains
          stat = stat_
       else
          if (stat_ /= STAT_OK) then
-            @:ABORT(missing data)
+            @:ABORT(unavailable data)
          endif
       endif
 

@@ -223,19 +223,19 @@ contains
 
          if (k_a < 1) then
             if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS
+               stat = STAT_OUT_OF_BOUNDS_W_LO
                return
             else
-               @:ABORT(out-of-bounds)
+               @:ABORT(out-of-bounds (lo) w)
             endif
          endif
 
          if (k_b > self%n_w) then
             if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS
+               stat = STAT_OUT_OF_BOUNDS_W_HI
                return
             else
-               @:ABORT(out-of-bounds)
+               @:ABORT(out-of-bounds (hi) w)
             endif
          endif
 
@@ -289,19 +289,19 @@ contains
 
          if (k_a < 1) then
             if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS
+               stat = STAT_OUT_OF_BOUNDS_W_LO
                return
             else
-               @:ABORT(out-of-bounds)
+               @:ABORT(out-of-bounds (lo) w)
             endif
          endif
 
          if (k_b > self%n_w) then
             if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS
+               stat = STAT_OUT_OF_BOUNDS_W_HI
                return
             else
-               @:ABORT(out-of-bounds)
+               @:ABORT(out-of-bounds (hi) w)
             endif
          endif
 
