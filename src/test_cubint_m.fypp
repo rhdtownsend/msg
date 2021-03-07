@@ -1,0 +1,167 @@
+#:include 'forum.inc'
+
+module test_cubint_m
+
+  ! Uses
+
+  use kinds_m
+  use cubint_m
+
+  use ISO_FORTRAN_ENV
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Access specifiers
+
+  private
+
+  public :: test
+
+contains
+
+   subroutine test ()
+
+      call test_cubint_()
+
+   end subroutine test
+
+   !****
+
+   subroutine test_cubint_()
+
+      integer, parameter :: n_x = 5
+      integer, parameter :: n_over = 50
+      integer, parameter :: n_x_int = n_over*(n_x-1) + 1
+
+      real(RD)       :: x(n_x)
+      real(RD)       :: f(n_x)
+      real(RD)       :: x_int(n_x_int)
+      real(RD)       :: f_int(n_x_int)
+      real(RD)       :: df_dx_int(n_x_int)
+      real(RD)       :: int_f_int(n_x_int)
+      real(RD)       :: f_chk(n_x_int)
+      real(RD)       :: df_dx_chk(n_x_int)
+      real(RD)       :: int_f_chk(n_x_int)
+      type(cubint_t) :: ci
+      
+      call cubint_arrange_()
+      call cubint_act_()
+      call cubint_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine cubint_arrange_()
+
+         integer  :: i
+         real(RD) :: df_dx(n_x)
+
+         do i = 1, n_x
+
+            x(i) = i-1
+
+            call eval_cubic_(x(i), f(i), df_dx(i))
+
+         end do
+
+         ci = cubint_t(x, f, df_dx)
+
+         ! Finish
+
+         return
+
+      end subroutine cubint_arrange_
+
+      !****
+
+      subroutine cubint_act_()
+
+         integer :: i
+         integer :: m
+
+         do i = 1, n_x-1
+            do m = 1, n_over
+               x_int(n_over*(i-1)+m) = x(i) + (x(i+1) - x(i))*(m-1)/n_over
+            end do
+         end do
+
+         x_int(n_x_int) = x(n_x)
+
+         do i = 1, n_x_int
+
+            f_int(i) = ci%func(x_int(i))
+            df_dx_int(i) = ci%deriv(x_int(i))
+            int_f_int(i) = ci%integ(x_int(i))
+
+            call eval_cubic_(x_int(i), f_chk(i), df_dx_chk(i), int_f_chk(i))
+
+         end do
+         
+         ! Finish
+
+         return
+
+      end subroutine cubint_act_
+
+      !****
+
+      subroutine cubint_assert_()
+
+         real(RD), parameter :: tol = 1E-14_RD
+
+         real(RD), allocatable :: f_err(:)
+         real(RD), allocatable :: df_dx_err(:)
+         real(RD), allocatable :: int_f_err(:)
+
+         f_err = (f_int - f_chk)/f_chk
+         df_dx_err = (df_dx_int - df_dx_chk)/f_chk
+         int_f_err = (int_f_int - int_f_chk)/f_chk
+
+         if (ALL(ABS(f_err) < tol)) then
+            print *,'  PASS f'
+         else
+            print *,'  FAIL f:', MAXVAL(ABS(f_err)), '>', tol
+         end if
+
+         if (ALL(ABS(df_dx_err) < tol)) then
+            print *,'  PASS df_dx'
+         else
+            print *,'  FAIL df_dx:', MAXVAL(ABS(df_dx_err)), '>', tol
+         end if
+
+         if (ALL(ABS(int_f_err) < tol)) then
+            print *,'  PASS int_f'
+         else
+            print *,'  FAIL int_f:', MAXVAL(ABS(int_f_err)), '>', tol
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine cubint_assert_
+
+   end subroutine test_cubint_
+
+   !****
+
+   subroutine eval_cubic_(x, f, df_dx, int_f)
+
+      real(RD), intent(in)            :: x
+      real(RD), intent(out)           :: f
+      real(RD), intent(out), optional :: df_dx
+      real(RD), intent(out), optional :: int_f
+
+      f = 2*x**3 + x**2 - 4*x + 7
+
+      if (PRESENT(df_dx)) df_dx = 6*x**2 + 2*x - 4
+      if (PRESENT(int_f)) int_f = x**4/2 + x**3/3 - 2*x**2 + 7*x
+
+   end subroutine eval_cubic_
+
+end module test_cubint_m
