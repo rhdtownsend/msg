@@ -1,4 +1,4 @@
-program  test_interp_m
+program  test_interp
 
   ! Uses
 
@@ -12,4 +12,4 @@ program  test_interp_m
 
   call test()
 
-end program test_interp_m
+end program test_interp
