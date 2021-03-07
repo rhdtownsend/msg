@@ -1,0 +1,670 @@
+! Module   : cubint_m
+! Purpose  : define cubint_t type, representing piecewise cubic
+!            interpolants
+!
+! Copyright 2021 Rich Townsend
+!
+! This file is part of the ForUM (Fortran Utility Modules)
+! package. ForUM is free software: you can redistribute it and/or
+! modify it under the terms of the GNU General Public License as
+! published by the Free Software Foundation, version 3.
+!
+! ForUM is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module cubint_m
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use order_m
+
+   use f95_lapack
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type cubint_t
+      private
+      real(RD), allocatable :: x(:)    
+      real(RD), allocatable :: f(:)    
+      real(RD), allocatable :: df_dx(:)
+      real(RD), allocatable :: g(:)
+      integer               :: n       
+   contains
+      private
+      procedure, public :: get_domain
+      procedure         :: func_0_
+      procedure         :: func_1_
+      generic, public   :: func => func_0_, func_1_
+      procedure         :: deriv_0_
+      procedure         :: deriv_1_
+      generic, public   :: deriv => deriv_0_, deriv_1_
+      procedure         :: integ_0_
+      procedure         :: integ_1_
+      generic, public   :: integ => integ_0_, integ_1_
+      procedure         :: interp_
+   end type cubint_t
+
+   ! Interfaces
+
+   interface cubint_t
+      module procedure cubint_t_
+   end interface cubint_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: cubint_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function cubint_t_(x, f, df_dx) result (ci)
+
+      real(RD), intent(in) :: x(:)
+      real(RD), intent(in) :: f(:)
+      real(RD), intent(in) :: df_dx(:)
+      type(cubint_t)       :: ci
+
+      integer  :: i
+      real(RD) :: int_f
+      real(RD) :: h
+
+      @:CHECK_BOUNDS(SIZE(f), SIZE(x))
+      @:CHECK_BOUNDS(SIZE(df_dx), SIZE(x))
+
+      @:ASSERT(ALL(x(2:) > x(:SIZE(x)-1)), non-monotonic abscissa)
+
+      ! Construct the cubint_t
+
+      ci%x = x
+      ci%f = f
+
+      ci%df_dx = df_dx
+
+      ci%n = SIZE(x)
+
+      ! Evaluate the g function used during integral evaluation
+
+      allocate(ci%g(ci%n-1))
+
+      int_f = 0._RD
+
+      h = x(2) - x(1)
+
+      ci%g(1) = int_f +                       &
+              f    (1)*phi_(1._RD, -1)*h -    &
+              f    (2)*phi_(0._RD, -1)*h -    &
+              df_dx(1)*psi_(1._RD, -1)*h**2 - &
+              df_dx(2)*psi_(0._RD, -1)*h**2
+
+      x_loop : do i = 2, ci%n-1
+
+         int_f = int_f -                                            &
+              f    (i-1)*(phi_(0._RD, -1) - phi_(1._RD, -1))*h +    &
+              f    (i  )*(phi_(1._RD, -1) - phi_(0._RD, -1))*h +    &
+              df_dx(i-1)*(psi_(0._RD, -1) - psi_(1._RD, -1))*h**2 + &
+              df_dx(i  )*(psi_(1._RD, -1) - psi_(0._RD, -1))*h**2
+
+         h = x(i+1) - x(i)
+
+         ci%g(i) = int_f +                       &  
+              f    (i  )*phi_(1._RD, -1)*h -     &
+              f    (i+1)*phi_(0._RD, -1)*h -     &
+              df_dx(i  )*psi_(1._RD, -1)*h**2 -  &
+              df_dx(i+1)*psi_(0._RD, -1)*h**2
+         
+      end do x_loop
+
+      ! Finish
+
+      return
+
+   end function cubint_t_
+
+   !****
+
+   function cubint_t_derivs_(x, f, deriv_type, df_dx_a, df_dx_b) result (ci)
+
+      real(RD), intent(in)           :: x(:)
+      real(RD), intent(in)           :: f(:)
+      character(*), intent(in)       :: deriv_type
+      real(RD), optional, intent(in) :: df_dx_a
+      real(RD), optional, intent(in) :: df_dx_b
+      type(cubint_t)                 :: ci
+
+      real(RD) :: df_dx(SIZE(x))
+
+      ! Construct the cubint_t, with derivatives calculated according
+      ! to deriv_type
+
+      select case (deriv_type)
+      case ('SPLINE')
+         df_dx = spline_derivs_(x, f, df_dx_a, df_dx_b)
+      case ('FINDIFF')
+         df_dx = findiff_derivs_(x, f, df_dx_a, df_dx_b)
+      case ('MONO')
+         df_dx = mono_derivs_(x, f, df_dx_a, df_dx_b)
+      case default
+         @:ABORT(invalid deriv_type)
+      end select
+
+      ci = cubint_t(x, f, df_dx)
+
+      ! Finish
+
+      return
+
+   end function cubint_t_derivs_
+
+   !****
+   
+   function spline_derivs_(x, f, df_dx_a, df_dx_b) result(df_dx)
+
+      real(RD), intent(in)           :: x(:)
+      real(RD), intent(in)           :: f(:)
+      real(RD), intent(in), optional :: df_dx_a
+      real(RD), intent(in), optional :: df_dx_b
+      real(RD)                       :: df_dx(SIZE(x))
+
+      integer  :: n
+      real(RD) :: h(SIZE(x)-1)
+      real(RD) :: L(SIZE(x)-1)
+      real(RD) :: D(SIZE(x))
+      real(RD) :: U(SIZE(x)-1)
+      real(RD) :: B(SIZE(x),1)
+      integer  :: info
+
+      @:ASSERT(SIZE(x) > 1, invalid length)
+
+      @:CHECK_BOUNDS(SIZE(f), SIZE(x))
+
+      ! Calcualte the first derivatives for a cubic spline interp
+      ! (ensuring the second derivatives are continuous)
+
+      n = SIZE(x)
+
+      h = x(2:) - x(:n-1)
+
+      ! Set up the tridiagonal matrix and RHS
+
+      ! Inner boundary
+
+      D(1) = 1._RD
+      U(1) = 0._RD
+
+      if (PRESENT(df_dx_a)) then
+         B(1,1) = df_dx_a
+      else
+         B(1,1) = (f(2) - f(1))/h(1)
+      endif
+
+      ! Internal points
+
+      L(1:n-2) = 2._RD/h(1:n-2)
+      D(2:n-1) = 4._RD/h(1:n-2) + 4._RD/h(2:n-1)
+      U(2:n-1) = 2._RD/h(2:n-1)
+
+      B(2:n-1,1) = -6._RD*f(1:n-2)/h(1:n-2)**2 + 6._RD*f(2:n-1)/h(1:n-2)**2 + &
+           6._RD*f(3:n  )/h(2:n-1)**2 - 6._RD*f(2:n-1)/h(2:n-1)**2
+
+      ! Outer boundary
+
+      L(n-1) = 0._RD
+      D(n) = 1._RD
+
+      if (PRESENT(df_dx_b)) then
+         B(n,1) = df_dx_b
+      else
+         B(n,1) = (f(n) - f(n-1))/h(n-1)
+      endif
+
+      ! Solve the tridiagonal system
+
+      call LA_GTSV(L, D, U, B, info)
+      @:ASSERT(info == 0, non-zero return from XTGSV)
+
+      df_dx = B(:,1)
+
+      ! Finish
+
+      return
+
+   end function spline_derivs_
+
+   !****
+
+   function findiff_derivs_(x, f, df_dx_a, df_dx_b) result (df_dx)
+
+      real(RD), intent(in)           :: x(:)
+      real(RD), intent(in)           :: f(:)
+      real(RD), intent(in), optional :: df_dx_a
+      real(RD), intent(in), optional :: df_dx_b
+      real(RD)                       :: df_dx(SIZE(x))
+
+      integer  :: n
+      real(RD) :: h(SIZE(x)-1)
+      real(RD) :: s(SIZE(x)-1)
+
+      @:ASSERT(SIZE(x) > 1, invalid length)
+
+      @:CHECK_BOUNDS(SIZE(f), SIZE(x))
+
+      ! Calculate the first derivatives via parabolic finite differences
+
+      n = SIZE(x)
+
+      h = x(2:) - x(:n-1)
+
+      s = (f(2:) - f(:n-1))/h
+
+      if (PRESENT(df_dx_a)) then
+         df_dx(1) = df_dx_a
+      else
+         df_dx(1) = s(1)
+      endif
+
+      df_dx(2:n-1) = 0.5_RD*(s(1:n-2) + s(2:n-1))
+
+      if (PRESENT(df_dx_b)) then
+         df_dx(n) = df_dx_b
+      else
+         df_dx(n) = s(n-1)
+      endif
+
+      ! Finish
+
+      return
+
+   end function findiff_derivs_
+
+   !****
+
+   function mono_derivs_(x, f, df_dx_a, df_dx_b) result(df_dx)
+
+      real(RD), intent(in)           :: x(:)
+      real(RD), intent(in)           :: f(:)
+      real(RD), intent(in), optional :: df_dx_a
+      real(RD), intent(in), optional :: df_dx_b
+      real(RD)                       :: df_dx(SIZE(x))
+
+      integer  :: n
+      real(RD) :: h(SIZE(x)-1)
+      real(RD) :: s(SIZE(x)-1)
+      real(RD) :: p(SIZE(x))
+      integer  :: i
+
+      @:ASSERT(SIZE(x) > 1, invalid length)
+
+      @:CHECK_BOUNDS(SIZE(f), SIZE(x))
+
+      ! Calculate the first derivatives using the Steffen (1990, A&A,
+      ! 239, 443) monontonicity preserving algorithm
+
+      n = SIZE(x)
+
+      h = x(2:) - x(:n-1)
+
+      s = (f(2:) - f(:n-1))/h
+
+      ! Calculate parabolic gradients
+
+      if (PRESENT(df_dx_a)) then
+         p(1) = df_dx_a
+      else
+         p(1) = s(1)
+      endif
+
+      p(2:n-1) = (s(1:n-2)*h(2:n-1) + s(2:n-1)*h(1:n-2))/(h(1:n-2) + h(2:n-1))
+
+      if (PRESENT(df_dx_b)) then
+         p(n) = df_dx_b
+      else
+         p(n) = s(n-1)
+      endif
+
+      ! Calculate monotonic gradients
+
+      df_dx(1) = p(1)
+
+      do i = 2,n-1
+         df_dx(i) = (SIGN(1._RD, s(i-1)) + SIGN(1._RD, s(i)))* &
+              MIN(abs(s(i-1)), abs(s(i)), 0.5*abs(p(i)))
+      end do
+
+      df_dx(n) = p(n)
+
+      ! Finish
+
+      return
+
+   end function mono_derivs_
+
+   !****
+   
+   subroutine get_domain(self, x_min, x_max)
+
+      class(cubint_t), intent(in) :: self
+      real(RD), intent(out)       :: x_min
+      real(RD), intent(out)       :: x_max
+
+      ! Return the function range
+
+      x_min = self%x(1)
+      x_max = self%x(self%n)
+
+      ! FInish
+
+      return
+
+   end subroutine get_domain
+
+   !****
+
+   function func_0_(self, x) result(func)
+
+      class(cubint_t), intent(in) :: self
+      real(RD), intent(in)        :: x
+      real(RD)                    :: func
+
+      real(RD) :: x_(1)
+      real(RD) :: func_(1)
+
+      ! Interpolate the function
+
+      x_ = x
+
+      func_ = self%interp_(x_, 0)
+
+      func = func_(1)
+
+      ! Finish
+
+      return
+
+   end function func_0_
+
+   !****
+
+   function func_1_(self, x) result(func)
+
+      class(cubint_t), intent(in) :: self
+      real(RD), intent(in)        :: x(:)
+      real(RD)                    :: func(SIZE(x))
+
+      ! Interpolate the function
+
+      func = self%interp_(x, 0)
+
+      ! Finish
+
+      return
+
+   end function func_1_
+
+   !****
+
+   function deriv_0_ (self, x) result(deriv)
+
+      class(cubint_t), intent(in) :: self
+      real(RD), intent(in)        :: x
+      real(RD)                    :: deriv
+
+      real(RD) :: deriv_(1)
+
+      ! Interpolate the function derivative
+
+      deriv_ = self%interp_([x], 1)
+
+      deriv = deriv_(1)
+
+      ! Finish
+
+      return
+
+   end function deriv_0_
+
+   !****
+
+   function deriv_1_ (self, x) result(deriv)
+
+      class(cubint_t), intent(in) :: self
+      real(RD), intent(in)        :: x(:)
+      real(RD)                    :: deriv(SIZE(x))
+
+      ! Interpolate the function derivative
+
+      deriv = self%interp_(x, 1)
+
+      ! Finish
+
+      return
+
+   end function deriv_1_
+
+   !****
+
+   function integ_0_ (self, x) result(integ)
+
+      class(cubint_t), intent(in) :: self
+      real(RD), intent(in)        :: x
+      real(RD)                    :: integ
+
+      real(RD) :: integ_(1)
+
+      ! Interpolate the function integral
+
+      integ_ = self%interp_([x], -1, self%g)
+
+      integ = integ_(1)
+
+      ! Finish
+
+      return
+
+   end function integ_0_
+
+   !****
+
+   function integ_1_ (self, x) result(integ)
+
+      class(cubint_t), intent(in) :: self
+      real(RD), intent(in)        :: x(:)
+      real(RD)                    :: integ(SIZE(x))
+
+      ! Interpolate the function integral
+
+      integ = self%interp_(x, -1, self%g)
+
+      ! Finish
+
+      return
+
+   end function integ_1_
+
+   !****
+
+   function interp_ (self, x, n, g) result (f)
+
+      class(cubint_t), intent(in)   :: self
+      real(RD), intent(in)          :: x(:)
+      integer, intent(in)           :: n
+      real(RD), intent(in),optional :: g(:)
+      real(RD)                      :: f(SIZE(x))
+
+      integer  :: i
+      integer  :: j
+      real(RD) :: h
+      real(RD) :: w
+
+      if (PRESENT(g)) then
+         @:CHECK_BOUNDS(SIZE(g), self%n-1)
+      endif
+
+      ! Interpolate the n'th derivative of f
+
+      i = 1
+
+      x_loop : do j = 1,SIZE(x)
+
+         ! Update the bracketing index
+
+         call locate(self%x, x(j), i)
+         @:ASSERT(i > 0 .AND. i < self%n, out-of-bounds interpolation)
+
+         ! Set up the interpolation weights
+
+         h = self%x(i+1) - self%x(i)
+         w = (x(j) - self%x(i))/h
+
+         ! Do the interpolation
+
+         f(j) = &
+              self%f    (i  )*phi_(1._RD-w, n)*(-1._RD/h)**n +     &
+              self%f    (i+1)*phi_(      w, n)*( 1._RD/h)**n +     &
+              self%df_dx(i  )*psi_(1._RD-w, n)*(-1._RD/h)**(n-1) + &
+              self%df_dx(i+1)*psi_(      w, n)*( 1._RD/h)**(n-1)
+
+         if (PRESENT(g)) f(j) = f(j) + g(i)
+
+      end do x_loop
+
+      ! Finish
+
+      return
+
+   end function interp_
+
+   !****
+
+   function phi_(t, n) result (phi)
+
+      real(RD), intent(in) :: t
+      integer, intent(in)  :: n
+      real(RD)             :: phi
+
+      ! Evaluate the n'th derivative of the phi basis function
+
+      select case (n)
+      case (-1)
+         phi = t**3 - t**4/2._RD
+      case (0)
+         phi = 3._RD*t**2 - 2._RD*t**3
+      case (1)
+         phi = 6._RD*t - 6._RD*t**2
+      case default
+         @:ABORT(invalid n)
+      end select
+
+      ! Finish
+
+      return
+
+   end function phi_
+
+   !****
+
+   function psi_ (t, n) result (psi)
+
+      real(RD), intent(in) :: t
+      integer, intent(in)  :: n
+      real(RD)             :: psi
+
+      ! Evaluate the n'th derivative of the psi basis function
+
+      select case (n)
+      case (-1)
+         psi = t**4/4._RD - t**3/3._RD
+      case (0)
+         psi = t**3 - t**2
+      case (1)
+         psi = 3._RD*t**2 - 2._RD*t
+      case default
+         @:ABORT(invalid n)
+      end select
+
+      ! Finish
+
+      return
+
+   end function psi_
+
+   !****
+
+   subroutine read_(hi, ci)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(cubint_t), intent(out)   :: ci
+
+      character(TYPE_LEN)   :: file_type
+      real(RD), allocatable :: x(:)
+      real(RD), allocatable :: f(:)
+      real(RD), allocatable :: df_dx(:)
+
+      ! Read the cubint_t
+
+      call hi%read_attr('TYPE', file_type)
+      @:ASSERT(file_type == 'cubint_t', invalid type)
+
+      call hi%alloc_read_dset('x', x)
+      call hi%alloc_read_dset('f', f)
+      call hi%alloc_read_dset('df_dx', df_dx)
+
+      ci = cubint_t(x, f, df_dx)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, ci)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(cubint_t), intent(in)    :: ci
+
+      ! Write the cubint_t
+
+      call hi%write_attr('TYPE', 'cubint_t')
+
+      call hi%write_attr('n', ci%n)
+
+      call hi%write_dset('x', ci%x)
+      call hi%write_dset('f', ci%f)
+      call hi%write_dset('df_dx', ci%df_dx)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+end module cubint_m
