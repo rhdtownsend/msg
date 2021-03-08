@@ -27,6 +27,8 @@ module specint_m
 
    use limb_m
    use math_m
+   use passband_m
+   use photint_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -60,6 +62,10 @@ module specint_m
       module procedure specint_t_rebin_
    end interface specint_t
 
+   interface photint_t
+      module procedure photint_t_specint_
+   end interface photint_t
+
    interface read
       module procedure read_
    end interface read
@@ -73,6 +79,7 @@ module specint_m
    private
 
    public :: specint_t
+   public :: photint_from_specint
    public :: read
    public :: write
 
@@ -328,6 +335,48 @@ contains
       end subroutine interp_${name}$
 
    #:endfor
+
+   !****
+
+   function photint_t_specint_(si, pb, norm) result(pi)
+
+      type(specint_t), intent(in)   :: si
+      type(passband_t), intent(in)  :: pb
+      logical, intent(in), optional :: norm
+      type(photint_t)               :: pi
+      
+      real(RD) :: c(si%n_b)
+      integer  :: k
+      real(RD) :: w_a
+      real(RD) :: w_b
+      real(RD) :: P
+
+      ! Construct the radint_t from the specint_t
+
+      c = 0._RD
+
+      do k = 1, si%n_w
+
+         ! Evaluate the passthrough
+
+         w_a = si%w_0 + si%dw*(k-1)
+         w_b = si%w_0 + si%dw*(k  )
+
+         P = pb%passthru(EXP(w_a), EXP(w_b), norm)
+
+         ! Add the contribution to c
+
+         c = c + P*si%c(:,k)
+
+      end do
+
+      pi = photint_t(c, si%li)
+
+      ! Finish
+
+      return
+
+   end function photint_t_specint_
 
    !****
 

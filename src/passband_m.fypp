@@ -1,0 +1,225 @@
+! Module  : passband_m
+! Purpose : define passband_t type, representing a photometric passband
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module passband_m
+
+   ! Uses
+
+   use kinds_m
+   use const_m
+   use hdf5io_m
+
+   use cubint_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type passband_t
+      private
+      type(cubint_t) :: ci
+      real(RD)       :: D
+      real(RD)       :: ZP
+      real(RD)       :: lambda_min
+      real(RD)       :: lambda_max
+   contains
+      private
+      procedure, public :: passthru
+   end type passband_t
+
+   ! Interfaces
+
+   interface passband_t
+      module procedure passband_t_
+      module procedure passband_t_cubint_
+   end interface passband_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: passband_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function passband_t_(S, lambda, ZP) result(pb)
+
+      real(RD), intent(in) :: S(:)
+      real(RD), intent(in) :: lambda(:)
+      real(RD), intent(in) :: ZP
+      type(passband_t)     :: pb
+
+      real(RD)       :: lambda_min
+      real(RD)       :: lambda_max
+      type(cubint_t) :: ci
+      real(RD)       :: D
+
+      @:CHECK_BOUNDS(SIZE(lambda), SIZE(S))
+
+      ! Construct the passband_t from the supplied data
+
+      call ci%get_range()
+
+      lambda_min = lambda(1)
+      lambda_max = lambda(SIZE(lambda))
+
+      ci = cubint_t(lambda, C_LIGHT*S/lambda, 'SPLINE')
+      D = ci%integ(lambda_min, lambda_max)
+
+      pb = passband_t(cubint_t(lambda, S, 'SPLINE'), D, ZP)
+
+      ! Finish
+
+      return
+
+   end function passband_t_
+
+   !****
+
+   function passband_t_cubint_(ci, D, ZP) result(pb)
+
+      type(cubint_t), intent(in) :: ci
+      real(RD), intent(in)       :: D
+      real(RD), intent(in)       :: ZP
+      type(passband_t)           :: pb
+
+      real(RD) :: lambda_min
+      real(RD) :: lambda_max
+
+      ! Construct the passband_t from the supplied data
+
+      call ci%get_range(lambda_min, lambda_max)
+
+      pb%ci = ci
+
+      pb%D = D
+      pb%ZP = ZP
+
+      pb%lambda_min = lambda_min
+      pb%lambda_max = lambda_max
+
+      ! Finish
+
+      return
+
+   end function passband_t_cubint_
+
+   !****
+
+   function passthru(self, lambda_a, lambda_b, norm) result (P)
+
+      class(passband_t), intent(in) :: self
+      real(RD), intent(in)          :: lambda_a
+      real(RD), intent(in)          :: lambda_b
+      logical, intent(in), optional :: norm
+
+      real(RD) :: lambda_a_
+      real(RD) :: lambda_b_
+
+      ! Evaluate the passthru P = int_a^b S(lambda) dlambda
+
+      lambda_a_ = MAX(lambda_a, self%lambda_min)
+      lambda_b_ = MIN(lambda_b, self%lambda_max)
+
+      P = self%ci%integ(lambda_a_, lambda_b_)
+
+      ! If necessary, normalize
+
+      if (PRESENT(norm)) then
+         if (norm) S = S/D*10**((48.60_RD + self%ZP)/2.5_RD)
+      endif
+
+      ! Finish
+
+      return
+
+   end function passthru
+
+   !****
+
+   subroutine read_(hi, pb)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(passband_t), intent(out) :: pb
+
+      character(TYPE_LEN) :: file_type
+      real(RD)            :: D
+      real(RD)            :: ZP
+      type(hdf5io_t)      :: hi_ci
+      type(cubint_t)      :: ci
+
+      ! Read the passband_t
+
+      call hi%read_attr('TYPE', file_type)
+      @:ASSERT(file_type == 'passband_t', invalid type)
+
+      call hi%read_attr('D', D)
+      call hi%read_attr('ZP', ZP)
+
+      hi_ci = hdf5io_t(hi, 'ci')
+      call read(hi_ci, ci)
+      call hi%final()
+
+      pb = passband_t(ci, D, ZP)
+
+      ! Finish
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, pb)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(passband_t), intent(in)  :: pb
+
+      type(hdf5io_t) :: hi_ci
+
+      ! Write the passband_t
+
+      call hi%write_attr('TYPE', 'passband_t')
+
+      call hi%write_attr(self%D)
+      call hi%write_attr(self%ZP)
+
+      hi_ci = hdf5io_t(hi, 'ci')
+      call write(hi_ci, self%ci)
+      call hi_ci%final()
+
+      ! Finish
+
+   end subroutine write_
+   
+end module passband_m
