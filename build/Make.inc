@@ -36,6 +36,7 @@ FYPPFLAGS:=${FYPPFLAGS} $(foreach subdir,$(subst :, ,${SUBDIRS}),-I${subdir}) $(
 
 ifeq ($(shell uname -s),Darwin)
   SHARED_LIB_EXT=dylib
+  LIB_LDFLAGS=-install_name @rpath/$@
 else
   SHARED_LIB_EXT=so
 endif
@@ -98,7 +99,7 @@ vpath %.inc ${SUBDIRS}
 	@${F9XC} ${F9XFLAGS} ${MODINCS} -c $<
 	@touch $*.mod
 
-%.${SHARED_LIB_EXT} : LDFLAGS := $(LDFLAGS) -shared
+%.${SHARED_LIB_EXT} : LDFLAGS := $(LDFLAGS) -shared ${LIB_LDFLAGS}
 
 all : ${TARGETS}
 
@@ -124,7 +125,7 @@ endif
 
 ${TARGETS}: $$(subst .f90,.o,$$($$@_SRCS))
 	@echo LD $@
-	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS}
+	${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} 
 
 %.d : $$($$*_SRCS)
 	@echo DEPEND $@
