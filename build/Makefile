@@ -4,7 +4,7 @@
 # Variables
 
 #TARGETS = test_math test_interp test_order test_fit
-TARGETS = synspec_to_specint specint_to_photint make_specgrid test_specgrid make_photgrid libcmsg.${SHARED_LIB_EXT}
+TARGETS = synspec_to_specint specint_to_photint make_passband make_specgrid test_specgrid make_photgrid test_photgrid libcmsg.${SHARED_LIB_EXT}
 
 synspec_to_specint_SRCS = \
   synspec_to_specint.f90 \
@@ -36,6 +36,17 @@ specint_to_photint_SRCS = \
   limb_m.f90 \
   math_m.f90 \
   memory_m.f90 \
+  order_m.f90 \
+  system_m.f90 \
+  hdf5io_m.f90 \
+  cinter_m.f90
+
+make_passband_SRCS = \
+  make_passband.f90 \
+  passband_m.f90 \
+  cubint_m.f90 \
+  kinds_m.f90 \
+  const_m.f90 \
   order_m.f90 \
   system_m.f90 \
   hdf5io_m.f90 \
