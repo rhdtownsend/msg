@@ -79,7 +79,7 @@ module specint_m
    private
 
    public :: specint_t
-   public :: photint_from_specint
+   public :: photint_t
    public :: read
    public :: write
 
