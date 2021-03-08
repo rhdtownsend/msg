@@ -344,14 +344,28 @@ contains
       type(passband_t), intent(in)  :: pb
       logical, intent(in), optional :: norm
       type(photint_t)               :: pi
-      
-      real(RD) :: c(si%n_b)
-      integer  :: k
+
+      real(RD) :: lambda_min
+      real(RD) :: lambda_max
       real(RD) :: w_a
       real(RD) :: w_b
+      real(RD) :: c(si%n_b)
+      integer  :: k
       real(RD) :: P
 
       ! Construct the radint_t from the specint_t
+
+      ! First check that the spectrum is defined across the passband support
+
+      call pb%get_support(lambda_min, lambda_max)
+
+      w_a = si%w_0
+      w_b = si%w_0 + si%dw*si%n_w
+
+      @:ASSERT(EXP(w_a) <= lambda_min, spectrum does not span passband support)
+      @:ASSERT(EXP(w_b) >= lambda_max, spectrum does not span passband support)
+
+      ! Evaluate the coefficients
 
       c = 0._RD
 

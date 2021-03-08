@@ -44,6 +44,7 @@ module passband_m
       real(RD)       :: lambda_max
    contains
       private
+      procedure, public :: get_support
       procedure, public :: passthru
    end type passband_t
 
@@ -133,6 +134,25 @@ contains
       return
 
    end function passband_t_cubint_
+
+   !****
+
+   subroutine get_support(self, lambda_min, lambda_max)
+
+      class(passband_t), intent(in) :: self
+      real(RD), intent(out)         :: lambda_min
+      real(RD), intent(out)         :: lambda_max
+
+      ! Get the support (non-zero interval) of the passband response
+
+      lambda_min = self%lambda_min
+      lambda_max = self%lambda_max
+
+      ! Finish
+
+      return
+
+   end subroutine get_support
 
    !****
 
