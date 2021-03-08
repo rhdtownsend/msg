@@ -63,6 +63,7 @@ module cubint_m
 
    interface cubint_t
       module procedure cubint_t_
+      module procedure cubint_t_derivs_
    end interface cubint_t
 
    interface read
