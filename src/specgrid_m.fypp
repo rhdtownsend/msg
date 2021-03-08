@@ -82,7 +82,7 @@ contains
       type(specgrid_t)             :: sg
 
       @:CHECK_BOUNDS(SIZE(si, 1), gr%n_logT)
-      @:CHECK_BOUNDS(SIZE(si, 1), gr%n_logg)
+      @:CHECK_BOUNDS(SIZE(si, 2), gr%n_logg)
 
       ! Construct the specgrid_t
 
