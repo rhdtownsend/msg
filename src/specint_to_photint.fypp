@@ -1,0 +1,95 @@
+! Module   : specint_to_photint
+! Purpose  : create photint files from specint files
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program specint_to_photint
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use system_m
+
+   use specint_m
+   use passband_m
+   use photint_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: specint_filename
+   character(:), allocatable :: passband_filename
+   character(:), allocatable :: photint_filename
+
+   type(hdf5io_t)   :: hi
+   type(specint_t)  :: si
+   real(RD)         :: logT
+   real(RD)         :: logg
+   type(passband_t) :: pb
+   type(photint_t)  :: pi
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 3,{Syntax: specint_to_photint specint_filename passband_filename photint_filename})
+
+   call get_arg(1, specint_filename)
+   call get_arg(2, passband_filename)
+   call get_arg(3, photint_filename)
+
+   ! Read data from the specint file
+
+   hi = hdf5io_t(specint_filename, OPEN_FILE_RO)
+
+   call read(hi, si)
+
+   call hi%read_attr('logT', logT)
+   call hi%read_attr('logg', logg)
+
+   call hi%final()
+   
+   ! Read data from the passband file
+
+   hi = hdf5io_t(passband_filename, OPEN_FILE_RO)
+
+   call read(hi, pb)
+
+   call hi%final()
+
+   ! Create the photint_t
+
+   pi = photint_t(si, pb, norm=.TRUE.)
+
+   ! Write the photint_t (with additional metadata)
+
+   hi = hdf5io_t(photint_filename, CREATE_FILE)
+
+   call write(hi, pi)
+
+   call hi%write_attr('logT', logT)
+   call hi%write_attr('logg', logg)
+
+   call hi%final()
+
+   ! Finish
+
+end program specint_to_photint
