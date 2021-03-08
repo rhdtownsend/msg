@@ -1,0 +1,94 @@
+! Module   : make_passband
+! Purpose  : create passband files from ASCII tables
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program make_passband
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use system_m
+
+   use passband_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: table_filename
+   real(RD)                  :: ZP
+   character(:), allocatable :: passband_filename
+
+   integer               :: unit
+   integer               :: n
+   real(RD), allocatable :: lambda(:)
+   real(RD), allocatable :: S(:)
+   integer               :: i
+   type(passband_t)      :: pb
+   type(hdf5io_t)        :: hi
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 3,{Syntax: table_filename ZP passband_filename})
+
+   call get_arg(1, table_filename)
+   call get_arg(2, ZP)
+   call get_arg(3, passband_filename)
+
+   ! Read the table data
+
+   open(NEWUNIT=unit, STATUS='OLD', FILE=table_filename)
+
+   n = 0
+
+   count_loop : do
+      read(unit, *, END=100)
+      n = n + 1
+   end do count_loop
+
+100 continue
+
+   rewind(unit)
+
+   allocate(lambda(n))
+   allocate(S(n))
+
+   read_loop : do i = 1, n
+      read(unit, *) lambda(i), S(i)
+   end do read_loop
+
+   close(unit)
+
+   ! Create the passband_t
+
+   pb = passband_t(S, lambda, ZP)
+
+   ! Write the passband_t
+
+   hi = hdf5io_t(passband_filename, CREATE_FILE)
+   call write(hi, pb)
+   call hi%final()
+
+   ! Finish
+
+end program make_passband

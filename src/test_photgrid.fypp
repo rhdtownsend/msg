@@ -1,0 +1,29 @@
+program test_photgrid
+
+   use kinds_m
+   use hdf5io_m
+
+   use photgrid_m
+   use stat_m
+
+   implicit none
+
+   type(photgrid_t) :: pg
+   type(hdf5io_t)   :: hi
+   real(RD)         :: I
+   integer          :: stat
+
+   hi = hdf5io_t('pg.h5', OPEN_FILE_RO)
+   call read(hi, pg)
+   call hi%final()
+
+   call pg%interp_intensity(log10(14660._RD), 2.80_RD, 0.5_RD, I, stat)
+   if (stat /= STAT_OK) then
+      print *,'Stat is:',stat
+      stop
+   end if
+
+   print *,I
+
+end program test_photgrid
+   
