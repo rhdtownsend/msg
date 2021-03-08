@@ -94,8 +94,6 @@ contains
       character(*), intent(in) :: str
       type(limb_t)             :: li
 
-      integer :: law
-
       ! Construct the limb_t from the supplied data
 
       li%law = str_to_law_(str)
