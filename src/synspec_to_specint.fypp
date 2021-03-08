@@ -98,7 +98,7 @@ program synspec_to_specint
 
    mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
 
-   si = specint_from_table(I, mu, lambda, w_0, dw, n_w, li)
+   si = specint_t(I, mu, lambda, w_0, dw, n_w, li)
 
    ! Write the specint_t (with additional metadata)
 

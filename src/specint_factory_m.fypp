@@ -33,17 +33,23 @@ module specint_factory_m
 
    implicit none
 
+   ! Interfaces
+
+   interface specint_t
+      module procedure specint_t_table_
+   end interface specint_t
+
    ! Access specifiers
 
    private
 
-   public :: specint_from_table
+   public :: specint_t
 
    ! Procedures
 
 contains
 
-   function specint_from_table (I, mu, lambda, w_0, dw, n_w, li) result (si)
+   function specint_t_table_(I, mu, lambda, w_0, dw, n_w, li) result (si)
 
       real(RD), intent(in)     :: I(:,:)
       real(RD), intent(in)     :: mu(:)
@@ -103,6 +109,6 @@ contains
 
       ! Finish
 
-   end function specint_from_table
+   end function specint_t_table_
 
 end module specint_factory_m
