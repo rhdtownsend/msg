@@ -90,13 +90,11 @@ contains
 
       ! Construct the passband_t from the supplied data
 
-      call ci%get_range()
-
       lambda_min = lambda(1)
       lambda_max = lambda(SIZE(lambda))
 
       ci = cubint_t(lambda, C_LIGHT*S/lambda, 'SPLINE')
-      D = ci%integ(lambda_min, lambda_max)
+      D = ci%integ(lambda_max) - ci%integ(lambda_min)
 
       pb = passband_t(cubint_t(lambda, S, 'SPLINE'), D, ZP)
 
@@ -120,7 +118,7 @@ contains
 
       ! Construct the passband_t from the supplied data
 
-      call ci%get_range(lambda_min, lambda_max)
+      call ci%get_domain(lambda_min, lambda_max)
 
       pb%ci = ci
 
@@ -144,6 +142,7 @@ contains
       real(RD), intent(in)          :: lambda_a
       real(RD), intent(in)          :: lambda_b
       logical, intent(in), optional :: norm
+      real(RD)                      :: P
 
       real(RD) :: lambda_a_
       real(RD) :: lambda_b_
@@ -153,12 +152,12 @@ contains
       lambda_a_ = MAX(lambda_a, self%lambda_min)
       lambda_b_ = MIN(lambda_b, self%lambda_max)
 
-      P = self%ci%integ(lambda_a_, lambda_b_)
+      P = self%ci%integ(lambda_b_) - self%ci%integ(lambda_a_)
 
       ! If necessary, normalize
 
       if (PRESENT(norm)) then
-         if (norm) S = S/D*10**((48.60_RD + self%ZP)/2.5_RD)
+         if (norm) P = P/self%D*10._RD**((48.60_RD + self%ZP)/2.5_RD)
       endif
 
       ! Finish
@@ -211,11 +210,11 @@ contains
 
       call hi%write_attr('TYPE', 'passband_t')
 
-      call hi%write_attr(self%D)
-      call hi%write_attr(self%ZP)
+      call hi%write_attr('D', pb%D)
+      call hi%write_attr('ZP', pb%ZP)
 
       hi_ci = hdf5io_t(hi, 'ci')
-      call write(hi_ci, self%ci)
+      call write(hi_ci, pb%ci)
       call hi_ci%final()
 
       ! Finish
