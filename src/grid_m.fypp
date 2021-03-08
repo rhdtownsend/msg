@@ -497,10 +497,10 @@ contains
       type(grid_t), intent(out)          :: gr
       character(*), intent(in), optional :: type
 
-      character(TYPE_LEN)             :: file_type
-      real(RD), allocatable           :: logT(:)
-      real(RD), allocatable           :: logg(:)
-      logical, allocatable            :: mask(:,:)
+      character(TYPE_LEN)   :: file_type
+      real(RD), allocatable :: logT(:)
+      real(RD), allocatable :: logg(:)
+      logical, allocatable  :: mask(:,:)
 
       ! Read the grid_t
 
