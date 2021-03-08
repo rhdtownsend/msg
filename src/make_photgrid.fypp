@@ -102,7 +102,6 @@ contains
       type(hdf5io_t)            :: hi
       real(RD), allocatable     :: node_logT(:)
       real(RD), allocatable     :: node_logg(:)
-      real(RD)                  :: Teff
       integer                   :: n_logT
       integer                   :: n_logg
       integer                   :: i

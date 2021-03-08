@@ -25,7 +25,7 @@ module grid_m
    use hdf5io_m
    use order_m
 
-   use interp_m
+   use grid_interp_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -84,9 +84,6 @@ contains
       real(RD), intent(in) :: logT(:)
       real(RD), intent(in) :: logg(:)
       type(grid_t)         :: gr
-
-      integer :: i
-      integer :: j
 
       @:CHECK_BOUNDS(SIZE(logT), SIZE(mask, 1))
       @:CHECK_BOUNDS(SIZE(logg), SIZE(mask, 2))
@@ -200,7 +197,7 @@ contains
 
       ! Perform the interpolation
 
-      call bicubic_interp(f(2:3,2:3), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int, d_dlogT, d_dlogg)
+      call interp_bicubic(f(2:3,2:3), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int, d_dlogT, d_dlogg)
 
       if (PRESENT(stat)) stat = STAT_OK
 
@@ -313,7 +310,7 @@ contains
 
          ! Perform the interpolation
 
-         call bicubic_interp(f(2:3,2:3,k), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int(k), d_dlogT, d_dlogg)
+         call interp_bicubic(f(2:3,2:3,k), df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int(k), d_dlogT, d_dlogg)
 
       end do k_loop
 
@@ -504,11 +501,6 @@ contains
       real(RD), allocatable           :: logT(:)
       real(RD), allocatable           :: logg(:)
       logical, allocatable            :: mask(:,:)
-      integer                         :: n_logT
-      integer                         :: n_logg
-      type(hdf5io_t)                  :: hi_ri
-      integer                         :: i
-      integer                         :: j
 
       ! Read the grid_t
 

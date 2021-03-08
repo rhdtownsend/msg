@@ -29,17 +29,15 @@ program test_specgrid
    call read(hi, sg, w_0, dw, n_w)
    call hi%final()
 
-   print *,'Grid loaded'
-
    call sg%interp_intensity(log10(14660._RD), 2.80_RD, 0.5_RD, LOG(5100._RD), I, stat)
    if (stat /= STAT_OK) then
       print *,'Stat is:',stat
       stop
    end if
 
-!   do j = 1, n
-!      print *,j,I(j)
-!   end do
+   do j = 1, n
+      print *,j,I(j)
+   end do
 
 end program test_specgrid
    

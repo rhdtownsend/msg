@@ -1,5 +1,5 @@
-! Module  : interp_m
-! Purpose : interpolation support
+! Module  : grid_interp_m
+! Purpose : low-level interpolation support for grid_m module
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-module interp_m
+module grid_interp_m
 
    ! Uses
 
@@ -37,7 +37,7 @@ module interp_m
 
    public :: eval_deriv_kernel
    public :: eval_cross_kernel
-   public :: bicubic_interp
+   public :: interp_bicubic
 
    ! Procedures
 
@@ -264,7 +264,7 @@ contains
 
    !****
 
-   subroutine bicubic_interp(f, df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int, d_dx, d_dy)
+   subroutine interp_bicubic(f, df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int, d_dx, d_dy)
 
       real(RD), intent(in)          :: f(:,:)
       real(RD), intent(in)          :: df_dx(:,:)
@@ -344,6 +344,6 @@ contains
 
       return
 
-   end subroutine bicubic_interp
+   end subroutine interp_bicubic
 
-end module interp_m
+end module grid_interp_m

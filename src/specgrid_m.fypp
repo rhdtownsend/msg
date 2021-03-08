@@ -81,11 +81,8 @@ contains
       class(specint_t), intent(in) :: si(:,:)
       type(specgrid_t)             :: sg
 
-      integer :: i
-      integer :: j
-
-      @:CHECK_BOUNDS(SIZE(ri, 1), gr%n_logT)
-      @:CHECK_BOUNDS(SIZE(ri, 1), gr%n_logg)
+      @:CHECK_BOUNDS(SIZE(si, 1), gr%n_logT)
+      @:CHECK_BOUNDS(SIZE(si, 1), gr%n_logg)
 
       ! Construct the specgrid_t
 
