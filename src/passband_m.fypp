@@ -149,8 +149,8 @@ contains
 
       ! Evaluate the passthru P = int_a^b S(lambda) dlambda
 
-      lambda_a_ = MAX(lambda_a, self%lambda_min)
-      lambda_b_ = MIN(lambda_b, self%lambda_max)
+      lambda_a_ = MIN(MAX(lambda_a, self%lambda_min), self%lambda_max)
+      lambda_b_ = MIN(MAX(lambda_b, self%lambda_min), self%lambda_max)
 
       P = self%ci%integ(lambda_b_) - self%ci%integ(lambda_a_)
 
@@ -189,7 +189,7 @@ contains
 
       hi_ci = hdf5io_t(hi, 'ci')
       call read(hi_ci, ci)
-      call hi%final()
+      call hi_ci%final()
 
       pb = passband_t(ci, D, ZP)
 
