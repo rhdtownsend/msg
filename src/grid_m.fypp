@@ -169,7 +169,7 @@ contains
       do l = 1, 4
          do m = 1, 4
             if (mask(l,m)) then
-               call proc(i_cl+l-2, j_cl+l-2, f(l,m), stat)
+               call proc(i_cl+l-2, j_cl+m-2, f(l,m), stat)
                if (PRESENT(stat)) then
                   if (stat /= STAT_OK) return
                endif
