@@ -162,10 +162,9 @@ contains
 
          I(:,n_lam) = I(n_mu:1:-1,n_lam)
 
-         ! Convert to correct units
-         !   intensity: ergs/s/cm**2/Angstom/sr
+         ! Convert from to ergs/s/cm**2/Hz/sr to ergs/s/cm**2/Angstrom/sr
 
-         I(:,n_lam) = I(:,n_lam)*C_LIGHT/(lambda(n_lam)*1E-8_RD)**2
+         I(:,n_lam) = I(:,n_lam)*C_LIGHT/(lambda(n_lam)*1E-8_RD)**2*1E-8_RD
 
       end do read_loop
 
