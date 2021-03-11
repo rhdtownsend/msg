@@ -41,8 +41,8 @@ module dyn_specint_m
       real(RD)       :: w_0_rebin
       real(RD)       :: dw_rebin
       integer        :: n_w_rebin
-      logical        :: rebin
-      logical        :: loaded
+      logical        :: rebin = .FALSE.
+      logical        :: loaded = .FALSE.
    contains
       private
       procedure, public :: interp_intensity
@@ -157,8 +157,6 @@ contains
 
       si%hi = hdf5io_t(hi, '.')
 
-      si%loaded = .FALSE.
-
       ! Finish
 
       return
@@ -183,6 +181,8 @@ contains
       si%w_0_rebin = w_0
       si%dw_rebin = dw
       si%n_w_rebin = n_w
+
+      si%rebin = .TRUE.
 
       ! Finish
 
