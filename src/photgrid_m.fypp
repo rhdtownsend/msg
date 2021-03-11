@@ -80,7 +80,7 @@ contains
       type(photgrid_t)             :: pg
 
       @:CHECK_BOUNDS(SIZE(pi, 1), gr%n_logT)
-      @:CHECK_BOUNDS(SIZE(pi, 1), gr%n_logg)
+      @:CHECK_BOUNDS(SIZE(pi, 2), gr%n_logg)
 
       ! Construct the photgrid_t
 
