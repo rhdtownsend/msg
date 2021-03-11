@@ -1,0 +1,73 @@
+! Module  : licmsg
+! Purpose : library package for MSG modules
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module libmsg_m
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+
+   use specgrid_m
+   use photgrid_m
+   use stat_m, MSG_STAT_OK => STAT_OK
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Interfaces
+
+   interface specgrid_t
+      module procedure specgrid_t_file_
+   end interface specgrid_t
+
+   ! Access specifiers
+
+   private
+
+   public :: specgrid_t
+   public :: photgrid_t
+   public :: MSG_STAT_OK
+
+contains
+
+   function specgrid_t_file_(filename, w_0, dw, n_w) result(sg)
+
+      character(*), intent(in) :: filename
+      real(RD), intent(in)     :: w_0
+      real(RD), intent(in)     :: dw
+      integer, intent(in)      :: n_w
+      type(specgrid_t)         :: sg
+
+      type(hdf5io_t) :: hi
+
+      ! Read the specgrid_t
+
+      hi = hdf5io_t(filename, OPEN_FILE_RO)
+      call read(hi, sg, w_0, dw, n_w)
+      call hi%final()
+
+      ! Finish
+
+      return
+
+   end function specgrid_t_file_
+
+end module libmsg_m
