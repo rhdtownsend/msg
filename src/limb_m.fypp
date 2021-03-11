@@ -337,19 +337,19 @@ contains
               -1._RD/6._RD &
               ]
       case (SQRT_LAW)
-         b = [               &
+         b = TWOPI*[         &
               1._RD/2._RD,   &
               -1._RD/10._RD, &
               -1._RD/6._RD   &
               ]
       case (QUAD_LAW)
-         b = [              &
-              -1._RD/2._RD, &
+         b = TWOPI*[        &
+              1._RD/2._RD,  &
               -1._RD/6._RD, &
               -1._RD/4._RD  &
               ]
       case (CLARET_LAW)
-         b = [               &
+         b = TWOPI*[         &
               1._RD/2._RD,   &
               -1._RD/10._RD, &
               -1._RD/6._RD,  &
