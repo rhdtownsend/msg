@@ -36,8 +36,7 @@ FYPPFLAGS:=${FYPPFLAGS} $(foreach subdir,$(subst :, ,${SUBDIRS}),-I${subdir}) $(
 
 ifeq ($(shell uname -s),Darwin)
   SHARED_LIB_EXT=dylib
-  LIB_LDFLAGS=-install_name @rpath/$@
-else
+else			   
   SHARED_LIB_EXT=so
 endif
 
@@ -55,7 +54,7 @@ endif
 
 ifeq (${DEBUG},yes)
   FFLAGS:=${FFLAGS} -fcheck=all -Wall -Wno-unused-dummy-argument -Wno-maybe-uninitialized -finline-limit=0 -ggdb
-  FYPPFLAGS:=${FYPPFLAGS}PX3FLAGS}
+  FYPPFLAGS:=${FYPPFLAGS}
 else
   FFLAGS:=${FFLAGS} -O2 -march=native
   FYPPFLAGS:=${FYPPFLAGS}
@@ -97,9 +96,7 @@ vpath %.inc ${SUBDIRS}
 %.o %.mod : %.f90
 	@echo FC $<
 	@${F9XC} ${F9XFLAGS} ${MODINCS} -c $<
-	@touch $*.mod
-
-%.${SHARED_LIB_EXT} : LDFLAGS := $(LDFLAGS) -shared ${LIB_LDFLAGS}
+	@if [[ -e $*.mod ]]; then touch $*.mod; fi
 
 all : ${TARGETS}
 
@@ -123,9 +120,15 @@ endif
 
 .SECONDEXPANSION:
 
+ifeq ($(shell uname -s),Darwin)
+  %.${SHARED_LIB_EXT} : LIB_LDFLAGS=-shared -install_name @rpath/$@
+else			   
+  %.${SHARED_LIB_EXT} : LIB_LDFLAGS=-shared
+endif
+
 ${TARGETS}: $$(subst .f90,.o,$$($$@_SRCS))
 	@echo LD $@
-	${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} 
+	${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} ${LIB_LDFLAGS}
 
 %.d : $$($$*_SRCS)
 	@echo DEPEND $@
