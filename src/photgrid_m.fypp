@@ -37,11 +37,15 @@ module photgrid_m
 
    ! Derived-type definitions
 
-   type, extends(grid_t) :: photgrid_t
+   type :: photgrid_t
       private
-      class(photint_t), allocatable :: pi(:,:)
+      type(photint_t), allocatable :: pi(:,:)
+      type(grid_t)                 :: gr
+      integer                      :: n_logT
+      integer                      :: n_logg
    contains
       private
+      procedure, public :: inquire
       #:for name in ('intensity', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -73,26 +77,53 @@ module photgrid_m
 
 contains
 
-   function photgrid_t_ (gr, pi) result (pg)
+   function photgrid_t_ (pi, gr) result (pg)
 
-      type(grid_t), intent(in)     :: gr
-      class(photint_t), intent(in) :: pi(:,:)
-      type(photgrid_t)             :: pg
+      type(photint_t), intent(in) :: pi(:,:)
+      type(grid_t), intent(in)    :: gr
+      type(photgrid_t)            :: pg
 
-      @:CHECK_BOUNDS(SIZE(pi, 1), gr%n_logT)
-      @:CHECK_BOUNDS(SIZE(pi, 2), gr%n_logg)
+      integer :: n_logT
+      integer :: n_logg
 
       ! Construct the photgrid_t
 
-      pg%grid_t = gr
+      call gr%inquire(n_logT=n_logT, n_logg=n_logg)
+
+      @:CHECK_BOUNDS(SIZE(pi, 1), n_logT)
+      @:CHECK_BOUNDS(SIZE(pi, 2), n_logg)
  
-      allocate(pg%pi, SOURCE=pi)
+      pg%pi = pi
+
+      pg%gr = gr
+
+      pg%n_logT = n_logT
+      pg%n_logg = n_logg
 
       ! Finish
 
       return
 
    end function photgrid_t_
+
+   !****
+
+   subroutine inquire(self, n_logT, n_logg)
+
+      class(photgrid_t), intent(in)  :: self
+      integer, intent(out), optional :: n_logT
+      integer, intent(out), optional :: n_logg
+
+      ! Inquire metadata
+
+      if (PRESENT(n_logT)) n_logT = self%n_logT
+      if (PRESENT(n_logg)) n_logg = self%n_logg
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
 
    !****
 
@@ -112,7 +143,7 @@ contains
 
          ! Interpolate the ${name}$
 
-         call self%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+         call self%gr%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
 
          ! Finish
 
@@ -151,7 +182,7 @@ contains
 
          ! Interpolate the ${name}$
 
-         call self%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+         call self%gr%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
 
          ! Finish
 
@@ -181,33 +212,56 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(photgrid_t), intent(out) :: pg
 
+      character(TYPE_LEN)          :: file_type
+      integer                      :: n_logT
+      integer                      :: n_logg
+      type(hdf5io_t)               :: hi_gr
       type(grid_t)                 :: gr
       type(photint_t), allocatable :: pi(:,:)
-      type(hdf5io_t)               :: hi_pi
-      integer                      :: i
-      integer                      :: j
-
+      
       ! Read the photgrid_t
 
-      call read(hi, gr, type='photgrid_t')
-
-      allocate(pi(gr%n_logT,gr%n_logg))
-
-      logT_loop : do i = 1, gr%n_logT
-         logg_loop : do j = 1, gr%n_logg
-
-            if (gr%mask(i,j)) then
-               hi_pi = hdf5io_t(hi, pi_name_(i,j))
-               call read(hi_pi, pi(i,j))
-               call hi_pi%final()
-            end if
-            
-         end do logg_loop
-      end do logT_loop
+      call hi%read_attr('TYPE', file_type)
+      @:ASSERT(file_type == 'specgrid_t', invalid type)
       
-      pg = photgrid_t(gr, pi)
+      call hi%read_attr('n_logT', n_logT)
+      call hi%read_attr('n_logg', n_logg)
+
+      hi_gr = hdf5io_t(hi, 'gr')
+      call read(hi_gr, gr)
+      call hi_gr%final()
+
+      allocate(pi(n_logT,n_logg))
+
+      call gr%map(read_photint_)
+
+      pg = photgrid_t(pi, gr)
 
       ! Finish
+
+      return
+
+   contains
+
+      subroutine read_photint_(i, j, stat)
+
+         integer, intent(in)            :: i
+         integer, intent(in)            :: j
+         integer, intent(out), optional :: stat
+
+         type(hdf5io_t) :: hi_pi
+
+         ! Read the photint_t
+ 
+         hi_pi = hdf5io_t(hi, pi_name_(i,j))
+         call read(hi_pi, pi(i,j))
+         call hi_pi%final()
+
+         ! Finish
+
+         return
+
+      end subroutine read_photint_
 
    end subroutine read_
 
@@ -218,29 +272,46 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(photgrid_t), intent(in)  :: pg
 
-      type(hdf5io_t) :: hi_pi
-      integer        :: i
-      integer        :: j
+      type(hdf5io_t) :: hi_gr
 
       ! Write the photgrid_t
 
-      call write(hi, pg%grid_t, type='photgrid_t')
+      call hi%write_attr('TYPE', 'photgrid_t')
 
-      logT_loop : do i = 1, pg%n_logT
-         logg_loop : do j = 1, pg%n_logg
+      call hi%write_attr('n_logT', pg%n_logT)
+      call hi%write_attr('n_logg', pg%n_logg)
 
-            if (pg%mask(i,j)) then
-               hi_pi = hdf5io_t(hi, pi_name_(i,j))
-               call write(hi_pi, pg%pi(i,j))
-               call hi_pi%final()
-            end if
-            
-         end do logg_loop
-      end do logT_loop
+      hi_gr = hdf5io_t(hi, 'gr')
+      call write(hi_gr, pg%gr)
+      call hi_gr%final()
+
+      call pg%gr%map(write_photint_)
 
       ! Finish
 
       return
+
+   contains
+ 
+      subroutine write_photint_(i, j, stat)
+
+         integer, intent(in)            :: i
+         integer, intent(in)            :: j
+         integer, intent(out), optional :: stat
+
+         type(hdf5io_t) :: hi_pi
+
+         ! Write the photint_t for the node
+ 
+         hi_pi = hdf5io_t(hi, pi_name_(i,j))
+         call write(hi_pi, pg%pi(i,j))
+         call hi_pi%final()
+
+         ! Finish
+
+         return
+
+      end subroutine write_photint_
 
    end subroutine write_
 

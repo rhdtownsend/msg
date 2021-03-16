@@ -77,7 +77,7 @@ program make_specgrid
 
    ! Create the specgrid_t
 
-   sg = specgrid_t(grid_t(mask, logT, logg), si)
+   sg = specgrid_t(si, grid_t(mask, logT, logg))
 
    ! Write it
 
