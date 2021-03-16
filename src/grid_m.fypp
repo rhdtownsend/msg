@@ -37,6 +37,7 @@ module grid_m
    ! Derived-type definitions
 
    type grid_t
+      private
       logical, allocatable  :: mask(:,:)
       real(RD), allocatable :: logT(:)
       real(RD), allocatable :: logg(:)
@@ -44,12 +45,14 @@ module grid_m
       integer               :: n_logg
    contains
       private
-      procedure       :: interp_0_
-      procedure       :: interp_1_
-      generic, public :: interp => interp_0_, interp_1_
-      procedure       :: locate_cell_
-      procedure       :: setup_stencil_
-      procedure       :: setup_kernels_
+      procedure, public :: inquire
+      procedure, public :: map
+      procedure         :: interp_0_
+      procedure         :: interp_1_
+      generic, public   :: interp => interp_0_, interp_1_
+      procedure         :: locate_cell_
+      procedure         :: setup_stencil_
+      procedure         :: setup_kernels_
    end type grid_t
 
    ! Interfaces
@@ -106,24 +109,82 @@ contains
 
    !****
 
-   subroutine interp_0_(self, proc, logT, logg, f_int, stat, d_dlogT, d_dlogg)
+   subroutine inquire(self, n_logT, n_logg)
 
-         class(grid_t), intent(inout) :: self
-         interface
-            subroutine proc(i, j, f, stat)
-               use kinds_m
-               integer, intent(in)            :: i
-               integer, intent(in)            :: j
-               real(RD), intent(out)          :: f
-               integer, intent(out), optional :: stat
-            end subroutine proc
-         end interface
-      real(RD), intent(in)             :: logT
-      real(RD), intent(in)             :: logg
-      real(RD), intent(out)            :: f_int
-      integer, intent(out), optional   :: stat
-      logical, intent(in), optional    :: d_dlogT
-      logical, intent(in), optional    :: d_dlogg
+      class(grid_t), intent(in)      :: self
+      integer, intent(out), optional :: n_logT
+      integer, intent(out), optional :: n_logg
+
+      ! Inquire metadata
+
+      if (PRESENT(n_logT)) n_logT = self%n_logT
+      if (PRESENT(n_logg)) n_logg = self%n_logg
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine map(self, map_proc, stat)
+
+      class(grid_t), intent(in) :: self
+      interface
+         subroutine map_proc(i, j, stat)
+            use kinds_m
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            integer, intent(out), optional :: stat
+         end subroutine map_proc
+      end interface
+      integer, intent(out), optional :: stat
+
+      integer :: i
+      integer :: j
+
+      ! Apply the map_proc function to each node
+
+      do i = 1, self%n_logT
+         do j = 1, self%n_logg
+
+            if (self%mask(i,j)) then
+               call map_proc(i, j, stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               end if
+            end if
+
+         end do
+      end do
+
+      ! Finish
+
+      return
+
+   end subroutine map
+
+   !****
+
+   subroutine interp_0_(self, data_proc, logT, logg, f_int, stat, d_dlogT, d_dlogg)
+
+      class(grid_t), intent(in) :: self
+      interface
+         subroutine data_proc(i, j, data, stat)
+            use kinds_m
+            integer, intent(in)            :: i
+            integer, intent(in)            :: j
+            real(RD), intent(out)          :: data
+            integer, intent(out), optional :: stat
+         end subroutine data_proc
+      end interface
+      real(RD), intent(in)           :: logT
+      real(RD), intent(in)           :: logg
+      real(RD), intent(out)          :: f_int
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: d_dlogT
+      logical, intent(in), optional  :: d_dlogg
 
       integer  :: i_cl
       integer  :: j_cl
@@ -164,12 +225,12 @@ contains
 
       call self%setup_kernels_(mask, x, y, dx_kern, dy_kern, dxdy_kern)
 
-      ! Evaluate the function at the stencil points
+      ! Evaluate data at the nodes
 
       do l = 1, 4
          do m = 1, 4
             if (mask(l,m)) then
-               call proc(i_cl+l-2, j_cl+m-2, f(l,m), stat)
+               call data_proc(i_cl+l-2, j_cl+m-2, f(l,m), stat)
                if (PRESENT(stat)) then
                   if (stat /= STAT_OK) return
                endif
@@ -209,17 +270,17 @@ contains
 
    !****
 
-   subroutine interp_1_(self, proc, logT, logg, f_int, stat, d_dlogT, d_dlogg)
+   subroutine interp_1_(self, data_proc, logT, logg, f_int, stat, d_dlogT, d_dlogg)
 
-         class(grid_t), intent(inout) :: self
+         class(grid_t), intent(in) :: self
          interface
-            subroutine proc(i, j, f, stat)
+            subroutine data_proc(i, j, data, stat)
                use kinds_m
                integer, intent(in)            :: i
                integer, intent(in)            :: j
-               real(RD), intent(out)          :: f(:)
+               real(RD), intent(out)          :: data(:)
                integer, intent(out), optional :: stat
-            end subroutine proc
+            end subroutine data_proc
          end interface
       real(RD), intent(in)             :: logT
       real(RD), intent(in)             :: logg
@@ -269,7 +330,7 @@ contains
 
       call self%setup_kernels_(mask, x, y, dx_kern, dy_kern, dxdy_kern)
 
-      ! Evaluate the function at the stencil points
+      ! Evaluate data at the nodes
 
       n_k = SIZE(f_int)
 
@@ -278,7 +339,7 @@ contains
       do l = 1, 4
          do m = 1, 4
             if (mask(l,m)) then
-               call proc(i_cl+l-2, j_cl+m-2, f(l,m,:), stat)
+               call data_proc(i_cl+l-2, j_cl+m-2, f(l,m,:), stat)
                if (PRESENT(stat)) then
                   if (stat /= STAT_OK) return
                endif
@@ -491,11 +552,10 @@ contains
       
   !****
 
-   subroutine read_(hi, gr, type)
+   subroutine read_(hi, gr)
 
-      type(hdf5io_t), intent(inout)      :: hi
-      type(grid_t), intent(out)          :: gr
-      character(*), intent(in), optional :: type
+      type(hdf5io_t), intent(inout) :: hi
+      type(grid_t), intent(out)     :: gr
 
       character(TYPE_LEN)   :: file_type
       real(RD), allocatable :: logT(:)
@@ -505,11 +565,7 @@ contains
       ! Read the grid_t
 
       call hi%read_attr('TYPE', file_type)
-      if (PRESENT(type)) then
-         @:ASSERT(file_type == type, invalid type)
-      else
-         @:ASSERT(file_type == 'grid_t', invalid type)
-      endif
+      @:ASSERT(file_type == 'grid_t', invalid type)
 
       call hi%alloc_read_dset('logT', logT)
       call hi%alloc_read_dset('logg', logg)
@@ -524,19 +580,14 @@ contains
 
    !****
 
-   subroutine write_(hi, gr, type)
+   subroutine write_(hi, gr)
 
-      type(hdf5io_t), intent(inout)      :: hi
-      type(grid_t), intent(in)           :: gr
-      character(*), intent(in), optional :: type
+      type(hdf5io_t), intent(inout) :: hi
+      type(grid_t), intent(in)      :: gr
 
       ! Write the grid_t
       
-      if (PRESENT(type)) then
-         call hi%write_attr('TYPE', type)
-      else
-         call hi%write_attr('TYPE', 'grid_t')
-      endif
+      call hi%write_attr('TYPE', 'grid_t')
 
       call hi%write_attr('n_logT', gr%n_logT)
       call hi%write_attr('n_logg', gr%n_logg)
