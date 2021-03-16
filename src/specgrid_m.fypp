@@ -42,6 +42,9 @@ module specgrid_m
       private
       class(specint_t), allocatable :: si(:,:)
       type(grid_t)                  :: gr
+      real(RD)                      :: w_0
+      real(RD)                      :: dw
+      integer                       :: n_w
       integer                       :: n_logT
       integer                       :: n_logg
    contains
@@ -85,8 +88,12 @@ contains
       type(grid_t), intent(in)     :: gr
       type(specgrid_t)             :: sg
 
-      integer :: n_logT
-      integer :: n_logg
+      integer  :: n_logT
+      integer  :: n_logg
+      logical  :: first
+      real(RD) :: w_0
+      real(RD) :: dw
+      integer  :: n_w
 
       ! Construct the specgrid_t
 
@@ -94,10 +101,17 @@ contains
 
       @:CHECK_BOUNDS(SIZE(si, 1), n_logT)
       @:CHECK_BOUNDS(SIZE(si, 2), n_logg)
+
+      first = .FALSE.
+      call gr%map(meta_proc_)
  
       allocate(sg%si, SOURCE=si)
 
       sg%gr = gr
+
+      sg%w_0 = w_0
+      sg%dw = dw
+      sg%n_w = n_w
 
       sg%n_logT = n_logT
       sg%n_logg = n_logg
@@ -106,17 +120,59 @@ contains
 
       return
 
+   contains
+
+      subroutine meta_proc_(i, j, stat)
+
+         integer, intent(in)            :: i
+         integer, intent(in)            :: j
+         integer, intent(out), optional :: stat
+
+         real(RD) :: w_0_chk
+         real(RD) :: dw_chk
+         integer  :: n_w_chk
+
+         ! Set or check metadata
+
+         if (.NOT. first) then
+
+            call si(i,j)%inquire(w_0=w_0, dw=dw, n_w=n_w)
+            first = .TRUE.
+
+         else
+
+            call si(i,j)%inquire(w_0=w_0_chk, dw=dw_chk, n_w=n_w_chk)
+
+            @:ASSERT(w_0 == w_0_chk, base wavelength mismatch)
+            @:ASSERT(dw == dw_chk, wavelength increment mismatch)
+            @:ASSERT(n_w == n_w_chk, dimension mismatch)
+
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine meta_proc_
+
    end function specgrid_t_
 
    !****
 
-   subroutine inquire(self, n_logT, n_logg)
+   subroutine inquire(self, w_0, dw, n_w, n_logT, n_logg)
 
-      class(specgrid_t), intent(in)  :: self
-      integer, intent(out), optional :: n_logT
-      integer, intent(out), optional :: n_logg
+      class(specgrid_t), intent(in)   :: self
+      real(RD), intent(out), optional :: w_0
+      real(RD), intent(out), optional :: dw
+      integer, intent(out), optional  :: n_w
+      integer, intent(out), optional  :: n_logT
+      integer, intent(out), optional  :: n_logg
 
       ! Inquire metadata
+
+      if (PRESENT(w_0)) w_0 = self%w_0
+      if (PRESENT(dw)) dw = self%dw
+      if (PRESENT(n_w)) n_w = self%n_w
 
       if (PRESENT(n_logT)) n_logT = self%n_logT
       if (PRESENT(n_logg)) n_logg = self%n_logg
@@ -358,6 +414,10 @@ contains
       type is (specint_t)
 
          call hi%write_attr('TYPE', 'specgrid_t')
+
+         call hi%write_attr('w_0', sg%w_0)
+         call hi%write_attr('dw', sg%dw)
+         call hi%write_attr('n_w', sg%n_w)
 
          call hi%write_attr('n_logT', sg%n_logT)
          call hi%write_attr('n_logg', sg%n_logg)

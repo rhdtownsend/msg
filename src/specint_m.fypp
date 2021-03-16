@@ -49,6 +49,7 @@ module specint_m
       integer               :: n_b
    contains
       private
+      procedure, public :: inquire
       procedure, public :: interp_intensity
       procedure, public :: interp_D_moment
       procedure, public :: interp_flux
@@ -201,6 +202,27 @@ contains
       return
 
    end function specint_t_rebin_
+
+   !****
+
+   subroutine inquire(self, w_0, dw, n_w)
+
+      class(specint_t), intent(in)    :: self
+      real(RD), intent(out), optional :: w_0
+      real(RD), intent(out), optional :: dw
+      integer, intent(out), optional  :: n_w
+
+      ! Inquire metadata
+
+      if (PRESENT(w_0)) w_0 = self%w_0
+      if (PRESENT(dw)) dw = self%dw
+      if (PRESENT(n_w)) n_w = self%n_w
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
 
    !****
 

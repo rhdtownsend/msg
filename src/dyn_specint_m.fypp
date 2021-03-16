@@ -38,11 +38,11 @@ module dyn_specint_m
    type, extends(specint_t) :: dyn_specint_t
       private
       type(hdf5io_t) :: hi
-      real(RD)       :: w_0_rebin
-      real(RD)       :: dw_rebin
-      integer        :: n_w_rebin
-      logical        :: rebin = .FALSE.
-      logical        :: loaded = .FALSE.
+      real(RD)       :: w_0_
+      real(RD)       :: dw_
+      integer        :: n_w_
+      logical        :: must_rebin = .FALSE.
+      logical        :: must_load = .TRUE.
    contains
       private
       procedure, public :: interp_intensity
@@ -69,6 +69,27 @@ module dyn_specint_m
 
 contains
 
+   subroutine inquire(self, w_0, dw, n_w)
+
+      class(dyn_specint_t), intent(inout) :: self
+      real(RD), intent(out), optional     :: w_0
+      real(RD), intent(out), optional     :: dw
+      real(RD), intent(out), optional     :: n_w
+
+      ! Inquire metadata
+
+      if (PRESENT(w_0)) w_0 = self%w_0_
+      if (PRESENT(dw)) dw = self%dw_
+      if (PRESENT(n_w)) n_w = self%n_w_
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
                                           ('D_moment', 'D', 'l', 'integer'))
 
@@ -82,7 +103,7 @@ contains
 
          ! If necessary, load
 
-         if (.NOT. self%loaded) call self%load_()
+         if (self%must_load) call self%load_()
          
          ! Pass
 
@@ -109,7 +130,7 @@ contains
 
          ! If necessary, load
 
-         if (.NOT. self%loaded) call self%load_()
+         if (self%must_load) call self%load_()
          
          ! Pass
 
@@ -133,11 +154,12 @@ contains
 
       call read(self%hi, self%specint_t)
 
-      if (self%rebin) then
-         self%specint_t = specint_t(self%specint_t, self%w_0_rebin, self%dw_rebin, self%n_w_rebin)
+      if (self%must_rebin) then
+         self%specint_t = specint_t(self%specint_t, self%w_0_, self%dw_, self%n_w_)
+         self%must_rebin = .FALSE.
       endif
 
-      self%loaded = .TRUE.
+      self%must_load = .FALSE.
 
       ! Finish
 
@@ -156,6 +178,10 @@ contains
       ! later call to load_)
 
       si%hi = hdf5io_t(hi, '.')
+
+      call hi%read_attr('w_0', si%w_0_)
+      call hi%read_attr('dw', si%dw_)
+      call hi%read_attr('n_w', si%n_w_)
 
       ! Finish
 
@@ -176,13 +202,13 @@ contains
       ! Read the dyn_specint_t with deferred rebinning (this only sets
       ! variables used in a later call to load_)
 
-      call read(hi, si)
+      si%hi = hdf5io_t(hi, '.')
 
-      si%w_0_rebin = w_0
-      si%dw_rebin = dw
-      si%n_w_rebin = n_w
+      si%w_0_ = w_0
+      si%dw_ = dw
+      si%n_w_ = n_w
 
-      si%rebin = .TRUE.
+      si%must_rebin = .TRUE.
 
       ! Finish
 
