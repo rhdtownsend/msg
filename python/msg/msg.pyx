@@ -20,16 +20,20 @@
 import numpy as np
 
 cdef extern from "libcmsg.h":
+
     void *specgrid_load(const char *filename)
     void *specgrid_load_rebin(const char *filename, double w_0, double dw, int n_w)
-    void *photgrid_load(const char *filename)
     void specgrid_unload(void *ptr)
-    void photgrid_unload(void *ptr)
+    void specgrid_inquire(void *ptr, double *w_0, double *n_w, int *dw, int *n_logT, int *n_logg)
     void specgrid_interp_intensity(void *ptr, double logT, double logg, double mu, double w_0, int n_w, double I[], int *stat, bint d_dlogT, bint d_dlogg)
-    void photgrid_interp_intensity(void *ptr, double logT, double logg, double mu, double *I, int *stat, bint d_dlogT, bint d_dlogg)
     void specgrid_interp_d_moment(void *ptr, double logT, double logg, int l, double w_0, int n_w, double D[], int *stat, bint d_dlogT, bint d_dlogg)
-    void photgrid_interp_d_moment(void *ptr, double logT, double logg, int l, double *D, int *stat, bint d_dlogT, bint d_dlogg)
     void specgrid_interp_flux(void *ptr, double logT, double logg, double w_0, int n_w, double F[], int *stat, bint d_dlogT, bint d_dlogg)
+
+    void *photgrid_load(const char *filename)
+    void photgrid_unload(void *ptr)
+    void photgrid_inquire(void *ptr, int *n_logT, int *n_logg)
+    void photgrid_interp_intensity(void *ptr, double logT, double logg, double mu, double *I, int *stat, bint d_dlogT, bint d_dlogg)
+    void photgrid_interp_d_moment(void *ptr, double logT, double logg, int l, double *D, int *stat, bint d_dlogT, bint d_dlogg)
     void photgrid_interp_flux(void *ptr, double logT, double logg, double *F, int *stat, bint d_dlogT, bint d_dlogg)
 
 
@@ -69,11 +73,14 @@ cdef class SpecGrid:
     cdef void *ptr
 
     def __cinit__(self, const char *filename, rebin_pars=None):
+        cdef int n_logT, n_logg
         if rebin_pars:
             w_0, dw, n_w = rebin_pars
             self.ptr = specgrid_load_rebin(filename, w_0, dw, n_w)
         else:
             self.ptr = specgrid_load(filename)
+        specgrid_inquire(self.ptr, NULL, NULL, NULL, &n_logT, &n_logg)
+        print('Dims:', n_logT, n_logg)
 
     def __dealloc__(self):
         specgrid_unload(self.ptr)
@@ -114,7 +121,7 @@ cdef class PhotGrid:
         self.ptr = photgrid_load(filename)
 
     def __dealloc__(self):
-        specgrid_unload(self.ptr)
+        photgrid_unload(self.ptr)
 
     def intensity(self, double logT, double logg, double mu, bint d_dlogT=False, bint d_dlogg=False):
         cdef double I
