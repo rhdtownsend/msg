@@ -45,6 +45,7 @@ module dyn_specint_m
       logical        :: must_load = .TRUE.
    contains
       private
+      procedure, public :: inquire
       procedure, public :: interp_intensity
       procedure, public :: interp_D_moment
       procedure, public :: interp_flux
@@ -71,10 +72,10 @@ contains
 
    subroutine inquire(self, w_0, dw, n_w)
 
-      class(dyn_specint_t), intent(inout) :: self
-      real(RD), intent(out), optional     :: w_0
-      real(RD), intent(out), optional     :: dw
-      real(RD), intent(out), optional     :: n_w
+      class(dyn_specint_t), intent(in) :: self
+      real(RD), intent(out), optional  :: w_0
+      real(RD), intent(out), optional  :: dw
+      integer, intent(out), optional   :: n_w
 
       ! Inquire metadata
 
