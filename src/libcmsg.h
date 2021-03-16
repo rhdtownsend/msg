@@ -19,26 +19,29 @@ void *specgrid_load(const char *filename);
 
 void *specgrid_load_rebin(const char *filename, double w_0, double dw, int n_w);
 
-void *photgrid_load(const char *filename);
-
 void specgrid_unload(void *ptr);
 
-void photgrid_unload(void *ptr);
+void specgrid_inquire(void *ptr, double *w_0, double *dw, int *n_w, int *n_logT, int *n_logg);
 
 void specgrid_interp_intensity(void *ptr, double lnT, double lng, double mu, double w_0, int n_w, 
 			       double I[], int *stat, _Bool d_dlnT, _Bool d_dlng);
+void specgrid_interp_d_moment(void *ptr, double lnT, double lng, int l, double w_0, int n_w, 
+			      double D[], int *stat, _Bool d_dlnT, _Bool d_dlng);
+void specgrid_interp_flux(void *ptr, double lnT, double lng, double w_0, int n_w, 
+			  double F[], int *stat, _Bool d_dlnT, _Bool d_dlng);
+
+
+void *photgrid_load(const char *filename);
+
+void photgrid_unload(void *ptr);
+
+void photgrid_inquire(void *ptr, int *n_logT, int *n_logg);
 
 void photgrid_interp_intensity(void *ptr, double lnT, double lng, double mu, 
 			       double *I, int *stat, _Bool d_dlnT, _Bool d_dlng);
 
-void specgrid_interp_d_moment(void *ptr, double lnT, double lng, int l, double w_0, int n_w, 
-			      double D[], int *stat, _Bool d_dlnT, _Bool d_dlng);
-
 void photgrid_interp_d_moment(void *ptr, double lnT, double lng, int l,
 			      double *D, int *stat, _Bool d_dlnT, _Bool d_dlng);
-
-void specgrid_interp_flux(void *ptr, double lnT, double lng, double w_0, int n_w, 
-			  double F[], int *stat, _Bool d_dlnT, _Bool d_dlng);
 
 void photgrid_interp_flux(void *ptr, double lnT, double lng, 
 			  double *F, int *stat, _Bool d_dlnT, _Bool d_dlng);

@@ -42,6 +42,7 @@ module libcmsg_m
    #:for prefix in ('specgrid', 'photgrid')
       public :: ${prefix}$_load
       public :: ${prefix}$_unload
+      public :: ${prefix}$_inquire
       public :: ${prefix}$_interp_intensity
       public :: ${prefix}$_interp_D_moment
       public :: ${prefix}$_interp_flux
@@ -139,6 +140,57 @@ contains
       return
 
    end function specgrid_load_rebin
+
+   !****
+
+   subroutine specgrid_inquire(ptr, w_0, dw, n_w, n_logT, n_logg) bind(C)
+
+      type(C_PTR), value :: ptr
+      real(C_DOUBLE)     :: w_0
+      real(C_DOUBLE)     :: dw
+      integer(C_INT)     :: n_w
+      integer(C_INT)     :: n_logT
+      integer(C_INT)     :: n_logg
+
+      type(specgrid_t), pointer :: sg
+
+      ! Set up the Fortran pointer
+
+      call c_f_pointer(ptr, sg)
+
+      ! Inquire metadata
+
+      call sg%inquire(w_0=w_0, dw=dw, n_w=n_w, n_logT=n_logT, n_logg=n_logg)
+
+      ! Finish
+
+      return
+
+   end subroutine specgrid_inquire
+
+   !****
+
+   subroutine photgrid_inquire(ptr, n_logT, n_logg) bind(C)
+
+      type(C_PTR), value :: ptr
+      integer(C_INT)     :: n_logT
+      integer(C_INT)     :: n_logg
+
+      type(photgrid_t), pointer :: pg
+
+      ! Set up the Fortran pointer
+
+      call c_f_pointer(ptr, pg)
+
+      ! Inquire metadata
+
+      call pg%inquire(n_logT=n_logT, n_logg=n_logg)
+
+      ! Finish
+
+      return
+
+   end subroutine photgrid_inquire
 
    !****
 
