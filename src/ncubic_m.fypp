@@ -1,0 +1,574 @@
+! Module  : ncubic_m
+! Purpose : low-level N-dimensional cubic interpolation support routines
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module ncubic_m
+
+   ! Uses
+
+   use kinds_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: interp_bicubic
+   public :: eval_bicubic_derivs
+   public :: eval_tricubic_derivs
+   public :: interp_ncubic
+
+   ! Procedures
+
+contains
+
+   subroutine interp_bicubic(f, df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int, d_dx, d_dy)
+
+      real(RD), intent(in)          :: f(:,:)
+      real(RD), intent(in)          :: df_dx(:,:)
+      real(RD), intent(in)          :: df_dy(:,:)
+      real(RD), intent(in)          :: d2f_dxdy(:,:)
+      real(RD), intent(in)          :: dx
+      real(RD), intent(in)          :: dy
+      real(RD), intent(in)          :: u
+      real(RD), intent(in)          :: v
+      real(RD), intent(out)         :: f_int
+      logical, intent(in), optional :: d_dx
+      logical, intent(in), optional :: d_dy
+
+      real(RD) :: C(16)
+      real(RD) :: u_(2)
+      real(RD) :: delta(2)
+      logical  :: d_dx_
+      logical  :: d_dy_
+       logical  :: deriv(2)
+
+      @:CHECK_BOUNDS(SIZE(f, 1), 2)
+      @:CHECK_BOUNDS(SIZE(f, 2), 2)
+      
+      @:CHECK_BOUNDS(SIZE(df_dx, 1), 2)
+      @:CHECK_BOUNDS(SIZE(df_dx, 2), 2)
+      
+      @:CHECK_BOUNDS(SIZE(df_dy, 1), 2)
+      @:CHECK_BOUNDS(SIZE(df_dy, 2), 2)
+      
+      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 1), 2)
+      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 2), 2)
+
+      ! Set up the vectors
+
+      C(1) = f(1,1)
+      C(2) = f(2,1)
+      C(3) = f(1,2)
+      C(4) = f(2,2)
+
+      C(5) = df_dx(1,1)
+      C(6) = df_dx(2,1)
+      C(7) = df_dx(1,2)
+      C(8) = df_dx(2,2)
+
+      C(9) = df_dy(1,1)
+      C(10) = df_dy(2,1)
+      C(11) = df_dy(1,2)
+      C(12) = df_dy(2,2)
+
+      C(13) = d2f_dxdy(1,1)
+      C(14) = d2f_dxdy(2,1)
+      C(15) = d2f_dxdy(1,2)
+      C(16) = d2f_dxdy(2,2)
+
+      u_ = [u,v]
+      delta = [dx, dy]
+
+      if (PRESENT(d_dx)) then
+         d_dx_ = d_dx
+      else
+         d_dx_ = .FALSE.
+      endif
+
+      if (PRESENT(d_dy)) then
+         d_dy_ = d_dy
+      else
+         d_dy_ = .FALSE.
+      endif
+
+      deriv = [d_dx_,d_dy_]
+
+      ! Do the interpolation
+
+      call interp_ncubic(2, u_, C, delta, f_int, deriv)
+
+      ! Finish
+
+      return
+
+   end subroutine interp_bicubic
+
+   !****
+
+   subroutine eval_bicubic_derivs(x, y, f_in, f, df_dx, df_dy, d2f_dxdy)
+
+      real(RD), intent(in)  :: x(:)
+      real(RD), intent(in)  :: y(:)
+      real(RD), intent(in)  :: f_in(:,:)
+      real(RD), intent(out) :: f(:,:)
+      real(RD), intent(out) :: df_dx(:,:)
+      real(RD), intent(out) :: df_dy(:,:)
+      real(RD), intent(out) :: d2f_dxdy(:,:)
+
+      real(RD) :: delta(3,2)
+      real(RD) :: K(16,16)
+      real(RD) :: C(16)
+
+      @:CHECK_BOUNDS(SIZE(x), 4)
+      @:CHECK_BOUNDS(SIZE(y), 4)
+
+      @:CHECK_BOUNDS(SIZE(f_in, 1), 4)
+      @:CHECK_BOUNDS(SIZE(f_in, 2), 4)
+
+      @:CHECK_BOUNDS(SIZE(f, 1), 2)
+      @:CHECK_BOUNDS(SIZE(f, 2), 2)
+
+      @:CHECK_BOUNDS(SIZE(df_dy, 1), 2)
+      @:CHECK_BOUNDS(SIZE(df_dy, 2), 2)
+      
+      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 1), 2)
+      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 2), 2)
+
+      ! Evaluate bicubic derivatives
+
+      ! First evaluate kernel
+
+      delta(:,1) = x(2:4) - x(1:3)
+      delta(:,2) = y(2:4) - y(1:3)
+
+      call eval_kernel(2, delta, K)
+
+      ! Apply the kernel
+
+      C = MATMUL(K, RESHAPE(f_in, [16]))
+
+      ! Extract derivs
+
+      f = RESHAPE(C(1:4), [2,2])
+
+      df_dx = RESHAPE(C(5:8), [2,2])
+      df_dy = RESHAPE(C(9:12), [2,2])
+
+      d2f_dxdy = RESHAPE(C(13:16), [2,2])
+      
+      ! Finish
+
+      return
+
+   end subroutine eval_bicubic_derivs
+
+   !****
+
+   subroutine eval_tricubic_derivs(x, y, z, f_in, f, df_dx, df_dy, df_dz, d2f_dxdy, d2f_dxdz, d2f_dydz, d3f_dxdydz)
+
+      real(RD), intent(in)  :: x(:)
+      real(RD), intent(in)  :: y(:)
+      real(RD), intent(in)  :: z(:)
+      real(RD), intent(in)  :: f_in(:,:,:)
+      real(RD), intent(out) :: f(:,:,:)
+      real(RD), intent(out) :: df_dx(:,:,:)
+      real(RD), intent(out) :: df_dy(:,:,:)
+      real(RD), intent(out) :: df_dz(:,:,:)
+      real(RD), intent(out) :: d2f_dxdy(:,:,:)
+      real(RD), intent(out) :: d2f_dxdz(:,:,:)
+      real(RD), intent(out) :: d2f_dydz(:,:,:)
+      real(RD), intent(out) :: d3f_dxdydz(:,:,:)
+
+      real(RD) :: delta(3,3)
+      real(RD) :: K(64,64)
+      real(RD) :: C(64)
+      real(RD) :: f_(64)
+
+      @:CHECK_BOUNDS(SIZE(x), 4)
+      @:CHECK_BOUNDS(SIZE(y), 4)
+      @:CHECK_BOUNDS(SIZE(z), 4)
+
+      @:CHECK_BOUNDS(SIZE(f_in, 1), 4)
+      @:CHECK_BOUNDS(SIZE(f_in, 2), 4)
+      @:CHECK_BOUNDS(SIZE(f_in, 3), 4)
+
+      @:CHECK_BOUNDS(SIZE(f, 1), 2)
+      @:CHECK_BOUNDS(SIZE(f, 2), 2)
+      @:CHECK_BOUNDS(SIZE(f, 3), 2)
+
+      @:CHECK_BOUNDS(SIZE(df_dx, 1), 2)
+      @:CHECK_BOUNDS(SIZE(df_dx, 2), 2)
+      @:CHECK_BOUNDS(SIZE(df_dx, 3), 2)
+      
+      @:CHECK_BOUNDS(SIZE(df_dy, 1), 2)
+      @:CHECK_BOUNDS(SIZE(df_dy, 2), 2)
+      @:CHECK_BOUNDS(SIZE(df_dy, 3), 2)
+
+      @:CHECK_BOUNDS(SIZE(df_dz, 1), 2)
+      @:CHECK_BOUNDS(SIZE(df_dz, 2), 2)
+      @:CHECK_BOUNDS(SIZE(df_dz, 3), 2)
+
+      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 1), 2)
+      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 2), 2)
+      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 3), 2)
+
+      @:CHECK_BOUNDS(SIZE(d2f_dxdz, 1), 2)
+      @:CHECK_BOUNDS(SIZE(d2f_dxdz, 2), 2)
+      @:CHECK_BOUNDS(SIZE(d2f_dxdz, 3), 2)
+
+      @:CHECK_BOUNDS(SIZE(d2f_dydz, 1), 2)
+      @:CHECK_BOUNDS(SIZE(d2f_dydz, 2), 2)
+      @:CHECK_BOUNDS(SIZE(d2f_dydz, 3), 2)
+
+      @:CHECK_BOUNDS(SIZE(d3f_dxdydz, 1), 2)
+      @:CHECK_BOUNDS(SIZE(d3f_dxdydz, 2), 2)
+      @:CHECK_BOUNDS(SIZE(d3f_dxdydz, 3), 2)
+
+      ! Evaluate tricubic derivatives
+
+      ! First evaluate kernel
+
+      delta(:,1) = x(2:4) - x(1:3)
+      delta(:,2) = y(2:4) - y(1:3)
+      delta(:,3) = z(2:4) - z(1:3)
+
+      call eval_kernel(3, delta, K)
+
+      ! Apply the kernel
+
+      f_ = RESHAPE(f_in, [64])
+
+      C = MATMUL(K, f_)
+
+      ! Extract derivs
+
+      f = RESHAPE(C(1:8), [2,2,2])
+
+      df_dx = RESHAPE(C(9:16), [2,2,2])
+      df_dy = RESHAPE(C(17:24), [2,2,2])
+      df_dz = RESHAPE(C(33:40), [2,2,2])
+
+      d2f_dxdy = RESHAPE(C(25:32), [2,2,2])
+      d2f_dxdz = RESHAPE(C(41:48), [2,2,2])
+      d2f_dydz = RESHAPE(C(49:56), [2,2,2])
+
+      d3f_dxdydz = RESHAPE(C(57:64), [2,2,2])
+
+      ! Finish
+
+      return
+
+   end subroutine eval_tricubic_derivs
+
+   !****
+
+   subroutine eval_kernel(N, delta, K)
+
+      integer, intent(in)   :: N
+      real(RD), intent(in)  :: delta(:,:)
+      real(RD), intent(out) :: K(:,:)
+
+      integer  :: i
+      integer  :: p
+      integer  :: d
+      integer  :: j
+      real(RD) :: u
+      real(RD) :: K_1(4)
+      real(RD) :: K_1_a(4)
+      real(RD) :: K_1_b(4)
+
+      @:CHECK_BOUNDS(SIZE(delta, 1), 3)
+      @:CHECK_BOUNDS(SIZE(delta, 2), N)
+
+      @:CHECK_BOUNDS(SIZE(K, 1), 4**N)
+      @:CHECK_BOUNDS(SIZE(K, 2), 4**N)
+
+      ! Evaluate the kernel matrix K for setting up function values
+      ! and derivatives. The C vector used in interp_ncubic can then
+      ! be evaluated as C = MATMUL(K, F), where F is the vector of
+      ! function values on a 4**N-point stencil
+
+      do i = 1, 4**N
+      
+         ! Extract output position and derivative indices
+         
+         p = IBITS(i-1, 0, N)
+         d = IBITS(i-1, N, N)
+
+         ! Accumulate the outer product of kernels for each
+         ! dimension
+
+         K(i,1) = 1._RD
+
+         dim_loop : do j = 1,N
+
+            ! Set up the 1-d kernel
+
+            if (BTEST(p, j-1)) then
+
+               if (BTEST(d, j-1)) then 
+
+                  u = delta(2,j)/(delta(2,j) + delta(3,j))
+
+                  K_1_a = [0,-1,1,0]/delta(2,j)
+                  K_1_b = [0,0,-1,1]/delta(3,j)
+
+                  K_1 = (1._RD-u)*K_1_a + u*K_1_b
+
+               else
+
+                  K_1 = [0,0,1,0]
+
+               endif
+
+            else
+
+               if (BTEST(d, j-1)) then
+
+                  u = delta(1,j)/(delta(1,j) + delta(2,j))
+
+                  K_1_a = [-1,1,0,0]/delta(1,j)
+                  K_1_b = [0,-1,1,0]/delta(2,j)
+
+                  K_1 = (1._RD-u)*K_1_a + u*K_1_b
+
+               else
+
+                  K_1 = [0,1,0,0]
+
+               endif
+
+            endif
+
+            K(i,1:4**j) = outer_prod_(K(i,1:4**(j-1)), K_1)
+
+         end do dim_loop
+
+      end do
+
+      ! Finish
+
+      return
+
+   contains
+
+      function outer_prod_(A, B) result (AB)
+
+         real(RD), intent(in) :: A(:)
+         real(RD), intent(in) :: B(:)
+         real(RD)             :: AB(SIZE(A)*SIZE(B))
+
+         integer :: i
+         integer :: n
+         integer :: m
+
+         ! Calculate the outer product between (flat) arrays A and B
+
+         n = SIZE(A)
+         m = SIZE(B)
+
+         do i = 1, m
+
+            AB(n*(i-1)+1:n*i) = A*B(i)
+
+         end do
+
+         ! Finish
+
+         return
+
+      end function outer_prod_
+
+   end subroutine eval_kernel
+
+   !****
+
+   subroutine interp_ncubic(N, u, C, delta, f_int, deriv)
+
+      integer, intent(in)           :: N
+      real(RD), intent(in)          :: u(:)
+      real(RD), intent(in)          :: C(:)
+      real(RD), intent(in)          :: delta(:)
+      real(RD), intent(out)         :: f_int
+      logical, intent(in), optional :: deriv(:)
+
+      logical  :: deriv_(N)
+      integer  :: i
+      integer  :: p
+      integer  :: d
+      integer  :: j
+      real(RD) :: H
+
+      @:CHECK_BOUNDS(SIZE(u), N)
+      @:CHECK_BOUNDS(SIZE(C), 4**N)
+      @:CHECK_BOUNDS(SIZE(delta), N)
+
+      if (PRESENT(deriv)) then
+         @:CHECK_BOUNDS(SIZE(deriv), N)
+         deriv_ = deriv
+      else
+         deriv_ = .FALSE.
+      endif
+
+      ! Perform cubic interpolation within an N-dimensional hypercube
+      !
+      !  u(N)     -- fractional position vector within hypercube
+      !  C(4**N)  -- function and derivatives at corners of hypercube
+      !  delta(N) -- side lengths of hypercube
+      !  deriv(N) -- whether to calculate derivatives wrt each coord
+      !
+      ! For each element C(i) of C, let k = i-1, the N least
+      ! significant bits of k give the position coordinate of the corner,
+      ! and the N most significant bits indicate function (0) or
+      ! derivative (1) along each dimension
+
+      ! Build up f_int
+
+      f_int = 0._RD
+
+      do i = 1, 4**N
+
+         ! Extract position and derivative indices
+
+         p = IBITS(i-1, 0, N)
+         d = IBITS(i-1, N, N)
+
+         ! Evaluate the product of the basis function for each
+         ! dimension
+
+         H = 1._RD
+         
+         dim_loop : do j = 1,N
+
+            if (BTEST(p, j-1)) then
+               if (BTEST(d, j-1)) then
+                  H = H*h_11(u(j), deriv_(j))*delta(j)
+               else
+                  H = H*h_01(u(j), deriv_(j))
+               endif
+            else
+               if (BTEST(d, j-1)) then
+                  H = H*h_10(u(j), deriv_(j))*delta(j)
+               else
+                  H = H*h_00(u(j), deriv_(j))
+               endif
+            endif
+               
+            if (deriv_(j)) H = H/delta(j)
+
+         end do dim_loop
+
+         ! Add in the contribution to f_int
+
+         f_int = f_int + H*C(i)
+
+      end do
+      
+      ! Finish
+
+   contains
+
+      function h_00(u, deriv)
+
+         real(RD), intent(in) :: u
+         logical, intent(in)  :: deriv
+         real(RD)             :: h_00
+
+         ! Set up the h_00 hermite basis function
+
+         if (deriv) then
+            h_00 = 6*u**2 - 6*u
+         else
+            h_00 = 2*u**3 - 3*u**2 + 1
+         endif
+
+         ! Finish
+
+         return
+
+      end function h_00
+         
+      function h_01(u, deriv)
+
+         real(RD), intent(in) :: u
+         logical, intent(in)  :: deriv
+         real(RD)             :: h_01
+
+         ! Set up the h_01 hermite basis function
+
+         if (deriv) then
+            h_01 = -6*u**2 + 6*u
+         else
+            h_01 = -2*u**3 + 3*u**2
+         endif
+
+         ! Finish
+
+         return
+
+      end function h_01
+         
+      function h_10(u, deriv)
+
+         real(RD), intent(in) :: u
+         logical, intent(in)  :: deriv
+         real(RD)             :: h_10
+
+         ! Set up the h_10 hermite basis function
+
+         if (deriv) then
+            h_10 = 3*u**2 - 4*u + 1
+         else
+            h_10 = u**3 - 2*u**2 + u
+         endif
+         
+         ! Finish
+
+         return
+
+      end function h_10
+         
+      function h_11(u, deriv)
+
+         real(RD), intent(in) :: u
+         logical, intent(in)  :: deriv
+         real(RD)             :: h_11
+
+         ! Set up the h_11 hermite basis function
+
+         if (deriv) then
+            h_11 = 3*u**2 - 2*u
+         else
+            h_11 = u**3 - u**2
+         endif
+
+         ! Finish
+
+         return
+
+      end function h_11
+
+   end subroutine interp_ncubic
+
+end module ncubic_m

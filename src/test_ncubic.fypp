@@ -1,0 +1,15 @@
+program  test_ncubic
+
+  ! Uses
+
+  use test_ncubic_m
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Run the tests
+
+  call test()
+
+end program test_ncubic
