@@ -150,7 +150,7 @@ contains
          mask_ = .TRUE.
       endif
 
-      ! Evaluate the kernel for cross derivative calculation
+      ! Evaluate the kernel for derivative calculation
 
       ! Set up finite difference (fd) kernels
       
@@ -190,7 +190,7 @@ contains
          fd_mask(2,2) = .FALSE.
       endif
 
-      ! Blend them to create the first derivative
+      ! Blend them
 
       select case (COUNT(fd_mask))
       case (0)
