@@ -77,10 +77,6 @@ module limb_m
 
    private
 
-   public :: LINEAR_LAW
-   public :: SQRT_LAW
-   public :: QUAD_LAW
-   public :: CLARET_LAW
    public :: limb_t
    public :: read
    public :: write
