@@ -1,0 +1,248 @@
+! Module  : axis_m
+! Purpose : define axis_t type, representing a grid axis
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module axis_m
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use order_m
+
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Parameter definitions
+
+   integer, parameter :: LABEL_LEN = 16
+
+   ! Derived-type definitions
+
+   type axis_t
+      private
+      real(RD), allocatable :: x(:)
+      integer               :: n_x
+      character(LABEL_LEN)  :: label
+   contains
+      private
+      procedure, public :: inquire
+      procedure, public :: locate => locate_
+      procedure, public :: get_x
+   end type axis_t
+
+   ! Interfaces
+
+   interface axis_t
+      module procedure axis_t_
+   end interface axis_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: LABEL_LEN
+   public :: axis_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function axis_t_(x, label) result (ax)
+
+      real(RD), intent(in)     :: x(:)
+      character(*), intent(in) :: label
+      type(axis_t)             :: ax
+
+      integer :: n_x
+
+      ! Construct the axis_t from the supplied data
+
+      n_x = SIZE(x)
+      @:ASSERT(ALL(x(2:) > x(:n_x-1)), non-monotonic axis)
+
+      ax%x = x
+      ax%n_x = n_x
+
+      ax%label = label
+
+      ! Finish
+
+      return
+
+   end function axis_t_
+
+   !****
+
+   subroutine inquire(self, n_x, label)
+
+      class(axis_t), intent(in)           :: self
+      integer, intent(out), optional      :: n_x
+      character(*), intent(out), optional :: label
+
+      ! Inquire metadata
+
+      if (PRESENT(n_x)) n_x = self%n_x
+      if (PRESENT(label)) label = self%label
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine locate_(self, x, i, stat)
+
+      class(axis_t), intent(in)      :: self
+      real(RD), intent(in)           :: x
+      integer, intent(out)           :: i
+      integer, intent(out), optional :: stat
+
+      ! Locate where along the axis x falls
+
+      call locate(self%x, x, i)
+
+      if (i < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+            return
+         else
+            @:ABORT(out-of-bounds (lo) on axis)
+         endif
+      endif
+
+      if (i >= self%n_x) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+            return
+         else
+            @:ABORT(out-of-bounds (hi) on axis)
+         endif
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine locate_
+
+   !****
+
+   subroutine get_x(self, i, x, stat)
+
+      class(axis_t), intent(in)      :: self
+      integer, intent(in)            :: i
+      real(RD)                       :: x
+      integer, intent(out), optional :: stat
+
+      ! Get an x value
+
+      if (i < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+         else
+            @:ABORT(out-of-bounds (lo) on axis)
+         endif
+      endif
+
+      if (i > self%n_x) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+         else
+            @:ABORT(out-of-bounds (hi) on axis)
+         endif
+      endif
+            
+      x = self%x(i)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine get_x
+
+   !****
+
+   subroutine read_(hi, ax)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(axis_t), intent(out)     :: ax
+
+      character(TYPE_LEN)   :: type
+      character(LABEL_LEN)  :: label
+      real(RD), allocatable :: x(:)
+
+      ! Read the axis_t
+
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'axis_t',invalid type)
+
+      call hi%read_attr('label', label)
+      
+      call hi%alloc_read_dset('x', x)
+
+      ax = axis_t(x, label)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, ax)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(axis_t), intent(in)      :: ax
+
+      ! Writethe axis_t
+
+      call hi%write_attr('TYPE', 'axis_t')
+
+      call hi%write_attr('label', ax%label)
+      call hi%write_attr('n_x', ax%n_x)
+      
+      call hi%write_dset('x', ax%x)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+end module axis_m

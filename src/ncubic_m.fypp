@@ -23,6 +23,8 @@ module ncubic_m
 
    use kinds_m
 
+   use stat_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -33,347 +35,229 @@ module ncubic_m
 
    private
 
-   public :: interp_bicubic
-   public :: eval_bicubic_derivs
-   public :: eval_tricubic_derivs
+   public :: eval_kernel
    public :: interp_ncubic
 
    ! Procedures
 
 contains
 
-   subroutine interp_bicubic(f, df_dx, df_dy, d2f_dxdy, dx, dy, u, v, f_int, d_dx, d_dy)
-
-      real(RD), intent(in)          :: f(:,:)
-      real(RD), intent(in)          :: df_dx(:,:)
-      real(RD), intent(in)          :: df_dy(:,:)
-      real(RD), intent(in)          :: d2f_dxdy(:,:)
-      real(RD), intent(in)          :: dx
-      real(RD), intent(in)          :: dy
-      real(RD), intent(in)          :: u
-      real(RD), intent(in)          :: v
-      real(RD), intent(out)         :: f_int
-      logical, intent(in), optional :: d_dx
-      logical, intent(in), optional :: d_dy
-
-      real(RD) :: C(16)
-      real(RD) :: u_(2)
-      real(RD) :: delta(2)
-      logical  :: d_dx_
-      logical  :: d_dy_
-       logical  :: deriv(2)
-
-      @:CHECK_BOUNDS(SIZE(f, 1), 2)
-      @:CHECK_BOUNDS(SIZE(f, 2), 2)
-      
-      @:CHECK_BOUNDS(SIZE(df_dx, 1), 2)
-      @:CHECK_BOUNDS(SIZE(df_dx, 2), 2)
-      
-      @:CHECK_BOUNDS(SIZE(df_dy, 1), 2)
-      @:CHECK_BOUNDS(SIZE(df_dy, 2), 2)
-      
-      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 1), 2)
-      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 2), 2)
-
-      ! Set up the vectors
-
-      C(1) = f(1,1)
-      C(2) = f(2,1)
-      C(3) = f(1,2)
-      C(4) = f(2,2)
-
-      C(5) = df_dx(1,1)
-      C(6) = df_dx(2,1)
-      C(7) = df_dx(1,2)
-      C(8) = df_dx(2,2)
-
-      C(9) = df_dy(1,1)
-      C(10) = df_dy(2,1)
-      C(11) = df_dy(1,2)
-      C(12) = df_dy(2,2)
-
-      C(13) = d2f_dxdy(1,1)
-      C(14) = d2f_dxdy(2,1)
-      C(15) = d2f_dxdy(1,2)
-      C(16) = d2f_dxdy(2,2)
-
-      u_ = [u,v]
-      delta = [dx, dy]
-
-      if (PRESENT(d_dx)) then
-         d_dx_ = d_dx
-      else
-         d_dx_ = .FALSE.
-      endif
-
-      if (PRESENT(d_dy)) then
-         d_dy_ = d_dy
-      else
-         d_dy_ = .FALSE.
-      endif
-
-      deriv = [d_dx_,d_dy_]
-
-      ! Do the interpolation
-
-      call interp_ncubic(2, u_, C, delta, f_int, deriv)
-
-      ! Finish
-
-      return
-
-   end subroutine interp_bicubic
-
-   !****
-
-   subroutine eval_bicubic_derivs(x, y, f_in, f, df_dx, df_dy, d2f_dxdy)
-
-      real(RD), intent(in)  :: x(:)
-      real(RD), intent(in)  :: y(:)
-      real(RD), intent(in)  :: f_in(:,:)
-      real(RD), intent(out) :: f(:,:)
-      real(RD), intent(out) :: df_dx(:,:)
-      real(RD), intent(out) :: df_dy(:,:)
-      real(RD), intent(out) :: d2f_dxdy(:,:)
-
-      real(RD) :: delta(3,2)
-      real(RD) :: K(16,16)
-      real(RD) :: C(16)
-
-      @:CHECK_BOUNDS(SIZE(x), 4)
-      @:CHECK_BOUNDS(SIZE(y), 4)
-
-      @:CHECK_BOUNDS(SIZE(f_in, 1), 4)
-      @:CHECK_BOUNDS(SIZE(f_in, 2), 4)
-
-      @:CHECK_BOUNDS(SIZE(f, 1), 2)
-      @:CHECK_BOUNDS(SIZE(f, 2), 2)
-
-      @:CHECK_BOUNDS(SIZE(df_dy, 1), 2)
-      @:CHECK_BOUNDS(SIZE(df_dy, 2), 2)
-      
-      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 1), 2)
-      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 2), 2)
-
-      ! Evaluate bicubic derivatives
-
-      ! First evaluate kernel
-
-      delta(:,1) = x(2:4) - x(1:3)
-      delta(:,2) = y(2:4) - y(1:3)
-
-      call eval_kernel(2, delta, K)
-
-      ! Apply the kernel
-
-      C = MATMUL(K, RESHAPE(f_in, [16]))
-
-      ! Extract derivs
-
-      f = RESHAPE(C(1:4), [2,2])
-
-      df_dx = RESHAPE(C(5:8), [2,2])
-      df_dy = RESHAPE(C(9:12), [2,2])
-
-      d2f_dxdy = RESHAPE(C(13:16), [2,2])
-      
-      ! Finish
-
-      return
-
-   end subroutine eval_bicubic_derivs
-
-   !****
-
-   subroutine eval_tricubic_derivs(x, y, z, f_in, f, df_dx, df_dy, df_dz, d2f_dxdy, d2f_dxdz, d2f_dydz, d3f_dxdydz)
-
-      real(RD), intent(in)  :: x(:)
-      real(RD), intent(in)  :: y(:)
-      real(RD), intent(in)  :: z(:)
-      real(RD), intent(in)  :: f_in(:,:,:)
-      real(RD), intent(out) :: f(:,:,:)
-      real(RD), intent(out) :: df_dx(:,:,:)
-      real(RD), intent(out) :: df_dy(:,:,:)
-      real(RD), intent(out) :: df_dz(:,:,:)
-      real(RD), intent(out) :: d2f_dxdy(:,:,:)
-      real(RD), intent(out) :: d2f_dxdz(:,:,:)
-      real(RD), intent(out) :: d2f_dydz(:,:,:)
-      real(RD), intent(out) :: d3f_dxdydz(:,:,:)
-
-      real(RD) :: delta(3,3)
-      real(RD) :: K(64,64)
-      real(RD) :: C(64)
-      real(RD) :: f_(64)
-
-      @:CHECK_BOUNDS(SIZE(x), 4)
-      @:CHECK_BOUNDS(SIZE(y), 4)
-      @:CHECK_BOUNDS(SIZE(z), 4)
-
-      @:CHECK_BOUNDS(SIZE(f_in, 1), 4)
-      @:CHECK_BOUNDS(SIZE(f_in, 2), 4)
-      @:CHECK_BOUNDS(SIZE(f_in, 3), 4)
-
-      @:CHECK_BOUNDS(SIZE(f, 1), 2)
-      @:CHECK_BOUNDS(SIZE(f, 2), 2)
-      @:CHECK_BOUNDS(SIZE(f, 3), 2)
-
-      @:CHECK_BOUNDS(SIZE(df_dx, 1), 2)
-      @:CHECK_BOUNDS(SIZE(df_dx, 2), 2)
-      @:CHECK_BOUNDS(SIZE(df_dx, 3), 2)
-      
-      @:CHECK_BOUNDS(SIZE(df_dy, 1), 2)
-      @:CHECK_BOUNDS(SIZE(df_dy, 2), 2)
-      @:CHECK_BOUNDS(SIZE(df_dy, 3), 2)
-
-      @:CHECK_BOUNDS(SIZE(df_dz, 1), 2)
-      @:CHECK_BOUNDS(SIZE(df_dz, 2), 2)
-      @:CHECK_BOUNDS(SIZE(df_dz, 3), 2)
-
-      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 1), 2)
-      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 2), 2)
-      @:CHECK_BOUNDS(SIZE(d2f_dxdy, 3), 2)
-
-      @:CHECK_BOUNDS(SIZE(d2f_dxdz, 1), 2)
-      @:CHECK_BOUNDS(SIZE(d2f_dxdz, 2), 2)
-      @:CHECK_BOUNDS(SIZE(d2f_dxdz, 3), 2)
-
-      @:CHECK_BOUNDS(SIZE(d2f_dydz, 1), 2)
-      @:CHECK_BOUNDS(SIZE(d2f_dydz, 2), 2)
-      @:CHECK_BOUNDS(SIZE(d2f_dydz, 3), 2)
-
-      @:CHECK_BOUNDS(SIZE(d3f_dxdydz, 1), 2)
-      @:CHECK_BOUNDS(SIZE(d3f_dxdydz, 2), 2)
-      @:CHECK_BOUNDS(SIZE(d3f_dxdydz, 3), 2)
-
-      ! Evaluate tricubic derivatives
-
-      ! First evaluate kernel
-
-      delta(:,1) = x(2:4) - x(1:3)
-      delta(:,2) = y(2:4) - y(1:3)
-      delta(:,3) = z(2:4) - z(1:3)
-
-      call eval_kernel(3, delta, K)
-
-      ! Apply the kernel
-
-      f_ = RESHAPE(f_in, [64])
-
-      C = MATMUL(K, f_)
-
-      ! Extract derivs
-
-      f = RESHAPE(C(1:8), [2,2,2])
-
-      df_dx = RESHAPE(C(9:16), [2,2,2])
-      df_dy = RESHAPE(C(17:24), [2,2,2])
-      df_dz = RESHAPE(C(33:40), [2,2,2])
-
-      d2f_dxdy = RESHAPE(C(25:32), [2,2,2])
-      d2f_dxdz = RESHAPE(C(41:48), [2,2,2])
-      d2f_dydz = RESHAPE(C(49:56), [2,2,2])
-
-      d3f_dxdydz = RESHAPE(C(57:64), [2,2,2])
-
-      ! Finish
-
-      return
-
-   end subroutine eval_tricubic_derivs
-
-   !****
-
-   subroutine eval_kernel(N, delta, K)
-
-      integer, intent(in)   :: N
-      real(RD), intent(in)  :: delta(:,:)
-      real(RD), intent(out) :: K(:,:)
-
+   subroutine eval_kernel(rank, mask, vdelta, K, stat)
+
+      integer, intent(in)            :: rank
+      logical, intent(in)            :: mask(:)
+      real(RD), intent(in)           :: vdelta(:,:)
+      real(RD), intent(out)          :: K(:,:)
+      integer, intent(out), optional :: stat
+
+      integer  :: n_match
       integer  :: i
-      integer  :: p
-      integer  :: d
       integer  :: j
+      integer  :: bits_l
+      integer  :: bits_r
+      logical  :: mask_try(SIZE(mask))
+      logical  :: dim_mask(4,rank)
+      logical  :: dim_mask_try(4,rank)
+      integer  :: n_match_try
       real(RD) :: u
-      real(RD) :: K_1(4)
-      real(RD) :: K_1_a(4)
-      real(RD) :: K_1_b(4)
+      real(RD) :: dim_K(4)
+      real(RD) :: dim_K_a(4)
+      real(RD) :: dim_K_b(4)
 
-      @:CHECK_BOUNDS(SIZE(delta, 1), 3)
-      @:CHECK_BOUNDS(SIZE(delta, 2), N)
+      @:CHECK_BOUNDS(SIZE(mask), 4**rank)
 
-      @:CHECK_BOUNDS(SIZE(K, 1), 4**N)
-      @:CHECK_BOUNDS(SIZE(K, 2), 4**N)
+      @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
+      @:CHECK_BOUNDS(SIZE(vdelta, 2), rank)
+
+      @:CHECK_BOUNDS(SIZE(K, 1), 4**rank)
+      @:CHECK_BOUNDS(SIZE(K, 2), 4**rank)
 
       ! Evaluate the kernel matrix K for setting up function values
       ! and derivatives. The C vector used in interp_ncubic can then
       ! be evaluated as C = MATMUL(K, F), where F is the vector of
-      ! function values on a 4**N-point stencil
+      ! function values on a 4**rank-point stencil
 
-      do i = 1, 4**N
-      
-         ! Extract output position and derivative indices
+      ! First, set up the per-dimension masks. These are designed to
+      ! fall entirely within the rank-d mask, while using as many points
+      ! as possible; the actual mask used is the outer product of the
+      ! per-dimension masks
+
+      n_match = 0
+
+      do i = 1, 4**rank
+
+         ! Extract bitfields from i
          
-         p = IBITS(i-1, 0, N)
-         d = IBITS(i-1, N, N)
+         bits_l = IBITS(i-1, rank, rank)
+         bits_r = IBITS(i-1, 0, rank)
 
-         ! Accumulate the outer product of kernels for each
-         ! dimension
+         ! Accumulate the outer product of per-dimension masks
+
+         mask_try(1) = .TRUE.
+
+         do j = 1, rank
+
+            ! Set up the per-dimension mask
+
+            dim_mask_try(1,j) = BTEST(bits_l, j-1) 
+            dim_mask_try(2:3,j) = .TRUE.
+            dim_mask_try(4,j) = BTEST(bits_r, j-1)
+
+            ! Accumulate it
+
+            mask_try(1:4**j) = outer_prod_l_(mask_try(1:4**(j-1)), dim_mask_try(:,j))
+
+         end do
+
+         ! See if mask_try falls within mask
+
+         if (COUNT(mask_try .AND. .NOT. mask) == 0) then
+
+            ! If so, compare it to the current best match
+
+            n_match_try = COUNT(mask_try .AND. mask)
+
+            if (n_match_try > n_match) then
+
+               ! Replace best match
+
+               dim_mask = dim_mask_try
+
+               n_match = n_match_try
+
+            elseif (n_match_try == n_match) then
+
+               ! Merge with best match
+
+               dim_mask = dim_mask .AND. dim_mask_try
+
+            endif
+
+         endif
+
+      end do
+
+      ! Check that matches were found
+
+      if (n_match == 0) then
+
+         if (PRESENT(stat)) then
+            stat = STAT_UNAVAILABLE_DATA
+            return
+         else
+            @:ABORT(unavailable data)
+         endif
+
+      endif
+
+      ! Now build the kernel matrix row-by-row
+
+      row_loop: do i = 1, 4**rank
+      
+         ! Extract bitfields from i
+         
+         bits_l = IBITS(i-1, rank, rank)
+         bits_r = IBITS(i-1, 0, rank)
+
+         ! Accumulate the outer product of per-dimension kernels
 
          K(i,1) = 1._RD
 
-         dim_loop : do j = 1,N
+         dim_loop : do j = 1, rank
 
-            ! Set up the 1-d kernel
+            ! Set up the per-dimension kernel
 
-            if (BTEST(p, j-1)) then
+            if (BTEST(bits_r, j-1)) then
 
-               if (BTEST(d, j-1)) then 
+               if (BTEST(bits_l, j-1)) then
 
-                  u = delta(2,j)/(delta(2,j) + delta(3,j))
-
-                  K_1_a = [0,-1,1,0]/delta(2,j)
-                  K_1_b = [0,0,-1,1]/delta(3,j)
-
-                  K_1 = (1._RD-u)*K_1_a + u*K_1_b
+                  dim_K(1) = 0
+                  dim_K(2:4) = deriv_kernel_(vdelta(2:3,j), dim_mask(2:4,j))
 
                else
 
-                  K_1 = [0,0,1,0]
+                  dim_K = [0,0,1,0]
 
                endif
 
             else
 
-               if (BTEST(d, j-1)) then
+               if (BTEST(bits_l, j-1)) then
 
-                  u = delta(1,j)/(delta(1,j) + delta(2,j))
-
-                  K_1_a = [-1,1,0,0]/delta(1,j)
-                  K_1_b = [0,-1,1,0]/delta(2,j)
-
-                  K_1 = (1._RD-u)*K_1_a + u*K_1_b
+                  dim_K(1:3) = deriv_kernel_(vdelta(1:2,j), dim_mask(1:3,j))
+                  dim_K(4) = 0
 
                else
 
-                  K_1 = [0,1,0,0]
+                  dim_K = [0,0,1,0]
 
                endif
 
-            endif
+            end if
 
-            K(i,1:4**j) = outer_prod_(K(i,1:4**(j-1)), K_1)
+            ! Accumulate it
+
+            K(i,1:4**j) = outer_prod_r_(K(i,1:4**(j-1)), dim_K)
 
          end do dim_loop
 
-      end do
+      end do row_loop
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
    contains
 
-      function outer_prod_(A, B) result (AB)
+      function deriv_kernel_(delta, mask) result(K)
+
+         real(RD), intent(in) :: delta(:)
+         logical, intent(in)  :: mask(:)
+         real(RD)             :: K(3)
+
+         real(RD) :: u
+         real(RD) :: K_a(3)
+         real(RD) :: K_b(3)
+
+         @:CHECK_BOUNDS(SIZE(delta), 2)
+         @:CHECK_BOUNDS(SIZE(dim_mask), 3)
+
+         ! Set up a 3-point kernel for derivative evaluation
+
+         if (mask(1) .AND. mask(3)) then
+
+            u = delta(1)/(delta(1) + delta(2))
+
+            K_a = [-1,1,0]/delta(1)
+            K_b = [0,-1,1]/delta(2)
+
+            K = (1._RD-u)*K_a + u*K_b
+
+         elseif (mask(1)) then
+
+            K = [-1,1,0]/delta(1)
+
+         elseif (mask(3)) then
+
+            K = [0,-1,1]/delta(2)
+
+         else
+
+            @:ABORT(invalid mask)
+
+         endif
+
+         ! Finish
+
+         return
+
+      end function deriv_kernel_
+
+      !****
+
+      function outer_prod_r_(A, B) result (AB)
 
          real(RD), intent(in) :: A(:)
          real(RD), intent(in) :: B(:)
@@ -383,7 +267,7 @@ contains
          integer :: n
          integer :: m
 
-         ! Calculate the outer product between (flat) arrays A and B
+         ! Calculate the outer product between (flat) real arrays A and B
 
          n = SIZE(A)
          m = SIZE(B)
@@ -398,84 +282,113 @@ contains
 
          return
 
-      end function outer_prod_
+      end function outer_prod_r_
+
+      !****
+
+      function outer_prod_l_(A, B) result (AB)
+
+         logical, intent(in) :: A(:)
+         logical, intent(in) :: B(:)
+         logical             :: AB(SIZE(A)*SIZE(B))
+
+         integer :: i
+         integer :: n
+         integer :: m
+
+         ! Calculate the outer product between (flat) logical arrays A and B
+
+         n = SIZE(A)
+         m = SIZE(B)
+
+         do i = 1, m
+
+            AB(n*(i-1)+1:n*i) = A .AND. B(i)
+
+         end do
+
+         ! Finish
+
+         return
+
+      end function outer_prod_l_
 
    end subroutine eval_kernel
 
    !****
 
-   subroutine interp_ncubic(N, u, C, delta, f_int, deriv)
+   subroutine interp_ncubic(rank, vu, C, vdelta, f_int, vderiv)
 
-      integer, intent(in)           :: N
-      real(RD), intent(in)          :: u(:)
+      integer, intent(in)           :: rank
+      real(RD), intent(in)          :: vu(:)
       real(RD), intent(in)          :: C(:)
-      real(RD), intent(in)          :: delta(:)
+      real(RD), intent(in)          :: vdelta(:,:)
       real(RD), intent(out)         :: f_int
-      logical, intent(in), optional :: deriv(:)
+      logical, intent(in), optional :: vderiv(:)
 
-      logical  :: deriv_(N)
+      logical  :: vderiv_(rank)
       integer  :: i
       integer  :: p
       integer  :: d
       integer  :: j
       real(RD) :: H
 
-      @:CHECK_BOUNDS(SIZE(u), N)
-      @:CHECK_BOUNDS(SIZE(C), 4**N)
-      @:CHECK_BOUNDS(SIZE(delta), N)
+      @:CHECK_BOUNDS(SIZE(vu), rank)
+      @:CHECK_BOUNDS(SIZE(C), 4**rank)
+      @:CHECK_BOUNDS(SIZE(vdelta), rank)
 
-      if (PRESENT(deriv)) then
-         @:CHECK_BOUNDS(SIZE(deriv), N)
-         deriv_ = deriv
+      if (PRESENT(vderiv)) then
+         @:CHECK_BOUNDS(SIZE(vderiv), rank)
+         vderiv_ = vderiv
       else
-         deriv_ = .FALSE.
+         vderiv_ = .FALSE.
       endif
 
-      ! Perform cubic interpolation within an N-dimensional hypercube
+      ! Perform cubic interpolation within an (rank)-dimensional hypercube
       !
-      !  u(N)     -- fractional position vector within hypercube
-      !  C(4**N)  -- function and derivatives at corners of hypercube
-      !  delta(N) -- side lengths of hypercube
-      !  deriv(N) -- whether to calculate derivatives wrt each coord
+      !  u(rank)     -- fractional position vector within hypercube
+      !  C(4**rank)  -- function and derivatives at corners of hypercube
+      !  delta(rank) -- side lengths of hypercube
+      !  deriv(rank) -- whether to calculate derivatives wrt each coord
       !
-      ! For each element C(i) of C, let k = i-1, the N least
+      ! For each element C(i) of C, let k = i-1, the rank least
       ! significant bits of k give the position coordinate of the corner,
-      ! and the N most significant bits indicate function (0) or
+      ! and the rank most significant bits indicate function (0) or
       ! derivative (1) along each dimension
 
       ! Build up f_int
 
       f_int = 0._RD
 
-      do i = 1, 4**N
+      do i = 1, 4**rank
 
          ! Extract position and derivative indices
 
-         p = IBITS(i-1, 0, N)
-         d = IBITS(i-1, N, N)
+         p = IBITS(i-1, 0, rank)
+         d = IBITS(i-1, rank, rank)
 
          ! Evaluate the product of the basis function for each
          ! dimension
 
          H = 1._RD
          
-         dim_loop : do j = 1,N
+         dim_loop : do j = 1, rank
 
             if (BTEST(p, j-1)) then
                if (BTEST(d, j-1)) then
-                  H = H*h_11(u(j), deriv_(j))*delta(j)
+                  H = H*h_11(vu(j), vderiv_(j))*vdelta(2,j)
                else
-                  H = H*h_01(u(j), deriv_(j))
+                  H = H*h_01(vu(j), vderiv_(j))
                endif
             else
                if (BTEST(d, j-1)) then
-                  H = H*h_10(u(j), deriv_(j))*delta(j)
+                  H = H*h_10(vu(j), vderiv_(j))*vdelta(2,j)
                else
-                  H = H*h_00(u(j), deriv_(j))
+                  H = H*h_00(vu(j), vderiv_(j))
                endif
             endif
                
-            if (deriv_(j)) H = H/delta(j)
+            if (vderiv_(j)) H = H/vdelta(2,j)
 
          end do dim_loop
 

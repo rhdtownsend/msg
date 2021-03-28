@@ -25,7 +25,7 @@ module specgrid_m
    use kinds_m
    use hdf5io_m
 
-   use grid_m
+   use ngrid_m
    use specint_m
    use dyn_specint_m
    use stat_m
@@ -40,13 +40,13 @@ module specgrid_m
 
    type :: specgrid_t
       private
-      class(specint_t), allocatable :: si(:,:)
-      type(grid_t)                  :: gr
+      class(specint_t), allocatable :: si(:)
+      type(ngrid_t)                 :: ng
       real(RD)                      :: w_0
       real(RD)                      :: dw
       integer                       :: n_w
-      integer                       :: n_logT
-      integer                       :: n_logg
+      integer, allocatable          :: shape(:)
+      integer                       :: rank
    contains
       private
       procedure, public :: inquire
@@ -82,39 +82,42 @@ module specgrid_m
 
 contains
 
-   function specgrid_t_ (si, gr) result (sg)
+   function specgrid_t_ (si, ng) result (sg)
 
-      class(specint_t), intent(in) :: si(:,:)
-      type(grid_t), intent(in)     :: gr
+      class(specint_t), intent(in) :: si(:)
+      type(ngrid_t), intent(in)    :: ng
       type(specgrid_t)             :: sg
 
-      integer  :: n_logT
-      integer  :: n_logg
-      logical  :: first
-      real(RD) :: w_0
-      real(RD) :: dw
-      integer  :: n_w
+      integer              :: rank
+      integer, allocatable :: shape(:)
+      logical              :: first
+      real(RD)             :: w_0
+      real(RD)             :: dw
+      integer              :: n_w
 
       ! Construct the specgrid_t
 
-      call gr%inquire(n_logT=n_logT, n_logg=n_logg)
+      call ng%inquire(rank=rank)
 
-      @:CHECK_BOUNDS(SIZE(si, 1), n_logT)
-      @:CHECK_BOUNDS(SIZE(si, 2), n_logg)
+      allocate(shape(rank))
+
+      call ng%inquire(shape=shape)
+
+      @:CHECK_BOUNDS(SIZE(si), PRODUCT(shape))
 
       first = .FALSE.
-      call gr%map(meta_proc_)
+      call ng%map(meta_proc_)
  
       allocate(sg%si, SOURCE=si)
 
-      sg%gr = gr
+      sg%ng = ng
 
       sg%w_0 = w_0
       sg%dw = dw
       sg%n_w = n_w
 
-      sg%n_logT = n_logT
-      sg%n_logg = n_logg
+      sg%shape = shape
+      sg%rank = rank
 
       ! Finish
 
@@ -122,26 +125,28 @@ contains
 
    contains
 
-      subroutine meta_proc_(i, j, stat)
+      subroutine meta_proc_(vi, stat)
 
-         integer, intent(in)            :: i
-         integer, intent(in)            :: j
+         integer, intent(in)            :: vi(:)
          integer, intent(out), optional :: stat
 
+         integer  :: li
          real(RD) :: w_0_chk
          real(RD) :: dw_chk
          integer  :: n_w_chk
 
          ! Set or check metadata
 
+         li = ng%li_from_vi(vi)
+
          if (.NOT. first) then
 
-            call si(i,j)%inquire(w_0=w_0, dw=dw, n_w=n_w)
+            call si(li)%inquire(w_0=w_0, dw=dw, n_w=n_w)
             first = .TRUE.
 
          else
 
-            call si(i,j)%inquire(w_0=w_0_chk, dw=dw_chk, n_w=n_w_chk)
+            call si(li)%inquire(w_0=w_0_chk, dw=dw_chk, n_w=n_w_chk)
 
             @:ASSERT(w_0 == w_0_chk, base wavelength mismatch)
             @:ASSERT(dw == dw_chk, wavelength increment mismatch)
@@ -159,14 +164,18 @@ contains
 
    !****
 
-   subroutine inquire(self, w_0, dw, n_w, n_logT, n_logg)
+   subroutine inquire(self, w_0, dw, n_w, rank, shape)
 
       class(specgrid_t), intent(in)   :: self
       real(RD), intent(out), optional :: w_0
       real(RD), intent(out), optional :: dw
       integer, intent(out), optional  :: n_w
-      integer, intent(out), optional  :: n_logT
-      integer, intent(out), optional  :: n_logg
+      integer, intent(out), optional  :: shape(:)
+      integer, intent(out), optional  :: rank
+
+      if (PRESENT(shape)) then
+         @:CHECK_BOUNDS(SIZE(shape), self%rank)
+      end if
 
       ! Inquire metadata
 
@@ -174,8 +183,8 @@ contains
       if (PRESENT(dw)) dw = self%dw
       if (PRESENT(n_w)) n_w = self%n_w
 
-      if (PRESENT(n_logT)) n_logT = self%n_logT
-      if (PRESENT(n_logg)) n_logg = self%n_logg
+      if (PRESENT(shape)) shape = self%shape
+      if (PRESENT(rank)) rank = self%rank
 
       ! Finish
 
@@ -188,34 +197,35 @@ contains
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
                                           ('D_moment', 'D', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, logT, logg, ${arg_var}$, w_0, ${var}$, stat, d_dlogT, d_dlogg)
+      subroutine interp_${name}$(self, vx, ${arg_var}$, w_0, ${var}$, stat, vderiv)
 
          class(specgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: logT
-         real(RD), intent(in)             :: logg
+         real(RD), intent(in)             :: vx(:)
          ${arg_type}$, intent(in)         :: ${arg_var}$
          real(RD), intent(in)             :: w_0
          real(RD), intent(out)            :: ${var}$(:)
          integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: d_dlogT
-         logical, intent(in), optional    :: d_dlogg
+         logical, intent(in), optional    :: vderiv(:)
 
          ! Interpolate the ${name}$
 
-         call self%gr%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+         call self%ng%interp(proc_, vx, ${var}$, stat, vderiv)
 
          ! Finish
 
       contains
 
-         subroutine proc_(i, j, f, stat)
+         subroutine proc_(vi, f, stat)
 
-            integer, intent(in)            :: i
-            integer, intent(in)            :: j
+            integer, intent(in)            :: vi(:)
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            call self%si(i,j)%interp_${name}$(${arg_var}$, w_0, f, stat)
+            integer :: li
+
+            li = self%ng%li_from_vi(vi)
+
+            call self%si(li)%interp_${name}$(${arg_var}$, w_0, f, stat)
 
             return
 
@@ -229,33 +239,34 @@ contains
 
    #:for name, var in (('flux', 'F'), )
 
-      subroutine interp_${name}$(self, logT, logg, w_0, ${var}$, stat, d_dlogT, d_dlogg)
+      subroutine interp_${name}$(self, vx, w_0, ${var}$, stat, vderiv)
 
          class(specgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: logT
-         real(RD), intent(in)             :: logg
+         real(RD), intent(in)             :: vx(:)
          real(RD), intent(in)             :: w_0
          real(RD), intent(out)            :: ${var}$(:)
          integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: d_dlogT
-         logical, intent(in), optional    :: d_dlogg
+         logical, intent(in), optional    :: vderiv(:)
 
          ! Interpolate the ${name}$
 
-         call self%gr%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+         call self%ng%interp(proc_, vx, ${var}$, stat, vderiv)
 
          ! Finish
 
       contains
 
-         subroutine proc_(i, j, f, stat)
+         subroutine proc_(vi, f, stat)
 
-            integer, intent(in)            :: i
-            integer, intent(in)            :: j
+            integer, intent(in)            :: vi(:)
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            call self%si(i,j)%interp_${name}$(w_0, f, stat)
+            integer :: li
+
+            li = self%ng%li_from_vi(vi)
+
+            call self%si(li)%interp_${name}$(w_0, f, stat)
 
             return
 
@@ -272,20 +283,22 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(specgrid_t), intent(out) :: sg
 
-      type(grid_t)                     :: gr
-      integer                          :: n_logT
-      integer                          :: n_logg
-      type(dyn_specint_t), allocatable :: si(:,:)
+      type(ngrid_t)                    :: ng
+      integer, allocatable             :: shape(:)
+      integer                          :: n_si
+      type(dyn_specint_t), allocatable :: si(:)
 
       ! Read the specgrid_t with no rebinning
 
-      call read_base_(hi, gr, n_logT, n_logg)
+      call read_base_(hi, ng, shape)
 
-      allocate(si(n_logT,n_logg))
+      n_si = PRODUCT(shape)
 
-      call gr%map(read_specint_nobin_)
+      allocate(si(n_si))
 
-      sg = specgrid_t(si, gr)
+      call ng%map(read_specint_nobin_)
+
+      sg = specgrid_t(si, ng)
 
       ! Finish
 
@@ -293,18 +306,20 @@ contains
 
    contains
 
-      subroutine read_specint_nobin_(i, j, stat)
+      subroutine read_specint_nobin_(vi, stat)
 
-         integer, intent(in)            :: i
-         integer, intent(in)            :: j
+         integer, intent(in)            :: vi(:)
          integer, intent(out), optional :: stat
 
+         integer        :: li
          type(hdf5io_t) :: hi_si
 
          ! Read the specint_t for the node with no rebinning
+
+         li = ng%li_from_vi(vi)
  
-         hi_si = hdf5io_t(hi, si_name_(i,j))
-         call read(hi_si, si(i,j))
+         hi_si = hdf5io_t(hi, si_name_(li))
+         call read(hi_si, si(li))
          call hi_si%final()
 
          ! Finish
@@ -325,20 +340,22 @@ contains
       real(RD), intent(in)          :: dw
       integer, intent(in)           :: n_w
 
-      type(grid_t)                     :: gr
-      integer                          :: n_logT
-      integer                          :: n_logg
-      type(dyn_specint_t), allocatable :: si(:,:)
+      type(ngrid_t)                    :: ng
+      integer, allocatable             :: shape(:)
+      integer                          :: n_si
+      type(dyn_specint_t), allocatable :: si(:)
 
       ! Read the specgrid_t with rebinning
 
-      call read_base_(hi, gr, n_logT, n_logg)
+      call read_base_(hi, ng, shape)
 
-      allocate(si(n_logT,n_logg))
+      n_si = PRODUCT(shape)
 
-      call gr%map(read_specint_rebin_)
+      allocate(si(n_si))
 
-      sg = specgrid_t(si, gr)
+      call ng%map(read_specint_rebin_)
+
+      sg = specgrid_t(si, ng)
 
       ! Finish
 
@@ -346,18 +363,20 @@ contains
 
    contains
       
-      subroutine read_specint_rebin_(i, j, stat)
+      subroutine read_specint_rebin_(vi, stat)
 
-         integer, intent(in)            :: i
-         integer, intent(in)            :: j
+         integer, intent(in)            :: vi(:)
          integer, intent(out), optional :: stat
 
+         integer        :: li
          type(hdf5io_t) :: hi_si
 
          ! Read and rebin the specint_t for the node
+
+         li = ng%li_from_vi(vi)
  
-         hi_si = hdf5io_t(hi, si_name_(i,j))
-         call read(hi_si, si(i,j), w_0, dw, n_w)
+         hi_si = hdf5io_t(hi, si_name_(li))
+         call read(hi_si, si(li), w_0, dw, n_w)
          call hi_si%final()
 
          ! Finish
@@ -370,27 +389,25 @@ contains
 
    !****
 
-   subroutine read_base_(hi, gr, n_logT, n_logg)
+   subroutine read_base_(hi, ng, shape)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(grid_t), intent(out)     :: gr
-      integer, intent(out)          :: n_logT
-      integer, intent(out)          :: n_logg
+      type(hdf5io_t), intent(inout)     :: hi
+      type(ngrid_t), intent(out)        :: ng
+      integer, allocatable, intent(out) :: shape(:)
  
       character(TYPE_LEN) :: file_type
-      type(hdf5io_t)      :: hi_gr
+      type(hdf5io_t)      :: hi_ng
       
       ! Read base components of the specgrid_t
 
       call hi%read_attr('TYPE', file_type)
       @:ASSERT(file_type == 'specgrid_t', invalid type)
-      
-      call hi%read_attr('n_logT', n_logT)
-      call hi%read_attr('n_logg', n_logg) 
 
-      hi_gr = hdf5io_t(hi, 'gr')
-      call read(hi_gr, gr)
-      call hi_gr%final()
+      call hi%alloc_read_attr('shape', shape)
+      
+      hi_ng = hdf5io_t(hi, 'gr')
+      call read(hi_ng, ng)
+      call hi_ng%final()
 
       ! Finish
 
@@ -405,7 +422,7 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(specgrid_t), intent(in)  :: sg
 
-      type(hdf5io_t) :: hi_gr
+      type(hdf5io_t) :: hi_ng
 
       ! Write the specgrid_t
 
@@ -419,14 +436,14 @@ contains
          call hi%write_attr('dw', sg%dw)
          call hi%write_attr('n_w', sg%n_w)
 
-         call hi%write_attr('n_logT', sg%n_logT)
-         call hi%write_attr('n_logg', sg%n_logg)
+         call hi%write_attr('shape', sg%shape)
+         call hi%write_attr('rank', sg%rank)
 
-         hi_gr = hdf5io_t(hi, 'gr')
-         call write(hi_gr, sg%gr)
-         call hi_gr%final()
+         hi_ng = hdf5io_t(hi, 'ng')
+         call write(hi_ng, sg%ng)
+         call hi_ng%final()
 
-         call sg%gr%map(write_specint_)
+         call sg%ng%map(write_specint_)
 
       type is (dyn_specint_t)
 
@@ -440,18 +457,20 @@ contains
 
    contains
 
-      subroutine write_specint_(i, j, stat)
+      subroutine write_specint_(vi, stat)
 
-         integer, intent(in)            :: i
-         integer, intent(in)            :: j
+         integer, intent(in)            :: vi(:)
          integer, intent(out), optional :: stat
 
+         integer        :: li
          type(hdf5io_t) :: hi_si
 
          ! Write the specint_t for the node
+
+         li = sg%ng%li_from_vi(vi)
  
-         hi_si = hdf5io_t(hi, si_name_(i,j))
-         call write(hi_si, sg%si(i,j))
+         hi_si = hdf5io_t(hi, si_name_(li))
+         call write(hi_si, sg%si(li))
          call hi_si%final()
 
          ! Finish
@@ -464,14 +483,13 @@ contains
 
    !****
 
-   function si_name_(i,j) result (name)
+   function si_name_(li) result (name)
 
-      integer, intent(in) :: i
-      integer, intent(in) :: j
+      integer, intent(in) :: li
       character(256)      :: name
 
-      write(name, 100) i, j
-100   format('si(',I0,',',I0,')')
+      write(name, 100) li
+100   format('si(',I0,')')
 
    end function si_name_
 

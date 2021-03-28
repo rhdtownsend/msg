@@ -1,0 +1,623 @@
+! Module  : ngrid_m
+! Purpose : define ngrid_t type, a simple base type for N-dimensional
+!           interpolating grids
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module ngrid_m
+
+   ! Uses
+   
+   use kinds_m
+   use hdf5io_m
+   use order_m
+
+   use axis_m
+   use ncubic_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type ngrid_t
+      private
+      type(axis_t), allocatable :: ax(:)
+      logical, allocatable      :: mask(:)
+      integer, allocatable      :: shape(:)
+      integer                   :: rank
+      integer                   :: n_li
+      integer                   :: n_si
+   contains
+      private
+      procedure, public :: inquire
+      procedure, public :: map
+      procedure, public :: li_from_vi
+      procedure, public :: vi_from_li
+      procedure         :: vi_from_si_
+      procedure         :: interp_0_
+      procedure         :: interp_1_
+      generic, public   :: interp => interp_0_, interp_1_
+      procedure         :: setup_interp_
+   end type ngrid_t
+
+   ! Interfaces
+
+   interface ngrid_t
+      module procedure ngrid_t_
+   end interface ngrid_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: ngrid_t
+   public :: read
+   public :: write
+
+   ! Procedures
+
+contains
+
+   function ngrid_t_ (ax, mask) result (ng)
+
+      type(axis_t), intent(in) :: ax(:)
+      logical, intent(in)      :: mask(:)
+      type(ngrid_t)            :: ng
+
+      integer :: rank
+      integer :: i
+      integer :: shape(SIZE(ax))
+
+      ! Construct the ngrid_t
+
+      rank = SIZE(ax)
+
+      do i = 1, rank
+         call ax(i)%inquire(n_x=shape(i))
+      end do
+
+      @:CHECK_BOUNDS(SIZE(mask), PRODUCT(shape))
+
+      ng%mask = mask
+      ng%ax = ax
+
+      ng%shape = shape
+      ng%rank = rank
+
+      ng%n_li = PRODUCT(shape)
+      ng%n_si = 4**rank
+
+      ! Finish
+
+      return
+
+   end function ngrid_t_
+
+   !****
+
+   subroutine inquire(self, shape, rank)
+
+      class(ngrid_t), intent(in)     :: self
+      integer, intent(out), optional :: shape(:)
+      integer, intent(out), optional :: rank
+
+      if (PRESENT(shape)) then
+         @:CHECK_BOUNDS(SIZE(shape), self%rank)
+      end if
+
+      ! Inquire metadata
+
+      if (PRESENT(shape)) shape = self%shape
+      if (PRESENT(rank)) rank = self%rank
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine map(self, map_proc, stat)
+
+      class(ngrid_t), intent(in) :: self
+      interface
+         subroutine map_proc(vi, stat)
+            use kinds_m
+            integer, intent(in)            :: vi(:)
+            integer, intent(out), optional :: stat
+         end subroutine map_proc
+      end interface
+      integer, intent(out), optional :: stat
+
+      integer :: li
+      integer :: vi(self%rank)
+
+      ! Apply the map_proc function to each node in the grid
+
+      map_loop : do li = 1, self%n_li
+
+         if (self%mask(li)) then
+
+            vi = self%vi_from_li(li)
+
+            call map_proc(vi, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+         end if
+
+      end do map_loop
+
+      ! Finish
+
+      return
+
+   end subroutine map
+
+   !****
+
+   pure function li_from_vi(self, vi) result(li)
+
+      class(ngrid_t), intent(in) :: self
+      integer, intent(in)        :: vi(:)
+      integer                    :: li
+
+      integer :: p
+      integer :: j
+
+      @:CHECK_BOUNDS(SIZE(vi), self%rank)
+
+      ! Calculate a linear index from a vector index
+
+      p = 1
+      li = vi(1)
+
+      do j = 2, self%rank
+         p = p*self%shape(j)
+         li = li + vi(j)*p
+      end do
+
+      ! Finish
+
+      return
+
+   end function li_from_vi
+
+   !****
+
+   pure function vi_from_li(self, li) result(vi)
+
+      class(ngrid_t), intent(in) :: self
+      integer, intent(in)        :: li
+      integer                    :: vi(self%rank)
+
+      integer :: p
+      integer :: r
+      integer :: j
+
+      ! Calculate a vector index from a linear index
+
+      p = self%n_li
+      r = li
+
+      do j = self%rank, 1, -1
+         p = p/self%shape(j)
+         vi(j) = MOD(r, p)
+         r = r - vi(j)
+      end do
+
+      ! Finish
+
+      return
+
+   end function vi_from_li
+
+   !****
+
+   pure function vi_from_si_(self, vi_cl, si) result(vi)
+
+      class(ngrid_t), intent(in) :: self
+      integer, intent(in)        :: vi_cl(:)
+      integer, intent(in)        :: si
+      integer                    :: vi(self%rank)
+
+      integer :: p
+      integer :: r
+      integer :: j
+
+      @:CHECK_BOUNDS(SIZE(vi_cl), self%rank)
+
+      ! Calculate a vector index from a stencil index
+
+      p = self%n_si
+      r = si
+
+      do j = self%rank, 1, -1
+         p = p/4
+         vi(j) = MOD(r, p)
+         r = r - vi(j)
+      end do
+
+      vi = vi + vi_cl - 2
+
+      ! Finish
+
+      return
+
+   end function vi_from_si_
+
+   !****
+
+   subroutine interp_0_(self, data_proc, vx, f_int, stat, vderiv)
+
+      class(ngrid_t), intent(in) :: self
+      interface
+         subroutine data_proc(vi, data, stat)
+            use kinds_m
+            integer, intent(in)            :: vi(:)
+            real(RD), intent(out)          :: data
+            integer, intent(out), optional :: stat
+         end subroutine data_proc
+      end interface
+      real(RD), intent(in)           :: vx(:)
+      real(RD), intent(out)          :: f_int
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: vderiv
+
+      integer  :: vi_cl(self%rank)
+      logical  :: mask(self%n_si)
+      real(RD) :: vdelta(3,self%rank)
+      real(RD) :: vu(self%rank)
+      real(RD) :: K(self%n_si,self%n_si)
+      integer  :: si
+      integer  :: vi(self%rank)
+      real(RD) :: F(self%n_si)
+      real(RD) :: C(self%n_si)
+
+      @:CHECK_BOUNDS(SIZE(vx), self%rank)
+
+      ! Interpolate a scalar value
+
+      ! Set up the interpolation
+
+      call self%setup_interp_(vx, vi_cl, mask, vdelta, vu, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Evaluate the kernel
+
+      call eval_kernel(self%rank, mask, vdelta, K, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Evaluate data at the nodes
+
+      do si = 1, self%n_si
+
+         if (ANY(K(:,si) /= 0._RD)) then
+
+            vi = self%vi_from_si_(vi_cl, si)
+
+            call data_proc(vi, F(si), stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+         else
+
+            F(si) = 0._RD
+
+         endif
+
+      end do
+
+      ! Evaluate the C vector
+
+      C = MATMUL(K, F)
+
+      ! Perform the interpolation
+
+      call interp_ncubic(self%rank, vu, C, vdelta, f_int)
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   end subroutine interp_0_
+
+   !****
+
+   subroutine interp_1_(self, data_proc, vx, f_int, stat, vderiv)
+
+      class(ngrid_t), intent(in) :: self
+      interface
+         subroutine data_proc(vi, data, stat)
+            use kinds_m
+            integer, intent(in)            :: vi(:)
+            real(RD), intent(out)          :: data(:)
+            integer, intent(out), optional :: stat
+         end subroutine data_proc
+      end interface
+      real(RD), intent(in)           :: vx(:)
+      real(RD), intent(out)          :: f_int(:)
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: vderiv(:)
+
+      integer               :: vi_cl(self%rank)
+      logical               :: mask(self%n_si)
+      real(RD)              :: vdelta(3,self%rank)
+      real(RD)              :: vu(self%rank)
+      real(RD)              :: K(self%n_si,self%n_si)
+      integer               :: n_m
+      integer               :: si
+      integer               :: vi(self%rank)
+      real(RD), allocatable :: F(:,:)
+      real(RD)              :: C(self%n_si)
+      integer               :: m
+
+      @:CHECK_BOUNDS(SIZE(vx), self%rank)
+
+      ! Interpolate an array value
+
+      ! Set up the interpolation
+
+      call self%setup_interp_(vx, vi_cl, mask, vdelta, vu, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Evaluate the kernel
+
+      call eval_kernel(self%rank, mask, vdelta, K, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Evaluate data at the nodes
+
+      n_m = SIZE(f_int)
+
+      allocate(F(n_m,self%n_si))
+
+      do si = 1, self%n_si
+
+         if (ANY(K(:,si) /= 0._RD)) then
+
+            vi = self%vi_from_si_(vi_cl, si)
+
+            call data_proc(vi, F(si,:), stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+         else
+
+            F(si,:) = 0._RD
+
+         endif
+
+      end do
+
+      ! Now loop through output points
+
+      do m = 1, n_m
+
+         ! Evaluate the C vector
+
+         C = MATMUL(K, F(:,m))
+
+         ! Perform the interpolation
+
+         call interp_ncubic(self%rank, vu, C, vdelta, f_int(m), vderiv)
+
+      end do
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine interp_1_
+
+   !****
+   
+   subroutine setup_interp_(self, vx, vi_cl, mask, vdelta, vu, stat)
+
+      class(ngrid_t), intent(in)     :: self
+      real(RD), intent(in)           :: vx(:)
+      integer, intent(out)           :: vi_cl(:)
+      logical, intent(out)           :: mask(:)
+      real(RD), intent(out)          :: vdelta(:,:)
+      real(RD), intent(out)          :: vu(:)
+      integer, intent(out), optional :: stat
+
+      integer  :: j
+      integer  :: si
+      integer  :: vi(self%rank)
+      integer  :: li
+      integer  :: l
+      integer  :: i
+      real(RD) :: x(4)
+
+      @:CHECK_BOUNDS(SIZE(vx), self%rank)
+      @:CHECK_BOUNDS(SIZE(vi_cl), self%rank)
+      @:CHECK_BOUNDS(SIZE(mask), self%n)
+
+      @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
+      @:CHECK_BOUNDS(SIZE(vdelta, 2), self%rank)
+
+      @:CHECK_BOUNDS(SIZE(vu), self%rank)
+
+      ! Locate the interpolation cell
+
+      do j = 1, self%rank
+
+         call self%ax(j)%locate(vx(j), vi_cl(j), stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do
+
+      ! Set up the mask
+
+      do si = 1, self%n_si
+
+         vi = self%vi_from_si_(vi_cl, si)
+
+         mask(si) = .NOT. ANY(vi < 1 .OR. vi > self%shape)
+
+         if (mask(si)) then
+            li = self%li_from_vi(vi)
+            mask(si) = mask(si) .AND. self%mask(li)
+         end if
+
+      end do
+
+      ! Set up the vdelta and vu values
+
+      do j = 1, self%rank
+
+         do l = 1, 4
+
+            i = vi_cl(j) + l - 2
+
+            if (i < 1) then
+               x(l) = -HUGE(0._RD)
+            elseif (i > self%shape(j)) then
+               x(l) = HUGE(0._RD)
+            else
+               call self%ax(j)%get_x(i, x(l))
+            endif
+
+         end do
+
+         vdelta(:,j) = x(2:4) - x(1:3)
+
+         vu(j) = (vx(j) - x(2))/vdelta(2,j)
+
+      end do
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine setup_interp_
+
+  !****
+
+   subroutine read_(hi, ng)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(ngrid_t), intent(out)    :: ng
+
+      character(TYPE_LEN)       :: file_type
+      integer                   :: rank
+      logical, allocatable      :: mask(:)
+      type(axis_t), allocatable :: ax(:)
+      integer                   :: j
+      type(hdf5io_t)            :: hi_ax
+
+      ! Read the ngrid_t
+
+      call hi%read_attr('TYPE', file_type)
+      @:ASSERT(file_type == 'ngrid_t', invalid type)
+
+      call hi%read_attr('rank', rank)
+
+      allocate(ax(rank))
+
+      do j = 1, rank
+         hi_ax = hdf5io_t(hi, ax_name_(j))
+         call read(hi_ax, ax(j))
+         call hi_ax%final()
+      end do
+
+      call hi%alloc_read_dset('mask', mask)
+
+      ng = ngrid_t(ax, mask)
+
+      ! Finish
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, ng)
+
+      type(hdf5io_t), intent(inout) :: hi
+      type(ngrid_t), intent(in)     :: ng
+
+      integer        :: j
+      type(hdf5io_t) :: hi_ax
+
+      ! Write the ngrid_t
+      
+      call hi%write_attr('TYPE', 'ngrid_t')
+
+      call hi%write_attr('shape', ng%shape)
+      call hi%write_attr('rank', ng%rank)
+
+      do j = 1, ng%rank
+         hi_ax = hdf5io_t(hi, ax_name_(j))
+         call write(hi_ax, ng%ax(j))
+         call hi_ax%final()
+      end do
+
+      call hi%write_dset('mask', ng%mask)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function ax_name_(j) result (name)
+
+      integer, intent(in) :: j
+      character(256)      :: name
+
+      write(name, 100) j
+100   format('ax(',I0,')')
+
+   end function ax_name_
+
+end module ngrid_m

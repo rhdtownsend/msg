@@ -16,27 +16,30 @@ program test_specgrid
    
    type(specgrid_t) :: sg
    type(hdf5io_t)   :: hi
-   real(RD)         :: I(n)
+   real(RD), allocatable :: F(:)
    integer          :: j
    integer          :: stat
 
-   n_w = 1000
+   n_w = 2773
 
-   w_0 = LOG(5000._RD)
-   dw = (LOG(6000._RD) - LOG(5000._RD))/n_w
+   w_0 = 8.0_RD
+   dw = 1./2000._RD
+
+   allocate(F(n_w-1))
 
    hi = hdf5io_t('sg.h5', OPEN_FILE_RO)
    call read(hi, sg, w_0, dw, n_w)
    call hi%final()
 
-   call sg%interp_intensity(log10(14660._RD), 2.80_RD, 0.5_RD, LOG(5100._RD), I, stat)
+   !call sg%interp_flux( 3.6179505639835581_RD, 1.0862246753338889_RD, w_0, F, stat)
+   call sg%interp_intensity([4.0_RD, 3.5_RD], 1.0_RD, w_0, F, stat)
    if (stat /= STAT_OK) then
       print *,'Stat is:',stat
       stop
    end if
 
-   do j = 1, n
-      print *,j,I(j)
+   do j = 1, n_w-1
+      print *,j,F(j)
    end do
 
 end program test_specgrid

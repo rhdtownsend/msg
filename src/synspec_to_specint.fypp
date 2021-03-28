@@ -41,8 +41,6 @@ program synspec_to_specint
    ! Variables
 
    character(:), allocatable :: synspec_filename
-   real(RD)                  :: Teff
-   real(RD)                  :: logg
    integer                   :: n_mu
    real(RD)                  :: mu_0
    real(RD)                  :: R
@@ -51,32 +49,33 @@ program synspec_to_specint
    character(:), allocatable :: limb_law
    character(:), allocatable :: specint_filename
 
-   type(limb_t)          :: li
-   real(RD), allocatable :: I(:,:)
-   real(RD), allocatable :: lambda(:)
-   integer               :: n_lambda
-   real(RD)              :: w_0
-   real(RD)              :: dw
-   integer               :: n_w
-   integer               :: j
-   real(RD), allocatable :: mu(:)
-   type(specint_t)       :: si
-   type(hdf5io_t)        :: hi
+   type(limb_t)              :: li
+   real(RD), allocatable     :: I(:,:)
+   real(RD), allocatable     :: lambda(:)
+   integer                   :: n_lambda
+   real(RD)                  :: w_0
+   real(RD)                  :: dw
+   integer                   :: n_w
+   integer                   :: j
+   real(RD), allocatable     :: mu(:)
+   type(specint_t)           :: si
+   type(hdf5io_t)            :: hi
+   type(hdf5io_t)            :: hi_la
+   character(:), allocatable :: label
+   real(RD)                  :: value
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 10,{Syntax: synspec_to_specint synspec_filename Teff logg n_mu mu_0 lambda_min lambda_max R limb_law specint_filename})
+   @:ASSERT(n_arg() >= 10,{Syntax: synspec_to_specint synspec_filename n_mu mu_0 lambda_min lambda_max R limb_law specint_filename [label value] [label value]...})
 
    call get_arg(1, synspec_filename)
-   call get_arg(2, Teff)
-   call get_arg(3, logg)
-   call get_arg(4, n_mu)
-   call get_arg(5, mu_0)
-   call get_arg(6, lambda_min)
-   call get_arg(7, lambda_max)
-   call get_arg(8, R)
-   call get_arg(9, limb_law)
-   call get_arg(10, specint_filename)
+   call get_arg(2, n_mu)
+   call get_arg(3, mu_0)
+   call get_arg(4, lambda_min)
+   call get_arg(5, lambda_max)
+   call get_arg(6, R)
+   call get_arg(7, limb_law)
+   call get_arg(8, specint_filename)
 
    ! Set up the limb-darkening law
 
@@ -100,14 +99,21 @@ program synspec_to_specint
 
    si = specint_t(I, mu, lambda, w_0, dw, n_w, li)
 
-   ! Write the specint_t (with additional metadata)
+   ! Write the specint_t (together with labels)
 
    hi = hdf5io_t(specint_filename, CREATE_FILE, comp_level=9)
 
    call write(hi, si)
 
-   call hi%write_attr('logT', log10(Teff))
-   call hi%write_attr('logg', logg)
+   hi_la = hdf5io_t(hi, 'labels')
+
+   do j = 9, n_arg(), 2
+      call get_arg(j, label)
+      call get_arg(j+1, value)
+      call hi_la%write_dset(label, value)
+   end do
+
+   call hi_la%final()
 
    call hi%final()
 

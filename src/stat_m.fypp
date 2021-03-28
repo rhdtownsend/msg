@@ -30,26 +30,22 @@ module stat_m
    ! Parameter definitions
 
    integer, parameter :: STAT_OK = 0
-   integer, parameter :: STAT_OUT_OF_BOUNDS_LOGT_LO = 1
-   integer, parameter :: STAT_OUT_OF_BOUNDS_LOGT_HI = 2
-   integer, parameter :: STAT_OUT_OF_BOUNDS_LOGG_LO = 3
-   integer, parameter :: STAT_OUT_OF_BOUNDS_LOGG_HI = 4
-   integer, parameter :: STAT_OUT_OF_BOUNDS_W_LO = 5
-   integer, parameter :: STAT_OUT_OF_BOUNDS_W_HI = 6
-   integer, parameter :: STAT_OUT_OF_BOUNDS_MU_LO = 7
-   integer, parameter :: STAT_OUT_OF_BOUNDS_MU_HI = 8
-   integer, parameter :: STAT_INVALID_L = 9
-   integer, parameter :: STAT_UNAVAILABLE_DATA = 10
+   integer, parameter :: STAT_OUT_OF_BOUNDS_AXIS_LO = 1
+   integer, parameter :: STAT_OUT_OF_BOUNDS_AXIS_HI = 2
+   integer, parameter :: STAT_OUT_OF_BOUNDS_W_LO = 3
+   integer, parameter :: STAT_OUT_OF_BOUNDS_W_HI = 4
+   integer, parameter :: STAT_OUT_OF_BOUNDS_MU_LO = 5
+   integer, parameter :: STAT_OUT_OF_BOUNDS_MU_HI = 6
+   integer, parameter :: STAT_INVALID_L = 7
+   integer, parameter :: STAT_UNAVAILABLE_DATA = 8
 
    ! Access specifiers
 
    private
 
    public :: STAT_OK
-   public :: STAT_OUT_OF_BOUNDS_LOGT_LO
-   public :: STAT_OUT_OF_BOUNDS_LOGT_HI
-   public :: STAT_OUT_OF_BOUNDS_LOGG_LO
-   public :: STAT_OUT_OF_BOUNDS_LOGG_HI
+   public :: STAT_OUT_OF_BOUNDS_AXIS_LO
+   public :: STAT_OUT_OF_BOUNDS_AXIS_HI
    public :: STAT_OUT_OF_BOUNDS_W_LO
    public :: STAT_OUT_OF_BOUNDS_W_HI
    public :: STAT_OUT_OF_BOUNDS_MU_LO
