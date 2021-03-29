@@ -110,6 +110,7 @@ contains
          if (n == 1) then
 
             labels = hi_la%dset_names()
+
             labels = labels(sort_indices(labels))
 
             rank = SIZE(labels)
@@ -137,6 +138,8 @@ contains
 
       ! Set up the axes
 
+      print *,'labels:',labels
+
       allocate(ax(rank))
       allocate(shape(rank))
 
@@ -145,6 +148,8 @@ contains
          ax(j) = axis_t(node_x(j,k), labels(j))
          shape(j) = SIZE(k)
       end do
+
+      print *,'shape:',shape
          
       ! Allocate arrays for data
 
@@ -178,7 +183,7 @@ contains
 
          end do
 
-         li = ng%li_from_vi(PACK(vi, shape > 1))
+         li = ng%li_from_vi(vi)
 
          call get_arg(n, node_filename)
 

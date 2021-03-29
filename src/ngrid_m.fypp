@@ -92,15 +92,15 @@ contains
       type(ngrid_t)            :: ng
 
       integer :: rank
-      integer :: i
+      integer :: j
       integer :: shape(SIZE(ax))
 
       ! Construct the ngrid_t
 
       rank = SIZE(ax)
 
-      do i = 1, rank
-         call ax(i)%inquire(n_x=shape(i))
+      do j = 1, rank
+         call ax(j)%inquire(n_x=shape(j))
       end do
 
       @:CHECK_BOUNDS(SIZE(mask), PRODUCT(shape))
@@ -185,7 +185,7 @@ contains
 
    !****
 
-   pure function li_from_vi(self, vi) result(li)
+   function li_from_vi(self, vi) result(li)
 
       class(ngrid_t), intent(in) :: self
       integer, intent(in)        :: vi(:)
@@ -202,8 +202,8 @@ contains
       li = vi(1)
 
       do j = 2, self%rank
-         p = p*self%shape(j)
-         li = li + vi(j)*p
+         p = p*self%shape(j-1)
+         li = li + (vi(j)-1)*p
       end do
 
       ! Finish
@@ -214,7 +214,7 @@ contains
 
    !****
 
-   pure function vi_from_li(self, li) result(vi)
+   function vi_from_li(self, li) result(vi)
 
       class(ngrid_t), intent(in) :: self
       integer, intent(in)        :: li
@@ -227,12 +227,12 @@ contains
       ! Calculate a vector index from a linear index
 
       p = self%n_li
-      r = li
+      r = li - 1
 
       do j = self%rank, 1, -1
          p = p/self%shape(j)
-         vi(j) = MOD(r, p)
-         r = r - vi(j)
+         vi(j) = r/p + 1
+         r = r - (vi(j)-1)*p
       end do
 
       ! Finish
@@ -243,7 +243,7 @@ contains
 
    !****
 
-   pure function vi_from_si_(self, vi_cl, si) result(vi)
+   function vi_from_si_(self, vi_cl, si) result(vi)
 
       class(ngrid_t), intent(in) :: self
       integer, intent(in)        :: vi_cl(:)
@@ -475,7 +475,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(vx), self%rank)
       @:CHECK_BOUNDS(SIZE(vi_cl), self%rank)
-      @:CHECK_BOUNDS(SIZE(mask), self%n)
+      @:CHECK_BOUNDS(SIZE(mask), self%n_li)
 
       @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
       @:CHECK_BOUNDS(SIZE(vdelta, 2), self%rank)
