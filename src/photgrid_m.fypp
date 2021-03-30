@@ -1,5 +1,5 @@
 ! Module  : photgrid_m
-! Purpose : define photgrid_t type, for representing spectral intensity
+! Purpose : define photgrid_t type, for representing photometric intensity
 !           grids
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
@@ -25,7 +25,7 @@ module photgrid_m
    use kinds_m
    use hdf5io_m
 
-   use grid_m
+   use ngrid_m
    use photint_m
    use stat_m
 
@@ -39,10 +39,10 @@ module photgrid_m
 
    type :: photgrid_t
       private
-      type(photint_t), allocatable :: pi(:,:)
-      type(grid_t)                 :: gr
-      integer                      :: n_logT
-      integer                      :: n_logg
+      type(photint_t), allocatable :: pi(:)
+      type(ngrid_t)                :: ng
+      integer, allocatable         :: shape(:)
+      integer                      :: rank
    contains
       private
       procedure, public :: inquire
@@ -65,7 +65,7 @@ module photgrid_m
       module procedure write_
    end interface write
 
-   ! Access photifiers
+   ! Access specifiers
 
    private
 
@@ -77,28 +77,31 @@ module photgrid_m
 
 contains
 
-   function photgrid_t_ (pi, gr) result (pg)
+   function photgrid_t_ (pi, ng) result (pg)
 
-      type(photint_t), intent(in) :: pi(:,:)
-      type(grid_t), intent(in)    :: gr
-      type(photgrid_t)            :: pg
+      class(photint_t), intent(in) :: pi(:)
+      type(ngrid_t), intent(in)    :: ng
+      type(photgrid_t)             :: pg
 
-      integer :: n_logT
-      integer :: n_logg
+      integer              :: rank
+      integer, allocatable :: shape(:)
 
       ! Construct the photgrid_t
 
-      call gr%inquire(n_logT=n_logT, n_logg=n_logg)
+      call ng%inquire(rank=rank)
 
-      @:CHECK_BOUNDS(SIZE(pi, 1), n_logT)
-      @:CHECK_BOUNDS(SIZE(pi, 2), n_logg)
- 
-      pg%pi = pi
+      allocate(shape(rank))
 
-      pg%gr = gr
+      call ng%inquire(shape=shape)
 
-      pg%n_logT = n_logT
-      pg%n_logg = n_logg
+      @:CHECK_BOUNDS(SIZE(pi), PRODUCT(shape))
+
+      allocate(pg%pi, SOURCE=pi)
+
+      pg%ng = ng
+
+      pg%shape = shape
+      pg%rank = rank
 
       ! Finish
 
@@ -108,16 +111,23 @@ contains
 
    !****
 
-   subroutine inquire(self, n_logT, n_logg)
+   subroutine inquire(self, shape, rank, labels)
 
-      class(photgrid_t), intent(in)  :: self
-      integer, intent(out), optional :: n_logT
-      integer, intent(out), optional :: n_logg
+      class(photgrid_t), intent(in)       :: self
+      integer, intent(out), optional      :: shape(:)
+      integer, intent(out), optional      :: rank
+      character(*), intent(out), optional :: labels(:)
+
+      if (PRESENT(shape)) then
+         @:CHECK_BOUNDS(SIZE(shape), self%rank)
+      end if
 
       ! Inquire metadata
 
-      if (PRESENT(n_logT)) n_logT = self%n_logT
-      if (PRESENT(n_logg)) n_logg = self%n_logg
+      if (PRESENT(shape)) shape = self%shape
+      if (PRESENT(rank)) rank = self%rank
+
+      call self%ng%inquire(labels=labels)
 
       ! Finish
 
@@ -130,33 +140,34 @@ contains
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
                                           ('D_moment', 'D', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, logT, logg, ${arg_var}$, ${var}$, stat, d_dlogT, d_dlogg)
+      subroutine interp_${name}$(self, vx, ${arg_var}$, ${var}$, stat, vderiv)
 
          class(photgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: logT
-         real(RD), intent(in)             :: logg
+         real(RD), intent(in)             :: vx(:)
          ${arg_type}$, intent(in)         :: ${arg_var}$
          real(RD), intent(out)            :: ${var}$
          integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: d_dlogT
-         logical, intent(in), optional    :: d_dlogg
+         logical, intent(in), optional    :: vderiv(:)
 
          ! Interpolate the ${name}$
 
-         call self%gr%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+         call self%ng%interp(proc_, vx, ${var}$, stat, vderiv)
 
          ! Finish
 
       contains
 
-         subroutine proc_(i, j, f, stat)
+         subroutine proc_(vi, f, stat)
 
-            integer, intent(in)            :: i
-            integer, intent(in)            :: j
+            integer, intent(in)            :: vi(:)
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            call self%pi(i,j)%interp_${name}$(${arg_var}$, f, stat)
+            integer :: li
+
+            li = self%ng%li_from_vi(vi)
+
+            call self%pi(li)%interp_${name}$(${arg_var}$, f, stat)
 
             return
 
@@ -170,32 +181,33 @@ contains
 
    #:for name, var in (('flux', 'F'), )
 
-      subroutine interp_${name}$(self, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+      subroutine interp_${name}$(self, vx, ${var}$, stat, vderiv)
 
          class(photgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: logT
-         real(RD), intent(in)             :: logg
+         real(RD), intent(in)             :: vx(:)
          real(RD), intent(out)            :: ${var}$
          integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: d_dlogT
-         logical, intent(in), optional    :: d_dlogg
+         logical, intent(in), optional    :: vderiv(:)
 
          ! Interpolate the ${name}$
 
-         call self%gr%interp(proc_, logT, logg, ${var}$, stat, d_dlogT, d_dlogg)
+         call self%ng%interp(proc_, vx, ${var}$, stat, vderiv)
 
          ! Finish
 
       contains
 
-         subroutine proc_(i, j, f, stat)
+         subroutine proc_(vi, f, stat)
 
-            integer, intent(in)            :: i
-            integer, intent(in)            :: j
+            integer, intent(in)            :: vi(:)
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            call self%pi(i,j)%interp_${name}$(f, stat)
+            integer :: li
+
+            li = self%ng%li_from_vi(vi)
+
+            call self%pi(li)%interp_${name}$(f, stat)
 
             return
 
@@ -212,30 +224,22 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(photgrid_t), intent(out) :: pg
 
-      character(TYPE_LEN)          :: file_type
-      integer                      :: n_logT
-      integer                      :: n_logg
-      type(hdf5io_t)               :: hi_gr
-      type(grid_t)                 :: gr
-      type(photint_t), allocatable :: pi(:,:)
-      
-      ! Read the photgrid_t
+      type(ngrid_t)                :: ng
+      integer, allocatable         :: shape(:)
+      integer                      :: n_pi
+      type(photint_t), allocatable :: pi(:)
 
-      call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'specgrid_t', invalid type)
-      
-      call hi%read_attr('n_logT', n_logT)
-      call hi%read_attr('n_logg', n_logg)
+      ! Read the photgrid_t with no rebinning
 
-      hi_gr = hdf5io_t(hi, 'gr')
-      call read(hi_gr, gr)
-      call hi_gr%final()
+      call read_base_(hi, ng, shape)
 
-      allocate(pi(n_logT,n_logg))
+      n_pi = PRODUCT(shape)
 
-      call gr%map(read_photint_)
+      allocate(pi(n_pi))
 
-      pg = photgrid_t(pi, gr)
+      call ng%map(read_photint_)
+
+      pg = photgrid_t(pi, ng)
 
       ! Finish
 
@@ -243,18 +247,20 @@ contains
 
    contains
 
-      subroutine read_photint_(i, j, stat)
+      subroutine read_photint_(vi, stat)
 
-         integer, intent(in)            :: i
-         integer, intent(in)            :: j
+         integer, intent(in)            :: vi(:)
          integer, intent(out), optional :: stat
 
+         integer        :: li
          type(hdf5io_t) :: hi_pi
 
-         ! Read the photint_t
+         ! Read the photint_t for the node
+
+         li = ng%li_from_vi(vi)
  
-         hi_pi = hdf5io_t(hi, pi_name_(i,j))
-         call read(hi_pi, pi(i,j))
+         hi_pi = hdf5io_t(hi, pi_name_(li))
+         call read(hi_pi, pi(li))
          call hi_pi%final()
 
          ! Finish
@@ -267,44 +273,74 @@ contains
 
    !****
 
+   subroutine read_base_(hi, ng, shape)
+
+      type(hdf5io_t), intent(inout)     :: hi
+      type(ngrid_t), intent(out)        :: ng
+      integer, allocatable, intent(out) :: shape(:)
+
+      character(TYPE_LEN) :: file_type
+      type(hdf5io_t)      :: hi_ng
+
+      ! Read base components of the photgrid_t
+
+      call hi%read_attr('TYPE', file_type)
+      @:ASSERT(file_type == 'photgrid_t', invalid type)
+
+      call hi%alloc_read_attr('shape', shape)
+
+      hi_ng = hdf5io_t(hi, 'gr')
+      call read(hi_ng, ng)
+      call hi_ng%final()
+
+      ! Finish
+
+      return
+
+   end subroutine read_base_
+
+   !****
+
    subroutine write_(hi, pg)
 
       type(hdf5io_t), intent(inout) :: hi
       type(photgrid_t), intent(in)  :: pg
 
-      type(hdf5io_t) :: hi_gr
+      type(hdf5io_t) :: hi_ng
 
       ! Write the photgrid_t
 
       call hi%write_attr('TYPE', 'photgrid_t')
 
-      call hi%write_attr('n_logT', pg%n_logT)
-      call hi%write_attr('n_logg', pg%n_logg)
+      call hi%write_attr('shape', pg%shape)
+      call hi%write_attr('rank', pg%rank)
 
-      hi_gr = hdf5io_t(hi, 'gr')
-      call write(hi_gr, pg%gr)
-      call hi_gr%final()
+      hi_ng = hdf5io_t(hi, 'ng')
+      call write(hi_ng, pg%ng)
+      call hi_ng%final()
 
-      call pg%gr%map(write_photint_)
+      call pg%ng%map(write_photint_)
 
       ! Finish
 
       return
 
    contains
- 
-      subroutine write_photint_(i, j, stat)
 
-         integer, intent(in)            :: i
-         integer, intent(in)            :: j
+      subroutine write_photint_(vi, stat)
+
+         integer, intent(in)            :: vi(:)
          integer, intent(out), optional :: stat
 
+         integer        :: li
          type(hdf5io_t) :: hi_pi
 
          ! Write the photint_t for the node
+
+         li = pg%ng%li_from_vi(vi)
  
-         hi_pi = hdf5io_t(hi, pi_name_(i,j))
-         call write(hi_pi, pg%pi(i,j))
+         hi_pi = hdf5io_t(hi, pi_name_(li))
+         call write(hi_pi, pg%pi(li))
          call hi_pi%final()
 
          ! Finish
@@ -317,14 +353,13 @@ contains
 
    !****
 
-   function pi_name_(i,j) result (name)
+   function pi_name_(li) result (name)
 
-      integer, intent(in) :: i
-      integer, intent(in) :: j
+      integer, intent(in) :: li
       character(256)      :: name
 
-      write(name, 100) i, j
-100   format('pi(',I0,',',I0,')')
+      write(name, 100) li
+100   format('pi(',I0,')')
 
    end function pi_name_
 
