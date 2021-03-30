@@ -122,20 +122,33 @@ contains
 
    !****
 
-   subroutine inquire(self, shape, rank)
+   subroutine inquire(self, shape, rank, labels)
 
-      class(ngrid_t), intent(in)     :: self
-      integer, intent(out), optional :: shape(:)
-      integer, intent(out), optional :: rank
+      class(ngrid_t), intent(in)          :: self
+      integer, intent(out), optional      :: shape(:)
+      integer, intent(out), optional      :: rank
+      character(*), intent(out), optional :: labels(:)
+
+      integer :: j
 
       if (PRESENT(shape)) then
          @:CHECK_BOUNDS(SIZE(shape), self%rank)
+      end if
+
+      if (PRESENT(labels)) then
+         @:CHECK_BOUNDS(SIZE(labels), self%rank)
       end if
 
       ! Inquire metadata
 
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
+
+      if (PRESENT(labels)) then
+         do j = 1, self%rank
+            call self%ax(j)%inquire(label=labels(j))
+         end do
+      end if
 
       ! Finish
 
@@ -291,7 +304,7 @@ contains
       real(RD), intent(in)           :: vx(:)
       real(RD), intent(out)          :: f_int
       integer, intent(out), optional :: stat
-      logical, intent(in), optional  :: vderiv
+      logical, intent(in), optional  :: vderiv(:)
 
       integer  :: vi_cl(self%rank)
       logical  :: mask(self%n_si)
@@ -348,7 +361,7 @@ contains
 
       ! Perform the interpolation
 
-      call interp_ncubic(self%rank, vu, C, vdelta, f_int)
+      call interp_ncubic(self%rank, vu, C, vdelta, f_int, vderiv)
 
       if (PRESENT(stat)) stat = STAT_OK
 
