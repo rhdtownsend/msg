@@ -154,6 +154,8 @@ contains
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
    end subroutine locate_
