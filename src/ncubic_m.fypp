@@ -222,7 +222,7 @@ contains
          real(RD) :: K_b(3)
 
          @:CHECK_BOUNDS(SIZE(delta), 2)
-         @:CHECK_BOUNDS(SIZE(dim_mask), 3)
+         @:CHECK_BOUNDS(SIZE(mask), 3)
 
          ! Set up a 3-point kernel for derivative evaluation
 
@@ -335,7 +335,9 @@ contains
 
       @:CHECK_BOUNDS(SIZE(vu), rank)
       @:CHECK_BOUNDS(SIZE(C), 4**rank)
-      @:CHECK_BOUNDS(SIZE(vdelta), rank)
+
+      @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
+      @:CHECK_BOUNDS(SIZE(vdelta, 2), rank)
 
       if (PRESENT(vderiv)) then
          @:CHECK_BOUNDS(SIZE(vderiv), rank)
