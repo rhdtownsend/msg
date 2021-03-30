@@ -272,12 +272,12 @@ contains
       ! Calculate a vector index from a stencil index
 
       p = self%n_si
-      r = si
+      r = si - 1
 
       do j = self%rank, 1, -1
          p = p/4
-         vi(j) = MOD(r, p)
-         r = r - vi(j)
+         vi(j) = r/p + 1
+         r = r - (vi(j)-1)*p
       end do
 
       vi = vi + vi_cl - 2
@@ -423,7 +423,7 @@ contains
 
       n_m = SIZE(f_int)
 
-      allocate(F(n_m,self%n_si))
+      allocate(F(self%n_si,n_m))
 
       do si = 1, self%n_si
 
@@ -488,7 +488,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(vx), self%rank)
       @:CHECK_BOUNDS(SIZE(vi_cl), self%rank)
-      @:CHECK_BOUNDS(SIZE(mask), self%n_li)
+      @:CHECK_BOUNDS(SIZE(mask), self%n_si)
 
       @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
       @:CHECK_BOUNDS(SIZE(vdelta, 2), self%rank)
