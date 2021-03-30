@@ -164,14 +164,15 @@ contains
 
    !****
 
-   subroutine inquire(self, w_0, dw, n_w, rank, shape)
+   subroutine inquire(self, w_0, dw, n_w, shape, rank, labels)
 
-      class(specgrid_t), intent(in)   :: self
-      real(RD), intent(out), optional :: w_0
-      real(RD), intent(out), optional :: dw
-      integer, intent(out), optional  :: n_w
-      integer, intent(out), optional  :: shape(:)
-      integer, intent(out), optional  :: rank
+      class(specgrid_t), intent(in)       :: self
+      real(RD), intent(out), optional     :: w_0
+      real(RD), intent(out), optional     :: dw
+      integer, intent(out), optional      :: n_w
+      integer, intent(out), optional      :: shape(:)
+      integer, intent(out), optional      :: rank
+      character(*), intent(out), optional :: labels(:)
 
       if (PRESENT(shape)) then
          @:CHECK_BOUNDS(SIZE(shape), self%rank)
@@ -185,6 +186,8 @@ contains
 
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
+
+      call self%ng%inquire(labels=labels)
 
       ! Finish
 
@@ -405,7 +408,7 @@ contains
 
       call hi%alloc_read_attr('shape', shape)
       
-      hi_ng = hdf5io_t(hi, 'gr')
+      hi_ng = hdf5io_t(hi, 'ng')
       call read(hi_ng, ng)
       call hi_ng%final()
 
