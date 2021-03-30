@@ -41,12 +41,15 @@ program specint_to_photint
    character(:), allocatable :: passband_filename
    character(:), allocatable :: photint_filename
 
-   type(hdf5io_t)   :: hi
-   type(specint_t)  :: si
-   real(RD)         :: logT
-   real(RD)         :: logg
-   type(passband_t) :: pb
-   type(photint_t)  :: pi
+   type(hdf5io_t)            :: hi
+   type(specint_t)           :: si
+   type(hdf5io_t)            :: hi_la
+   character(:), allocatable :: labels(:)
+   real(RD), allocatable     :: values(:)
+   integer                   :: n_labels
+   integer                   :: j
+   type(passband_t)          :: pb
+   type(photint_t)           :: pi
 
    ! Read command-line arguments
 
@@ -62,8 +65,17 @@ program specint_to_photint
 
    call read(hi, si)
 
-   call hi%read_attr('logT', logT)
-   call hi%read_attr('logg', logg)
+   hi_la = hdf5io_t(hi, 'labels')
+
+   labels = hi_la%dset_names()
+   n_labels = SIZE(labels)
+   allocate(values(n_labels))
+
+   do j = 1, n_labels
+      call hi_la%read_dset(labels(j), values(j))
+   end do
+
+   call hi_la%final()
 
    call hi%final()
    
@@ -79,15 +91,20 @@ program specint_to_photint
 
    pi = photint_t(si, pb, norm=.TRUE.)
 
-   ! Write the photint_t (with additional metadata)
+   ! Write the photint_t
 
    hi = hdf5io_t(photint_filename, CREATE_FILE)
 
    call write(hi, pi)
 
-   call hi%write_attr('logT', logT)
-   call hi%write_attr('logg', logg)
+   hi_la = hdf5io_t(hi, 'labels')
 
+   do j = 1, n_labels
+      call hi_la%write_dset(labels(j), values(j))
+   end do
+
+   call hi_la%final()
+   
    call hi%final()
 
    ! Finish
