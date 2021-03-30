@@ -25,6 +25,7 @@ module libcmsg_m
    use cinter_m
    use hdf5io_m
 
+   use axis_m
    use specgrid_m
    use photgrid_m
 
@@ -56,13 +57,14 @@ contains
 
    #:for prefix, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
 
-      function ${prefix}$_load(filename) result(ptr) bind(C)
+      function ${prefix}$_load(c_filename) result(ptr) bind(C)
 
-         character(C_CHAR) :: filename(*)
+         character(C_CHAR) :: c_filename(*)
          type(C_PTR)       :: ptr
 
-         type(${type}$), pointer :: gr
-         type(hdf5io_t)          :: hi
+         type(${type}$), pointer   :: gr
+         character(:), allocatable :: filename
+         type(hdf5io_t)            :: hi
 
          ! Allocate the grid
 
@@ -70,7 +72,9 @@ contains
 
          ! Load it from the file
 
-         hi = hdf5io_t(c_f_string(filename), OPEN_FILE_RO)
+         call c_f_string(c_filename, filename)
+
+         hi = hdf5io_t(filename, OPEN_FILE_RO)
          call read(hi, gr)
          call hi%final()
          
@@ -94,7 +98,7 @@ contains
 
          ! Set up the Fortran pointer
 
-         call c_f_pointer(ptr, gr)
+         call C_F_POINTER(ptr, gr)
 
          ! Deallocate the grid
 
@@ -110,15 +114,16 @@ contains
 
    !****
 
-   function specgrid_load_rebin(filename, w_0, dw, n_w) result(ptr) bind(C)
+   function specgrid_load_rebin(c_filename, w_0, dw, n_w) result(ptr) bind(C)
 
-      character(C_CHAR)     :: filename(*)
+      character(C_CHAR)     :: c_filename(*)
       real(C_DOUBLE), value :: w_0
       real(C_DOUBLE), value :: dw
       integer(C_INT), value :: n_w
       type(C_PTR)           :: ptr
 
       type(specgrid_t), pointer :: gr
+      character(:), allocatable :: filename
       type(hdf5io_t)            :: hi
 
       ! Allocate the grid
@@ -127,7 +132,9 @@ contains
 
       ! Load it from the file
 
-      hi = hdf5io_t(c_f_string(filename), OPEN_FILE_RO)
+      call c_f_string(c_filename, filename)
+
+      hi = hdf5io_t(filename, OPEN_FILE_RO)
       call read(hi, gr, w_0, dw, n_w)
       call hi%final()
          
@@ -143,24 +150,36 @@ contains
 
    !****
 
-   subroutine specgrid_inquire(ptr, w_0, dw, n_w, n_logT, n_logg) bind(C)
+   subroutine specgrid_inquire(ptr, w_0, dw, n_w, shape_ptr, rank) bind(C)
 
       type(C_PTR), value :: ptr
       real(C_DOUBLE)     :: w_0
       real(C_DOUBLE)     :: dw
       integer(C_INT)     :: n_w
-      integer(C_INT)     :: n_logT
-      integer(C_INT)     :: n_logg
+      type(C_PTR), value :: shape_ptr
+      integer(C_INT)     :: rank
 
       type(specgrid_t), pointer :: sg
+      integer                   :: rank_
+      integer, pointer          :: shape(:)
 
       ! Set up the Fortran pointer
 
-      call c_f_pointer(ptr, sg)
+      call C_F_POINTER(ptr, sg)
 
       ! Inquire metadata
 
-      call sg%inquire(w_0=w_0, dw=dw, n_w=n_w, n_logT=n_logT, n_logg=n_logg)
+      if (C_ASSOCIATED(shape_ptr)) then
+
+         call sg%inquire(rank=rank_)
+
+         call C_F_POINTER(shape_ptr, shape, [rank_])
+         
+         call sg%inquire(shape=shape)
+
+      endif
+
+      call sg%inquire(w_0=w_0, dw=dw, n_w=n_w, rank=rank)
 
       ! Finish
 
@@ -170,21 +189,33 @@ contains
 
    !****
 
-   subroutine photgrid_inquire(ptr, n_logT, n_logg) bind(C)
+   subroutine photgrid_inquire(ptr, shape_ptr, rank) bind(C)
 
       type(C_PTR), value :: ptr
-      integer(C_INT)     :: n_logT
-      integer(C_INT)     :: n_logg
-
+      type(C_PTR), value :: shape_ptr
+      integer(C_INT)     :: rank
+      
       type(photgrid_t), pointer :: pg
+      integer                   :: rank_
+      integer, pointer          :: shape(:)
 
       ! Set up the Fortran pointer
 
-      call c_f_pointer(ptr, pg)
+      call C_F_POINTER(ptr, pg)
 
       ! Inquire metadata
 
-      call pg%inquire(n_logT=n_logT, n_logg=n_logg)
+      if (C_ASSOCIATED(shape_ptr)) then
+
+         call pg%inquire(rank=rank_)
+
+         call C_F_POINTER(shape_ptr, shape, [rank_])
+         
+         call pg%inquire(shape=shape)
+
+      endif
+
+      call pg%inquire(rank=rank)
 
       ! Finish
 
@@ -194,31 +225,106 @@ contains
 
    !****
 
+   subroutine specgrid_get_label(ptr, i, label) bind(C)
+
+      type(C_PTR), value    :: ptr
+      integer(C_INT), value :: i
+      character(C_CHAR)     :: label(*)
+
+      type(specgrid_t), pointer         :: sg
+      integer                           :: rank
+      character(LABEL_LEN), allocatable :: labels(:)
+      integer                           :: j
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(ptr, sg)
+
+      ! Get the i'th label
+
+      call sg%inquire(rank=rank)
+
+      allocate(labels(rank))
+
+      call sg%inquire(labels=labels)
+
+      if (i >= 1 .AND. i <= SIZE(labels)) then
+         call f_c_string(labels(i), label)
+      else
+         label(1:1) = C_NULL_CHAR
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine specgrid_get_label
+
+   !****
+
+   subroutine photgrid_get_label(ptr, i, label) bind(C)
+
+      type(C_PTR), value    :: ptr
+      integer(C_INT), value :: i
+      character(C_CHAR)     :: label(*)
+
+      type(photgrid_t), pointer         :: pg
+      integer                           :: rank
+      character(LABEL_LEN), allocatable :: labels(:)
+      integer                           :: j
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(ptr, pg)
+
+      ! Get the i'th label
+
+      call pg%inquire(rank=rank)
+
+      allocate(labels(rank))
+
+      call pg%inquire(labels=labels)
+
+      if (i >= 1 .AND. i <= SIZE(labels)) then
+         call f_c_string(labels(i), label)
+      else
+         label(1:1) = C_NULL_CHAR
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine photgrid_get_label
+
+   !****
+
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(C_DOUBLE)'), &
                                           ('D_moment', 'D', 'l', 'integer(C_INT)'))
 
-      subroutine specgrid_interp_${name}$(ptr, logT, logg, ${arg_var}$, w_0, n_w, ${var}$, stat, d_dlogT, d_dlogg) bind(C)
+      subroutine specgrid_interp_${name}$(ptr, vx, ${arg_var}$, w_0, n_w, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value     :: ptr
-         real(C_DOUBLE), value  :: logT
-         real(C_DOUBLE), value  :: logg
-         ${arg_type}$, value    :: ${arg_var}$
-         real(C_DOUBLE), value  :: w_0
-         integer(C_INT), value  :: n_w
-         real(C_DOUBLE)         :: ${var}$(n_w)
-         integer(C_INT)         :: stat
-         logical(C_BOOL), value :: d_dlogT
-         logical(C_BOOL), value :: d_dlogg
+         type(C_PTR), value    :: ptr
+         real(C_DOUBLE)        :: vx(*)
+         ${arg_type}$, value   :: ${arg_var}$
+         real(C_DOUBLE), value :: w_0
+         integer(C_INT), value :: n_w
+         real(C_DOUBLE)        :: ${var}$(n_w)
+         integer(C_INT)        :: stat
+         logical(C_BOOL)       :: vderiv(*)
 
          type(specgrid_t), pointer :: sg
+         integer                   :: rank
 
          ! Set up the Fortran pointer
 
-         call c_f_pointer(ptr, sg)
+         call C_F_POINTER(ptr, sg)
 
          ! Interpolate the ${name}$
 
-         call sg%interp_${name}$(logT, logg, ${arg_var}$, w_0, ${var}$, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+         call sg%inquire(rank=rank)
+
+         call sg%interp_${name}$(vx(1:rank), ${arg_var}$, w_0, ${var}$, stat, LOGICAL(vderiv(1:rank)))
 
          ! Finish
 
@@ -228,26 +334,27 @@ contains
 
       !****
 
-      subroutine photgrid_interp_${name}$(ptr, logT, logg, ${arg_var}$, ${var}$, stat, d_dlogT, d_dlogg) bind(C)
+      subroutine photgrid_interp_${name}$(ptr, vx, ${arg_var}$, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value     :: ptr
-         real(C_DOUBLE), value  :: logT
-         real(C_DOUBLE), value  :: logg
-         ${arg_type}$, value    :: ${arg_var}$
-         real(C_DOUBLE)         :: ${var}$
-         integer(C_INT)         :: stat
-         logical(C_BOOL), value :: d_dlogT
-         logical(C_BOOL), value :: d_dlogg
+         type(C_PTR), value  :: ptr
+         real(C_DOUBLE)      :: vx(*)
+         ${arg_type}$, value :: ${arg_var}$
+         real(C_DOUBLE)      :: ${var}$
+         integer(C_INT)      :: stat
+         logical(C_BOOL)     :: vderiv(*)
 
          type(photgrid_t), pointer :: pg
+         integer                   :: rank
 
          ! Set up the Fortran pointer
 
-         call c_f_pointer(ptr, pg)
+         call C_F_POINTER(ptr, pg)
 
          ! Interpolate the ${name}$
 
-         call pg%interp_${name}$(logT, logg, ${arg_var}$, ${var}$, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+         call pg%inquire(rank=rank)
+
+         call pg%interp_${name}$(vx(1:rank), ${arg_var}$, ${var}$, stat, LOGICAL(vderiv(1:rank)))
 
          ! Finish
 
@@ -261,27 +368,28 @@ contains
       
    #:for name, var in (('flux', 'F'),)
 
-      subroutine specgrid_interp_${name}$(ptr, logT, logg, w_0, n_w, ${var}$, stat, d_dlogT, d_dlogg) bind(C)
+      subroutine specgrid_interp_${name}$(ptr, vx, w_0, n_w, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value     :: ptr
-         real(C_DOUBLE), value  :: logT
-         real(C_DOUBLE), value  :: logg
-         real(C_DOUBLE), value  :: w_0
-         integer(C_INT), value  :: n_w
-         real(C_DOUBLE)         :: ${var}$(n_w)
-         integer(C_INT)         :: stat
-         logical(C_BOOL), value :: d_dlogT
-         logical(C_BOOL), value :: d_dlogg
+         type(C_PTR), value    :: ptr
+         real(C_DOUBLE)        :: vx(*)
+         real(C_DOUBLE), value :: w_0
+         integer(C_INT), value :: n_w
+         real(C_DOUBLE)        :: ${var}$(n_w)
+         integer(C_INT)        :: stat
+         logical(C_BOOL)       :: vderiv(*)
 
          type(specgrid_t), pointer :: sg
+         integer                   :: rank
 
          ! Set up the Fortran pointer
 
-         call c_f_pointer(ptr, sg)
+         call C_F_POINTER(ptr, sg)
 
          ! Interpolate the ${name}$
 
-         call sg%interp_${name}$(logT, logg, w_0, ${var}$, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+         call sg%inquire(rank=rank)
+
+         call sg%interp_${name}$(vx(1:rank), w_0, ${var}$, stat, LOGICAL(vderiv(1:rank)))
 
          ! Finish
 
@@ -291,25 +399,26 @@ contains
 
       !****
 
-      subroutine photgrid_interp_${name}$(ptr, logT, logg, ${var}$, stat, d_dlogT, d_dlogg) bind(C)
+      subroutine photgrid_interp_${name}$(ptr, vx, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value     :: ptr
-         real(C_DOUBLE), value  :: logT
-         real(C_DOUBLE), value  :: logg
-         real(C_DOUBLE)         :: ${var}$
-         integer(C_INT)         :: stat
-         logical(C_BOOL), value :: d_dlogT
-         logical(C_BOOL), value :: d_dlogg
+         type(C_PTR), value :: ptr
+         real(C_DOUBLE)     :: vx(*)
+         real(C_DOUBLE)     :: ${var}$
+         integer(C_INT)     :: stat
+         logical(C_BOOL)    :: vderiv(*)
 
          type(photgrid_t), pointer :: pg
+         integer                   :: rank
 
          ! Set up the Fortran pointer
 
-         call c_f_pointer(ptr, pg)
+         call C_F_POINTER(ptr, pg)
 
          ! Interpolate the ${name}$
 
-         call pg%interp_${name}$(logT, logg, ${var}$, stat, LOGICAL(d_dlogT), LOGICAL(d_dlogg))
+         call pg%inquire(rank=rank)
+
+         call pg%interp_${name}$(vx(1:rank), ${var}$, stat, LOGICAL(vderiv(1:rank)))
 
          ! Finish
 
