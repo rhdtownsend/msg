@@ -6,7 +6,7 @@
 #TARGETS = test_math test_interp test_order test_fit
 #TARGETS = synspec_to_specint specint_to_photint make_passband make_specgrid test_specgrid make_photgrid test_photgrid libmsg.${SHARED_LIB_EXT} libcmsg.${SHARED_LIB_EXT}
 #TARGETS = test_ncubic
-TARGETS = synspec_to_specint make_specgrid test_specgrid
+TARGETS = synspec_to_specint make_specgrid test_specgrid make_photgrid specint_to_photint libcmsg.${SHARED_LIB_EXT}
 
 test_ncubic_SRCS = \
   test_ncubic.f90 \
@@ -110,8 +110,9 @@ test_specgrid_SRCS = \
 
 make_photgrid_SRCS = \
   make_photgrid.f90 \
-  grid_m.f90 \
-  grid_interp_m.f90 \
+  axis_m.f90 \
+  ngrid_m.f90 \
+  ncubic_m.f90 \
   photgrid_m.f90 \
   photint_m.f90 \
   stat_m.f90 \
@@ -171,8 +172,9 @@ libmsg.dylib_SRCS = ${libmsg.so_SRCS}
 
 libcmsg.so_SRCS = \
   libcmsg.f90 \
-  grid_m.f90 \
-  grid_interp_m.f90 \
+  axis_m.f90 \
+  ngrid_m.f90 \
+  ncubic_m.f90 \
   specint_m.f90 \
   dyn_specint_m.f90 \
   specgrid_m.f90 \
