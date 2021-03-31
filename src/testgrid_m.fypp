@@ -1,0 +1,159 @@
+! Module  : testgrid_m
+   ! Purpose : define testgrid_t type, for testing ngrid_m
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module testgrid_m
+
+   ! Uses
+   
+   use kinds_m
+
+   use ngrid_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type :: testgrid_t
+      private
+      real(RD), allocatable :: f(:)
+      type(ngrid_t)         :: ng
+      integer, allocatable  :: shape(:)
+      integer               :: rank
+   contains
+      private
+      procedure, public :: inquire
+      procedure, public :: interp_f
+   end type testgrid_t
+
+   ! Interfaces
+
+   interface testgrid_t
+      module procedure testgrid_t_
+   end interface testgrid_t
+
+   ! Access specifiers
+
+   private
+
+   public :: testgrid_t
+
+   ! Procedures
+
+contains
+
+   function testgrid_t_ (f, ng) result (tg)
+
+      real(RD), intent(in)      :: f(:)
+      type(ngrid_t), intent(in) :: ng
+      type(testgrid_t)          :: tg
+
+      integer              :: rank
+      integer, allocatable :: shape(:)
+
+      ! Construct the testgrid_t
+
+      call ng%inquire(rank=rank)
+
+      allocate(shape(rank))
+
+      call ng%inquire(shape=shape)
+
+      @:CHECK_BOUNDS(SIZE(f), PRODUCT(shape))
+
+      allocate(tg%f, SOURCE=f)
+
+      tg%ng = ng
+
+      tg%shape = shape
+      tg%rank = rank
+
+      ! Finish
+
+      return
+
+   end function testgrid_t_
+
+   !****
+
+   subroutine inquire(self, shape, rank, labels)
+
+      class(testgrid_t), intent(in)       :: self
+      integer, intent(out), optional      :: shape(:)
+      integer, intent(out), optional      :: rank
+      character(*), intent(out), optional :: labels(:)
+
+      if (PRESENT(shape)) then
+         @:CHECK_BOUNDS(SIZE(shape), self%rank)
+      end if
+
+      ! Inquire metadata
+
+      if (PRESENT(shape)) shape = self%shape
+      if (PRESENT(rank)) rank = self%rank
+
+      call self%ng%inquire(labels=labels)
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine interp_f(self, vx, f, stat, vderiv)
+
+      class(testgrid_t), intent(inout) :: self
+      real(RD), intent(in)             :: vx(:)
+      real(RD), intent(out)            :: f
+      integer, intent(out), optional   :: stat
+      logical, intent(in), optional    :: vderiv(:)
+
+      ! Interpolate f
+
+      call self%ng%interp(proc_, vx, f, stat, vderiv)
+
+      ! Finish
+
+   contains
+
+      subroutine proc_(vi, f, stat)
+
+         integer, intent(in)            :: vi(:)
+         real(RD), intent(out)          :: f
+         integer, intent(out), optional :: stat
+
+         integer :: li
+
+         li = self%ng%li_from_vi(vi)
+
+         f = self%f(li)
+
+         return
+
+      end subroutine proc_
+
+   end subroutine interp_f
+
+end module testgrid_m
