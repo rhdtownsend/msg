@@ -189,7 +189,7 @@ contains
 
                else
 
-                  dim_K = [0,0,1,0]
+                  dim_K = [0,1,0,0]
 
                endif
 
