@@ -248,6 +248,8 @@ contains
          r = r - (vi(j)-1)*p
       end do
 
+      @:ASSERT_DEBUG(li == self%li_from_vi(vi), indexing error)
+
       ! Finish
 
       return
@@ -281,6 +283,8 @@ contains
       end do
 
       vi = vi + vi_cl - 2
+
+      @:ASSERT_DEBUG(ALL(vi >= vi_cl-1 .AND. vi <= vi_cl+2), incorrect stencial index)
 
       ! Finish
 
