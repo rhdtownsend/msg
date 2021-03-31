@@ -72,7 +72,7 @@ program make_specgrid
 
 contains
 
-   subroutine read_specint_grid (n_node, si, ng)
+   subroutine read_specint_grid(n_node, si, ng)
 
       integer, intent(in)                       :: n_node
       type(specint_t), allocatable, intent(out) :: si(:)
