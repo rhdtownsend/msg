@@ -289,7 +289,7 @@ contains
 
       call hi%alloc_read_attr('shape', shape)
 
-      hi_ng = hdf5io_t(hi, 'gr')
+      hi_ng = hdf5io_t(hi, 'ng')
       call read(hi_ng, ng)
       call hi_ng%final()
 
