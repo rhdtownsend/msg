@@ -134,7 +134,7 @@ contains
 
       real(RD), allocatable :: c(:,:)
 
-      ! Construct the specint_t by fitting the supplied I(mu,k)
+      ! Construct the specint_t by fitting the supplied I(mu,w)
       ! intensity data
 
       call li%fit_intensity(I, mu, c)
