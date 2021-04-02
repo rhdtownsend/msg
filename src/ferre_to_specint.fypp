@@ -280,8 +280,6 @@ contains
 
       ! Write it
 
-      print *,'writing', specint_filename
-
       hi = hdf5io_t(specint_filename, CREATE_FILE)
 
       call write(hi, si)
@@ -289,7 +287,6 @@ contains
       hi_la = hdf5io_t(hi, 'labels')
 
       do j = 1, fh%n_of_dim
-         print *,'lab:',labels(j),values(j)
          call hi_la%write_dset(labels(j), values(j))
       end do
 
