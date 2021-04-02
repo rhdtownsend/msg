@@ -1,0 +1,126 @@
+.. _installation:
+
+************
+Installation
+************
+
+This chapter discusses MSG installation in detail. If you just want
+to get up and running, have a look at the :ref:`quick-start` chapter.
+
+Pre-Requisites
+==============
+
+To compile and run MSG, you'll need the following software
+components:
+
+* A modern (2003+) Fortran compiler
+* The :netlib:`BLAS <blas>` linear algebra library
+* The :netlib:`LAPACK <lapack>` linear algebra library
+* The :netlib:`LAPACK95 <lapack95>` Fortran 95
+  interface to LAPACK
+* The `HDF5 <https://www.hdfgroup.org/solutions/hdf5/>`__ data management library
+
+On Linux and MacOS platforms, these components are bundled together in
+the MESA Software Development Kit (SDK), which can be downloaded from
+the `MESA SDK <mesa-sdk_>`__ homepage. Using this SDK is strongly
+recommended.
+
+Building MSG
+============
+
+.. _install-download:
+
+Download
+--------
+
+Download the `MSG source code <github-tarball_>`__, and unpack it
+from the command line using the :command:`tar` utility:
+
+.. prompt:: bash
+   :substitutions:
+
+   tar xf msg-|release|.tar.gz
+
+Set the :envvar:`MSG_DIR` environment variable with the path to the
+newly created source directory; this can be achieved e.g. using the
+:command:`dirname` built-in command:
+
+.. prompt:: bash
+   :substitutions:
+
+   export MSG_DIR=$(dirname msg-|release|)
+
+.. _install-compile:
+
+Compile
+-------
+
+Compile MSG using the :command:`make` utility:
+
+.. prompt:: bash
+
+   make -j -C $MSG
+   
+(the :command:`-j` flags tells :command:`make` to use multiple cores, speeding up the build).
+
+Test
+----
+
+To check that MSG has compiled correctly and gives reasonable
+results, you can run the calculation test suite via the command
+
+.. prompt:: bash
+
+   make -C $MSG_DIR test
+
+The initial output from the tests should look something like this:
+
+.. literalinclude:: installation/make-test.out
+   :language: console
+   :lines: 1-10
+
+If things go awry, consult the :ref:`troubleshooting`
+chapter.
+
+Custom Builds
+=============
+
+Custom builds of MSG can be created by setting certain environment
+variables, and/or variables in the file
+:file:`{$MSG_DIR}/src/build/Makefile`, to the value ``yes``. The
+following variables are currently supported:
+
+DEBUG
+  Enable debugging mode (default ``no``)
+
+OMP
+  Enable OpenMP parallelization (default ``yes``)
+
+CRMATH
+  Use correctly rounded math functions (default ``yes``)
+
+FPE
+  Enable floating point exception checks (default ``yes``)
+
+TEST
+  Enable building of testing tools (default ``yes``)
+
+TOOLS
+  Enable building of development tools (default ``no``)
+
+If a variable is not set, then its default value is assumed.
+
+Git Access
+==========
+
+Sometimes, you'll want to try out new features in MSG that haven't
+yet made it into a formal release. In such cases, you can check out
+MSG directly from the :git:`rhdtownsend/msg` git repository on
+:git:`GitHub <>`:
+
+.. prompt:: bash
+
+   git clone https://github.com/rhdtownsend/msg.git
+
+However, a word of caution: MSG is under constant development, and
+features in the main (``master``) branch can change without warning.
