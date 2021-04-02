@@ -1,0 +1,306 @@
+! Module   : ferre_to_specint
+! Purpose  : create specint files from FERRE grid files
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program ferre_to_specint
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use system_m
+
+   use axis_m
+   use const_m
+   use limb_m
+   use specint_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Parameter defintiions
+
+   integer, parameter :: CHAR_LEN = 256
+
+   ! Derived-type definitions
+
+   type ferre_hdr_t
+      integer                          :: n_of_dim
+      integer, allocatable             :: n_p(:)
+      integer                          :: npix
+      real(RD), allocatable            :: llimits(:)
+      real(RD), allocatable            :: steps(:)
+      character(CHAR_LEN), allocatable :: label(:)
+      real(RD)                         :: wave(2)
+      integer                          :: logw
+      real(RD)                         :: resolution
+      integer                          :: transposed
+   end type ferre_hdr_t
+      
+   ! Variables
+
+   character(:), allocatable :: ferre_filename
+   character(:), allocatable :: ferre_filetype
+   character(:), allocatable :: specint_prefix
+
+   integer               :: unit
+   type(ferre_hdr_t)     :: fh
+   integer, allocatable  :: vi(:)
+   real(RD), allocatable :: data(:)
+   integer               :: l
+   integer               :: j
+   character(CHAR_LEN)   :: specint_filename
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 3, {Syntax: ferre_to_specint ferre_filename ferre_filetype specint_prefix})
+
+   call get_arg(1, ferre_filename)
+   call get_arg(2, ferre_filetype)
+   call get_arg(3, specint_prefix)
+
+   ! Open the FERRE file
+
+   open(NEWUNIT=unit, FILE=ferre_filename, STATUS='OLD')
+
+   ! Read the header
+
+   call read_ferre_hdr(unit, fh)
+
+   ! Loop through the data lines, processing them one-by-one
+
+   allocate(vi(fh%n_of_dim))
+   vi = 1
+
+   allocate(data(fh%npix))
+
+   line_loop: do l = 1, PRODUCT(fh%n_p)
+
+      ! Read line data
+
+      read(unit, *) data
+
+      ! Process the data
+
+      write(specint_filename, 100) specint_prefix, l, '.h5'
+100   format(A,I5.5,A)
+
+      select case (ferre_filetype)
+      case ('CAP18')
+         call process_data_cap18(fh, data, vi, specint_filename)
+      case default
+         @:ABORT(invalid ferre_filetype)
+      end select
+
+      ! Update vi
+
+      if (fh%transposed > 0) then
+
+         vi(1) = vi(1) + 1
+
+         do j = 1, fh%n_of_dim-1
+            if (vi(j) > fh%n_p(j)) then
+               vi(j) = 1
+               vi(j+1) = vi(j+1) + 1
+            end if
+         end do
+
+      else
+
+         vi(fh%n_of_dim) = vi(fh%n_of_dim) + 1
+
+         do j = fh%n_of_dim, 2, -1
+            if (vi(j) > fh%n_p(j)) then
+               vi(j) = 1
+               vi(j-1) = vi(j-1) + 1
+            end if
+         end do
+
+      end if
+
+   end do line_loop
+
+   ! Finish
+
+   close(unit)
+
+   ! Finish
+
+contains
+
+   subroutine read_ferre_hdr(unit, fh)
+
+      integer, intent(in)            :: unit
+      type(ferre_hdr_t), intent(out) :: fh
+
+      integer, parameter :: N_MAX = 15
+
+      integer             :: n_of_dim
+      integer             :: n_p(N_MAX)
+      integer             :: npix
+      real(RD)            :: llimits(N_MAX)
+      real(RD)            :: steps(N_MAX)
+      integer             :: multi
+      character(CHAR_LEN) :: synthfile_internal
+      character(CHAR_LEN) :: id
+      character(CHAR_LEN) :: date
+      character(CHAR_LEN) :: label(N_MAX)
+      integer             :: transposed
+      character(CHAR_LEN) :: comments1
+      character(CHAR_LEN) :: comments2
+      character(CHAR_LEN) :: comments3
+      character(CHAR_LEN) :: comments4
+      character(CHAR_LEN) :: comments5
+      character(CHAR_LEN) :: comments6
+      real(RD)            :: wave(2)
+      integer             :: logw
+      real(RD)            :: resolution
+      real(RD)            :: original_sampling
+      character(CHAR_LEN) :: file_data19
+      character(CHAR_LEN) :: file_data20
+
+      namelist /synth/ n_of_dim, n_p, npix, llimits, steps, &
+           synthfile_internal, id, date, label, transposed, &
+           comments1, comments2, comments3, comments4, comments5, comments6, &
+           wave, logw, resolution, original_sampling, &
+           file_data19, file_data20
+
+      ! Read data from the namelist
+
+      read(unit, NML=synth)
+
+      @:ASSERT(n_of_dim <= N_MAX, recompile with increased N_MAX)
+
+      fh%n_of_dim = n_of_dim
+      fh%n_p = n_p(1:n_of_dim)
+      fh%npix = npix
+      fh%llimits = llimits(1:n_of_dim)
+      fh%steps = steps(1:n_of_dim)
+
+      fh%label = label(1:n_of_dim)
+      fh%transposed = transposed
+
+      fh%wave = wave
+      fh%logw = logw
+      fh%resolution = resolution
+
+      ! Finish
+
+      return
+
+   end subroutine read_ferre_hdr
+
+   !****
+
+   subroutine process_data_cap18(fh, data, vi, specint_filename)
+
+      type(ferre_hdr_t), intent(in) :: fh
+      real(RD)                      :: data(:)
+      integer, intent(in)           :: vi(:)
+      character(*), intent(in)      :: specint_filename
+
+      character(LABEL_LEN), allocatable :: labels(:)
+      real(RD), allocatable             :: values(:)
+      integer                           :: j
+      integer                           :: k
+      real(RD), allocatable             :: lambda(:)
+      real(RD), allocatable             :: I(:,:)
+      type(limb_t)                      :: li
+      real(RD)                          :: w_0
+      real(RD)                          :: dw
+      type(specint_t)                   :: si
+      type(hdf5io_t)                    :: hi
+      type(hdf5io_t)                    :: hi_la
+
+      ! Perform some checks
+
+      @:ASSERT(fh%logw == 1, unexpected logw in header)
+
+      ! Set up output label/value pairs
+
+      allocate(labels(fh%n_of_dim))
+      allocate(values(fh%n_of_dim))
+
+      do j = 1, fh%n_of_dim
+
+         values(j) = fh%llimits(j) + (vi(j)-1)*fh%steps(j)
+
+         select case (fh%label(j))
+         case ('METALS')
+            labels(j) = 'Fe_H'
+         case ('TEFF')
+            labels(j) = 'logT'
+            values(j) = LOG10(values(j))
+         case ('LOGG')
+            labels(j) = 'logg'
+         case ('O Mg Si S Ca Ti')
+            labels(j) = 'alpha_Fe'
+         case ('LOG10VDOP')
+            labels(j) = 'logxi'
+         case default
+            @:ABORT(unexpected label in header)
+         end select
+
+      end do
+
+      ! Evaluate the intensity from H_lambda, converting into w=LOG(lambda) units
+
+      lambda = 10**(fh%wave(1) + [((k-1)*fh%wave(2),k=1,fh%npix)])
+
+      allocate(I(1,fh%npix))
+      
+      I(1,:) = 4._RD*data*lambda
+
+      ! Create the specint_t
+
+      li = limb_t('CONST')
+
+      w_0 = LOG(10._RD)*(fh%wave(1) - 0.5_RD*fh%wave(2))
+      dw = LOG(10._RD)*fh%wave(2)
+
+      si = specint_t(I, [1._RD], li, w_0, dw)
+
+      ! Write it
+
+      print *,'writing', specint_filename
+
+      hi = hdf5io_t(specint_filename, CREATE_FILE)
+
+      call write(hi, si)
+
+      hi_la = hdf5io_t(hi, 'labels')
+
+      do j = 1, fh%n_of_dim
+         print *,'lab:',labels(j),values(j)
+         call hi_la%write_dset(labels(j), values(j))
+      end do
+
+      call hi_la%final()
+      
+      call hi%final()
+
+      ! Finish
+
+      return
+
+   end subroutine process_data_cap18
+
+end program ferre_to_specint
