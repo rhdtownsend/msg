@@ -36,10 +36,11 @@ module limb_m
 
    ! Parameter definitions
 
-   integer, parameter :: LINEAR_LAW = 1
-   integer, parameter :: SQRT_LAW = 2
-   integer, parameter :: QUAD_LAW = 3
-   integer, parameter :: CLARET_LAW = 4
+   integer, parameter :: CONST_LAW = 1
+   integer, parameter :: LINEAR_LAW = 2
+   integer, parameter :: SQRT_LAW = 3
+   integer, parameter :: QUAD_LAW = 4
+   integer, parameter :: CLARET_LAW = 5
 
    integer, parameter :: STR_LEN = 16
 
@@ -110,6 +111,8 @@ contains
       ! Convert the law index into a string
 
       select case (law)
+      case (CONST_LAW)
+         str = 'CONST'
       case (LINEAR_LAW)
          str = 'LINEAR'
       case (SQRT_LAW)
@@ -139,6 +142,8 @@ contains
       ! Convert the string into a law index
 
       select case (str)
+      case ('CONST')
+         law = CONST_LAW
       case ('LINEAR')
          law = LINEAR_LAW
       case ('SQRT')
@@ -167,6 +172,8 @@ contains
       ! Return the number of basis functions
 
       select case (self%law)
+      case (CONST_LAW)
+         n_basis = 1
       case (LINEAR_LAW)
          n_basis = 2
       case (SQRT_LAW)
@@ -217,6 +224,10 @@ contains
       endif
 
       select case (self%law)
+      case (CONST_LAW)
+         b = [      &
+              1._RD &
+              ]
       case (LINEAR_LAW)
          b = [           &
               1._RD,     &
@@ -277,6 +288,10 @@ contains
       endif
 
       select case (self%law)
+      case (CONST_LAW)
+         b = [               &
+              D_ls(l, 1._RD) &
+              ]
       case (LINEAR_LAW)
          b = [                                &
               D_ls(l, 1._RD),                 &
@@ -327,6 +342,10 @@ contains
       ! Evaluate the flux basis functions
 
       select case (self%law)
+      case (CONST_LAW)
+         b = TWOPI*[      &
+              1._RD/2._RD &
+              ]
       case (LINEAR_LAW)
          b = TWOPI*[       &
               1._RD/2._RD, &
@@ -429,42 +448,55 @@ contains
       real(RD), intent(in)               :: mu(:)
       real(RD), allocatable, intent(out) :: c(:,:)
 
+      integer               :: n_b
       integer               :: n_mu
       integer               :: n_k
       integer               :: k
       real(RD)              :: y(SIZE(I, 1),SIZE(I, 2))
-      integer               :: n_b
-      real(RD), allocatable :: a(:,:)
+       real(RD), allocatable :: a(:,:)
       
       @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
 
       ! Fit the limb-darkening law to the intensity data
 
-      ! Set up the fit data
+      n_b = self%n_basis()
 
       n_mu = SIZE(I, 1)
       n_k = SIZE(I, 2)
 
-      y_loop : do k = 1, n_k
-         y(:,k) = 1._RD - I(:,k)/I(n_mu,k)
-      end do y_loop
+      if (n_b > 1) then
 
-      ! Fit the a-coefficients
+         ! Set up the fit data
 
-      n_b = self%n_basis()
+         y_loop : do k = 1, n_k
+            y(:,k) = 1._RD - I(:,k)/I(n_mu,k)
+         end do y_loop
 
-      allocate(a(n_b-1,n_k))
+         ! Fit the a-coefficients
 
-      call gls_fit(mu, y, f_, a)
+         allocate(a(n_b-1,n_k))
 
-      ! Tranform to c-coefficients
+         call gls_fit(mu, y, f_, a)
 
-      allocate(c(n_b,n_k))
+         ! Tranform to c-coefficients
 
-      c_loop : do k = 1, n_k
-         c(1,k) = I(n_mu,k)
-         c(2:,k) = -I(n_mu,k)*a(:,k)
-      end do c_loop
+         allocate(c(n_b,n_k))
+
+         c_loop : do k = 1, n_k
+            c(1,k) = I(n_mu,k)
+            c(2:,k) = -I(n_mu,k)*a(:,k)
+         end do c_loop
+
+      else
+
+         ! When n_b == 1, no fitting is (or can be) done; just copy
+         ! over the normal intensity
+
+         allocate(c(1,n_k))
+
+         c(1,:) = I(n_mu,:)
+
+      endif
 
       ! Finish
 
