@@ -18,23 +18,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+from libcpp cimport bool
 
 cdef extern from "libcmsg.h":
 
     void *specgrid_load(const char *filename)
     void *specgrid_load_rebin(const char *filename, double w_0, double dw, int n_w)
     void specgrid_unload(void *ptr)
-    void specgrid_inquire(void *ptr, double *w_0, double *n_w, int *dw, int *n_logT, int *n_logg)
-    void specgrid_interp_intensity(void *ptr, double logT, double logg, double mu, double w_0, int n_w, double I[], int *stat, bint d_dlogT, bint d_dlogg)
-    void specgrid_interp_d_moment(void *ptr, double logT, double logg, int l, double w_0, int n_w, double D[], int *stat, bint d_dlogT, bint d_dlogg)
-    void specgrid_interp_flux(void *ptr, double logT, double logg, double w_0, int n_w, double F[], int *stat, bint d_dlogT, bint d_dlogg)
+    void specgrid_inquire(void *ptr, double *w_0, double *n_w, int *dw, int *shape, int *rank)
+    void specgrid_get_label(void *ptr, int i, char *label)
+    void specgrid_interp_intensity(void *ptr, double *vx, double mu, double w_0, int n_w, double I[], int *stat, bool *vderiv)
+    void specgrid_interp_d_moment(void *ptr, double *vx, int l, double w_0, int n_w, double D[], int *stat, bool *vderiv)
+    void specgrid_interp_flux(void *ptr, double *vx, double w_0, int n_w, double F[], int *stat, bool *vderiv)
 
     void *photgrid_load(const char *filename)
     void photgrid_unload(void *ptr)
-    void photgrid_inquire(void *ptr, int *n_logT, int *n_logg)
-    void photgrid_interp_intensity(void *ptr, double logT, double logg, double mu, double *I, int *stat, bint d_dlogT, bint d_dlogg)
-    void photgrid_interp_d_moment(void *ptr, double logT, double logg, int l, double *D, int *stat, bint d_dlogT, bint d_dlogg)
-    void photgrid_interp_flux(void *ptr, double logT, double logg, double *F, int *stat, bint d_dlogT, bint d_dlogg)
+    void photgrid_inquire(void *ptr, int *shape, int *rank)
+    void photgrid_get_label(void *ptr, int i, char *label)
+    void photgrid_interp_intensity(void *ptr, double *vx, double mu, double *I, int *stat, bool *vderiv)
+    void photgrid_interp_d_moment(void *ptr, double *vx, int l, double *D, int *stat, bool *vderiv)
+    void photgrid_interp_flux(void *ptr, double *vx, double *F, int *stat, bool *vderiv)
 
 
 cdef class MsgError(Exception):
@@ -42,107 +45,224 @@ cdef class MsgError(Exception):
     def __init__(self, stat):
 
         if stat == 1:
-            self.message = 'out-of-bounds (lo) logT'
+            self.message = 'out-of-bounds (lo) axis'
         elif stat == 2:
-            self.message = 'out-of-bounds (hi) logT'
+            self.message = 'out-of-bounds (hi) axis'
         elif stat == 3:
-            self.message = 'out-of-bounds (lo) logg'
-        elif stat == 4:
-            self.message = 'out-of-bounds (hi) logg'
-        elif stat == 5:
             self.message = 'out-of-bounds (lo) w'
-        elif stat == 6:
+        elif stat == 4:
             self.message = 'out-of-bounds (hi) w'
-        elif stat == 7:
+        elif stat == 5:
             self.message = 'out-of-bounds (lo) mu'
-        elif stat == 8:
+        elif stat == 6:
             self.message = 'out-of-bounds (hi) mu'
-        elif stat == 9:
+        elif stat == 7:
             self.message = 'invalid l'
-        elif stat == 10:
+        elif stat == 8:
             self.message = 'unavailable data'
         else:
             self.message = f'error with unknown stat code: {stat}'
 
+            
     def __str__(self):
         return self.message
 
 
+    
 cdef class SpecGrid:
 
     cdef void *ptr
+    cdef int[:] shape
+    cdef int rank
+    cdef list labels
 
-    def __cinit__(self, const char *filename, rebin_pars=None):
-        cdef int n_logT, n_logg
+    def __cinit__(self, str filename, rebin_pars=None):
+
         if rebin_pars:
             w_0, dw, n_w = rebin_pars
-            self.ptr = specgrid_load_rebin(filename, w_0, dw, n_w)
+            self.ptr = specgrid_load_rebin(filename.encode('ascii'), w_0, dw, n_w)
         else:
-            self.ptr = specgrid_load(filename)
-        specgrid_inquire(self.ptr, NULL, NULL, NULL, &n_logT, &n_logg)
-        print('Dims:', n_logT, n_logg)
+            self.ptr = specgrid_load(filename.encode('ascii'))
 
+        specgrid_inquire(self.ptr, NULL, NULL, NULL, NULL, &self.rank)
+
+        self.shape = np.empty(self.rank, dtype=np.intc)
+        specgrid_inquire(self.ptr, NULL, NULL, NULL, &self.shape[0], NULL)
+
+        self.labels = []
+        cdef char label[17]
+        for j in range(self.rank):
+            specgrid_get_label(self.ptr, j+1, label)
+            self.labels += [label.decode('ascii')]
+
+        print('Shape:', np.asarray(self.shape))
+        print('Labels:', self.labels)
+
+        
     def __dealloc__(self):
+
         specgrid_unload(self.ptr)
 
-    def intensity(self, double logT, double logg, double mu, double w_0, int n_w, bint d_dlogT=False, bint d_dlogg=False):
+        
+    def intensity(self, dict dx, double mu, double w_0, int n_w, dict deriv=None):
+
+        cdef double[:] I
+        cdef int stat
+        cdef double[:] vx
+        cdef bool[:] vderiv
+
         I = np.empty(n_w, dtype=np.double)
-        cdef double[:] I_view = I
-        cdef int stat
-        specgrid_interp_intensity(self.ptr, logT, logg, mu, w_0, n_w, &I_view[0], &stat, d_dlogT, d_dlogg)
+        vx = np.array([dx[key] for key in self.labels])
+
+        print(vx[0])
+
+        if deriv is not None:
+            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
+        else:
+            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+
+        specgrid_interp_intensity(self.ptr, &vx[0], mu, w_0, n_w, &I[0], &stat, &vderiv[0])
+
         if stat != 0:
             raise MsgError(stat)
-        return I
 
-    def D_moment(self, double logT, double logg, int l, double w_0, int n_w, bint d_dlogT=False, bint d_dlogg=False):
+        return np.asarray(I)
+
+    
+    def D_moment(self, dict dx, int l, double w_0, int n_w, dict deriv=None):
+
+        cdef double[:] D
+        cdef int stat
+        cdef double[:] vx
+        cdef bool[:] vderiv
+
         D = np.empty(n_w, dtype=np.double)
-        cdef double[:] D_view = D
-        cdef int stat
-        specgrid_interp_d_moment(self.ptr, logT, logg, l, w_0, n_w, &D_view[0], &stat, d_dlogT, d_dlogg)
-        if stat != 0:
-            raise MsgError(stat)
-        return D
+        vx = np.array([dx[key] for key in self.labels])
 
-    def flux(self, double logT, double logg, double w_0, int n_w, bint d_dlogT=False, bint d_dlogg=False):
-        F = np.empty(n_w, dtype=np.double)
-        cdef double[:] F_view = F
-        cdef int stat
-        specgrid_interp_flux(self.ptr, logT, logg, w_0, n_w, &F_view[0], &stat, d_dlogT, d_dlogg)
+        if deriv is not None:
+            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
+        else:
+            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+
+        specgrid_interp_d_moment(self.ptr, &vx[0], l, w_0, n_w, &D[0], &stat, &vderiv[0])
+
         if stat != 0:
             raise MsgError(stat)
-        return F
+
+        return np.asarray(D)
+
+    
+    def flux(self, dict dx, double w_0, int n_w, dict deriv):
+
+        cdef double[:] F
+        cdef int stat
+        cdef double[:] vx
+        cdef bool[:] vderiv
+
+        F = np.empty(n_w, dtype=np.double)
+        vx = np.array([dx[key] for key in self.labels])
+
+        if deriv is not None:
+            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
+        else:
+            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+
+        specgrid_interp_flux(self.ptr, &vx[0], w_0, n_w, &F[0], &stat, &vderiv[0])
+        if stat != 0:
+            raise MsgError(stat)
+        
+        return np.asarray(F)
 
 
 cdef class PhotGrid:
 
     cdef void *ptr
+    cdef int[:] shape
+    cdef int rank
+    cdef list labels
 
-    def __cinit__(self, const char *filename):
-        self.ptr = photgrid_load(filename)
+    def __cinit__(self, str filename):
 
+        self.ptr = photgrid_load(filename.encode('ascii'))
+
+        photgrid_inquire(self.ptr, NULL, &self.rank)
+
+        self.shape = np.empty(self.rank, dtype=np.intc)
+        photgrid_inquire(self.ptr, &self.shape[0], NULL)
+
+        self.labels = []
+        cdef char label[17]
+        for j in range(self.rank):
+            photgrid_get_label(self.ptr, j+1, label)
+            self.labels += [label.decode('ascii')]
+
+        print('Shape:', np.asarray(self.shape))
+        print('Labels:', self.labels)
+
+        
     def __dealloc__(self):
+        
         photgrid_unload(self.ptr)
 
-    def intensity(self, double logT, double logg, double mu, bint d_dlogT=False, bint d_dlogg=False):
+        
+    def intensity(self, dict dx, double mu, dict deriv=None):
+
         cdef double I
         cdef int stat
-        photgrid_interp_intensity(self.ptr, logT, logg, mu, &I, &stat, d_dlogT, d_dlogg)
+        cdef double[:] vx
+        cdef bool[:] vderiv
+
+        vx = np.array([dx[key] for key in self.labels])
+
+        if deriv is not None:
+            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
+        else:
+            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+
+        photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  NULL)
         if stat != 0:
             raise MsgError(stat)
+
         return I
 
-    def D_moment(self, double logT, double logg, int l, bint d_dlogT=False, bint d_dlogg=False):
+    
+    def D_moment(self, dict dx, int l, dict deriv=None):
+
         cdef double D
         cdef int stat
-        photgrid_interp_d_moment(self.ptr, logT, logg, l, &D, &stat, d_dlogT, d_dlogg)
+        cdef double[:] vx
+        cdef bool[:] vderiv
+
+        vx = np.array([dx[key] for key in self.labels])
+
+        if deriv is not None:
+            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
+        else:
+            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+            
+        photgrid_interp_d_moment(self.ptr, &vx[0], l, &D, &stat, &vderiv[0])
         if stat != 0:
             raise MsgError(stat)
+
         return D
 
-    def flux(self, double logT, double logg, bint d_dlogT=False, bint d_dlogg=False):
+    
+    def flux(self, dict dx, dict deriv=None):
+
         cdef double F
         cdef int stat
-        photgrid_interp_flux(self.ptr, logT, logg, &F, &stat, d_dlogT, d_dlogg)
+        cdef double[:] vx
+        cdef bool[:] vderiv
+
+        vx = np.array([dx[key] for key in self.labels])
+
+        if deriv is not None:
+            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
+        else:
+            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+            
+        photgrid_interp_flux(self.ptr, &vx[0], &F, &stat, &vderiv[0])
         if stat != 0:
             raise MsgError(stat)
+
         return F
