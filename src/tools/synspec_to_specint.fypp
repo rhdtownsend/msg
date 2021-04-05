@@ -29,8 +29,7 @@ program synspec_to_specint
 
    use const_m
    use limb_m
-   use specint_m
-   use specint_factory_m
+   use libmsg_m
 
    use ISO_FORTRAN_ENV
 

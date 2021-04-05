@@ -23,9 +23,7 @@ module cubint_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use order_m
+   use libforum_m
 
    use f95_lapack
 

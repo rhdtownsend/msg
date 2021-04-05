@@ -21,9 +21,9 @@ module libmsg_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
+   use libforum_m
 
+   use limb_m
    use axis_m
    use ngrid_m
    use specint_m
@@ -51,6 +51,7 @@ module libmsg_m
 
    private
 
+   public :: limb_t
    public :: axis_t
    public :: ngrid_t
    public :: specint_t
@@ -58,7 +59,6 @@ module libmsg_m
    public :: specgrid_t
    public :: photgrid_t
    public :: STAT_OK
-   public :: LABEL_LEN
 
 contains
 

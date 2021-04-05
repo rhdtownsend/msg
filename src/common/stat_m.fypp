@@ -21,7 +21,7 @@ module stat_m
 
    ! Uses
 
-   use kinds_m
+   use libforum_m
 
    ! No implicit typing
 
