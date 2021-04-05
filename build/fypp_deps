@@ -4,23 +4,27 @@
 # information to STDOUT
 
 import re
+import os
 import sys
+sys.path.insert(0, '{:s}/bin'.format(os.environ.get('FYPP_ROOT')))
+
 import fypp
 
-class FyppDeps (fypp.Fypp):
+incfiles = {}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._preprocessor._parser.handle_include = self.handle_include_and_add_deps
-        self.incfiles = {}
+class BuilderDeps (fypp.Builder):
+
+    def __init__(self):
+        super().__init__()
+        self.handle_include = self.handle_include_and_add_deps
 
     def handle_include_and_add_deps (self, span, fname):
         if span is not None:
-            if fname in self.incfiles:
-                self.incfiles[fname] += [span]
+            if fname in incfiles:
+                incfiles[fname] += [span]
             else:
-                self.incfiles[fname] = [span]
-        self._preprocessor._builder.handle_include(span, fname)
+                incfiles[fname] = [span]
+        super().handle_include(span, fname)
 
 def run_fypp_deps():
 
@@ -31,9 +35,9 @@ def run_fypp_deps():
     outfile = leftover[1] if len(leftover) > 1 else '-'
 
     try:
-        tool = FyppDeps(opts)
+        tool = fypp.Fypp(opts, builder_factory=BuilderDeps)
         tool.process_file(infile, outfile)
-        print('{:s} : {:s} {:s}'.format(outfile, infile, ' '.join(tool.incfiles.keys())))
+        print('{:s} : {:s} {:s}'.format(outfile, infile, ' '.join(incfiles.keys())))
     except fypp.FyppStopRequest as exc:
         sys.stderr.write(fypp._formatted_exception(exc))
         sys.exit(fypp.USER_ERROR_EXIT_CODE)

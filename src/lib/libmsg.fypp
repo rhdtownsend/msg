@@ -24,9 +24,13 @@ module libmsg_m
    use kinds_m
    use hdf5io_m
 
+   use axis_m
+   use ngrid_m
+   use specint_m
+   use photint_m
    use specgrid_m
    use photgrid_m
-   use stat_m, MSG_STAT_OK => STAT_OK
+   use stat_m
 
    ! No implicit typing
 
@@ -35,20 +39,51 @@ module libmsg_m
    ! Interfaces
 
    interface specgrid_t
-      module procedure specgrid_t_file_
+      module procedure specgrid_t_nobin_
+      module procedure specgrid_t_rebin_
    end interface specgrid_t
+
+   interface photgrid_t
+      module procedure photgrid_t_
+   end interface photgrid_t
 
    ! Access specifiers
 
    private
 
+   public :: axis_t
+   public :: ngrid_t
+   public :: specint_t
+   public :: photint_t
    public :: specgrid_t
    public :: photgrid_t
-   public :: MSG_STAT_OK
+   public :: STAT_OK
+   public :: LABEL_LEN
 
 contains
 
-   function specgrid_t_file_(filename, w_0, dw, n_w) result(sg)
+   function specgrid_t_nobin_(filename) result(sg)
+
+      character(*), intent(in) :: filename
+      type(specgrid_t)         :: sg
+
+      type(hdf5io_t) :: hi
+
+      ! Read the specgrid_t
+
+      hi = hdf5io_t(filename, OPEN_FILE_RO)
+      call read(hi, sg)
+      call hi%final()
+
+      ! Finish
+
+      return
+
+   end function specgrid_t_nobin_
+
+   !****
+
+   function specgrid_t_rebin_(filename, w_0, dw, n_w) result(sg)
 
       character(*), intent(in) :: filename
       real(RD), intent(in)     :: w_0
@@ -68,6 +103,28 @@ contains
 
       return
 
-   end function specgrid_t_file_
+   end function specgrid_t_rebin_
+
+   !****
+
+   function photgrid_t_(filename) result(pg)
+
+      character(*), intent(in) :: filename
+      type(photgrid_t)         :: pg
+
+      type(hdf5io_t) :: hi
+
+      ! Read the photgrid_t
+
+      hi = hdf5io_t(filename, OPEN_FILE_RO)
+      call read(hi, pg)
+      call hi%final()
+
+      ! Finish
+
+      return
+
+   end function photgrid_t_
 
 end module libmsg_m
+
