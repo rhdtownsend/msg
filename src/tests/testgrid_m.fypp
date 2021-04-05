@@ -1,5 +1,5 @@
 ! Module  : testgrid_m
-   ! Purpose : define testgrid_t type, for testing ngrid_m
+! Purpose : define testgrid_t type, for testing ngrid_m
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -21,10 +21,9 @@ module testgrid_m
 
    ! Uses
    
-   use kinds_m
+   use libforum
 
-   use ngrid_m
-   use stat_m
+   use libmsg
 
    use ISO_FORTRAN_ENV
 

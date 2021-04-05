@@ -21,15 +21,9 @@ program synspec_to_specint
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use memory_m
-   use order_m
-   use system_m
+   use libforum
 
-   use const_m
-   use limb_m
-   use libmsg_m
+   use libmsg
 
    use ISO_FORTRAN_ENV
 

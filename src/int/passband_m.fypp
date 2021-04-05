@@ -21,9 +21,7 @@ module passband_m
 
    ! Uses
 
-   use kinds_m
-   use const_m
-   use hdf5io_m
+   use libforum
 
    use cubint_m
 

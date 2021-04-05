@@ -22,8 +22,7 @@ module photgrid_m
 
    ! Uses
    
-   use kinds_m
-   use hdf5io_m
+   use libforum
 
    use ngrid_m
    use photint_m

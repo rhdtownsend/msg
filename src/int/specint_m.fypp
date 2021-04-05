@@ -21,9 +21,7 @@ module specint_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use order_m
+   use libforum
 
    use limb_m
    use math_m

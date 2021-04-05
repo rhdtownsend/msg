@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-module libforum_m
+module libforum
 
    ! Uses
 
@@ -37,4 +37,4 @@ module libforum_m
 
    public
 
-end module libforum_m
+end module libforum

@@ -21,15 +21,9 @@ program make_photgrid
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use order_m
-   use system_m
+   use libforum, PI_ => PI
 
-   use axis_m
-   use ngrid_m
-   use photint_m
-   use photgrid_m
+   use libmsg
 
    use ISO_FORTRAN_ENV
 

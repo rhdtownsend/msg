@@ -21,8 +21,7 @@ module math_m
 
    ! Uses
 
-   use kinds_m
-   use order_m
+   use libforum
 
    use ISO_FORTRAN_ENV
 

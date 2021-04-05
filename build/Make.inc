@@ -55,7 +55,7 @@ endif
 ifeq (${DEBUG},yes)
   FFLAGS := ${FFLAGS} -fcheck=all -Wall -Wno-unused-dummy-argument -Wno-maybe-uninitialized -finline-limit=0 -ggdb
 else
-  FFLAGS:=${FFLAGS} -O2 -march=native
+  FFLAGS := ${FFLAGS} -O2 -march=native
 endif
 
 F9XFLAGS := ${F9XFLAGS} $(addprefix -I,${MODPATH}) ${FFLAGS} -std=f2008
@@ -76,10 +76,15 @@ else
   LIB_LDFLAGS = -shared
 endif
 
-# Additional variables
+# Targets-related variables
 
-TARGETS_D = $(addsuffix .d,${TARGETS})
-TARGETS_O = $(addsuffix .o,${TARGETS})
+LIB_TARGETS = $(filter lib%,${TARGETS})
+LIBX_TARGETS = $(addsuffix .${SHARED_LIB_EXT},${LIB_TARGETS})
+
+EXEC_TARGETS = $(filter-out lib%,${TARGETS})
+
+DEP_TARGETS = $(patsubst %,.%.d,${TARGETS})
+OBJ_TARGETS = $(addsuffix .o,${TARGETS})
 
 # Paths
 
@@ -88,19 +93,9 @@ vpath %.inc ${SUBDIRS}
 
 # Explicit rules
 
-all : ${TARGETS}
+.PHONY: all install lib-install exec-install clean almostclean
 
-${LIB_TARGETS} :
-	@echo LD_LIB $@
-	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} ${LIB_LDFLAGS}
-
-${EXEC_TARGETS} :
-	@echo LD $@
-	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS}
-
-${TARGETS_D} :
-	@echo DEPEND $@
-	@./makedepf90_deps $@ $^ > $@
+all : ${LIBX_TARGETS} ${EXEC_TARGETS}
 
 install : lib-install exec-install
 
@@ -116,15 +111,28 @@ exec-install : ${EXEC_TARGETS}
             cp $${t} ${BINDIR}; \
         done
 
-clean :
-	rm -f ${TARGETS} $(addsuffix .f90,${TARGETS}) *.o *.mod *.smod *.f90 *.d *.dpp
+clean : almostclean
+	rm -f .*.d .*.dpp
 
 almostclean :
-	rm -f ${TARGETS} $(addsuffix .f90,${TARGETS}) *.o *.mod *.smod *.f90
+	rm -f ${LIBX_TARGETS} ${EXEC_TARGETS} *.o *.mod *.smod *.f90
+
+${LIBX_TARGETS} :
+	@echo LD_LIB $@
+	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} ${LIB_LDFLAGS}
+
+${EXEC_TARGETS} :
+	@echo LD $@
+	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS}
+
+${DEP_TARGETS} : 
+	@echo DEPEND $(patsubst .%.d,%,$@) "->" $@
+	@makedepf90 $(addprefix -d ,${EXTRA_DEPS}) -m %m.mod $^ > $@
+	@echo "include \$$(patsubst %.f90,.%.dpp,$^)" >> $@
 
 # Static rules
 
-${TARGETS_O} : %.o : %.d
+${OBJ_TARGETS} : %.o : .%.d
 
 # Implicit rules
 
@@ -132,24 +140,33 @@ ${TARGETS_O} : %.o : %.d
 % : %.mod
 % : %.o
 
-%.f90 %.dpp : %.fypp
-	@./fypp_deps ${FYPPFLAGS} $< $*.f90 > $*.dpp
+%.f90 .%.dpp : %.fypp
+	@./fypp_deps ${FYPPFLAGS} $< $*.f90 > .$*.dpp
 
 %.o %.mod : %.f90
 	@echo FC $<
 	@${F9XC} ${F9XFLAGS} ${MODINCS} -c $<
 	@if [[ -e $*.mod ]]; then touch $*.mod; fi
 
+%.d : EXTRA_DEPS = $(addsuffix .mod,${$*_LIBS})
+
 .PRECIOUS : %.f90
+
+# Macros
+
+strip_d = $(patsubst %.d,%,$(1))
 
 # Dependency handling
 
 ifneq ($(MAKECMDGOALS),clean)
--include ${TARGETS_D}
+-include ${DEP_TARGETS}
 endif
 
 .SECONDEXPANSION:
 
-${TARGETS} : $$($$@_OBJS)
+${LIBX_TARGETS} : %.${SHARED_LIB_EXT} : $${$$*_OBJS} $$(addsuffix .${SHARED_LIB_EXT},$${$$*_LIBS})
 
-${TARGETS_D} : %.d : $$(subst .o,.f90,$$($$*_OBJS))
+${EXEC_TARGETS} : $$($$@_OBJS) $$(addsuffix .${SHARED_LIB_EXT},$${$$@_LIBS})
+
+${DEP_TARGETS} : .%.d : $$(subst .o,.f90,$${$$*_OBJS})
+

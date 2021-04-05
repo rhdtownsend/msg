@@ -21,9 +21,9 @@ module libcmsg_m
 
    ! Uses
 
-   use cinter_m
+   use libforum
 
-   use libmsg_m
+   use libmsg
 
    use ISO_FORTRAN_ENV
    use ISO_C_BINDING
@@ -60,6 +60,7 @@ contains
 
          type(${type}$), pointer   :: gr
          character(:), allocatable :: filename
+         type(hdf5io_t)            :: hi
 
          ! Allocate the grid
 
@@ -69,7 +70,9 @@ contains
 
          call c_f_string(c_filename, filename)
 
-         gr = ${type}$(filename)
+         hi = hdf5io_t(filename, OPEN_FILE_RO)
+         call read(hi, gr)
+         call hi%final()
 
          ! Set up the C pointer
 
@@ -117,6 +120,7 @@ contains
 
       type(specgrid_t), pointer :: gr
       character(:), allocatable :: filename
+      type(hdf5io_t)            :: hi
  
       ! Allocate the grid
 
@@ -126,7 +130,9 @@ contains
 
       call c_f_string(c_filename, filename)
 
-      gr = specgrid_t(filename, w_0, dw, n_w)
+      hi = hdf5io_t(filename, OPEN_FILE_RO)
+      call read(hi, gr, w_0, dw, n_w)
+      call hi%final()
 
       ! Set up the C pointer
 

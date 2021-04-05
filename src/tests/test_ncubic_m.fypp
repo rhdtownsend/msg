@@ -28,6 +28,7 @@ contains
       call test_bicubic_derivs_()
       call test_tricubic_derivs_()
       call test_interp_bicubic_()
+      call test_eval_kernel_mask_()
 
    end subroutine test
 
@@ -476,6 +477,235 @@ contains
       end subroutine interp_bicubic_assert_
 
    end subroutine test_interp_bicubic_
+
+   !****
+
+   subroutine test_eval_kernel_mask_()
+
+      real(RD) :: x(4)
+      real(RD) :: y(4)
+      real(RD) :: z(4)
+      real(RD) :: f_in(4,4,4)
+
+      print *,'eval_kernel_mask'
+
+      call eval_kernel_mask_arrange_()
+      call eval_kernel_mask_act_2_()
+      call eval_kernel_mask_act_3_()
+      call eval_kernel_mask_assert_()
+
+   contains
+
+      subroutine eval_kernel_mask_arrange_()
+
+         integer :: i
+         integer :: j
+         integer :: k
+
+         ! Set up data
+
+         x = [(i-1,i=1,4)]
+         y = [(j-1,j=1,4)]**2
+         z = [(k-1,k=1,4)]**3
+
+         do i = 1, 4
+            do j = 1, 4
+               do k = 1, 4
+                  call eval_trilinear_(x(i), y(j), z(k), f_in(i,j,k))
+               end do
+            end do
+         end do
+
+      end subroutine eval_kernel_mask_arrange_
+
+      !****
+
+      subroutine eval_kernel_mask_act_2_()
+
+         real(RD) :: f(16)
+         real(RD) :: K(16,16)
+         real(RD) :: delta(3,2)
+         logical  :: mask(16)
+         integer  :: stat
+
+         f = RESHAPE(f_in, [16])
+
+         delta(:,1) = x(2:4) - x(1:3)
+         delta(:,2) = y(2:4) - y(1:3)
+
+         print *,'go call'
+
+         mask = .TRUE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  all .TRUE.: ',stat, 0, COUNT(K /= 0._RD)
+
+         mask = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  all .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(1) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  corner (1,1) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(4) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  corner (4,1) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(13) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  corner (1,4) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(16) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  corner (4,4) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(6) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  corner (2,2) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(7) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  corner (3,2) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(10) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  corner (2,3) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(11) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  corner (3,3) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(1:4) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  row 1 .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(13:16) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  row 4 .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(1:13:4) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  col 1 .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(4:16:4) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  col 4 .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(1) = .FALSE.
+         mask(16) = .FALSE.
+         call eval_kernel_mask(2, delta, mask, K, stat)
+         print *, '  (1,1) and (4,4) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+      end subroutine eval_kernel_mask_act_2_
+
+      subroutine eval_kernel_mask_act_3_()
+
+         real(RD) :: f(64)
+         real(RD) :: K(64,64)
+         real(RD) :: delta(3,3)
+         logical  :: mask(64)
+         integer  :: stat
+
+         f = RESHAPE(f_in, [64])
+
+         delta(:,1) = x(2:4) - x(1:3)
+         delta(:,2) = y(2:4) - y(1:3)
+         delta(:,3) = z(2:4) - z(1:3)
+
+         mask = .TRUE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  all .TRUE.: ',stat, 0, COUNT(K /= 0._RD)
+
+         mask = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  all .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(1) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  corner (1,1,1) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(4) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  corner (4,1,1) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(13) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  corner (1,4,1) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(16) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  corner (4,4,1) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(49) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  corner (1,1,4) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(52) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  corner (4,1,4) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(61) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  corner (1,4,4) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(64) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  corner (4,4,4) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(18) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  face (2,1,2) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+         mask = .TRUE.
+         mask(18) = .FALSE.
+         mask(47) = .FALSE.
+         call eval_kernel_mask(3, delta, mask, K, stat)
+         print *, '  face (2,1,2) and (3,4,3) .FALSE.: ',stat, COUNT(K /= 0._RD)
+
+      end subroutine eval_kernel_mask_act_3_
+
+      !****
+
+      subroutine eval_kernel_mask_assert_()
+
+      end subroutine eval_kernel_mask_assert_
+
+   end subroutine test_eval_kernel_mask_
+
+   !****
+
+   subroutine eval_trilinear_(x, y, z, f)
+
+      real(RD), intent(in)  :: x
+      real(RD), intent(in)  :: y
+      real(RD), intent(in)  :: z
+      real(RD), intent(out) :: f
+
+      f = x*y*z + 2*x*y + 3*x*z + z
+
+   end subroutine eval_trilinear_
 
    !****
 

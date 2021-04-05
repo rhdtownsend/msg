@@ -21,11 +21,9 @@ program make_passband
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use system_m
+   use libforum
 
-   use passband_m
+   use libmsg
 
    use ISO_FORTRAN_ENV
 

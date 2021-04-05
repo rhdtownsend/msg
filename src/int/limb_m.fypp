@@ -21,10 +21,8 @@ module limb_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
+   use libforum
 
-   use const_m
    use fit_m
    use stat_m
 

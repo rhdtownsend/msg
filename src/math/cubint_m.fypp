@@ -23,7 +23,7 @@ module cubint_m
 
    ! Uses
 
-   use libforum_m
+   use libforum
 
    use f95_lapack
 

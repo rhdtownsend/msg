@@ -21,13 +21,9 @@ program specint_to_photint
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use system_m
+   use libforum, PI_ => PI
 
-   use specint_m
-   use passband_m
-   use photint_m
+   use libmsg
 
    use ISO_FORTRAN_ENV
 
