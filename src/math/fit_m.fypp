@@ -21,7 +21,7 @@ module fit_m
 
   ! Uses
 
-  use libforum
+  use libforum_m
 
   use f95_lapack
 

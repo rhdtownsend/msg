@@ -17,11 +17,11 @@
 
 #:include 'forum.inc'
 
-module libmsg
+module libmsg_m
 
    ! Uses
 
-   use libforum
+   use libforum_m
 
    use limb_m
    use axis_m
@@ -55,5 +55,5 @@ module libmsg
    public :: read
    public :: write
 
-end module libmsg
+end module libmsg_m
 

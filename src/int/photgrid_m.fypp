@@ -22,7 +22,7 @@ module photgrid_m
 
    ! Uses
    
-   use libforum
+   use libforum_m
 
    use ngrid_m
    use photint_m

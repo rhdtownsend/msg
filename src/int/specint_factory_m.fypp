@@ -21,7 +21,7 @@ module specint_factory_m
 
   ! Uses
   
-   use libforum
+   use libforum_m
 
    use math_m
    use limb_m
