@@ -79,7 +79,10 @@ endif
 # Targets-related variables
 
 LIB_TARGETS = $(filter lib%,${TARGETS})
-LIBX_TARGETS = $(addsuffix .${SHARED_LIB_EXT},${LIB_TARGETS})
+LIB_EXT_TARGETS = $(addsuffix .${SHARED_LIB_EXT},${LIB_TARGETS})
+
+INC_TARGETS = $(addsuffix .h,$(filter libc%,${LIB_TARGETS}))
+MOD_TARGETS = $(addsuffix _m.mod,${LIB_TARGETS})
 
 EXEC_TARGETS = $(filter-out lib%,${TARGETS})
 
@@ -90,19 +93,32 @@ OBJ_TARGETS = $(addsuffix .o,${TARGETS})
 
 vpath %.fypp ${SUBDIRS}
 vpath %.inc ${SUBDIRS}
+vpath %.h ${SUBDIRS}
 
 # Explicit rules
 
-.PHONY: all install lib-install exec-install clean almostclean
+.PHONY: all install lib-install  mod-install exec-install clean almostclean
 
-all : ${LIBX_TARGETS} ${EXEC_TARGETS}
+all : ${LIB_EXT_TARGETS} ${EXEC_TARGETS}
 
-install : lib-install exec-install
+install : lib-install inc-install mod-install exec-install
 
-lib-install : ${LIB_TARGETS}
+lib-install : ${LIB_EXT_TARGETS}
 	@for t in $^; do \
             echo CP $${t} ${LIBDIR}; \
             cp $${t} ${LIBDIR}; \
+        done
+
+mod-install : ${MOD_TARGETS}
+	@for t in $^; do \
+            echo CP $${t} ${INCDIR}; \
+            cp $${t} ${INCDIR}; \
+        done
+
+inc-install : ${INC_TARGETS}
+	@for t in $^; do \
+            echo CP $${t} ${INCDIR}; \
+            cp $${t} ${INCDIR}; \
         done
 
 exec-install : ${EXEC_TARGETS}
@@ -115,9 +131,9 @@ clean : almostclean
 	rm -f .*.d .*.dpp
 
 almostclean :
-	rm -f ${LIBX_TARGETS} ${EXEC_TARGETS} *.o *.mod *.smod *.f90
+	rm -f ${LIB_EXT_TARGETS} ${EXEC_TARGETS} *.o *.mod *.smod *.f90
 
-${LIBX_TARGETS} :
+${LIB_EXT_TARGETS} :
 	@echo LD_LIB $@
 	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} ${LIB_LDFLAGS}
 
@@ -129,10 +145,6 @@ ${DEP_TARGETS} :
 	@echo DEPEND $(patsubst .%.d,%,$@) "->" $@
 	@makedepf90 $(addprefix -d ,${EXTRA_DEPS}) -m %m.mod $^ > $@
 	@echo "include \$$(patsubst %.f90,.%.dpp,$^)" >> $@
-
-# Static rules
-
-${OBJ_TARGETS} : %.o : .%.d
 
 # Implicit rules
 
@@ -148,7 +160,7 @@ ${OBJ_TARGETS} : %.o : .%.d
 	@${F9XC} ${F9XFLAGS} ${MODINCS} -c $<
 	@if [[ -e $*.mod ]]; then touch $*.mod; fi
 
-%.d : EXTRA_DEPS = $(addsuffix .mod,${$*_LIBS})
+%.d : EXTRA_DEPS = $(addsuffix _m.mod,${$*_LIBS})
 
 .PRECIOUS : %.f90
 
@@ -164,7 +176,7 @@ endif
 
 .SECONDEXPANSION:
 
-${LIBX_TARGETS} : %.${SHARED_LIB_EXT} : $${$$*_OBJS} $$(addsuffix .${SHARED_LIB_EXT},$${$$*_LIBS})
+${LIB_EXT_TARGETS} : %.${SHARED_LIB_EXT} : $${$$*_OBJS} $$(addsuffix .${SHARED_LIB_EXT},$${$$*_LIBS})
 
 ${EXEC_TARGETS} : $$($$@_OBJS) $$(addsuffix .${SHARED_LIB_EXT},$${$$@_LIBS})
 
