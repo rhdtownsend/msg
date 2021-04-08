@@ -1,8 +1,8 @@
 program test_specgrid
 
-   use libforum_m
+   use forum_m
 
-   use libmsg_m
+   use msg_m
 
    implicit none
 

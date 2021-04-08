@@ -21,9 +21,9 @@ program make_photgrid
 
    ! Uses
 
-   use libforum_m, PI_ => PI
+   use forum_m, PI_ => PI
 
-   use libmsg_m
+   use msg_m
 
    use ISO_FORTRAN_ENV
 

@@ -21,7 +21,7 @@ module passband_m
 
    ! Uses
 
-   use libforum_m
+   use forum_m
 
    use cubint_m
 

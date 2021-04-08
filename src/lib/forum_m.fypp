@@ -1,4 +1,4 @@
-! Module  : libforum_m
+! Module  : forum_m
 ! Purpose : library package for ForUM modules
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-module libforum_m
+module forum_m
 
    ! Uses
 
@@ -37,4 +37,4 @@ module libforum_m
 
    public
 
-end module libforum_m
+end module forum_m

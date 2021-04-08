@@ -1,4 +1,4 @@
-! Module  : libcmsg_m
+! Module  : cmsg_m
 ! Purpose : C interfaces for MSG modules
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
@@ -17,13 +17,13 @@
 
 #:include 'forum.inc'
 
-module libcmsg_m
+module cmsg_m
 
    ! Uses
 
-   use libforum_m
+   use forum_m
 
-   use libmsg_m
+   use msg_m
 
    use ISO_FORTRAN_ENV
    use ISO_C_BINDING
@@ -424,4 +424,4 @@ contains
 
    #:endfor
 
-end module libcmsg_m
+end module cmsg_m

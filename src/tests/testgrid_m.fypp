@@ -21,9 +21,9 @@ module testgrid_m
 
    ! Uses
    
-   use libforum_m
+   use forum_m
 
-   use libmsg_m
+   use msg_m
 
    use ISO_FORTRAN_ENV
 

@@ -21,7 +21,7 @@ module specint_m
 
    ! Uses
 
-   use libforum_m
+   use forum_m
 
    use limb_m
    use math_m
