@@ -450,6 +450,7 @@ contains
 
       ! Now loop through output points
 
+      !$OMP PARALLEL DO PRIVATE(C)
       do m = 1, n_m
 
          ! Evaluate the C vector
