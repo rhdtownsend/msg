@@ -1,5 +1,5 @@
-// Header  : libcmsg
-// Purpose : C headers for libcmsg
+// Header  : cmsg
+// Purpose : C headers for cmsg
 //
 // Copyright 2021 Rich Townsend & The MSG Team
 //
