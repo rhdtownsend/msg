@@ -20,7 +20,7 @@
 import numpy as np
 from libcpp cimport bool
 
-cdef extern from "libcmsg.h":
+cdef extern from "cmsg.h":
 
     void *specgrid_load(const char *filename)
     void *specgrid_load_rebin(const char *filename, double w_0, double dw, int n_w)
