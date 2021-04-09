@@ -248,6 +248,8 @@ contains
          call locate(self%w_0, self%dw, w_0, k_a)
          k_b = k_a + n_w
 
+         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
+         
          if (k_a < 1) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_W_LO
@@ -257,7 +259,7 @@ contains
             endif
          endif
 
-         if (k_b > self%n_w) then
+         if (k_b > self%n_w+1 .OR. (k_b == self%n_w+1 .AND. u /= 0._RD)) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_W_HI
                return
@@ -266,8 +268,6 @@ contains
             endif
          endif
 
-         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
-         
          ! Set up the basis functions
 
          call self%li%eval_${name}$_basis(${arg_var}$, b, stat)
@@ -278,7 +278,13 @@ contains
          ! Interpolate ${name}$ (done with two matmul's to avoid
          ! creating a temporary)
 
-         ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
+         if (u == 0._RD) then
+            ${var}$ = MATMUL(b, self%c(:,k_a:k_b-1))
+         else if (u == 1._RD) then
+            ${var}$ = MATMUL(b, self%c(:,k_a+1:k_b))
+         else
+            ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
+         endif
 
          if (PRESENT(stat)) stat = STAT_OK
 
@@ -314,6 +320,8 @@ contains
          call locate(self%w_0, self%dw, w_0, k_a)
          k_b = k_a + n_w
 
+         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
+         
          if (k_a < 1) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_W_LO
@@ -323,7 +331,8 @@ contains
             endif
          endif
 
-         if (k_b > self%n_w) then
+         if (k_b > self%n_w+1 .OR. (k_b == self%n_w+1 .AND. u /= 0._RD)) then
+            print *,'k_b, n_w, u', k_b, self%n_w, u
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_W_HI
                return
@@ -332,8 +341,6 @@ contains
             endif
          endif
 
-         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
-         
          ! Set up the basis functions
 
          call self%li%eval_${name}$_basis(b, stat)
@@ -344,7 +351,13 @@ contains
          ! Interpolate ${name}$ (done with two matmul's to avoid
          ! creating a temporary)
 
-         ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
+         if (u == 0._RD) then
+            ${var}$ = MATMUL(b, self%c(:,k_a:k_b-1))
+         else if (u == 1._RD) then
+            ${var}$ = MATMUL(b, self%c(:,k_a+1:k_b))
+         else
+            ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
+         endif
 
          if (PRESENT(stat)) stat = STAT_OK
 

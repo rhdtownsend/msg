@@ -104,15 +104,19 @@ contains
 
    !****
 
-   subroutine inquire(self, n_x, label)
+   subroutine inquire(self, n_x, minimum, maximum, label)
 
       class(axis_t), intent(in)           :: self
       integer, intent(out), optional      :: n_x
+      real(RD), intent(out), optional     :: minimum
+      real(RD), intent(out), optional     :: maximum
       character(*), intent(out), optional :: label
 
       ! Inquire metadata
 
       if (PRESENT(n_x)) n_x = self%n_x
+      if (PRESENT(minimum)) minimum = self%x(1)
+      if (PRESENT(maximum)) maximum = self%x(self%n_x)
       if (PRESENT(label)) label = self%label
 
       ! Finish
