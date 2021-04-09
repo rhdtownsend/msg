@@ -1,6 +1,10 @@
 # File     : Makefile
 # Purpose  : makefile for build subdir
 
+# Defaults
+
+PYTHON ?= yes
+
 # Targets
 
 LIB_TARGETS = libforum libmsg libcmsg
