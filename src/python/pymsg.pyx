@@ -25,16 +25,16 @@ cdef extern from "cmsg.h":
     void *specgrid_load(const char *filename)
     void *specgrid_load_rebin(const char *filename, double w_0, double dw, int n_w)
     void specgrid_unload(void *ptr)
-    void specgrid_inquire(void *ptr, double *w_0, double *n_w, int *dw, int *shape, int *rank)
-    void specgrid_get_label(void *ptr, int i, char *label)
+    void specgrid_inquire(void *ptr, double *w_0, double *n_w, int *dw, int shape[], int *rank, double axis_min[], double axis_max[])
+    void specgrid_get_axis_label(void *ptr, int i, char *axis_label)
     void specgrid_interp_intensity(void *ptr, double *vx, double mu, double w_0, int n_w, double I[], int *stat, bool *vderiv)
     void specgrid_interp_d_moment(void *ptr, double *vx, int l, double w_0, int n_w, double D[], int *stat, bool *vderiv)
     void specgrid_interp_flux(void *ptr, double *vx, double w_0, int n_w, double F[], int *stat, bool *vderiv)
 
     void *photgrid_load(const char *filename)
     void photgrid_unload(void *ptr)
-    void photgrid_inquire(void *ptr, int *shape, int *rank)
-    void photgrid_get_label(void *ptr, int i, char *label)
+    void photgrid_inquire(void *ptr, int shape[], int *rank, double axis_min[], double axis_max[])
+    void photgrid_get_axis_label(void *ptr, int i, char *axis_label)
     void photgrid_interp_intensity(void *ptr, double *vx, double mu, double *I, int *stat, bool *vderiv)
     void photgrid_interp_d_moment(void *ptr, double *vx, int l, double *D, int *stat, bool *vderiv)
     void photgrid_interp_flux(void *ptr, double *vx, double *F, int *stat, bool *vderiv)
@@ -72,9 +72,14 @@ cdef class MsgError(Exception):
 cdef class SpecGrid:
 
     cdef void *ptr
-    cdef int[:] shape
-    cdef int rank
-    cdef list labels
+    cdef readonly double w_0
+    cdef readonly double dw
+    cdef readonly int n_w
+    cdef readonly int[:] shape
+    cdef readonly int rank
+    cdef readonly double[:] axis_minima
+    cdef readonly double[:] axis_maxima
+    cdef readonly list axis_labels
 
     def __cinit__(self, str filename, rebin_pars=None):
 
@@ -84,25 +89,37 @@ cdef class SpecGrid:
         else:
             self.ptr = specgrid_load(filename.encode('ascii'))
 
-        specgrid_inquire(self.ptr, NULL, NULL, NULL, NULL, &self.rank)
+        specgrid_inquire(self.ptr, &self.w_0, &self.dw, &self.n_w, NULL, &self.rank, NULL, NULL)
 
         self.shape = np.empty(self.rank, dtype=np.intc)
-        specgrid_inquire(self.ptr, NULL, NULL, NULL, &self.shape[0], NULL)
+        self.axis_minima = np.empty(self.rank, dtype=np.double)
+        self.axis_maxima = np.empty(self.rank, dtype=np.double)
+        
+        specgrid_inquire(self.ptr, NULL, NULL, NULL, &self.shape[0], NULL, &self.axis_minima[0], &self.axis_maxima[0])
 
-        self.labels = []
-        cdef char label[17]
+        self.axis_labels = []
+        cdef char axis_label[17]
         for j in range(self.rank):
-            specgrid_get_label(self.ptr, j+1, label)
-            self.labels += [label.decode('ascii')]
-
-        print('Shape:', np.asarray(self.shape))
-        print('Labels:', self.labels)
+            specgrid_get_axis_label(self.ptr, j+1, axis_label)
+            self.axis_labels += [axis_label.decode('ascii')]
 
         
     def __dealloc__(self):
 
         specgrid_unload(self.ptr)
 
+
+    def _vector_args(self, dx, deriv):
+
+        vx = np.array([dx[key] for key in self.axis_labels])
+
+        if deriv is not None:
+            vderiv = np.array([key in deriv for key in self.axis_labels], dtype=np.uint8)
+        else:
+            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+
+        return vx, vderiv
+    
         
     def intensity(self, dict dx, double mu, double w_0, int n_w, dict deriv=None):
 
@@ -112,14 +129,8 @@ cdef class SpecGrid:
         cdef bool[:] vderiv
 
         I = np.empty(n_w, dtype=np.double)
-        vx = np.array([dx[key] for key in self.labels])
 
-        print(vx[0])
-
-        if deriv is not None:
-            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
-        else:
-            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+        vx, vderiv = self._vector_args(dx, deriv)
 
         specgrid_interp_intensity(self.ptr, &vx[0], mu, w_0, n_w, &I[0], &stat, &vderiv[0])
 
@@ -137,12 +148,8 @@ cdef class SpecGrid:
         cdef bool[:] vderiv
 
         D = np.empty(n_w, dtype=np.double)
-        vx = np.array([dx[key] for key in self.labels])
 
-        if deriv is not None:
-            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
-        else:
-            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+        vx, vderiv = self._vector_args(dx, deriv)
 
         specgrid_interp_d_moment(self.ptr, &vx[0], l, w_0, n_w, &D[0], &stat, &vderiv[0])
 
@@ -152,7 +159,7 @@ cdef class SpecGrid:
         return np.asarray(D)
 
     
-    def flux(self, dict dx, double w_0, int n_w, dict deriv):
+    def flux(self, dict dx, double w_0, int n_w, dict deriv=None):
 
         cdef double[:] F
         cdef int stat
@@ -160,12 +167,8 @@ cdef class SpecGrid:
         cdef bool[:] vderiv
 
         F = np.empty(n_w, dtype=np.double)
-        vx = np.array([dx[key] for key in self.labels])
 
-        if deriv is not None:
-            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
-        else:
-            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+        vx, vderiv = self._vector_args(dx, deriv)
 
         specgrid_interp_flux(self.ptr, &vx[0], w_0, n_w, &F[0], &stat, &vderiv[0])
         if stat != 0:
@@ -177,33 +180,47 @@ cdef class SpecGrid:
 cdef class PhotGrid:
 
     cdef void *ptr
-    cdef int[:] shape
-    cdef int rank
-    cdef list labels
+    cdef readonly int[:] shape
+    cdef readonly int rank
+    cdef readonly double[:] axis_minima
+    cdef readonly double[:] axis_maxima
+    cdef readonly list axis_labels
 
     def __cinit__(self, str filename):
 
         self.ptr = photgrid_load(filename.encode('ascii'))
 
-        photgrid_inquire(self.ptr, NULL, &self.rank)
+        photgrid_inquire(self.ptr, NULL, &self.rank, NULL, NULL)
 
         self.shape = np.empty(self.rank, dtype=np.intc)
-        photgrid_inquire(self.ptr, &self.shape[0], NULL)
+        self.axis_minima = np.empty(self.rank, dtype=np.double)
+        self.axis_maxima = np.empty(self.rank, dtype=np.double)
 
-        self.labels = []
-        cdef char label[17]
+        photgrid_inquire(self.ptr, &self.shape[0], NULL, &self.axis_minima[0], &self.axis_maxima[0])
+
+        self.axis_label = []
+        cdef char axis_label[17]
         for j in range(self.rank):
-            photgrid_get_label(self.ptr, j+1, label)
-            self.labels += [label.decode('ascii')]
-
-        print('Shape:', np.asarray(self.shape))
-        print('Labels:', self.labels)
+            photgrid_get_axis_label(self.ptr, j+1, axis_label)
+            self.axis_labels += [axis_label.decode('ascii')]
 
         
     def __dealloc__(self):
         
         photgrid_unload(self.ptr)
 
+        
+    def _vector_args(self, dx, deriv):
+
+        vx = np.array([dx[key] for key in self.axis_labels])
+
+        if deriv is not None:
+            vderiv = np.array([key in deriv for key in self.axis_labels], dtype=np.uint8)
+        else:
+            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+
+        return vx, vderiv
+    
         
     def intensity(self, dict dx, double mu, dict deriv=None):
 
@@ -212,12 +229,7 @@ cdef class PhotGrid:
         cdef double[:] vx
         cdef bool[:] vderiv
 
-        vx = np.array([dx[key] for key in self.labels])
-
-        if deriv is not None:
-            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
-        else:
-            vderiv = np.array([False]*self.rank, dtype=np.uint8)
+        vx, vderiv = self._vector_args(dx, deriv)
 
         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  NULL)
         if stat != 0:
@@ -233,13 +245,8 @@ cdef class PhotGrid:
         cdef double[:] vx
         cdef bool[:] vderiv
 
-        vx = np.array([dx[key] for key in self.labels])
+        vx, vderiv = self._vector_args(dx, deriv)
 
-        if deriv is not None:
-            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
-        else:
-            vderiv = np.array([False]*self.rank, dtype=np.uint8)
-            
         photgrid_interp_d_moment(self.ptr, &vx[0], l, &D, &stat, &vderiv[0])
         if stat != 0:
             raise MsgError(stat)
@@ -254,13 +261,8 @@ cdef class PhotGrid:
         cdef double[:] vx
         cdef bool[:] vderiv
 
-        vx = np.array([dx[key] for key in self.labels])
+        vx, vderiv = self._vector_args(dx, deriv)
 
-        if deriv is not None:
-            vderiv = np.array([key in deriv for key in self.labels], dtype=np.uint8)
-        else:
-            vderiv = np.array([False]*self.rank, dtype=np.uint8)
-            
         photgrid_interp_flux(self.ptr, &vx[0], &F, &stat, &vderiv[0])
         if stat != 0:
             raise MsgError(stat)
