@@ -146,7 +146,7 @@ contains
 
    !****
 
-   subroutine specgrid_inquire(ptr, w_0, dw, n_w, shape_ptr, rank) bind(C)
+   subroutine specgrid_inquire(ptr, w_0, dw, n_w, shape_ptr, rank, axis_minima_ptr, axis_maxima_ptr) bind(C)
 
       type(C_PTR), value :: ptr
       real(C_DOUBLE)     :: w_0
@@ -154,10 +154,14 @@ contains
       integer(C_INT)     :: n_w
       type(C_PTR), value :: shape_ptr
       integer(C_INT)     :: rank
+      type(C_PTR), value :: axis_minima_ptr
+      type(C_PTR), value :: axis_maxima_ptr
 
       type(specgrid_t), pointer :: sg
       integer                   :: rank_
       integer, pointer          :: shape(:)
+      real(RD), pointer         :: axis_minima(:)
+      real(RD), pointer         :: axis_maxima(:)
 
       ! Set up the Fortran pointer
 
@@ -166,13 +170,21 @@ contains
       ! Inquire metadata
 
       if (C_ASSOCIATED(shape_ptr)) then
-
          call sg%inquire(rank=rank_)
-
          call C_F_POINTER(shape_ptr, shape, [rank_])
-         
          call sg%inquire(shape=shape)
+      endif
 
+      if (C_ASSOCIATED(axis_minima_ptr)) then
+         call sg%inquire(rank=rank_)
+         call C_F_POINTER(axis_minima_ptr, axis_minima, [rank_])
+         call sg%inquire(axis_minima=axis_minima)
+      endif
+
+      if (C_ASSOCIATED(axis_maxima_ptr)) then
+         call sg%inquire(rank=rank_)
+         call C_F_POINTER(axis_maxima_ptr, axis_maxima, [rank_])
+         call sg%inquire(axis_maxima=axis_maxima)
       endif
 
       call sg%inquire(w_0=w_0, dw=dw, n_w=n_w, rank=rank)
@@ -185,15 +197,19 @@ contains
 
    !****
 
-   subroutine photgrid_inquire(ptr, shape_ptr, rank) bind(C)
+   subroutine photgrid_inquire(ptr, shape_ptr, rank, axis_minima_ptr, axis_maxima_ptr) bind(C)
 
       type(C_PTR), value :: ptr
       type(C_PTR), value :: shape_ptr
       integer(C_INT)     :: rank
+      type(C_PTR), value :: axis_minima_ptr
+      type(C_PTR), value :: axis_maxima_ptr
       
       type(photgrid_t), pointer :: pg
       integer                   :: rank_
       integer, pointer          :: shape(:)
+      real(RD), pointer         :: axis_minima(:)
+      real(RD), pointer         :: axis_maxima(:)
 
       ! Set up the Fortran pointer
 
@@ -202,13 +218,21 @@ contains
       ! Inquire metadata
 
       if (C_ASSOCIATED(shape_ptr)) then
-
          call pg%inquire(rank=rank_)
-
          call C_F_POINTER(shape_ptr, shape, [rank_])
-         
          call pg%inquire(shape=shape)
+      endif
 
+      if (C_ASSOCIATED(axis_minima_ptr)) then
+         call pg%inquire(rank=rank_)
+         call C_F_POINTER(axis_minima_ptr, axis_minima, [rank_])
+         call pg%inquire(axis_minima=axis_minima)
+      endif
+
+      if (C_ASSOCIATED(axis_maxima_ptr)) then
+         call pg%inquire(rank=rank_)
+         call C_F_POINTER(axis_maxima_ptr, axis_maxima, [rank_])
+         call pg%inquire(axis_maxima=axis_maxima)
       endif
 
       call pg%inquire(rank=rank)
@@ -221,15 +245,15 @@ contains
 
    !****
 
-   subroutine specgrid_get_label(ptr, i, label) bind(C)
+   subroutine specgrid_get_axis_label(ptr, i, axis_label) bind(C)
 
       type(C_PTR), value    :: ptr
       integer(C_INT), value :: i
-      character(C_CHAR)     :: label(*)
+      character(C_CHAR)     :: axis_label(*)
 
       type(specgrid_t), pointer         :: sg
       integer                           :: rank
-      character(LABEL_LEN), allocatable :: labels(:)
+      character(LABEL_LEN), allocatable :: axis_labels(:)
       integer                           :: j
 
       ! Set up the Fortran pointer
@@ -240,33 +264,33 @@ contains
 
       call sg%inquire(rank=rank)
 
-      allocate(labels(rank))
+      allocate(axis_labels(rank))
 
-      call sg%inquire(labels=labels)
+      call sg%inquire(axis_labels=axis_labels)
 
-      if (i >= 1 .AND. i <= SIZE(labels)) then
-         call f_c_string(labels(i), label)
+      if (i >= 1 .AND. i <= SIZE(axis_labels)) then
+         call f_c_string(axis_labels(i), axis_label)
       else
-         label(1:1) = C_NULL_CHAR
+         axis_label(1:1) = C_NULL_CHAR
       endif
 
       ! Finish
 
       return
 
-   end subroutine specgrid_get_label
+   end subroutine specgrid_get_axis_label
 
    !****
 
-   subroutine photgrid_get_label(ptr, i, label) bind(C)
+   subroutine photgrid_get_axis_label(ptr, i, axis_label) bind(C)
 
       type(C_PTR), value    :: ptr
       integer(C_INT), value :: i
-      character(C_CHAR)     :: label(*)
+      character(C_CHAR)     :: axis_label(*)
 
       type(photgrid_t), pointer         :: pg
       integer                           :: rank
-      character(LABEL_LEN), allocatable :: labels(:)
+      character(LABEL_LEN), allocatable :: axis_labels(:)
       integer                           :: j
 
       ! Set up the Fortran pointer
@@ -277,21 +301,21 @@ contains
 
       call pg%inquire(rank=rank)
 
-      allocate(labels(rank))
+      allocate(axis_labels(rank))
 
-      call pg%inquire(labels=labels)
+      call pg%inquire(axis_labels=axis_labels)
 
-      if (i >= 1 .AND. i <= SIZE(labels)) then
-         call f_c_string(labels(i), label)
+      if (i >= 1 .AND. i <= SIZE(axis_labels)) then
+         call f_c_string(axis_labels(i), axis_label)
       else
-         label(1:1) = C_NULL_CHAR
+         axis_label(1:1) = C_NULL_CHAR
       endif
 
       ! Finish
 
       return
 
-   end subroutine photgrid_get_label
+   end subroutine photgrid_get_axis_label
 
    !****
 

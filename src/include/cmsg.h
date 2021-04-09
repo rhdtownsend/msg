@@ -23,9 +23,9 @@ void *specgrid_load_rebin(const char *filename, double w_0, double dw, int n_w);
 
 void specgrid_unload(void *ptr);
 
-void specgrid_inquire(void *ptr, double *w_0, double *dw, int *n_w, int *shape, int *rank);
+void specgrid_inquire(void *ptr, double *w_0, double *dw, int *n_w, int shape[], int *rank, double axis_minima[], double axis_maxima[]);
 
-void specgrid_get_label(void *ptr, int i, char *label);
+void specgrid_get_axis_label(void *ptr, int i, char *axis_label);
 
 void specgrid_interp_intensity(void *ptr, double vx[], double mu, double w_0, int n_w, 
 			       double I[], int *stat, bool vderiv[]);
@@ -39,9 +39,9 @@ void *photgrid_load(const char *filename);
 
 void photgrid_unload(void *ptr);
 
-void photgrid_inquire(void *ptr, int *shape, int *rank);
+void photgrid_inquire(void *ptr, int shape[], int *rank, double axis_minima[], double axis_maxima[]);
 
-void photgrid_get_label(void *ptr, int i, char *label);
+void photgrid_get_axis_label(void *ptr, int i, char *axis_label);
 
 void photgrid_interp_intensity(void *ptr, double vx[], double mu, 
 			       double *I, int *stat, bool vderiv[]);
