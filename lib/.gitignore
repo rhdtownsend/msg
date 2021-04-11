@@ -1,0 +1,3 @@
+# This allows an empty dir in the repo
+*
+!.gitignore
