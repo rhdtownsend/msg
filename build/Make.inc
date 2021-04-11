@@ -1,21 +1,6 @@
 # File     : Make.inc
 # Purpose  : standard makefile rules, targets
 
-# The following flags can be edited (set to either yes or no)
-
-# Enable debugging (with a performance penalty)
-DEBUG ?= no
-
-# Enable OpenMP parallelization
-OMP ?= yes
-
-# Enable FPE checks
-FPE ?= yes
-
-############ DO NOT EDIT BELOW THIS LINE ############
-### (unless you think you know what you're doing) ###
-#####################################################
-
 # Check MSG_DIR is set
 
 ifneq ($(MAKECMDGOALS),clean)
