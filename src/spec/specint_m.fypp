@@ -163,8 +163,8 @@ contains
       integer               :: k
       real(RD), allocatable :: y(:)
 
-      @:ASSERT(w_0 >= si_in%w_0, out-of-bounds rebin)
-      @:ASSERT(w_0+dw*n_w <= si_in%w_0+si_in%dw*si_in%n_w, out-of-bounds rebin)
+      @:ASSERT(w_0 >= si_in%w_0, 'out-of-bounds rebin')
+      @:ASSERT(w_0+dw*n_w <= si_in%w_0+si_in%dw*si_in%n_w, 'out-of-bounds rebin')
 
       ! Construct the specint_t by rebinning si_in
 
@@ -255,7 +255,7 @@ contains
                stat = STAT_OUT_OF_BOUNDS_W_LO
                return
             else
-               @:ABORT(out-of-bounds (lo) w)
+               @:ABORT('out-of-bounds (lo) w')
             endif
          endif
 
@@ -264,7 +264,7 @@ contains
                stat = STAT_OUT_OF_BOUNDS_W_HI
                return
             else
-               @:ABORT(out-of-bounds (hi) w)
+               @:ABORT('out-of-bounds (hi) w')
             endif
          endif
 
@@ -327,7 +327,7 @@ contains
                stat = STAT_OUT_OF_BOUNDS_W_LO
                return
             else
-               @:ABORT(out-of-bounds (lo) w)
+               @:ABORT('out-of-bounds (lo) w')
             endif
          endif
 
@@ -337,7 +337,7 @@ contains
                stat = STAT_OUT_OF_BOUNDS_W_HI
                return
             else
-               @:ABORT(out-of-bounds (hi) w)
+               @:ABORT('out-of-bounds (hi) w')
             endif
          endif
 
@@ -395,8 +395,8 @@ contains
       w_a = si%w_0
       w_b = si%w_0 + si%dw*si%n_w
 
-      @:ASSERT(EXP(w_a) <= lambda_min, spectrum does not span passband support)
-      @:ASSERT(EXP(w_b) >= lambda_max, spectrum does not span passband support)
+      @:ASSERT(EXP(w_a) <= lambda_min, 'spectrum does not span passband support')
+      @:ASSERT(EXP(w_b) >= lambda_max, 'spectrum does not span passband support')
 
       ! Evaluate the coefficients
 
@@ -442,7 +442,7 @@ contains
       ! Read the specint_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'specint_t',invalid type)
+      @:ASSERT(type == 'specint_t', 'invalid type')
 
       call hi%read_attr('w_0', w_0)
       call hi%read_attr('dw', dw)

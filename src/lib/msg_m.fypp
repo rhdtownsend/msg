@@ -1,5 +1,5 @@
-! Module  : licmsg
-! Purpose : library package for MSG modules
+! Module  : msg_m
+! Purpose : Fortran public interface for MSG
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -23,20 +23,27 @@ module msg_m
 
    use forum_m
 
-   use limb_m
    use axis_m
-   use ngrid_m
-   use specint_m
-   use specint_factory_m
-   use photint_m
    use specgrid_m
    use photgrid_m
-   use passband_m
    use stat_m
+
+   use ISO_FORTRAN_ENV
 
    ! No implicit typing
 
    implicit none
+
+   ! Interfaces
+
+   interface specgrid_t
+      module procedure specgrid_t_
+      module procedure specgrid_t_rebin_
+   end interface specgrid_t
+   
+   interface photgrid_t
+      module procedure photgrid_t_
+   end interface photgrid_t
 
    ! Access specifiers
 
@@ -44,16 +51,100 @@ module msg_m
 
    public :: LABEL_LEN
    public :: STAT_OK
-   public :: limb_t
-   public :: axis_t
-   public :: ngrid_t
-   public :: specint_t
-   public :: photint_t
    public :: specgrid_t
    public :: photgrid_t
-   public :: passband_t
-   public :: read
-   public :: write
+
+contains
+
+   #:for type in ('specgrid_t', 'photgrid_t')
+
+      function ${type}$_(file_name) result(gr)
+
+         character(*), intent(in) :: file_name
+         type(${type}$)           :: gr
+
+         type(hdf5io_t) :: hi
+
+         ! Create the ${type}$
+
+         call open_file_(file_name, hi)
+         call read(hi, gr)
+         call hi%final()
+
+         ! Finish
+
+         return
+
+      end function ${type}$_
+
+   #:endfor
+
+   !****
+
+   function specgrid_t_rebin_(file_name, w_0, dw, n_w) result(gr)
+
+      character(*), intent(in) :: file_name
+      real(RD), intent(in)     :: w_0
+      real(RD), intent(in)     :: dw
+      integer, intent(in)      :: n_w
+      type(specgrid_t)         :: gr
+
+      type(hdf5io_t) :: hi
+
+      ! Create the specgrid_t
+
+      call open_file_(file_name, hi)
+      call read(hi, gr, w_0, dw, n_w)
+      call hi%final()
+
+      ! Finish
+
+      return
+
+   end function specgrid_t_rebin_
+
+   !****
+
+   subroutine open_file_(file_name, hi)
+
+      character(*), intent(in)    :: file_name
+      type(hdf5io_t), intent(out) :: hi
+
+      integer                   :: status
+      character(:), allocatable :: msg_dir
+      character(:), allocatable :: file_name_dir
+
+      ! Open the file
+
+      if (is_hdf5(file_name)) then
+
+         print *,'go read direct'
+
+         hi = hdf5io_t(file_name, OPEN_FILE_RO)
+         return
+
+      else
+
+         call GET_ENV('MSG_DIR', msg_dir, status)
+
+         if (status == 0) then
+
+            file_name_dir = msg_dir//'/data/'//file_name
+
+            if (is_hdf5(file_name_dir)) then
+
+               hi = hdf5io_t(file_name_dir, OPEN_FILE_RO)
+               return
+
+            endif
+
+         endif
+
+      endif
+
+      @:ABORT('file not found')
+
+   end subroutine open_file_
 
 end module msg_m
 

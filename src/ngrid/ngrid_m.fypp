@@ -270,7 +270,7 @@ contains
          r = r - (vi(j)-1)*p
       end do
 
-      @:ASSERT_DEBUG(li == self%li_from_vi(vi), indexing error)
+      @:ASSERT_DEBUG(li == self%li_from_vi(vi), 'indexing error')
 
       ! Finish
 
@@ -306,7 +306,7 @@ contains
 
       vi = vi + vi_cl - 2
 
-      @:ASSERT_DEBUG(ALL(vi >= vi_cl-1 .AND. vi <= vi_cl+2), incorrect stencial index)
+      @:ASSERT_DEBUG(ALL(vi >= vi_cl-1 .AND. vi <= vi_cl+2), 'indexing error')
 
       ! Finish
 
@@ -597,7 +597,7 @@ contains
       ! Read the ngrid_t
 
       call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'ngrid_t', invalid type)
+      @:ASSERT(file_type == 'ngrid_t', 'invalid type')
 
       call hi%read_attr('rank', rank)
 

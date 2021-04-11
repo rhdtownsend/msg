@@ -147,9 +147,9 @@ contains
 
             call si(li)%inquire(w_0=w_0_chk, dw=dw_chk, n_w=n_w_chk)
 
-            @:ASSERT(w_0 == w_0_chk, base wavelength mismatch)
-            @:ASSERT(dw == dw_chk, wavelength increment mismatch)
-            @:ASSERT(n_w == n_w_chk, dimension mismatch)
+            @:ASSERT(w_0 == w_0_chk, 'base wavelength mismatch')
+            @:ASSERT(dw == dw_chk, 'wavelength increment mismatch')
+            @:ASSERT(n_w == n_w_chk, 'dimension mismatch')
 
          end if
 
@@ -405,7 +405,7 @@ contains
       ! Read base components of the specgrid_t
 
       call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'specgrid_t', invalid type)
+      @:ASSERT(file_type == 'specgrid_t', 'invalid type')
 
       call hi%alloc_read_attr('shape', shape)
       
@@ -451,7 +451,7 @@ contains
 
       type is (dyn_specint_t)
 
-         @:ABORT(cannot write dyn_specint_t)
+         @:ABORT('cannot write dyn_specint_t')
 
       end select
 

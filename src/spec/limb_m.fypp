@@ -120,7 +120,7 @@ contains
       case (CLARET_LAW)
          str = 'CLARET'
       case default
-         @:ABORT(invalid law)
+         @:ABORT('invalid law')
       end select
 
       ! Finish
@@ -151,7 +151,7 @@ contains
       case ('CLARET')
          law = CLARET_LAW
       case default
-         @:ABORT(invalid string)
+         @:ABORT('invalid string')
       end select
 
       ! Finish
@@ -181,7 +181,7 @@ contains
       case (CLARET_LAW)
          n_basis = 5
       case default
-         @:ABORT(invalid law)
+         @:ABORT('invalid law')
       end select
 
       ! Finish
@@ -208,7 +208,7 @@ contains
             stat = STAT_OUT_OF_BOUNDS_MU_LO
             return
          else
-            @:ABORT(out-of-bounds (lo) mu)
+            @:ABORT('out-of-bounds (lo) mu')
          endif
       endif
 
@@ -217,7 +217,7 @@ contains
             stat = STAT_OUT_OF_BOUNDS_MU_HI
             return
          else
-            @:ABORT(out-of-bounds (hi) mu)
+            @:ABORT('out-of-bounds (hi) mu')
          endif
       endif
 
@@ -252,7 +252,7 @@ contains
               mu**2 - 1._RD        &
               ]
       case default
-         @:ABORT(invalid law)
+         @:ABORT('invalid law')
       end select
 
       if (PRESENT(stat)) stat = STAT_OK
@@ -272,7 +272,7 @@ contains
       real(RD)                       :: b(:)
       integer, intent(out), optional :: stat
 
-      @:CHECK_BOUNDS(SIZE(b),self%n_basis())
+      @:CHECK_BOUNDS(SIZE(b), self%n_basis())
 
       ! Evaluate the D-moment basis functions
 
@@ -281,7 +281,7 @@ contains
             stat = STAT_INVALID_L
             return
          else
-            @:ABORT(invalid argument)
+            @:ABORT('invalid argument')
          endif
       endif
 
@@ -316,7 +316,7 @@ contains
               D_ls(l, 3._RD) - D_ls(l, 1._RD)   &
               ]
       case default
-         @:ABORT(invalid law)
+         @:ABORT('invalid law')
       end select
 
       if (PRESENT(stat)) stat = STAT_OK
@@ -335,7 +335,7 @@ contains
       real(RD)                       :: b(:)
       integer, intent(out), optional :: stat
 
-      @:CHECK_BOUNDS(SIZE(b),self%n_basis())
+      @:CHECK_BOUNDS(SIZE(b), self%n_basis())
 
       ! Evaluate the flux basis functions
 
@@ -370,7 +370,7 @@ contains
               -1._RD/4._RD   &
               ]
       case default
-         @:ABORT(invalid law)
+         @:ABORT('invalid law')
       end select
 
       if (PRESENT(stat)) stat = STAT_OK
@@ -527,7 +527,7 @@ contains
       ! Read the limb_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'limb_t',invalid type)
+      @:ASSERT(type == 'limb_t', 'invalid type')
 
       call hi%read_attr('law', str)
   

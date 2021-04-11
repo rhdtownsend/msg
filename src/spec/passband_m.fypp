@@ -200,7 +200,7 @@ contains
       ! Read the passband_t
 
       call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'passband_t', invalid type)
+      @:ASSERT(file_type == 'passband_t', 'invalid type')
 
       call hi%read_attr('D', D)
       call hi%read_attr('ZP', ZP)

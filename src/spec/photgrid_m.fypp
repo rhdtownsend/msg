@@ -286,7 +286,7 @@ contains
       ! Read base components of the photgrid_t
 
       call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'photgrid_t', invalid type)
+      @:ASSERT(file_type == 'photgrid_t', 'invalid type')
 
       call hi%alloc_read_attr('shape', shape)
 

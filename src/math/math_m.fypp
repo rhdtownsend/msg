@@ -65,11 +65,11 @@ contains
 
       n_x = SIZE(x)
 
-      @:ASSERT(i_a >= 1,out-of-bounds integration)
-      @:ASSERT(i_a < n_x,out-of-bounds integration)
+      @:ASSERT_DEBUG(i_a >= 1, 'out-of-bounds integration')
+      @:ASSERT_DEBUG(i_a < n_x, 'out-of-bounds integration')
 
-      @:ASSERT(i_b >= 1,out-of-bounds integration)
-      @:ASSERT(i_b < n_x,out-of-bounds integration)
+      @:ASSERT_DEBUG(i_b >= 1, 'out-of-bounds integration')
+      @:ASSERT_DEBUG(i_b < n_x, 'out-of-bounds integration')
 
       u_a = (x_a - x(i_a))/(x(i_a+1)-x(i_a))
       u_b = (x_b - x(i_b))/(x(i_b+1)-x(i_b))
@@ -121,11 +121,11 @@ contains
 
       n_x = SIZE(x)
 
-      @:ASSERT(i_a >= 1,out-of-bounds integration)
-      @:ASSERT(i_a < n_x,out-of-bounds integration)
+      @:ASSERT_DEBUG(i_a >= 1, 'out-of-bounds integration')
+      @:ASSERT_DEBUG(i_a < n_x, 'out-of-bounds integration')
 
-      @:ASSERT(i_b >= 1,out-of-bounds integration)
-      @:ASSERT(i_b < n_x,out-of-bounds integration)
+      @:ASSERT_DEBUG(i_b >= 1, 'out-of-bounds integration')
+      @:ASSERT_DEBUG(i_b < n_x, 'out-of-bounds integration')
 
       u_a = (x_a - x(i_a))/(x(i_a+1)-x(i_a))
       u_b = (x_b - x(i_b))/(x(i_b+1)-x(i_b))
