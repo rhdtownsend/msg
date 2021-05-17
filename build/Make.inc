@@ -101,11 +101,13 @@ LDFLAGS = `hdf5_link` `lapack95_link`
 ifeq ($(shell uname -s),Darwin)
   LIB_SUFFIX = .dylib
   LIB_LDFLAGS = -shared -install_name ${MSG_DIR}/lib/$@
+  EXEC_LDFLAGS = 
   PYM_SUFFIX = $(shell python-config --extension-suffix)
   PYM_LDFLAGS = ${LIB_LDFLAGS} -undefined dynamic_lookup 
 else			   
   LIB_SUFFIX = .so
   LIB_LDFLAGS = -shared
+  EXEC_LDFLAGS = -Wl,-rpath -Wl,${MSG_DIR}/lib
   PYM_SUFFIX = $(shell python-config --extension-suffix)
   PYM_LDFLAGS = ${LIB_LDFLAGS} -Wl,-rpath -Wl,${MSG_DIR}/lib
 endif
@@ -176,7 +178,7 @@ ${PYM_TARGETS_} :
 
 ${EXEC_TARGETS} :
 	@echo LD $@
-	@${F9XC} ${F9XFLAGS} -o $@ $^
+	@${F9XC} ${F9XFLAGS} -o $@ $^ ${EXEC_LDFLAGS}
 
 ${DEP_TARGETS} : 
 	@echo DEPEND $(patsubst .%.d,%,$@) "->" $@
