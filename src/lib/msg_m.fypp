@@ -53,6 +53,8 @@ module msg_m
    public :: STAT_OK
    public :: specgrid_t
    public :: photgrid_t
+   public :: read
+   public :: write
 
 contains
 
