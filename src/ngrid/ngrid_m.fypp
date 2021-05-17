@@ -122,12 +122,14 @@ contains
 
    !****
 
-   subroutine inquire(self, shape, rank, labels)
+   subroutine inquire(self, shape, rank, axis_minima, axis_maxima, axis_labels)
 
       class(ngrid_t), intent(in)          :: self
       integer, intent(out), optional      :: shape(:)
       integer, intent(out), optional      :: rank
-      character(*), intent(out), optional :: labels(:)
+      real(RD), intent(out), optional     :: axis_minima(:)
+      real(RD), intent(out), optional     :: axis_maxima(:)
+      character(*), intent(out), optional :: axis_labels(:)
 
       integer :: j
 
@@ -135,8 +137,16 @@ contains
          @:CHECK_BOUNDS(SIZE(shape), self%rank)
       end if
 
-      if (PRESENT(labels)) then
-         @:CHECK_BOUNDS(SIZE(labels), self%rank)
+      if (PRESENT(axis_minima)) then
+         @:CHECK_BOUNDS(SIZE(axis_minima), self%rank)
+      end if
+
+      if (PRESENT(axis_maxima)) then
+         @:CHECK_BOUNDS(SIZE(axis_maxima), self%rank)
+      end if
+
+      if (PRESENT(axis_labels)) then
+         @:CHECK_BOUNDS(SIZE(axis_labels), self%rank)
       end if
 
       ! Inquire metadata
@@ -144,9 +154,21 @@ contains
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
 
-      if (PRESENT(labels)) then
+      if (PRESENT(axis_minima)) then
          do j = 1, self%rank
-            call self%ax(j)%inquire(label=labels(j))
+            call self%ax(j)%inquire(minimum=axis_minima(j))
+         end do
+      end if
+
+      if (PRESENT(axis_maxima)) then
+         do j = 1, self%rank
+            call self%ax(j)%inquire(maximum=axis_maxima(j))
+         end do
+      end if
+
+      if (PRESENT(axis_labels)) then
+         do j = 1, self%rank
+            call self%ax(j)%inquire(label=axis_labels(j))
          end do
       end if
 
@@ -248,7 +270,7 @@ contains
          r = r - (vi(j)-1)*p
       end do
 
-      @:ASSERT_DEBUG(li == self%li_from_vi(vi), indexing error)
+      @:ASSERT_DEBUG(li == self%li_from_vi(vi), 'indexing error')
 
       ! Finish
 
@@ -284,7 +306,7 @@ contains
 
       vi = vi + vi_cl - 2
 
-      @:ASSERT_DEBUG(ALL(vi >= vi_cl-1 .AND. vi <= vi_cl+2), incorrect stencial index)
+      @:ASSERT_DEBUG(ALL(vi >= vi_cl-1 .AND. vi <= vi_cl+2), 'indexing error')
 
       ! Finish
 
@@ -575,7 +597,7 @@ contains
       ! Read the ngrid_t
 
       call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'ngrid_t', invalid type)
+      @:ASSERT(file_type == 'ngrid_t', 'invalid type')
 
       call hi%read_attr('rank', rank)
 

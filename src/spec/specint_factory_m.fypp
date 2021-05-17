@@ -81,8 +81,8 @@ contains
       n_mu = SIZE(mu)
       n_lambda = SIZE(lambda)
 
-      @:ASSERT(w_0 >= LOG(lambda(1)), out-of-range w)
-      @:ASSERT(w_0 + n_w*dw <= LOG(lambda(n_lambda)), out-of-range w)
+      @:ASSERT(w_0 >= LOG(lambda(1)), 'out-of-range w')
+      @:ASSERT(w_0 + n_w*dw <= LOG(lambda(n_lambda)), 'out-of-range w')
 
       allocate(I_w(n_mu,n_w))
 

@@ -1,24 +1,44 @@
 # File     : Makefile
 # Purpose  : makefile for build subdir
 
+# Default settings
+
+# Build Python interface
+PYTHON ?= yes
+
+# Build test programs
+TESTS ?= yes
+
+# Build tool executables
+TOOLS ?= no
+
+# Enable debugging (with a performance penalty)
+DEBUG ?= no
+
+# Enable OpenMP parallelization
+OMP ?= yes
+
+# Enable FPE checks
+FPE ?= yes
+
 # Targets
 
 LIB_TARGETS = libforum libmsg libcmsg
 EXEC_TARGETS =
 PYM_TARGETS = 
 
-ifeq (${TOOLS},yes)
-  EXEC_TARGETS := ${EXEC_TARGETS} synspec_to_specint ferre_to_specint \
-             specint_to_photint make_specgrid make_photgrid \
-             make_passband
+ifeq ($(PYTHON),yes)
+  PYM_TARGETS := pymsg
 endif
 
 ifeq (${TESTS},yes)
   EXEC_TARGETS := ${EXEC_TARGETS} test_specgrid test_photgrid
 endif
 
-ifeq ($(PYTHON),yes)
-  PYM_TARGETS := pymsg
+ifeq (${TOOLS},yes)
+  EXEC_TARGETS := ${EXEC_TARGETS} synspec_to_specint ferre_to_specint \
+             specint_to_photint make_specgrid make_photgrid \
+             make_passband
 endif
 
 # Object lists & related variables

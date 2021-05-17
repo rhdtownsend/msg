@@ -98,7 +98,7 @@ contains
       @:CHECK_BOUNDS(SIZE(f), SIZE(x))
       @:CHECK_BOUNDS(SIZE(df_dx), SIZE(x))
 
-      @:ASSERT(ALL(x(2:) > x(:SIZE(x)-1)), non-monotonic abscissa)
+      @:ASSERT(ALL(x(2:) > x(:SIZE(x)-1)), 'non-monotonic abscissa')
 
       ! Construct the cubint_t
 
@@ -171,7 +171,7 @@ contains
       case ('MONO')
          df_dx = mono_derivs_(x, f, df_dx_a, df_dx_b)
       case default
-         @:ABORT(invalid deriv_type)
+         @:ABORT('invalid deriv_type')
       end select
 
       ci = cubint_t(x, f, df_dx)
@@ -200,7 +200,7 @@ contains
       real(RD) :: B(SIZE(x),1)
       integer  :: info
 
-      @:ASSERT(SIZE(x) > 1, invalid length)
+      @:ASSERT(SIZE(x) > 1, 'invalid length')
 
       @:CHECK_BOUNDS(SIZE(f), SIZE(x))
 
@@ -247,7 +247,7 @@ contains
       ! Solve the tridiagonal system
 
       call LA_GTSV(L, D, U, B, info)
-      @:ASSERT(info == 0, non-zero return from XTGSV)
+      @:ASSERT(info == 0, 'non-zero return from XTGSV')
 
       df_dx = B(:,1)
 
@@ -271,7 +271,7 @@ contains
       real(RD) :: h(SIZE(x)-1)
       real(RD) :: s(SIZE(x)-1)
 
-      @:ASSERT(SIZE(x) > 1, invalid length)
+      @:ASSERT(SIZE(x) > 1, 'invalid length')
 
       @:CHECK_BOUNDS(SIZE(f), SIZE(x))
 
@@ -319,7 +319,7 @@ contains
       real(RD) :: p(SIZE(x))
       integer  :: i
 
-      @:ASSERT(SIZE(x) > 1, invalid length)
+      @:ASSERT(SIZE(x) > 1, 'invalid length')
 
       @:CHECK_BOUNDS(SIZE(f), SIZE(x))
 
@@ -535,7 +535,7 @@ contains
          ! Update the bracketing index
 
          call locate(self%x, x(j), i)
-         @:ASSERT(i > 0 .AND. i < self%n, out-of-bounds interpolation)
+         @:ASSERT(i > 0 .AND. i < self%n, 'out-of-bounds interpolation')
 
          ! Set up the interpolation weights
 
@@ -578,7 +578,7 @@ contains
       case (1)
          phi = 6._RD*t - 6._RD*t**2
       case default
-         @:ABORT(invalid n)
+         @:ABORT('invalid n')
       end select
 
       ! Finish
@@ -605,7 +605,7 @@ contains
       case (1)
          psi = 3._RD*t**2 - 2._RD*t
       case default
-         @:ABORT(invalid n)
+         @:ABORT('invalid n')
       end select
 
       ! Finish
@@ -629,7 +629,7 @@ contains
       ! Read the cubint_t
 
       call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'cubint_t', invalid type)
+      @:ASSERT(file_type == 'cubint_t', 'invalid type')
 
       call hi%alloc_read_dset('x', x)
       call hi%alloc_read_dset('f', f)

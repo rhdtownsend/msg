@@ -163,8 +163,8 @@ contains
       integer               :: k
       real(RD), allocatable :: y(:)
 
-      @:ASSERT(w_0 >= si_in%w_0, out-of-bounds rebin)
-      @:ASSERT(w_0+dw*n_w <= si_in%w_0+si_in%dw*si_in%n_w, out-of-bounds rebin)
+      @:ASSERT(w_0 >= si_in%w_0, 'out-of-bounds rebin')
+      @:ASSERT(w_0+dw*n_w <= si_in%w_0+si_in%dw*si_in%n_w, 'out-of-bounds rebin')
 
       ! Construct the specint_t by rebinning si_in
 
@@ -248,26 +248,26 @@ contains
          call locate(self%w_0, self%dw, w_0, k_a)
          k_b = k_a + n_w
 
+         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
+         
          if (k_a < 1) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_W_LO
                return
             else
-               @:ABORT(out-of-bounds (lo) w)
+               @:ABORT('out-of-bounds (lo) w')
             endif
          endif
 
-         if (k_b > self%n_w) then
+         if (k_b > self%n_w+1 .OR. (k_b == self%n_w+1 .AND. u /= 0._RD)) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_W_HI
                return
             else
-               @:ABORT(out-of-bounds (hi) w)
+               @:ABORT('out-of-bounds (hi) w')
             endif
          endif
 
-         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
-         
          ! Set up the basis functions
 
          call self%li%eval_${name}$_basis(${arg_var}$, b, stat)
@@ -278,7 +278,13 @@ contains
          ! Interpolate ${name}$ (done with two matmul's to avoid
          ! creating a temporary)
 
-         ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
+         if (u == 0._RD) then
+            ${var}$ = MATMUL(b, self%c(:,k_a:k_b-1))
+         else if (u == 1._RD) then
+            ${var}$ = MATMUL(b, self%c(:,k_a+1:k_b))
+         else
+            ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
+         endif
 
          if (PRESENT(stat)) stat = STAT_OK
 
@@ -314,26 +320,27 @@ contains
          call locate(self%w_0, self%dw, w_0, k_a)
          k_b = k_a + n_w
 
+         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
+         
          if (k_a < 1) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_W_LO
                return
             else
-               @:ABORT(out-of-bounds (lo) w)
+               @:ABORT('out-of-bounds (lo) w')
             endif
          endif
 
-         if (k_b > self%n_w) then
+         if (k_b > self%n_w+1 .OR. (k_b == self%n_w+1 .AND. u /= 0._RD)) then
+            print *,'k_b, n_w, u', k_b, self%n_w, u
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_W_HI
                return
             else
-               @:ABORT(out-of-bounds (hi) w)
+               @:ABORT('out-of-bounds (hi) w')
             endif
          endif
 
-         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
-         
          ! Set up the basis functions
 
          call self%li%eval_${name}$_basis(b, stat)
@@ -344,7 +351,13 @@ contains
          ! Interpolate ${name}$ (done with two matmul's to avoid
          ! creating a temporary)
 
-         ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
+         if (u == 0._RD) then
+            ${var}$ = MATMUL(b, self%c(:,k_a:k_b-1))
+         else if (u == 1._RD) then
+            ${var}$ = MATMUL(b, self%c(:,k_a+1:k_b))
+         else
+            ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
+         endif
 
          if (PRESENT(stat)) stat = STAT_OK
 
@@ -382,8 +395,8 @@ contains
       w_a = si%w_0
       w_b = si%w_0 + si%dw*si%n_w
 
-      @:ASSERT(EXP(w_a) <= lambda_min, spectrum does not span passband support)
-      @:ASSERT(EXP(w_b) >= lambda_max, spectrum does not span passband support)
+      @:ASSERT(EXP(w_a) <= lambda_min, 'spectrum does not span passband support')
+      @:ASSERT(EXP(w_b) >= lambda_max, 'spectrum does not span passband support')
 
       ! Evaluate the coefficients
 
@@ -429,7 +442,7 @@ contains
       ! Read the specint_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'specint_t',invalid type)
+      @:ASSERT(type == 'specint_t', 'invalid type')
 
       call hi%read_attr('w_0', w_0)
       call hi%read_attr('dw', dw)

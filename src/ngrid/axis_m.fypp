@@ -89,7 +89,7 @@ contains
       ! Construct the axis_t from the supplied data
 
       n_x = SIZE(x)
-      @:ASSERT(ALL(x(2:) > x(:n_x-1)), non-monotonic axis)
+      @:ASSERT(ALL(x(2:) > x(:n_x-1)), 'non-monotonic '//TRIM(label)//' axis')
 
       ax%x = x
       ax%n_x = n_x
@@ -104,15 +104,19 @@ contains
 
    !****
 
-   subroutine inquire(self, n_x, label)
+   subroutine inquire(self, n_x, minimum, maximum, label)
 
       class(axis_t), intent(in)           :: self
       integer, intent(out), optional      :: n_x
+      real(RD), intent(out), optional     :: minimum
+      real(RD), intent(out), optional     :: maximum
       character(*), intent(out), optional :: label
 
       ! Inquire metadata
 
       if (PRESENT(n_x)) n_x = self%n_x
+      if (PRESENT(minimum)) minimum = self%x(1)
+      if (PRESENT(maximum)) maximum = self%x(self%n_x)
       if (PRESENT(label)) label = self%label
 
       ! Finish
@@ -139,7 +143,7 @@ contains
             stat = STAT_OUT_OF_BOUNDS_AXIS_LO
             return
          else
-            @:ABORT(out-of-bounds (lo) on axis)
+            @:ABORT('out-of-bounds (lo) on '//TRIM(self%label)//' axis')
          endif
       endif
 
@@ -148,7 +152,7 @@ contains
             stat = STAT_OUT_OF_BOUNDS_AXIS_HI
             return
          else
-            @:ABORT(out-of-bounds (hi) on axis)
+            @:ABORT('out-of-bounds (hi) on '//TRIM(self%label)//' axis')
          endif
       endif
 
@@ -175,7 +179,7 @@ contains
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_AXIS_LO
          else
-            @:ABORT(out-of-bounds (lo) on axis)
+            @:ABORT('out-of-bounds (lo) on '//self%label//' axis')
          endif
       endif
 
@@ -183,7 +187,7 @@ contains
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_AXIS_HI
          else
-            @:ABORT(out-of-bounds (hi) on axis)
+            @:ABORT('out-of-bounds (hi) on '//self%label//' axis')
          endif
       endif
             
@@ -211,7 +215,7 @@ contains
       ! Read the axis_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'axis_t',invalid type)
+      @:ASSERT(type == 'axis_t', 'invalid type')
 
       call hi%read_attr('label', label)
       

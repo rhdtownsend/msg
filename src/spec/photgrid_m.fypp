@@ -110,12 +110,14 @@ contains
 
    !****
 
-   subroutine inquire(self, shape, rank, labels)
+   subroutine inquire(self, shape, rank, axis_minima, axis_maxima, axis_labels)
 
       class(photgrid_t), intent(in)       :: self
       integer, intent(out), optional      :: shape(:)
       integer, intent(out), optional      :: rank
-      character(*), intent(out), optional :: labels(:)
+      real(RD), intent(out), optional     :: axis_minima(:)
+      real(RD), intent(out), optional     :: axis_maxima(:)
+      character(*), intent(out), optional :: axis_labels(:)
 
       if (PRESENT(shape)) then
          @:CHECK_BOUNDS(SIZE(shape), self%rank)
@@ -126,7 +128,7 @@ contains
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
 
-      call self%ng%inquire(labels=labels)
+      call self%ng%inquire(axis_minima=axis_minima, axis_maxima=axis_maxima, axis_labels=axis_labels)
 
       ! Finish
 
@@ -284,7 +286,7 @@ contains
       ! Read base components of the photgrid_t
 
       call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'photgrid_t', invalid type)
+      @:ASSERT(file_type == 'photgrid_t', 'invalid type')
 
       call hi%alloc_read_attr('shape', shape)
 

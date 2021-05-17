@@ -145,7 +145,7 @@ contains
             stat = STAT_UNAVAILABLE_DATA
             return
          else
-            @:ABORT(unavailable data)
+            @:ABORT('unavailable data')
          endif
 
       endif
@@ -245,7 +245,7 @@ contains
 
          else
 
-            @:ABORT(invalid mask)
+            @:ABORT('invalid mask')
 
          endif
 

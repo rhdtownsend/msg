@@ -208,7 +208,7 @@ contains
       ! Read the photint_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'photint_t',invalid type)
+      @:ASSERT(type == 'photint_t', 'invalid type')
 
       call hi%alloc_read_dset('c', c)
 
