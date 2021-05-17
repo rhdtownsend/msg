@@ -12,12 +12,12 @@ program test_specgrid
    real(RD) :: dw
    integer  :: n_w
    
-   type(specgrid_t) :: sg
-   type(hdf5io_t)   :: hi
+   type(specgrid_t)      :: sg
+   type(hdf5io_t)        :: hi
    real(RD), allocatable :: F(:)
-   integer          :: j
-   integer          :: stat
-   character(16) :: labels(3)
+   integer               :: j
+   integer               :: stat
+   character(LABEL_LEN)  :: axis_labels(3)
 
    n_w = 2773
 
@@ -30,7 +30,7 @@ program test_specgrid
    call read(hi, sg, w_0, dw, n_w)
    call hi%final()
 
-   call sg%inquire(labels=labels)
+   call sg%inquire(axis_labels=axis_labels)
 
    !call sg%interp_flux( 3.6179505639835581_RD, 1.0862246753338889_RD, w_0, F, stat)
    call sg%interp_intensity([0._RD, 4.0_RD, 3.5_RD], 1.0_RD, w_0, F, stat)
