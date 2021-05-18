@@ -111,7 +111,7 @@ else:
     tarball = 'v{0:s}'.format(release)
 
 targets = {
-    'github-tarball': 'https://codeload.github.com/rhdtownsend/msg/tar.gz/{0:s}'.format(tarball),
+    'github-tarball': 'https://api.github.com/repos/rhdtownsend/msg/tarball/{0:s}'.format(tarball),
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mesa': 'http://mesa.sourceforge.net/',
 }
