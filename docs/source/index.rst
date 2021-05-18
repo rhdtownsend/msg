@@ -2,12 +2,12 @@
 MSG
 ###
 
-MSG (`Madison Spectral Grids`) is a software library and a set of data
-products that together provide the capability to synthesize stellar
-spectra over a wide range of input parameters. The synthesis is
-performed via cubic interpolation in multi-dimensional grids of
-pre-calculated intensity (or flux) spectra. MSG is desgined to offer
-high performance, accuracy and flexibility while remaining
+MSG (`Multidimensional Spectral Grids`) is a software library and a
+set of data products that together provide the capability to
+synthesize stellar spectra over a wide range of input parameters. The
+synthesis is performed via cubic interpolation in multi-dimensional
+grids of pre-calculated intensity (or flux) spectra. MSG is desgined
+to offer high performance, accuracy and flexibility while remaining
 easy to install and use.
 
 .. toctree::
