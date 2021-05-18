@@ -100,7 +100,8 @@ test_photgrid_DEPS = forum_m msg_m
 
 # Search subdirs
 
-SUBDIRS = $(wildcard ../src/*)
+GITMODS = forum
+SUBDIRS = $(filter-out ${GITMODS},$(wildcard ../src/*)) $(wildcard $(patsubst %,../src/%/src,${GITMODS}))
 
 # Include other makefiles
 
