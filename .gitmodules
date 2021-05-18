@@ -1,4 +1,4 @@
 [submodule "src/forum"]
 	path = src/forum
-	url = ../msg-data.git
+	url = ../forum.git
 	
