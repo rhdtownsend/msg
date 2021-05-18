@@ -23,9 +23,9 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = "master"
-release = "master"
-branch = "master"
+version = "main"
+release = "main"
+branch = "main"
 copyright = '2021, Rich Townsend & The MSG Team'
 
 
@@ -105,8 +105,8 @@ extlinks = {
 
 # Set site-wide targets
 
-if release == 'master':
-    tarball = 'master'
+if release == 'main':
+    tarball = 'main'
 else:
     tarball = 'v{0:s}'.format(release)
 
