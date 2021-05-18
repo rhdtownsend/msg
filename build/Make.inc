@@ -68,7 +68,7 @@ else
 endif
 
 ifeq (${PYTHON},yes)
-  CFLAGS := ${CFLAGS} $(shell python-config --includes)
+  CFLAGS := ${CFLAGS} $(shell python3-config --includes)
 endif
 
 # Cython
@@ -87,13 +87,13 @@ ifeq ($(shell uname -s),Darwin)
   LIB_SUFFIX = .dylib
   LIB_LDFLAGS = -shared -install_name ${MSG_DIR}/lib/$@
   EXEC_LDFLAGS = 
-  PYM_SUFFIX = $(shell python-config --extension-suffix)
+  PYM_SUFFIX = $(shell python3-config --extension-suffix)
   PYM_LDFLAGS = ${LIB_LDFLAGS} -undefined dynamic_lookup 
 else			   
   LIB_SUFFIX = .so
   LIB_LDFLAGS = -shared
   EXEC_LDFLAGS = -Wl,-rpath -Wl,${MSG_DIR}/lib
-  PYM_SUFFIX = $(shell python-config --extension-suffix)
+  PYM_SUFFIX = $(shell python3-config --extension-suffix)
   PYM_LDFLAGS = ${LIB_LDFLAGS} -Wl,-rpath -Wl,${MSG_DIR}/lib
 endif
 
