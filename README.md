@@ -1,2 +1,3 @@
 # msg
-Madison Spectral Grids
+Multidimensional Spectral Grids
+
