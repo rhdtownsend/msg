@@ -17,8 +17,8 @@ easy to install and use.
 
    user-guide/preliminaries.rst
    user-guide/quick-start.rst
-   user-guide/python-demo.rst
-   user-guide/grid-fundamentals.rst
+   user-guide/fortran-walkthrough.rst
+   user-guide/python-walkthrough.rst
 
 .. toctree::
    :caption: Reference Guide

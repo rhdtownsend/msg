@@ -96,11 +96,11 @@ DEBUG
 OMP
   Enable OpenMP parallelization (default ``yes``)
 
-CRMATH
-  Use correctly rounded math functions (default ``yes``)
-
 FPE
   Enable floating point exception checks (default ``yes``)
+
+PYTHON
+  Enable building of Python interface (default ``yes``)
 
 TEST
   Enable building of testing tools (default ``yes``)
