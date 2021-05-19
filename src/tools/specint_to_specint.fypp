@@ -1,0 +1,74 @@
+! Module   : specint_to_photint
+! Purpose  : create a specint file by rebinning / subsetting an existing
+!            specint file
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program specint_to_specint
+
+   ! Uses
+
+   use forum_m, PI_ => PI
+   use msg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: specint_filename_in
+   real(RD)                  :: w_0
+   real(RD)                  :: dw
+   integer                   :: n_w
+   character(:), allocatable :: specint_filename_out
+
+   type(hdf5io_t)  :: hi
+   type(specint_t) :: si_in
+   type(specint_t) :: si_out
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 5, 'Syntax: specint_to_specint specint_filename_in w_0 dw n_w specint_filename_out')
+
+   call get_arg(1, specint_filename_in)
+   call get_arg(2, w_0)
+   call get_arg(3, dw)
+   call get_arg(4, n_w)
+   call get_arg(5, specint_filename_out)
+
+   ! Read data from the specint file
+
+   hi = hdf5io_t(specint_filename_in, OPEN_FILE_RO)
+   call read(hi, si_in)
+   call hi%final()
+
+   ! Do the rebinning
+
+   si_out = specint_t(si_in, w_0, dw, n_w)
+
+   ! Write data to the specint file
+
+   hi = hdf5io_t(specint_filename_in, CREATE_FILE)
+   call write(hi, si_out)
+   call hi%final()
+
+   ! Finish
+
+end program specint_to_specint
