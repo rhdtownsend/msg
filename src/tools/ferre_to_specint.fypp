@@ -179,6 +179,19 @@ contains
 
       ! Read data from the namelist
 
+      n_of_dim = 0
+      n_p = 0
+      npix = 0
+      llimits = 0._RD
+      steps = 0._RD
+
+      label = ''
+      transposed = 0
+
+      wave = 0._RD
+      logw = 0
+      resolution = 0._RD
+
       read(unit, NML=synth)
 
       @:ASSERT(n_of_dim <= N_MAX, 'recompile with increased N_MAX')
@@ -207,7 +220,7 @@ contains
    subroutine process_data_cap18(fh, H_lambda, vi, specint_filename)
 
       type(ferre_hdr_t), intent(in) :: fh
-      real(RD)                      :: H_lambda(:)
+      real(RD), intent(in)          :: H_lambda(:)
       integer, intent(in)           :: vi(:)
       character(*), intent(in)      :: specint_filename
 
