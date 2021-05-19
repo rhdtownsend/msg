@@ -24,8 +24,14 @@ module msg_m
    use forum_m
 
    use axis_m
-   use specgrid_m
+   use limb_m
+   use ngrid_m
+   use passband_m
    use photgrid_m
+   use photint_m
+   use specgrid_m
+   use specint_m
+   use specint_factory_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -51,8 +57,14 @@ module msg_m
 
    public :: LABEL_LEN
    public :: STAT_OK
-   public :: specgrid_t
+   public :: axis_t
+   public :: limb_t
+   public :: ngrid_t
+   public :: passband_t
    public :: photgrid_t
+   public :: photint_t
+   public :: specgrid_t
+   public :: specint_t
    public :: read
    public :: write
 
@@ -119,8 +131,6 @@ contains
       ! Open the file
 
       if (is_hdf5(file_name)) then
-
-         print *,'go read direct'
 
          hi = hdf5io_t(file_name, OPEN_FILE_RO)
          return
