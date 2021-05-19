@@ -22,7 +22,6 @@ program make_passband
    ! Uses
 
    use forum_m
-
    use msg_m
 
    use ISO_FORTRAN_ENV
@@ -47,7 +46,7 @@ program make_passband
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3,{Syntax: table_filename ZP passband_filename})
+   @:ASSERT(n_arg() == 3, 'Syntax: table_filename ZP passband_filename}')
 
    call get_arg(1, table_filename)
    call get_arg(2, ZP)

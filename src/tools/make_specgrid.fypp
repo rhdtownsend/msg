@@ -22,7 +22,6 @@ program make_specgrid
    ! Uses
 
    use forum_m
-
    use msg_m
 
    use ISO_FORTRAN_ENV
@@ -43,7 +42,7 @@ program make_specgrid
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() >= 2,{Syntax: make_specgrid specint_filename [specint_filename...] specgrid_filename})
+   @:ASSERT(n_arg() >= 2, 'Syntax: make_specgrid specint_filename [specint_filename...] specgrid_filename')
 
    n_node = n_arg()-1
    call get_arg(n_node+1, specgrid_filename)
@@ -116,8 +115,8 @@ contains
             labels_chk = hi_la%dset_names()
             labels_chk = labels_chk(sort_indices(labels_chk))
 
-            @:ASSERT(SIZE(labels_chk) == rank, mismatched labels)
-            @:ASSERT(ALL(labels_chk == labels), mismatched labels)
+            @:ASSERT(SIZE(labels_chk) == rank, 'mismatched labels')
+            @:ASSERT(ALL(labels_chk == labels), 'mismatched labels')
 
          endif
 
@@ -132,8 +131,6 @@ contains
 
       ! Set up the axes
 
-      print *,'labels:',labels
-
       allocate(ax(rank))
       allocate(shape(rank))
 
@@ -143,8 +140,6 @@ contains
          shape(j) = SIZE(k)
       end do
 
-      print *,'shape:',shape
-         
       ! Allocate arrays for data
 
       n_li = PRODUCT(shape)
@@ -171,7 +166,7 @@ contains
                if (node_x(j,n) == x) exit
             end do
             
-            @:ASSERT(i <= shape(j), unable to locate node in grid)
+            @:ASSERT(i <= shape(j), 'unable to locate node in grid')
 
             vi(j) = i
 

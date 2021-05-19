@@ -22,7 +22,6 @@ program specint_to_photint
    ! Uses
 
    use forum_m, PI_ => PI
-
    use msg_m
 
    use ISO_FORTRAN_ENV
@@ -49,7 +48,7 @@ program specint_to_photint
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3,{Syntax: specint_to_photint specint_filename passband_filename photint_filename})
+   @:ASSERT(n_arg() == 3, 'Syntax: specint_to_photint specint_filename passband_filename photint_filename')
 
    call get_arg(1, specint_filename)
    call get_arg(2, passband_filename)
