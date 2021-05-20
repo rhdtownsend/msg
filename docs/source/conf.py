@@ -100,7 +100,8 @@ extlinks = {
     'ads': ('https://ui.adsabs.harvard.edu/abs/%s/abstract', ''),
     'netlib': ('https://www.netlib.org/%s', ''),
     'git': ('https://github.com/%s', ''),
-    'repo': ('https://github.com/rhdtownsend/msg/blob/{:s}/%s'.format(branch), '')
+    'repo': ('https://github.com/rhdtownsend/msg/blob/{:s}/%s'.format(branch), ''),
+    'grid': ('http://www.astro.wisc.edu/~townsend/resource/download/msg/%s', '')
 }
 
 # Set site-wide targets
