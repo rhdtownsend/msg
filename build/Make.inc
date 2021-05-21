@@ -68,7 +68,7 @@ else
 endif
 
 ifeq (${PYTHON},yes)
-  CFLAGS := ${CFLAGS} $(shell python3-config --includes)
+  CFLAGS := ${CFLAGS} $(shell python3-config --includes) -I$(shell python3 -c 'import numpy; print(numpy.get_include())')
 endif
 
 # Cython
