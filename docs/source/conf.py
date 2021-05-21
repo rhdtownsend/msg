@@ -15,6 +15,7 @@ import sys
 import re
 
 sys.path.insert(0, os.path.abspath('exts'))
+sys.path.insert(0, os.path.join(os.environ['MSG_DIR'], 'lib'))
 
 import sphinx_rtd_theme
 
@@ -40,12 +41,15 @@ numfig = True
 extensions = [
     'sphinx_rtd_theme',
     'sphinx.ext.mathjax',
-    'sphinx.ext.extlinks',
+    'sphinx.ext.extlinks', 
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
     'sphinx-prompt',
     'sphinx_substitution_extensions',
-    'ads_cite',
+    'jupyter_sphinx',
+    'ads_cite'
 ]
-
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -85,6 +89,7 @@ html_theme_options = {
 html_context = {
     'css_files': [
         '_static/theme_overrides.css',  # override wide tables in RTD theme
+        '_static/jupyter-sphinx.css'    # support for nice cell formatting
     ],
 }
 
@@ -127,7 +132,7 @@ rep_exts = {"release": release,
 for rep_ext_key, rep_ext_val in rep_exts.items():
     rst_prolog += "\n.. |{:s}| replace:: {:s}".format(rep_ext_key, rep_ext_val)
 
-# Latex macros
+# Mathjax & Latex macros
 
 macros = {}
 
@@ -152,6 +157,22 @@ mathjax_config = {
         'Macros': mathjax_macros
     }
 }
+mathjax3_config = {                  
+    'tex': { 
+        'macros': mathjax_macros
+    }
+}
 
 # Enable email obfuscation
 email_automode = True
+
+# Set up intersphinx
+intersphinx_mapping = {'numpy': ('http://docs.scipy.org/doc/numpy/', None)}
+
+# Set up autodoc
+autoclass_content = 'class'
+autodoc_member_order = 'groupwise'
+
+# Set up napoleon
+napoleon_google_docstring = True
+napoleon_include_init_with_doc = True
