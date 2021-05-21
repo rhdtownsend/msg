@@ -18,6 +18,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+cimport numpy as cnp
+cimport cython
+
 from libcpp cimport bool
 
 cdef extern from "cmsg.h":
@@ -39,49 +42,47 @@ cdef extern from "cmsg.h":
     void photgrid_interp_d_moment(void *ptr, double *vx, int l, double *D, int *stat, bool *vderiv)
     void photgrid_interp_flux(void *ptr, double *vx, double *F, int *stat, bool *vderiv)
 
-
-cdef class MsgError(Exception):
-
-    def __init__(self, stat):
-
-        if stat == 1:
-            self.message = 'out-of-bounds (lo) axis'
-        elif stat == 2:
-            self.message = 'out-of-bounds (hi) axis'
-        elif stat == 3:
-            self.message = 'out-of-bounds (lo) w'
-        elif stat == 4:
-            self.message = 'out-of-bounds (hi) w'
-        elif stat == 5:
-            self.message = 'out-of-bounds (lo) mu'
-        elif stat == 6:
-            self.message = 'out-of-bounds (hi) mu'
-        elif stat == 7:
-            self.message = 'invalid l'
-        elif stat == 8:
-            self.message = 'unavailable data'
-        else:
-            self.message = f'error with unknown stat code: {stat}'
-
-            
-    def __str__(self):
-        return self.message
-
-
-    
+@cython.binding(True)
 cdef class SpecGrid:
+    r"""A SpecGrid represents a grid of spectral intensity data.
+
+    This grid may be used to interpolate the specific intensity (or
+    related quantities) across a spatial (wavelength) abscissa and for
+    a set of atmospheric parameter values Both internally and for
+    interpolated results, the spatial abscissa is configured as a set
+    of bins distributed uniformly in :math:`w`-space, where
+    :math:`{\rm d}w`, where :math:`w \equiv
+    \log(\lambda/\angstrom)`. Three parameters uniquely specify the
+    abscissa: w_0, dw and n_w; the i'th bin (i=0,...,n_w-1) then spans
+    the interval [w_0+i*dw, w_0+(i+1)*dw].
+
+    """
 
     cdef void *ptr
+    
     cdef readonly double w_0
+    """double: Spatial abscissa minimum value."""
     cdef readonly double dw
+    """double: Spatial abscissa bin width."""
     cdef readonly int n_w
-    cdef readonly int[:] shape
+    """int: Spatial abscissa number of bins."""
     cdef readonly int rank
-    cdef readonly double[:] axis_minima
-    cdef readonly double[:] axis_maxima
+    """int: Number of atmospheric parameters axes"""
     cdef readonly list axis_labels
+    """list: Atmospheric parameter axes labels."""
+    
+    cdef int[:] _shape
+    cdef double[:] _axis_minima
+    cdef double[:] _axis_maxima
 
-    def __cinit__(self, str filename, rebin_pars=None):
+    def __init__(self, str filename, tuple rebin_pars=None):
+        """SpecGrid constructor.
+
+        Args:
+            filename (string): Full pathname of grid file to load.
+            rebin_pars (tuple, optional): Parameters `(w_0, dw, n_w)` for
+                rebinning grid data when loading.
+        """
 
         if rebin_pars:
             w_0, dw, n_w = rebin_pars
@@ -91,11 +92,11 @@ cdef class SpecGrid:
 
         specgrid_inquire(self.ptr, &self.w_0, &self.dw, &self.n_w, NULL, &self.rank, NULL, NULL)
 
-        self.shape = np.empty(self.rank, dtype=np.intc)
-        self.axis_minima = np.empty(self.rank, dtype=np.double)
-        self.axis_maxima = np.empty(self.rank, dtype=np.double)
+        self._shape = np.empty(self.rank, dtype=np.intc)
+        self._axis_minima = np.empty(self.rank, dtype=np.double)
+        self._axis_maxima = np.empty(self.rank, dtype=np.double)
         
-        specgrid_inquire(self.ptr, NULL, NULL, NULL, &self.shape[0], NULL, &self.axis_minima[0], &self.axis_maxima[0])
+        specgrid_inquire(self.ptr, &self.w_0, &self.dw, &self.n_w, &self._shape[0], NULL, &self._axis_minima[0], &self._axis_maxima[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
@@ -119,9 +120,55 @@ cdef class SpecGrid:
             vderiv = np.array([False]*self.rank, dtype=np.uint8)
 
         return vx, vderiv
+
     
-        
+    @property
+    def shape(self):
+        """numpy.ndarray: Atmospheric parameter axes lengths."""
+        return np.asarray(self._shape)
+
+    
+    @property
+    def axis_minima(self):
+        """numpy.ndarray: Atmospheric parameter axes minimia."""
+        return np.asarray(self._axis_minima)
+
+    
+    @property
+    def axis_maxima(self):
+        """numpy.ndarray: Atmospheric parameter axes maxima."""
+        return np.asarray(self._axis_maxima)
+
+    
     def intensity(self, dict dx, double mu, double w_0, int n_w, dict deriv=None):
+        r"""Evaluate the spectroscopic intensity :math:`I(\mu,w)`.
+
+        Args:
+            dx (dict): Atmospheric parameters; keys must match
+                `axis_labels` property, values must be double.
+            mu (double): Cosine of angle of emergence, :math:`\mu`, 
+                relative to surface normal.
+            w_0 (double): Spatial abscissa minimum value.
+            n_w (int): Spatial abscissa number of bins.
+            deriv (dict, optional): Flags indicating whether to 
+                evaluate derivative wrt each atmospheric parameter;
+                keys must match the `axis_labels` property, values must 
+                be boolean.
+
+        Returns:
+            numpy.ndarray: spectroscopic intensity [:math:`\erg\,\cm^{-2}\,\second^{-1}\,\steradian^{-1}`]
+
+        Raises:
+            KeyError: If `dx` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `dx`, `mu`, or any part of the spatial 
+                abscissa falls outside the bounds of the grid.
+            LookupError: If `dx` falls in a grid void.
+
+        Note:
+            The spatial abscissa for the returned data is defined by
+            the `w_0` and `n_w` parameters, and the `dw` property.
+        """
 
         cdef double[:] I
         cdef int stat
@@ -135,12 +182,39 @@ cdef class SpecGrid:
         specgrid_interp_intensity(self.ptr, &vx[0], mu, w_0, n_w, &I[0], &stat, &vderiv[0])
 
         if stat != 0:
-            raise MsgError(stat)
+            handle_error(stat)
 
         return np.asarray(I)
 
     
     def D_moment(self, dict dx, int l, double w_0, int n_w, dict deriv=None):
+        r"""Evaluate the spectroscopic intensity moment :math:`D_{\ell}(w)`.
+
+        Args:
+            dx (dict): Atmospheric parameters; keys must match
+                `axis_labels` property, values must be double.
+            l (int): Harmonic degree of moment.
+            w_0 (double): Spatial abscissa minimum value.
+            n_w (int): Spatial abscissa number of bins.
+            deriv (dict, optional): Flags indicating whether to 
+                evaluate derivative wrt each atmospheric parameter;
+                keys must match the `axis_labels` property, values must 
+                be boolean.
+
+        Returns:
+            numpy.ndarray: spectroscopic intensity moment [:math:`\erg\,\cm^{-2}\,\second^{-1}`]
+
+        Raises:
+            KeyError: If `dx` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `dx`, `l`, or any part of the spatial 
+                abscissa falls outside the bounds of the grid.
+            LookupError: If `dx` falls in a grid void.
+
+        Note:
+            The spatial abscissa for the returned data is defined by
+            the `w_0` and `n_w` parameters, and the `dw` property.
+        """
 
         cdef double[:] D
         cdef int stat
@@ -154,12 +228,38 @@ cdef class SpecGrid:
         specgrid_interp_d_moment(self.ptr, &vx[0], l, w_0, n_w, &D[0], &stat, &vderiv[0])
 
         if stat != 0:
-            raise MsgError(stat)
+            handle_error(stat)
 
         return np.asarray(D)
 
     
     def flux(self, dict dx, double w_0, int n_w, dict deriv=None):
+        r"""Evaluate the spectroscopic flux :math:`F(w)`.
+
+        Args:
+            dx (dict): Atmospheric parameters; keys must match
+                `axis_labels` property, values must be double.
+            w_0 (double): Spatial abscissa minimum value.
+            n_w (int): Spatial abscissa number of bins.
+            deriv (dict, optional): Flags indicating whether to 
+                evaluate derivative wrt each atmospheric parameter;
+                keys must match the `axis_labels` property, values must
+                be boolean.
+
+        Returns:
+            numpy.ndarray: spectroscopic flux [:math:`\erg\,\cm^{-2}\,\second^{-1}`]
+
+        Raises:
+            KeyError: If `dx` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `dx` or any part of the spatial abscissa 
+                falls outside the bounds of the grid.
+            LookupError: If `dx` falls in a grid void.
+
+        Note:
+            The spatial abscissa for the returned data is defined by
+            the `w_0` and `n_w` parameters, and the `dw` property.
+        """
 
         cdef double[:] F
         cdef int stat
@@ -172,36 +272,52 @@ cdef class SpecGrid:
 
         specgrid_interp_flux(self.ptr, &vx[0], w_0, n_w, &F[0], &stat, &vderiv[0])
         if stat != 0:
-            raise MsgError(stat)
+            handle_error(stat)
         
         return np.asarray(F)
 
 
+@cython.binding(True)
 cdef class PhotGrid:
+    r"""A PhotGrid represents a grid of photometric intensity data.
+
+    This grid may be used to interpolate the photometric intensity (or
+    related quantities) for a set of atmospheric parameter values.
+
+    """
 
     cdef void *ptr
-    cdef readonly int[:] shape
+    
     cdef readonly int rank
-    cdef readonly double[:] axis_minima
-    cdef readonly double[:] axis_maxima
+    """int: Number of atmospheric parameter axes."""
     cdef readonly list axis_labels
+    """list: Atmospheric parameter axes labels."""
+    
+    cdef int[:] _shape
+    cdef double[:] _axis_minima
+    cdef double[:] _axis_maxima
 
-    def __cinit__(self, str filename):
+    def __init__(self, str filename):
+        """PhotGrid constructor.
+
+        Args:
+            filename (string): Full pathname of grid file to load.
+        """
 
         self.ptr = photgrid_load(filename.encode('ascii'))
 
         photgrid_inquire(self.ptr, NULL, &self.rank, NULL, NULL)
 
-        self.shape = np.empty(self.rank, dtype=np.intc)
-        self.axis_minima = np.empty(self.rank, dtype=np.double)
-        self.axis_maxima = np.empty(self.rank, dtype=np.double)
+        self._shape = np.empty(self.rank, dtype=np.intc)
+        self._axis_minima = np.empty(self.rank, dtype=np.double)
+        self._axis_maxima = np.empty(self.rank, dtype=np.double)
 
-        photgrid_inquire(self.ptr, &self.shape[0], NULL, &self.axis_minima[0], &self.axis_maxima[0])
+        photgrid_inquire(self.ptr, &self._shape[0], NULL, &self._axis_minima[0], &self._axis_maxima[0])
 
-        self.axis_label = []
+        self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
-            photgrid_get_axis_label(self.ptr, j+1, axis_label)
+            specgrid_get_axis_label(self.ptr, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
 
         
@@ -222,7 +338,47 @@ cdef class PhotGrid:
         return vx, vderiv
     
         
+    @property
+    def shape(self):
+        """numpy.ndarray: Atmospheric parameter axes lengths."""
+        return np.asarray(self._shape)
+
+    
+    @property
+    def axis_minima(self):
+        """numpy.ndarray: Atmospheric parameter axes minimia."""
+        return np.asarray(self._axis_minima)
+
+    
+    @property
+    def axis_maxima(self):
+        """numpy.ndarray: Atmospheric parameter axes maxima."""
+        return np.asarray(self._axis_maxima)
+
+    
     def intensity(self, dict dx, double mu, dict deriv=None):
+        r"""Evaluate the photometric intensity :math:`I_{x}(\mu)`.
+
+        Args:
+            dx (dict): Atmospheric parameters; keys must match
+                the `axis_labels` property, values must be double.
+            mu (double): Cosine of angle of emergence, :math:`\mu`, 
+                relative to surface normal.
+            deriv (dict, optional): Flags indicating whether to 
+                evaluate derivative wrt each atmospheric parameter;
+                keys must match the `axis_labels` property, values must
+                be boolean.
+
+        Returns:
+            double: photometric intensity [:math:`\erg\,\cm^{-2}\,\second^{-1}\,\steradian^{-1}`]
+
+        Raises:
+            KeyError: If `dx` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `dx` or `mu` falls outside the bounds of the 
+                grid.
+            LookupError: If `dx` falls in a grid void.
+        """
 
         cdef double I
         cdef int stat
@@ -233,12 +389,33 @@ cdef class PhotGrid:
 
         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  NULL)
         if stat != 0:
-            raise MsgError(stat)
+            handle_error(stat)
 
         return I
 
     
     def D_moment(self, dict dx, int l, dict deriv=None):
+        r"""Evaluate the photometric intensity moment :math:`D_{\ell,x}`.
+
+        Args:
+            dx (dict): Atmospheric parameters; keys must match
+                axis_labels property, values must be double.
+            l (int): Harmonic degree of Legendre function :math:`P_{\ell}`.
+            deriv (dict, optional): Flags indicating whether to 
+                evaluate derivative wrt each atmospheric parameter;
+                keys must match axis_labels property, values must be 
+                boolean.
+
+        Returns:
+            double: photometric intensity moment [:math:`\erg\,\cm^{-2}\,\second^{-1}`]
+
+        Raises:
+            KeyError: If `dx` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `dx` or `l` falls outside the bounds of the 
+                grid.
+            LookupError: If `dx` falls in a grid void.
+       """
 
         cdef double D
         cdef int stat
@@ -249,12 +426,31 @@ cdef class PhotGrid:
 
         photgrid_interp_d_moment(self.ptr, &vx[0], l, &D, &stat, &vderiv[0])
         if stat != 0:
-            raise MsgError(stat)
+            handle_error(stat)
 
         return D
 
     
     def flux(self, dict dx, dict deriv=None):
+        r"""Evaluate the photometric flux :math:`F_{x}`.
+
+        Args:
+            dx (dict): Atmospheric parameters; keys must match
+                axis_labels property, values must be double.
+            deriv (dict, optional): Flags indicating whether to 
+                evaluate derivative wrt each atmospheric parameter;
+                keys must match axis_labels property, values must be 
+                boolean.
+
+        Returns:
+            double: Photometric flux [:math:`\erg\,\cm^{-2}\,\second^{-1}`]
+
+        Raises:
+            KeyError: If `dx` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `dx` falls outside the bounds of the grid.
+            LookupError: If `dx` falls in a grid void.
+       """
 
         cdef double F
         cdef int stat
@@ -265,6 +461,31 @@ cdef class PhotGrid:
 
         photgrid_interp_flux(self.ptr, &vx[0], &F, &stat, &vderiv[0])
         if stat != 0:
-            raise MsgError(stat)
+            handle_error(stat)
 
         return F
+
+
+def handle_error(stat):
+
+    # Use the stat value to throw an appropriate exception
+
+    if stat == 1:
+        raise ValueError('out-of-bounds (lo) axis')
+    elif stat == 2:
+        raise ValueError('out-of-bounds (hi) axis')
+    elif stat == 3:
+        raise ValueError('out-of-bounds (lo) w')
+    elif stat == 4:
+        raise ValueError('out-of-bounds (hi) w')
+    elif stat == 5:
+        raise ValueError('out-of-bounds (lo) mu')
+    elif stat == 6:
+        raise ValueError('out-of-bounds (hi) mu')
+    elif stat == 7:
+        raise ValueError('invalid l')
+    elif stat == 8:
+        raise LookupError('unavailable data')
+    else:
+        raise Exception(f'error with unknown stat code: {stat}')
+    
