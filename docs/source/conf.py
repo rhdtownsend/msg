@@ -167,7 +167,10 @@ mathjax3_config = {
 email_automode = True
 
 # Set up intersphinx
-intersphinx_mapping = {'numpy': ('http://docs.scipy.org/doc/numpy/', None)}
+intersphinx_mapping = {
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None)
+}
 
 # Set up autodoc
 autoclass_content = 'class'

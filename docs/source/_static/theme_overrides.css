@@ -11,3 +11,11 @@
       overflow: visible !important;
    }
 }
+
+/* Center figures in jupyter-sphinx */
+
+.jupyter_container .cell_output img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
