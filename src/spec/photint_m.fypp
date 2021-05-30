@@ -44,9 +44,9 @@ module photint_m
       integer               :: n_b
    contains
       private
-      procedure, public :: interp_intensity
-      procedure, public :: interp_D_moment
-      procedure, public :: interp_flux
+      #:for name in ('intensity', 'D_moment', 'flux')
+         procedure, public :: interp_${name}$
+      #:endfor
    end type photint_t
 
    ! Interfaces

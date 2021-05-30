@@ -48,9 +48,9 @@ module specint_m
    contains
       private
       procedure, public :: inquire
-      procedure, public :: interp_intensity
-      procedure, public :: interp_D_moment
-      procedure, public :: interp_flux
+      #:for name in ('intensity', 'D_moment', 'flux')
+         procedure, public :: interp_${name}$
+      #:endfor
    end type specint_t
 
    ! Interfaces
@@ -386,7 +386,7 @@ contains
       integer  :: k
       real(RD) :: P
 
-      ! Construct the radint_t from the specint_t
+      ! Create a photint_t from the specint_t
 
       ! First check that the spectrum is defined across the passband support
 
@@ -416,6 +416,8 @@ contains
          c = c + P*si%c(:,k)
 
       end do
+
+      ! Construct the photint
 
       pi = photint_t(c, si%li)
 

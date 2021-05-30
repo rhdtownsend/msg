@@ -25,6 +25,9 @@ module specgrid_m
    use forum_m
 
    use ngrid_m
+   use passband_m
+   use photint_m
+   use photgrid_m
    use specint_m
    use dyn_specint_m
    use stat_m
@@ -60,6 +63,10 @@ module specgrid_m
       module procedure specgrid_t_
    end interface specgrid_t
 
+   interface photgrid_t
+      module procedure photgrid_t_specgrid_
+   end interface photgrid_t
+   
    interface read
       module procedure read_nobin_
       module procedure read_rebin_
@@ -74,6 +81,7 @@ module specgrid_m
    private
 
    public :: specgrid_t
+   public :: photgrid_t
    public :: read
    public :: write
 
@@ -279,6 +287,80 @@ contains
       end subroutine interp_${name}$
 
    #:endfor
+
+   !****
+
+   function photgrid_t_specgrid_(sg, pb, norm) result(pg)
+
+      type(specgrid_t), intent(inout) :: sg
+      type(passband_t), intent(in)    :: pb
+      logical, intent(in), optional   :: norm
+      type(photgrid_t)                :: pg
+
+      real(RD)                     :: lambda_min
+      real(RD)                     :: lambda_max
+      real(RD)                     :: w_a
+      real(RD)                     :: w_b
+      integer                      :: n_li
+      type(photint_t), allocatable :: pi(:)
+
+      ! Construct the photgrid_t from the specgrid_t
+
+      ! First check that the specgrid is defined across the passband support
+
+      call pb%get_support(lambda_min, lambda_max)
+
+      w_a = sg%w_0
+      w_b = sg%w_0 + sg%dw*sg%n_w
+
+      @:ASSERT(EXP(w_a) <= lambda_min, 'specgrid does not span passband support')
+      @:ASSERT(EXP(w_b) >= lambda_max, 'specgrid does not span passband support')
+
+      ! Evaluate the photint_t data
+
+      n_li = PRODUCT(sg%shape)
+
+      allocate(pi(n_li))
+
+      call sg%ng%map(photint_proc_)
+
+      ! Create the photgrid_t
+
+      pg = photgrid_t(pi, sg%ng)
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine photint_proc_(vi, stat)
+
+         integer, intent(in)            :: vi(:)
+         integer, intent(out), optional :: stat
+
+         integer  :: li
+
+         ! Construct the photint_t
+         
+         li = sg%ng%li_from_vi(vi)
+
+         select type (si => sg%si)
+         type is (specint_t)
+            pi(li) = photint_t(si(li), pb, norm)
+         type is (dyn_specint_t)
+            pi(li) = photint_t(si(li), pb, norm)
+         class default
+            @:ABORT('invalid class')
+         end select
+
+         ! Finish
+
+         return
+
+      end subroutine photint_proc_
+
+   end function photgrid_t_specgrid_
 
    !****
 
