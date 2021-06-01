@@ -37,8 +37,8 @@ endif
 
 ifeq (${TOOLS},yes)
   EXEC_TARGETS := ${EXEC_TARGETS} synspec_to_specint ferre_to_specint \
-             specint_to_specint specint_to_photint make_specgrid make_photgrid \
-             make_passband
+             specint_to_specint specint_to_photint specgrid_to_photgrid \
+             make_specgrid make_photgrid make_passband
 endif
 
 # Object lists & related variables
@@ -81,6 +81,10 @@ specint_to_specint_DEPS = forum_m msg_m
 specint_to_photint_OBJS = specint_to_photint.o
 specint_to_photint_LIBS = libforum libmsg
 specint_to_photint_DEPS = forum_m msg_m
+
+specgrid_to_photgrid_OBJS = specgrid_to_photgrid.o
+specgrid_to_photgrid_LIBS = libforum libmsg
+specgrid_to_photgrid_DEPS = forum_m msg_m
 
 make_specgrid_OBJS = make_specgrid.o
 make_specgrid_LIBS = libforum libmsg

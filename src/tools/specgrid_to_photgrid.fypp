@@ -1,0 +1,76 @@
+! Module   : specgrid_to_photgrid
+! Purpose  : create photgrid files from specgrid files
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program specgrid_to_photgrid
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: specgrid_filename
+   character(:), allocatable :: passband_filename
+   character(:), allocatable :: photgrid_filename
+
+   type(hdf5io_t)   :: hi
+   type(specgrid_t) :: sg
+   type(passband_t) :: pb
+   type(photgrid_t) :: pg
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 3, 'Syntax: specgrid_to_photgrid specgrid_filename passband_filename photgrid_filename')
+
+   call get_arg(1, specgrid_filename)
+   call get_arg(2, passband_filename)
+   call get_arg(3, photgrid_filename)
+
+   ! Read the specgrid_t
+
+   hi = hdf5io_t(specgrid_filename, OPEN_FILE_RO)
+   call read(hi, sg)
+   call hi%final()
+
+   ! Read data from the passband file
+
+   hi = hdf5io_t(passband_filename, OPEN_FILE_RO)
+   call read(hi, pb)
+   call hi%final()
+
+   ! Create the photgrid
+
+   pg = photgrid_t(sg, pb, norm=.TRUE.)
+
+   ! Write it
+
+   hi = hdf5io_t(photgrid_filename, CREATE_FILE)
+   call write(hi, pg)
+   call hi%final()
+
+   ! Finish
+
+end program specgrid_to_photgrid
