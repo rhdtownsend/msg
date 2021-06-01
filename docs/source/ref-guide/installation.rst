@@ -43,12 +43,12 @@ from the command line using the :command:`tar` utility:
 
 Set the :envvar:`MSG_DIR` environment variable with the path to the
 newly created source directory; this can be achieved e.g. using the
-:command:`dirname` built-in command:
+:command:`realpath` command\ [#realpath]_:
 
 .. prompt:: bash
    :substitutions:
 
-   export MSG_DIR=$(dirname msg-|release|)
+   export MSG_DIR=$(realpath msg-|release|)
 
 .. _install-compile:
 
@@ -59,7 +59,7 @@ Compile MSG using the :command:`make` utility:
 
 .. prompt:: bash
 
-   make -j -C $MSG
+   make -j -C $MSG_DIR
    
 (the :command:`-j` flags tells :command:`make` to use multiple cores, speeding up the build).
 
@@ -124,3 +124,11 @@ MSG directly from the :git:`rhdtownsend/msg` git repository on
 
 However, a word of caution: MSG is under constant development, and
 features in the main (``master``) branch can change without warning.
+
+.. rubric:: footnote
+
+.. [#realpath] The :command:`realpath` command is included in the GNU
+               `CoreUtils <https://www.gnu.org/software/coreutils/>`__
+               package. Mac OS users can install CoreUtils using
+               `MacPorts <https://www.macports.org/>`__ or `Homebrew
+               <https://brew.sh/>`__.

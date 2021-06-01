@@ -18,8 +18,9 @@ condiment to add flavor to your science!`
 
    user-guide/preliminaries.rst
    user-guide/quick-start.rst
-   user-guide/fortran-walkthrough.rst
    user-guide/python-walkthrough.rst
+   user-guide/fortran-walkthrough.rst
+   user-guide/spectral-abscissa.rst
 
 .. toctree::
    :caption: Reference Guide
