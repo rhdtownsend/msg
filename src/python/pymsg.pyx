@@ -317,7 +317,7 @@ cdef class PhotGrid:
         self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
-            specgrid_get_axis_label(self.ptr, j+1, axis_label)
+            photgrid_get_axis_label(self.ptr, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
 
         
