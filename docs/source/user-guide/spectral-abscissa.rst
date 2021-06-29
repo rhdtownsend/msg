@@ -78,6 +78,8 @@ where the bin width :math:`\Delta \lambda` is independent of
 Logarithmic Abscissa
 ====================
 
+While so far we've been assuming the detector is placed at the source, ...
+
 As soon as we allow for motion of the detector relative to the
 source, the resulting Doppler shift means that the detector measures a
 spectrum on an abscissa :math:`\{\lambda'_{k}\}`, where
