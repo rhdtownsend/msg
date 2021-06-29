@@ -118,6 +118,7 @@ else:
 
 targets = {
     'github-tarball': 'https://api.github.com/repos/rhdtownsend/msg/tarball/{0:s}'.format(tarball),
+    'madstar-tarball': 'http://www.astro.wisc.edu/~townsend/resource/download/msg/msg-main.tar.gz',
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mesa': 'http://mesa.sourceforge.net/',
 }
