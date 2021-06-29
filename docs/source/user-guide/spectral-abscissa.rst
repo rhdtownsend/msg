@@ -86,7 +86,7 @@ spectrum on an abscissa :math:`\{\lambda'_{k}\}`, where
 
    \lambda'_{k} = (1 + z) \lambda_{k} = (1 + z) \lambda_{1} + (k - 1) \Delta \lambda (1 + k)
    
-
-
+From this expression, we can see that the bin width for the detector
+is different than for the source. This messes things up.
    
 
