@@ -86,7 +86,8 @@ spectrum on an abscissa :math:`\{\lambda'_{k}\}`, where
 
    \lambda'_{k} = (1 + z) \lambda_{k} = (1 + z) \lambda_{1} + (k - 1) \Delta \lambda (1 + k)
    
-From this expression, we see that the bin width for the detector
-is different than for the source. This in principle means that we have to 
+From this expression, we see that the bin width for the detector is
+different than for the source. This means that we have to perform an
+expensive rebinning to map the source output onto the detector.
    
 
