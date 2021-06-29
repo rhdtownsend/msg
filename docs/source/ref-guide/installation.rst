@@ -120,7 +120,7 @@ MSG directly from the :git:`rhdtownsend/msg` git repository on
 
 .. prompt:: bash
 
-   git clone https://github.com/rhdtownsend/msg.git
+   git clone --recurse-submodules https://github.com/rhdtownsend/msg.git
 
 However, a word of caution: MSG is under constant development, and
 features in the main (``master``) branch can change without warning.
