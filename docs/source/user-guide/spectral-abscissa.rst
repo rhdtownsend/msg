@@ -78,15 +78,15 @@ where the bin width :math:`\Delta \lambda` is independent of
 Logarithmic Abscissa
 ====================
 
-As soon as we allow for motion of the detector, relative to the
-source, the resulting Doppler means that the detector measures a
+As soon as we allow for motion of the detector relative to the
+source, the resulting Doppler shift means that the detector measures a
 spectrum on an abscissa :math:`\{\lambda'_{k}\}`, where
 
 .. math::
 
    \lambda'_{k} = (1 + z) \lambda_{k} = (1 + z) \lambda_{1} + (k - 1) \Delta \lambda (1 + k)
    
-From this expression, we can see that the bin width for the detector
-is different than for the source. This messes things up.
+From this expression, we see that the bin width for the detector
+is different than for the source. This in principle means that we have to 
    
 
