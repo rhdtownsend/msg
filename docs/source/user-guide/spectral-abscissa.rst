@@ -22,7 +22,7 @@ bin :math:`[\lambda_{\rm a},\lambda_{\rm b}]`, is
    \Delta E_{\rm a,b} =
    \Delta A \, \Delta t \, \int_{\lambda_{\rm a}}^{\lambda_{\rm b}} F_{\lambda} \,{\rm d}\lambda.
 
-Suppose we measure this spectrum, by placing a suitable device in situ at the 
+To measure this flux density, we place a spectrograph by placing a spectograph into the spectrum by placing a suitable device in situ at the 
 
 When we measure a spectrum, we may imagine we're determining
 :math:`F_{\lambda}` --- but that's only true in a fuzzy sense. In
