@@ -26,7 +26,7 @@ When we measure a spectrum, we may imagine we're determining
 :math:`F_{\lambda}` --- but that's only true in a fuzzy sense. In
 fact, the detector in a spectrograph (or some related instrument)
 measures :math:`\Delta E_{\rm a,b}`, and from that we infer a
-bin-average flux density
+'bin-average' flux density
 
 .. math::
 
