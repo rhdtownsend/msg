@@ -38,7 +38,13 @@ where
 
 .. math::
 
-   \Delta \lambda_{\rm a,b} \equiv \lambda_{\rm b} - \lambda_{\rm a}.
+   \Delta \lambda_{\rm a,b} \equiv \lambda_{\rm b} - \lambda_{\rm a}
+
+is the bin width. In the limit where this width tends to zero (for
+instance, if we were to build spectrographs of progressively higher
+resolution), the bin average :math:`\left\langle F_{\lambda}
+\right\rangle_{\rm a,b}` approaches the flux density
+:math:`F_{\lambda}` at :math:`\lambda=\lambda_{a} = \lamba_{\rm b}`.
 
 We can generalize this analysis to a spectral abscissa
 :math:`\{\lambda_{k}\}` (:math:`k = 1,2,\ldots`) and a corresponding
