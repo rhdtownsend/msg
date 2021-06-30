@@ -22,9 +22,6 @@ bin :math:`[\lambda_{\rm a},\lambda_{\rm b}]`, is
    \Delta E_{\rm a,b} =
    \Delta A \, \Delta t \, \int_{\lambda_{\rm a}}^{\lambda_{\rm b}} F_{\lambda} \,{\rm d}\lambda.
 
-To measure the flux density, we can place a spectrograph so that it
-intercepts and measures this energy in 
-
 When we measure a spectrum, we may imagine we're determining
 :math:`F_{\lambda}` --- but that's only true in a fuzzy sense. In
 fact, the detector in a spectrograph (or some related instrument)
