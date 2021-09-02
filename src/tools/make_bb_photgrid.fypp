@@ -1,0 +1,177 @@
+! Module   : make_bb_photgrid
+! Purpose  : create a blackbody/bolometric photgrid file
+!
+! Copyright 2021 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program make_bb_photgrid
+
+   ! Uses
+
+   use forum_m, PI_ => PI
+   use msg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   real(RD)                  :: Teff_min
+   real(RD)                  :: Teff_max
+   integer                   :: n_Teff
+   real(RD)                  :: logg_min
+   real(RD)                  :: logg_max
+   integer                   :: n_logg
+   integer                   :: n_mu
+   real(RD)                  :: u
+   character(:), allocatable :: limb_law
+   character(:), allocatable :: photgrid_filename
+
+   type(axis_t)                 :: ax(2)
+   integer                      :: n_node
+   logical, allocatable         :: mask(:)
+   type(ngrid_t)                :: ng
+   type(limb_t)                 :: li
+   integer                      :: i
+   real(RD), allocatable        :: mu(:)
+   real(RD), allocatable        :: f_mu(:)
+   type(photint_t), allocatable :: pi(:)
+   type(photgrid_t)             :: pg
+   type(hdf5io_t)               :: hi
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 10, 'Syntax: make_bb_photgrid Teff_min Teff_max n_Teff logg_min logg_max n_logg n_mu u limb_law photgrid_filename')
+
+   call get_arg(1, Teff_min)
+   call get_arg(2, Teff_max)
+   call get_arg(3, n_Teff)
+
+   call get_arg(4, logg_min)
+   call get_arg(5, logg_max)
+   call get_arg(6, n_logg)
+
+   call get_arg(7, n_mu)
+   call get_arg(8, u)
+   call get_arg(9, limb_law)
+
+   call get_arg(10, photgrid_filename)
+
+   ! Create the axes
+
+   ax(1) = make_axis(LOG10(Teff_min), LOG10(Teff_max), n_Teff, 'logT')
+   ax(2) = make_axis(logg_min, logg_max, n_logg, 'logg')
+
+   ! Create the ngrid_t
+
+   n_node = n_Teff*n_logg
+
+   allocate(mask(n_node))
+   mask = .TRUE.
+
+   ng = ngrid_t(ax, mask)
+
+   ! Set up limb-darkening stuff
+
+   li = limb_t(limb_law)
+
+   mu = [(REAL(i-1, RD)/(n_mu-1),i=1,n_mu)]
+   f_mu = (1._RD - u*(1._RD - mu))
+
+   ! Create the photint_t array
+
+   allocate(pi(n_node))
+
+   call ng%map(make_photint)
+
+   ! Create the photgrid_t
+
+   pg = photgrid_t(pi, ng)
+
+   ! Write it
+
+   hi = hdf5io_t(photgrid_filename, CREATE_FILE)
+   call write(hi, pg)
+   call hi%final()
+
+   ! Finish
+
+contains
+
+   function make_axis (x_min, x_max, n, label) result (ax)
+
+      real(RD), intent(in)     :: x_min
+      real(RD), intent(in)     :: x_max
+      integer, intent(in)      :: n
+      character(*), intent(in) :: label
+      type(axis_t)             :: ax
+
+      integer  :: i
+      real(RD) :: x(n)
+
+      ! Set up axis values
+
+      x = [((x_min*(n-i) + x_max*(i-1))/(n-1),i=1,n)]
+
+      ! Create the axis
+
+      ax = axis_t(x, label)
+
+      ! Finish
+
+      return
+
+   end function make_axis
+
+   !****
+
+   subroutine make_photint (vi, stat)
+
+      integer, intent(in)            :: vi(:)
+      integer, intent(out), optional :: stat
+
+      integer  :: li_
+      real(RD) :: logT
+      real(RD) :: Teff
+      real(RD) :: I(n_mu)
+
+      ! Convert vector indices into linear indices
+
+      li_ = ng%li_from_vi(vi)
+
+      ! Create intensity data
+
+      call ax(1)%get_x(vi(1), logT)
+      Teff = 10**logT
+
+      I = SIGMA_STEFAN*Teff**4/(TWOPI*(1._RD/2._RD - u/6._RD)) * f_mu
+
+      ! Construct the photint_t
+
+      pi(li_) = photint_t(I, mu, li)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine make_photint
+
+end program make_bb_photgrid
