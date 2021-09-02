@@ -399,7 +399,7 @@ contains
 
       D_ls = 1._RD/(1._RD + s + l_0)
 
-      do m = l_0+2, l, 2
+      do m = l_0, l-2, 2
          D_ls = (s - m)/(s + m + 3._RD)*D_ls
       end do
 
@@ -451,11 +451,12 @@ contains
       integer               :: n_k
       integer               :: k
       real(RD)              :: y(SIZE(I, 1),SIZE(I, 2))
-       real(RD), allocatable :: a(:,:)
-      
+      real(RD), allocatable :: a(:,:)
+
       @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
 
-      ! Fit the limb-darkening law to the intensity data
+      ! Fit the limb-darkening law to the intensity data. The fit is
+      ! constrained to pass through I(mu=1)
 
       n_b = self%n_basis()
 
@@ -508,7 +509,11 @@ contains
          integer, intent(in)  :: n
          real(RD)             :: f_(n)
 
-         call self%eval_intensity_basis(mu, f_)
+         real(RD) :: b(n+1)
+
+         call self%eval_intensity_basis(mu, b)
+
+         f_ = b(2:)
 
       end function f_
 
