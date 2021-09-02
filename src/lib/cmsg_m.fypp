@@ -60,7 +60,6 @@ contains
 
          type(${type}$), pointer   :: gr
          character(:), allocatable :: file_name
-         type(hdf5io_t)            :: hi
 
          ! Allocate the grid
 
@@ -249,7 +248,6 @@ contains
       type(specgrid_t), pointer         :: sg
       integer                           :: rank
       character(LABEL_LEN), allocatable :: axis_labels(:)
-      integer                           :: j
 
       ! Set up the Fortran pointer
 
@@ -286,7 +284,6 @@ contains
       type(photgrid_t), pointer         :: pg
       integer                           :: rank
       character(LABEL_LEN), allocatable :: axis_labels(:)
-      integer                           :: j
 
       ! Set up the Fortran pointer
 
