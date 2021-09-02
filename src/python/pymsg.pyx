@@ -387,7 +387,7 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  NULL)
+        photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  &vderiv[0])
         if stat != 0:
             handle_error(stat)
 
