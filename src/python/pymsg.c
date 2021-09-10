@@ -6805,7 +6805,7 @@ static PyObject *__pyx_pf_5pymsg_8PhotGrid_6intensity(struct __pyx_obj_5pymsg_Ph
   double __pyx_v_I;
   int __pyx_v_stat;
   __Pyx_memviewslice __pyx_v_vx = { 0, 0, { 0 }, { 0 }, { 0 } };
-  CYTHON_UNUSED __Pyx_memviewslice __pyx_v_vderiv = { 0, 0, { 0 }, { 0 }, { 0 } };
+  __Pyx_memviewslice __pyx_v_vderiv = { 0, 0, { 0 }, { 0 }, { 0 } };
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -6817,7 +6817,8 @@ static PyObject *__pyx_pf_5pymsg_8PhotGrid_6intensity(struct __pyx_obj_5pymsg_Ph
   __Pyx_memviewslice __pyx_t_7 = { 0, 0, { 0 }, { 0 }, { 0 } };
   __Pyx_memviewslice __pyx_t_8 = { 0, 0, { 0 }, { 0 }, { 0 } };
   Py_ssize_t __pyx_t_9;
-  int __pyx_t_10;
+  Py_ssize_t __pyx_t_10;
+  int __pyx_t_11;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -6828,7 +6829,7 @@ static PyObject *__pyx_pf_5pymsg_8PhotGrid_6intensity(struct __pyx_obj_5pymsg_Ph
  * 
  *         vx, vderiv = self._vector_args(dx, deriv)             # <<<<<<<<<<<<<<
  * 
- *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  NULL)
+ *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  &vderiv[0])
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vector_args); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 388, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -6937,7 +6938,7 @@ static PyObject *__pyx_pf_5pymsg_8PhotGrid_6intensity(struct __pyx_obj_5pymsg_Ph
   /* "pymsg.pyx":390
  *         vx, vderiv = self._vector_args(dx, deriv)
  * 
- *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  NULL)             # <<<<<<<<<<<<<<
+ *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  &vderiv[0])             # <<<<<<<<<<<<<<
  *         if stat != 0:
  *             handle_error(stat)
  */
@@ -6951,20 +6952,30 @@ static PyObject *__pyx_pf_5pymsg_8PhotGrid_6intensity(struct __pyx_obj_5pymsg_Ph
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
     __PYX_ERR(0, 390, __pyx_L1_error)
   }
-  photgrid_interp_intensity(__pyx_v_self->ptr, (&(*((double *) ( /* dim=0 */ (__pyx_v_vx.data + __pyx_t_9 * __pyx_v_vx.strides[0]) )))), __pyx_v_mu, (&__pyx_v_I), (&__pyx_v_stat), NULL);
+  __pyx_t_10 = 0;
+  __pyx_t_4 = -1;
+  if (__pyx_t_10 < 0) {
+    __pyx_t_10 += __pyx_v_vderiv.shape[0];
+    if (unlikely(__pyx_t_10 < 0)) __pyx_t_4 = 0;
+  } else if (unlikely(__pyx_t_10 >= __pyx_v_vderiv.shape[0])) __pyx_t_4 = 0;
+  if (unlikely(__pyx_t_4 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_4);
+    __PYX_ERR(0, 390, __pyx_L1_error)
+  }
+  photgrid_interp_intensity(__pyx_v_self->ptr, (&(*((double *) ( /* dim=0 */ (__pyx_v_vx.data + __pyx_t_9 * __pyx_v_vx.strides[0]) )))), __pyx_v_mu, (&__pyx_v_I), (&__pyx_v_stat), (&(*((bool *) ( /* dim=0 */ (__pyx_v_vderiv.data + __pyx_t_10 * __pyx_v_vderiv.strides[0]) )))));
 
   /* "pymsg.pyx":391
  * 
- *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  NULL)
+ *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  &vderiv[0])
  *         if stat != 0:             # <<<<<<<<<<<<<<
  *             handle_error(stat)
  * 
  */
-  __pyx_t_10 = ((__pyx_v_stat != 0) != 0);
-  if (__pyx_t_10) {
+  __pyx_t_11 = ((__pyx_v_stat != 0) != 0);
+  if (__pyx_t_11) {
 
     /* "pymsg.pyx":392
- *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  NULL)
+ *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  &vderiv[0])
  *         if stat != 0:
  *             handle_error(stat)             # <<<<<<<<<<<<<<
  * 
@@ -6994,7 +7005,7 @@ static PyObject *__pyx_pf_5pymsg_8PhotGrid_6intensity(struct __pyx_obj_5pymsg_Ph
 
     /* "pymsg.pyx":391
  * 
- *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  NULL)
+ *         photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  &vderiv[0])
  *         if stat != 0:             # <<<<<<<<<<<<<<
  *             handle_error(stat)
  * 
