@@ -2,7 +2,7 @@
 ! Purpose : define dyn_specint_t type, for adding dynamic loading to the
 !           specint_t type
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -39,11 +39,9 @@ module dyn_specint_m
    type, extends(specint_t) :: dyn_specint_t
       private
       type(hdf5io_t) :: hi
-      real(RD)       :: w_0_
-      real(RD)       :: dw_
-      integer        :: n_w_
-      logical        :: must_rebin = .FALSE.
-      logical        :: must_load = .TRUE.
+      real(RD)       :: lam_min
+      real(RD)       :: lam_max
+      logical        :: loaded = .FALSE.
    contains
       private
       procedure, public :: inquire
@@ -61,8 +59,11 @@ module dyn_specint_m
 
    interface read
       module procedure read_
-      module procedure read_rebin_
    end interface read
+
+   interface write
+      module procedure write_
+   end interface write
 
    ! Access specifiers
 
@@ -71,23 +72,30 @@ module dyn_specint_m
    public :: dyn_specint_t
    public :: photint_t
    public :: read
+   public :: write
 
    ! Procedures
 
 contains
 
-   subroutine inquire(self, w_0, dw, n_w)
+   subroutine inquire(self, lam_min, lam_max)
 
       class(dyn_specint_t), intent(in) :: self
-      real(RD), intent(out), optional  :: w_0
-      real(RD), intent(out), optional  :: dw
-      integer, intent(out), optional   :: n_w
+      real(RD), intent(out), optional  :: lam_min
+      real(RD), intent(out), optional  :: lam_max
 
       ! Inquire metadata
 
-      if (PRESENT(w_0)) w_0 = self%w_0_
-      if (PRESENT(dw)) dw = self%dw_
-      if (PRESENT(n_w)) n_w = self%n_w_
+      if (self%loaded) then
+
+         call self%specint_t%inquire(lam_min, lam_max)
+
+      else
+
+         if (PRESENT(lam_min)) lam_min = self%lam_min
+         if (PRESENT(lam_max)) lam_max = self%lam_max
+
+      endif
 
       ! Finish
 
@@ -98,23 +106,23 @@ contains
    !****
 
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                          ('D_moment', 'D', 'l', 'integer'))
+                                         ('D_moment', 'D', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, ${arg_var}$, w_0, ${var}$, stat)
+      subroutine interp_${name}$(self, ${arg_var}$, lam, ${var}$, stat)
 
          class(dyn_specint_t), intent(inout) :: self
          ${arg_type}$, intent(in)            :: ${arg_var}$
-         real(RD), intent(in)                :: w_0
+         real(RD), intent(in)                :: lam(:)
          real(RD), intent(out)               :: ${var}$(:)
          integer, intent(out), optional      :: stat
 
          ! If necessary, load
 
-         if (self%must_load) call self%load_()
+         if (.NOT. self%loaded) call self%load_()
          
          ! Pass
 
-         call self%specint_t%interp_${name}$(${arg_var}$, w_0, ${var}$, stat)
+         call self%specint_t%interp_${name}$(${arg_var}$, lam, ${var}$, stat)
 
          ! Finish
 
@@ -126,22 +134,22 @@ contains
       
    !****
 
-   #:for name, var in (('flux', 'F'), )
+   #:for name, var in (('flux', 'F'),)
 
-      subroutine interp_${name}$(self, w_0, ${var}$, stat)
+      subroutine interp_${name}$(self, lam, ${var}$, stat)
 
          class(dyn_specint_t), intent(inout) :: self
-         real(RD), intent(in)                :: w_0
+         real(RD), intent(in)                :: lam(:)
          real(RD), intent(out)               :: ${var}$(:)
          integer, intent(out), optional      :: stat
 
          ! If necessary, load
 
-         if (self%must_load) call self%load_()
+         if (.NOT. self%loaded) call self%load_()
          
          ! Pass
 
-         call self%specint_t%interp_${name}$(w_0, ${var}$, stat)
+         call self%specint_t%interp_${name}$(lam, ${var}$, stat)
 
          ! Finish
 
@@ -162,7 +170,7 @@ contains
 
       ! If necessary, load
 
-      if (si%must_load) call si%load_()
+      if (.NOT. si%loaded) call si%load_()
          
       ! Pass
 
@@ -176,20 +184,26 @@ contains
 
    !****
 
-   subroutine load_ (self)
+   subroutine load_(self)
       
       class(dyn_specint_t), intent(inout) :: self
+
+      real(RD) :: lam_min
+      real(RD) :: lam_max
 
       ! Load the specint
 
       call read(self%hi, self%specint_t)
+      call self%hi%final()
 
-      if (self%must_rebin) then
-         self%specint_t = specint_t(self%specint_t, self%w_0_, self%dw_, self%n_w_)
-         self%must_rebin = .FALSE.
-      endif
+      self%loaded = .TRUE.
 
-      self%must_load = .FALSE.
+      ! Consistency check
+
+      call self%inquire(lam_min, lam_max)
+
+      @:ASSERT(lam_min == self%lam_min, 'inconsistent lam_min')
+      @:ASSERT(lam_max == self%lam_max, 'inconsistent lam_max')
 
       ! Finish
 
@@ -204,14 +218,13 @@ contains
       type(hdf5io_t), intent(inout)    :: hi
       type(dyn_specint_t), intent(out) :: si
 
-      ! Read the dyn_specint_t (this only sets variables used in a
+      ! Read the dyn_specint_t (the specint_t supertype is set in a
       ! later call to load_)
 
       si%hi = hdf5io_t(hi, '.')
 
-      call hi%read_attr('w_0', si%w_0_)
-      call hi%read_attr('dw', si%dw_)
-      call hi%read_attr('n_w', si%n_w_)
+      call hi%read_attr('lam_min', si%lam_min)
+      call hi%read_attr('lam_max', si%lam_max)
 
       ! Finish
 
@@ -221,29 +234,21 @@ contains
 
    !****
 
-   subroutine read_rebin_(hi, si, w_0, dw, n_w)
+   subroutine write_(hi, si)
 
-      type(hdf5io_t), intent(inout)    :: hi
-      type(dyn_specint_t), intent(out) :: si
-      real(RD), intent(in)             :: w_0
-      real(RD), intent(in)             :: dw
-      integer, intent(in)              :: n_w
+      type(hdf5io_t), intent(inout)      :: hi
+      type(dyn_specint_t), intent(inout) :: si
 
-      ! Read the dyn_specint_t with deferred rebinning (this only sets
-      ! variables used in a later call to load_)
+      ! Write the dyn_specint_t
 
-      si%hi = hdf5io_t(hi, '.')
-
-      si%w_0_ = w_0
-      si%dw_ = dw
-      si%n_w_ = n_w
-
-      si%must_rebin = .TRUE.
+      if (.NOT. si%loaded) call si%load_()
+         
+      call write(hi, si%specint_t)
 
       ! Finish
 
       return
 
-   end subroutine read_rebin_
-
+   end subroutine write_
+   
 end module dyn_specint_m

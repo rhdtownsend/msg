@@ -2,7 +2,7 @@
 ! Purpose : define specgrid_t type, for representing spectral intensity
 !           grids
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -44,9 +44,8 @@ module specgrid_m
       private
       class(specint_t), allocatable :: si(:)
       type(ngrid_t)                 :: ng
-      real(RD)                      :: w_0
-      real(RD)                      :: dw
-      integer                       :: n_w
+      real(RD)                      :: lam_min
+      real(RD)                      :: lam_max
       integer, allocatable          :: shape(:)
       integer                       :: rank
    contains
@@ -68,8 +67,7 @@ module specgrid_m
    end interface photgrid_t
    
    interface read
-      module procedure read_nobin_
-      module procedure read_rebin_
+      module procedure read_
    end interface read
 
    interface write
@@ -97,10 +95,8 @@ contains
 
       integer              :: rank
       integer, allocatable :: shape(:)
-      logical              :: first
-      real(RD)             :: w_0
-      real(RD)             :: dw
-      integer              :: n_w
+      real(RD)             :: lam_min
+      real(RD)             :: lam_max
 
       ! Construct the specgrid_t
 
@@ -112,16 +108,19 @@ contains
 
       @:CHECK_BOUNDS(SIZE(si), PRODUCT(shape))
 
-      first = .TRUE.
+      lam_min = -HUGE(0._RD)
+      lam_max = HUGE(0._RD)
+
       call ng%map(meta_proc_)
+
+      @:ASSERT(lam_max > lam_min,'non-overlapping wavelength ranges')
  
       allocate(sg%si, SOURCE=si)
 
       sg%ng = ng
 
-      sg%w_0 = w_0
-      sg%dw = dw
-      sg%n_w = n_w
+      sg%lam_min = lam_min
+      sg%lam_max = lam_max
 
       sg%shape = shape
       sg%rank = rank
@@ -138,29 +137,18 @@ contains
          integer, intent(out), optional :: stat
 
          integer  :: li
-         real(RD) :: w_0_chk
-         real(RD) :: dw_chk
-         integer  :: n_w_chk
+         real(RD) :: lam_min_i
+         real(RD) :: lam_max_i
 
          ! Set or check metadata
 
          li = ng%li_from_vi(vi)
 
-         if (first) then
+         call si(li)%inquire(lam_min=lam_min_i, lam_max=lam_max_i)
 
-            call si(li)%inquire(w_0=w_0, dw=dw, n_w=n_w)
-            first = .FALSE.
-
-         else
-
-            call si(li)%inquire(w_0=w_0_chk, dw=dw_chk, n_w=n_w_chk)
-
-            @:ASSERT(w_0 == w_0_chk, 'base wavelength mismatch')
-            @:ASSERT(dw == dw_chk, 'wavelength increment mismatch')
-            @:ASSERT(n_w == n_w_chk, 'dimension mismatch')
-
-         end if
-
+         lam_min = MAX(lam_min, lam_min_i)
+         lam_max = MIN(lam_max, lam_max_i)
+         
          ! Finish
 
          return
@@ -171,16 +159,15 @@ contains
 
    !****
 
-   subroutine inquire(self, w_0, dw, n_w, shape, rank, axis_minima, axis_maxima, axis_labels)
+   subroutine inquire(self, lam_min, lam_max, shape, rank, axis_min, axis_max, axis_labels)
 
       class(specgrid_t), intent(in)       :: self
-      real(RD), intent(out), optional     :: w_0
-      real(RD), intent(out), optional     :: dw
-      integer, intent(out), optional      :: n_w
+      real(RD), intent(out), optional     :: lam_min
+      real(RD), intent(out), optional     :: lam_max
       integer, intent(out), optional      :: shape(:)
       integer, intent(out), optional      :: rank
-      real(RD), intent(out), optional     :: axis_minima(:)
-      real(RD), intent(out), optional     :: axis_maxima(:)
+      real(RD), intent(out), optional     :: axis_min(:)
+      real(RD), intent(out), optional     :: axis_max(:)
       character(*), intent(out), optional :: axis_labels(:)
 
       if (PRESENT(shape)) then
@@ -189,14 +176,13 @@ contains
 
       ! Inquire metadata
 
-      if (PRESENT(w_0)) w_0 = self%w_0
-      if (PRESENT(dw)) dw = self%dw
-      if (PRESENT(n_w)) n_w = self%n_w
+      if (PRESENT(lam_min)) lam_min = self%lam_min
+      if (PRESENT(lam_max)) lam_max = self%lam_max
 
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
 
-      call self%ng%inquire(axis_minima=axis_minima, axis_maxima=axis_maxima, axis_labels=axis_labels)
+      call self%ng%inquire(axis_min=axis_min, axis_max=axis_max, axis_labels=axis_labels)
 
       ! Finish
 
@@ -207,19 +193,19 @@ contains
    !****
 
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                          ('D_moment', 'D', 'l', 'integer'))
+                                       ('D_moment', 'D', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, vx, ${arg_var}$, w_0, ${var}$, stat, vderiv)
+      subroutine interp_${name}$(self, vx, ${arg_var}$, lam, ${var}$, stat, vderiv)
 
          class(specgrid_t), intent(inout) :: self
          real(RD), intent(in)             :: vx(:)
          ${arg_type}$, intent(in)         :: ${arg_var}$
-         real(RD), intent(in)             :: w_0
+         real(RD), intent(in)             :: lam(:)
          real(RD), intent(out)            :: ${var}$(:)
          integer, intent(out), optional   :: stat
          logical, intent(in), optional    :: vderiv(:)
 
-         ! Interpolate the ${name}$
+         ! Interpolate the data
 
          call self%ng%interp(proc_, vx, ${var}$, stat, vderiv)
 
@@ -237,7 +223,7 @@ contains
 
             li = self%ng%li_from_vi(vi)
 
-            call self%si(li)%interp_${name}$(${arg_var}$, w_0, f, stat)
+            call self%si(li)%interp_${name}$(${arg_var}$, lam, f, stat)
 
             return
 
@@ -249,13 +235,13 @@ contains
 
    !****
 
-   #:for name, var in (('flux', 'F'), )
+   #:for name, var in (('flux', 'F'),)
 
-      subroutine interp_${name}$(self, vx, w_0, ${var}$, stat, vderiv)
+      subroutine interp_${name}$(self, vx, lam, ${var}$, stat, vderiv)
 
          class(specgrid_t), intent(inout) :: self
          real(RD), intent(in)             :: vx(:)
-         real(RD), intent(in)             :: w_0
+         real(RD), intent(in)             :: lam(:)
          real(RD), intent(out)            :: ${var}$(:)
          integer, intent(out), optional   :: stat
          logical, intent(in), optional    :: vderiv(:)
@@ -278,7 +264,7 @@ contains
 
             li = self%ng%li_from_vi(vi)
 
-            call self%si(li)%interp_${name}$(w_0, f, stat)
+            call self%si(li)%interp_${name}$(lam, f, stat)
 
             return
 
@@ -297,8 +283,10 @@ contains
       logical, intent(in), optional   :: norm
       type(photgrid_t)                :: pg
 
-      real(RD)                     :: lambda_min
-      real(RD)                     :: lambda_max
+      real(RD)                     :: lam_min
+      real(RD)                     :: lam_max
+      real(RD)                     :: lam_min_pb
+      real(RD)                     :: lam_max_pb
       real(RD)                     :: w_a
       real(RD)                     :: w_b
       integer                      :: n_li
@@ -308,13 +296,11 @@ contains
 
       ! First check that the specgrid is defined across the passband support
 
-      call pb%get_support(lambda_min, lambda_max)
+      call sg%inquire(lam_min=lam_min, lam_max=lam_max)
+      call pb%get_support(lam_min_pb, lam_max_pb)
 
-      w_a = sg%w_0
-      w_b = sg%w_0 + sg%dw*sg%n_w
-
-      @:ASSERT(EXP(w_a) <= lambda_min, 'specgrid does not span passband support')
-      @:ASSERT(EXP(w_b) >= lambda_max, 'specgrid does not span passband support')
+      @:ASSERT(lam_min_pb <= lam_min, 'specgrid does not span passband support')
+      @:ASSERT(lam_max_pb >= lam_max, 'specgrid does not span passband support')
 
       ! Evaluate the photint_t data
 
@@ -345,14 +331,7 @@ contains
          
          li = sg%ng%li_from_vi(vi)
 
-         select type (si => sg%si)
-         type is (specint_t)
-            pi(li) = photint_t(si(li), pb, norm)
-         type is (dyn_specint_t)
-            pi(li) = photint_t(si(li), pb, norm)
-         class default
-            @:ABORT('invalid class')
-         end select
+         pi(li) = photint_t(sg%si(li), pb, norm)
 
          ! Finish
 
@@ -364,25 +343,34 @@ contains
 
    !****
 
-   subroutine read_nobin_(hi, sg)
+   subroutine read_(hi, sg)
 
       type(hdf5io_t), intent(inout) :: hi
       type(specgrid_t), intent(out) :: sg
 
-      type(ngrid_t)                    :: ng
+      character(TYPE_LEN)              :: type
       integer, allocatable             :: shape(:)
+      type(hdf5io_t)                   :: hi_ng
+      type(ngrid_t)                    :: ng
       integer                          :: n_si
       type(dyn_specint_t), allocatable :: si(:)
 
-      ! Read the specgrid_t with no rebinning
+      ! Read the specgrid_t
 
-      call read_base_(hi, ng, shape)
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'specgrid_t', 'invalid type')
+
+      call hi%alloc_read_attr('shape', shape)
+      
+      hi_ng = hdf5io_t(hi, 'ng')
+      call read(hi_ng, ng)
+      call hi_ng%final()
 
       n_si = PRODUCT(shape)
 
       allocate(si(n_si))
 
-      call ng%map(read_specint_nobin_)
+      call ng%map(read_specint_)
 
       sg = specgrid_t(si, ng)
 
@@ -392,7 +380,7 @@ contains
 
    contains
 
-      subroutine read_specint_nobin_(vi, stat)
+      subroutine read_specint_(vi, stat)
 
          integer, intent(in)            :: vi(:)
          integer, intent(out), optional :: stat
@@ -400,7 +388,7 @@ contains
          integer        :: li
          type(hdf5io_t) :: hi_si
 
-         ! Read the specint_t for the node with no rebinning
+         ! Read the specint_t for the node
 
          li = ng%li_from_vi(vi)
  
@@ -412,130 +400,31 @@ contains
 
          return
 
-      end subroutine read_specint_nobin_
+      end subroutine read_specint_
             
-   end subroutine read_nobin_
-
-   !****
-
-   subroutine read_rebin_(hi, sg, w_0, dw, n_w)
-
-      type(hdf5io_t), intent(inout) :: hi
-      type(specgrid_t), intent(out) :: sg
-      real(RD), intent(in)          :: w_0
-      real(RD), intent(in)          :: dw
-      integer, intent(in)           :: n_w
-
-      type(ngrid_t)                    :: ng
-      integer, allocatable             :: shape(:)
-      integer                          :: n_si
-      type(dyn_specint_t), allocatable :: si(:)
-
-      ! Read the specgrid_t with rebinning
-
-      call read_base_(hi, ng, shape)
-
-      n_si = PRODUCT(shape)
-
-      allocate(si(n_si))
-
-      call ng%map(read_specint_rebin_)
-
-      sg = specgrid_t(si, ng)
-
-      ! Finish
-
-      return
-
-   contains
-      
-      subroutine read_specint_rebin_(vi, stat)
-
-         integer, intent(in)            :: vi(:)
-         integer, intent(out), optional :: stat
-
-         integer        :: li
-         type(hdf5io_t) :: hi_si
-
-         ! Read and rebin the specint_t for the node
-
-         li = ng%li_from_vi(vi)
- 
-         hi_si = hdf5io_t(hi, si_name_(li))
-         call read(hi_si, si(li), w_0, dw, n_w)
-         call hi_si%final()
-
-         ! Finish
-
-         return
-
-      end subroutine read_specint_rebin_
-
-   end subroutine read_rebin_
-
-   !****
-
-   subroutine read_base_(hi, ng, shape)
-
-      type(hdf5io_t), intent(inout)     :: hi
-      type(ngrid_t), intent(out)        :: ng
-      integer, allocatable, intent(out) :: shape(:)
- 
-      character(TYPE_LEN) :: file_type
-      type(hdf5io_t)      :: hi_ng
-      
-      ! Read base components of the specgrid_t
-
-      call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'specgrid_t', 'invalid type')
-
-      call hi%alloc_read_attr('shape', shape)
-      
-      hi_ng = hdf5io_t(hi, 'ng')
-      call read(hi_ng, ng)
-      call hi_ng%final()
-
-      ! Finish
-
-      return
-
-   end subroutine read_base_
+   end subroutine read_
 
    !****
 
    subroutine write_(hi, sg)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(specgrid_t), intent(in)  :: sg
+      type(hdf5io_t), intent(inout)   :: hi
+      type(specgrid_t), intent(inout) :: sg
 
       type(hdf5io_t) :: hi_ng
 
       ! Write the specgrid_t
 
-      select type (si => sg%si)
+      call hi%write_attr('TYPE', 'specgrid_t')
 
-      type is (specint_t)
+      call hi%write_attr('shape', sg%shape)
+      call hi%write_attr('rank', sg%rank)
 
-         call hi%write_attr('TYPE', 'specgrid_t')
+      hi_ng = hdf5io_t(hi, 'ng')
+      call write(hi_ng, sg%ng)
+      call hi_ng%final()
 
-         call hi%write_attr('w_0', sg%w_0)
-         call hi%write_attr('dw', sg%dw)
-         call hi%write_attr('n_w', sg%n_w)
-
-         call hi%write_attr('shape', sg%shape)
-         call hi%write_attr('rank', sg%rank)
-
-         hi_ng = hdf5io_t(hi, 'ng')
-         call write(hi_ng, sg%ng)
-         call hi_ng%final()
-
-         call sg%ng%map(write_specint_)
-
-      type is (dyn_specint_t)
-
-         @:ABORT('cannot write dyn_specint_t')
-
-      end select
+      call sg%ng%map(write_specint_)
 
       ! Finish
 
@@ -556,7 +445,14 @@ contains
          li = sg%ng%li_from_vi(vi)
  
          hi_si = hdf5io_t(hi, si_name_(li))
-         call write(hi_si, sg%si(li))
+
+         select type (si => sg%si)
+         type is (specint_t)
+            call write(hi_si, si(li))
+         type is (dyn_specint_t)
+            call write(hi_si, si(li))
+         end select
+            
          call hi_si%final()
 
          ! Finish

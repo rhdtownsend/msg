@@ -1,7 +1,7 @@
 ! Module   : synspec_to_specint
 ! Purpose  : create specint files from synspec files
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -22,6 +22,7 @@ program synspec_to_specint
    ! Uses
 
    use forum_m
+   use math_m
    use msg_m
 
    use ISO_FORTRAN_ENV
@@ -36,20 +37,22 @@ program synspec_to_specint
    integer                   :: n_mu
    real(RD)                  :: mu_0
    real(RD)                  :: R
-   real(RD)                  :: lambda_min
-   real(RD)                  :: lambda_max
+   real(RD)                  :: lam_min
+   real(RD)                  :: lam_max
    character(:), allocatable :: limb_law
    character(:), allocatable :: specint_filename
 
    type(limb_t)              :: li
-   real(RD), allocatable     :: I(:,:)
-   real(RD), allocatable     :: lambda(:)
-   integer                   :: n_lambda
+   real(RD), allocatable     :: I_in(:,:)
+   real(RD), allocatable     :: lam_in(:)
    real(RD)                  :: w_0
    real(RD)                  :: dw
-   integer                   :: n_w
+   integer                   :: n_lam
    integer                   :: j
    real(RD), allocatable     :: mu(:)
+   integer                   :: k
+   real(RD), allocatable     :: lam(:)
+   real(RD), allocatable     :: I(:,:)
    type(specint_t)           :: si
    type(hdf5io_t)            :: hi
    type(hdf5io_t)            :: hi_la
@@ -58,13 +61,13 @@ program synspec_to_specint
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() >= 8 .AND. MOD(n_arg(), 2)==0, 'Syntax: synspec_to_specint synspec_filename n_mu mu_0 lambda_min lambda_max R limb_law specint_filename [label value] [label value]...')
+   @:ASSERT(n_arg() >= 8 .AND. MOD(n_arg(), 2)==0, 'Syntax: synspec_to_specint synspec_filename n_mu mu_0 lam_min lam_max R limb_law specint_filename [label value] [label value]...')
 
    call get_arg(1, synspec_filename)
    call get_arg(2, n_mu)
    call get_arg(3, mu_0)
-   call get_arg(4, lambda_min)
-   call get_arg(5, lambda_max)
+   call get_arg(4, lam_min)
+   call get_arg(5, lam_max)
    call get_arg(6, R)
    call get_arg(7, limb_law)
    call get_arg(8, specint_filename)
@@ -75,21 +78,29 @@ program synspec_to_specint
 
    ! Read data from the synspec file
 
-   call read_data(synspec_filename, n_mu, lambda, I)
+   call read_data(synspec_filename, n_mu, lam_in, I_in)
 
-   n_lambda = SIZE(lambda)
-
-   ! Set up binning parameters
-
-   dw = 1._RD/R
-   w_0 = LOG(lambda_min)
-   n_w = FLOOR((LOG(lambda_max) - LOG(lambda_min))/dw)
-
-   ! Create the specint_t
+   ! Set up the angle axis
 
    mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
 
-   si = specint_t(I, mu, lambda, w_0, dw, n_w, li)
+   ! Set up the output wavelength axis (uniform resolution)
+
+   dw = 1._RD/R
+   w_0 = LOG(lam_min)
+   n_lam = FLOOR((LOG(lam_max) - LOG(lam_min))/dw) + 1
+
+   lam = EXP([(w_0 + (k-1)*dw, k=1, n_lam)])
+
+   ! Bin the data onto this axis
+
+   allocate(I(n_mu,n_lam-1))
+
+   call bin_data(lam_in, I_in, lam, I)
+
+   ! Create the specint_t
+
+   si = specint_t(I, mu, lam, li)
 
    ! Write the specint_t (together with labels)
 
@@ -113,11 +124,11 @@ program synspec_to_specint
 
 contains
 
-   subroutine read_data (filename, n_mu, lambda, I)
+   subroutine read_data (filename, n_mu, lam, I)
 
       character(*), intent(in)           :: filename
       integer, intent(in)                :: n_mu
-      real(RD), allocatable, intent(out) :: lambda(:)
+      real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
 
       integer              :: unit
@@ -136,7 +147,7 @@ contains
 
       d_lam = 1024
 
-      allocate(lambda(d_lam))
+      allocate(lam(d_lam))
       allocate(I(n_mu,d_lam))
 
       n_lam = 0
@@ -149,20 +160,20 @@ contains
 
          if(n_lam > d_lam) then
             d_lam = d_lam*2
-            call reallocate(lambda, [d_lam])
+            call reallocate(lam, [d_lam])
             call reallocate(I, [n_mu,d_lam])
          endif
 
          ! Read a block of data
 
-         read(unit, *, END=100) lambda(n_lam), H
+         read(unit, *, END=100) lam(n_lam), H
          read(unit,*) I(:,n_lam)
 
          I(:,n_lam) = I(n_mu:1:-1,n_lam)
 
          ! Convert from to ergs/s/cm**2/Hz/sr to ergs/s/cm**2/Angstrom/sr
 
-         I(:,n_lam) = I(:,n_lam)*C_LIGHT/(lambda(n_lam)*1E-8_RD)**2*1E-8_RD
+         I(:,n_lam) = I(:,n_lam)*C_LIGHT/(lam(n_lam)*1E-8_RD)**2*1E-8_RD
 
       end do read_loop
 
@@ -173,16 +184,16 @@ contains
       n_lam = n_lam - 1
       d_lam = n_lam
 
-      call reallocate(lambda, [d_lam])
+      call reallocate(lam, [d_lam])
       call reallocate(I, [n_mu,d_lam])
 
       write(OUTPUT_UNIT, *) 'n_lam (as read) :', n_lam
 
       ! Sort the data by wavelength
 
-      ind = sort_indices(lambda)
+      ind = sort_indices(lam)
 
-      lambda = lambda(ind)
+      lam = lam(ind)
       I = I(:,ind)
 
       ! Merge duplicate points
@@ -193,7 +204,7 @@ contains
 
       merge_loop : do i_lam = 2,d_lam
 
-         if(lambda(i_lam) == lambda(n_lam)) then
+         if(lam(i_lam) == lam(n_lam)) then
 
             I(:,n_lam) = I(:,n_lam) + I(:,i_lam)
             n_dup = n_dup + 1
@@ -209,7 +220,7 @@ contains
 
             n_lam = n_lam + 1
 
-            lambda(n_lam) = lambda(i_lam)
+            lam(n_lam) = lam(i_lam)
             I(:,n_lam) = I(:,i_lam)
 
          endif
@@ -222,7 +233,7 @@ contains
 
       d_lam = n_lam
 
-      call reallocate(lambda, [d_lam])
+      call reallocate(lam, [d_lam])
       call reallocate(I, [n_mu,d_lam])
 
       write(OUTPUT_UNIT, *) 'n_lam (merged)  :', n_lam
@@ -232,5 +243,39 @@ contains
       return
 
    end subroutine read_data
+
+   !****
+
+   subroutine bin_data(lam_in, I_in, lam, I)
+
+      real(RD), intent(in)  :: lam_in(:)
+      real(RD), intent(in)  :: I_in(:,:)
+      real(RD), intent(in)  :: lam(:)
+      real(RD), intent(out) :: I(:,:)
+
+      integer               :: n_mu
+      integer               :: n_lam
+      integer               :: k
+      integer               :: j
+
+      @:CHECK_BOUNDS(SIZE(I_in, 2), SIZE(lam_in)-1)
+      @:CHECK_BOUNDS(SIZE(I, 2), SIZE(lam)-1)
+
+      ! Convert the piecewise-linear intensity data I_in(:,lam_in) to the binned data I(:,lam)
+
+      n_mu = SIZE(I_in, 1)
+      n_lam = SIZE(I, 1)
+
+      mu_loop : do j = 1, n_mu
+
+         lam_loop : do k = 1, n_lam
+            I(j,k) = integrate_lin(lam_in, I_in(j,:), lam(k), lam(k+1))/(lam(k+1) - lam(k))
+         end do lam_loop
+
+      end do mu_loop
+
+      ! Finish
+
+   end subroutine bin_data
 
 end program synspec_to_specint

@@ -1,7 +1,7 @@
 // Header  : cmsg
 // Purpose : C headers for cmsg
 //
-// Copyright 2021 Rich Townsend & The MSG Team
+// Copyright 2021-2022 Rich Townsend & The MSG Team
 //
 // This file is part of MSG. MSG is free software: you can redistribute
 // it and/or modify it under the terms of the GNU General Public
@@ -23,31 +23,25 @@ void *specgrid_load_rebin(const char *filename, double w_0, double dw, int n_w);
 
 void specgrid_unload(void *ptr);
 
-void specgrid_inquire(void *ptr, double *w_0, double *dw, int *n_w, int shape[], int *rank, double axis_minima[], double axis_maxima[]);
+void specgrid_inquire(void *ptr, double *lam_min, double *lam_max, int shape[], int *rank, double axis_min[], double axis_max[]);
 
 void specgrid_get_axis_label(void *ptr, int i, char *axis_label);
 
-void specgrid_interp_intensity(void *ptr, double vx[], double mu, double w_0, int n_w, 
-			       double I[], int *stat, bool vderiv[]);
-void specgrid_interp_d_moment(void *ptr, double vx[], int l, double w_0, int n_w, 
-			      double D[], int *stat, bool vderiv[]);
-void specgrid_interp_flux(void *ptr, double vx[], double w_0, int n_w, 
-			  double F[], int *stat, bool vderiv[]);
+void specgrid_interp_intensity(void *ptr, double vx[], double mu, int n, double lam[], double I[], int *stat, bool vderiv[]);
+void specgrid_interp_d_moment(void *ptr, double vx[], int l, int n, double lam[], double D[], int *stat, bool vderiv[]);
+void specgrid_interp_flux(void *ptr, double vx[], int n, double lam[], double F[], int *stat, bool vderiv[]);
 
 
 void *photgrid_load(const char *filename);
 
 void photgrid_unload(void *ptr);
 
-void photgrid_inquire(void *ptr, int shape[], int *rank, double axis_minima[], double axis_maxima[]);
+void photgrid_inquire(void *ptr, int shape[], int *rank, double axis_min[], double axis_max[]);
 
 void photgrid_get_axis_label(void *ptr, int i, char *axis_label);
 
-void photgrid_interp_intensity(void *ptr, double vx[], double mu, 
-			       double *I, int *stat, bool vderiv[]);
+void photgrid_interp_intensity(void *ptr, double vx[], double mu, double *I, int *stat, bool vderiv[]);
 
-void photgrid_interp_d_moment(void *ptr, double vx[], int l,
-			      double *D, int *stat, bool vderiv[]);
+void photgrid_interp_d_moment(void *ptr, double vx[], int l, double *D, int *stat, bool vderiv[]);
 
-void photgrid_interp_flux(void *ptr, double vx[],
-			  double *F, int *stat, bool vderiv[]);
+void photgrid_interp_flux(void *ptr, double vx[], double *F, int *stat, bool vderiv[]);

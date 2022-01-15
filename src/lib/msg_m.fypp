@@ -1,7 +1,7 @@
 ! Module  : msg_m
 ! Purpose : Fortran public interface for MSG
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -31,7 +31,7 @@ module msg_m
    use photint_m
    use specgrid_m
    use specint_m
-   use specint_factory_m
+!   use specint_factory_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -44,7 +44,6 @@ module msg_m
 
    interface specgrid_t
       module procedure specgrid_t_
-      module procedure specgrid_t_rebin_
    end interface specgrid_t
    
    interface photgrid_t
@@ -92,30 +91,6 @@ contains
       end function ${type}$_
 
    #:endfor
-
-   !****
-
-   function specgrid_t_rebin_(file_name, w_0, dw, n_w) result(gr)
-
-      character(*), intent(in) :: file_name
-      real(RD), intent(in)     :: w_0
-      real(RD), intent(in)     :: dw
-      integer, intent(in)      :: n_w
-      type(specgrid_t)         :: gr
-
-      type(hdf5io_t) :: hi
-
-      ! Create the specgrid_t
-
-      call open_file_(file_name, hi)
-      call read(hi, gr, w_0, dw, n_w)
-      call hi%final()
-
-      ! Finish
-
-      return
-
-   end function specgrid_t_rebin_
 
    !****
 

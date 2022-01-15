@@ -1,7 +1,7 @@
 ! Module  : cmsg_m
 ! Purpose : C public interface for MSG modules
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -43,9 +43,7 @@ module cmsg_m
       public :: ${prefix}$_interp_intensity
       public :: ${prefix}$_interp_D_moment
       public :: ${prefix}$_interp_flux
-  #:endfor
-
-   public :: specgrid_load_rebin
+   #:endfor
 
    ! Procedures
 
@@ -107,55 +105,21 @@ contains
 
    !****
 
-   function specgrid_load_rebin(c_file_name, w_0, dw, n_w) result(ptr) bind(C)
-
-      character(C_CHAR)     :: c_file_name(*)
-      real(C_DOUBLE), value :: w_0
-      real(C_DOUBLE), value :: dw
-      integer(C_INT), value :: n_w
-      type(C_PTR)           :: ptr
-
-      type(specgrid_t), pointer :: gr
-      character(:), allocatable :: file_name
- 
-      ! Allocate the grid
-
-      allocate(gr)
-
-      ! Load it from the file
-
-      call c_f_string(c_file_name, file_name)
-
-      gr = specgrid_t(file_name, w_0, dw, n_w)
-
-      ! Set up the C pointer
-
-      ptr = C_LOC(gr)
-
-      ! Finish
-
-      return
-
-   end function specgrid_load_rebin
-
-   !****
-
-   subroutine specgrid_inquire(ptr, w_0, dw, n_w, shape_ptr, rank, axis_minima_ptr, axis_maxima_ptr) bind(C)
+   subroutine specgrid_inquire(ptr, lam_min, lam_max, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
 
       type(C_PTR), value :: ptr
-      real(C_DOUBLE)     :: w_0
-      real(C_DOUBLE)     :: dw
-      integer(C_INT)     :: n_w
+      real(C_DOUBLE)     :: lam_min
+      real(C_DOUBLE)     :: lam_max
       type(C_PTR), value :: shape_ptr
       integer(C_INT)     :: rank
-      type(C_PTR), value :: axis_minima_ptr
-      type(C_PTR), value :: axis_maxima_ptr
+      type(C_PTR), value :: axis_min_ptr
+      type(C_PTR), value :: axis_max_ptr
 
       type(specgrid_t), pointer :: sg
       integer                   :: rank_
       integer, pointer          :: shape(:)
-      real(RD), pointer         :: axis_minima(:)
-      real(RD), pointer         :: axis_maxima(:)
+      real(RD), pointer         :: axis_min(:)
+      real(RD), pointer         :: axis_max(:)
 
       ! Set up the Fortran pointer
 
@@ -169,19 +133,19 @@ contains
          call sg%inquire(shape=shape)
       endif
 
-      if (C_ASSOCIATED(axis_minima_ptr)) then
+      if (C_ASSOCIATED(axis_min_ptr)) then
          call sg%inquire(rank=rank_)
-         call C_F_POINTER(axis_minima_ptr, axis_minima, [rank_])
-         call sg%inquire(axis_minima=axis_minima)
+         call C_F_POINTER(axis_min_ptr, axis_min, [rank_])
+         call sg%inquire(axis_min=axis_min)
       endif
 
-      if (C_ASSOCIATED(axis_maxima_ptr)) then
+      if (C_ASSOCIATED(axis_max_ptr)) then
          call sg%inquire(rank=rank_)
-         call C_F_POINTER(axis_maxima_ptr, axis_maxima, [rank_])
-         call sg%inquire(axis_maxima=axis_maxima)
+         call C_F_POINTER(axis_max_ptr, axis_max, [rank_])
+         call sg%inquire(axis_max=axis_max)
       endif
 
-      call sg%inquire(w_0=w_0, dw=dw, n_w=n_w, rank=rank)
+      call sg%inquire(lam_min=lam_min, lam_max=lam_max, rank=rank)
 
       ! Finish
 
@@ -191,19 +155,19 @@ contains
 
    !****
 
-   subroutine photgrid_inquire(ptr, shape_ptr, rank, axis_minima_ptr, axis_maxima_ptr) bind(C)
+   subroutine photgrid_inquire(ptr, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
 
       type(C_PTR), value :: ptr
       type(C_PTR), value :: shape_ptr
       integer(C_INT)     :: rank
-      type(C_PTR), value :: axis_minima_ptr
-      type(C_PTR), value :: axis_maxima_ptr
+      type(C_PTR), value :: axis_min_ptr
+      type(C_PTR), value :: axis_max_ptr
       
       type(photgrid_t), pointer :: pg
       integer                   :: rank_
       integer, pointer          :: shape(:)
-      real(RD), pointer         :: axis_minima(:)
-      real(RD), pointer         :: axis_maxima(:)
+      real(RD), pointer         :: axis_min(:)
+      real(RD), pointer         :: axis_max(:)
 
       ! Set up the Fortran pointer
 
@@ -217,16 +181,16 @@ contains
          call pg%inquire(shape=shape)
       endif
 
-      if (C_ASSOCIATED(axis_minima_ptr)) then
+      if (C_ASSOCIATED(axis_min_ptr)) then
          call pg%inquire(rank=rank_)
-         call C_F_POINTER(axis_minima_ptr, axis_minima, [rank_])
-         call pg%inquire(axis_minima=axis_minima)
+         call C_F_POINTER(axis_min_ptr, axis_min, [rank_])
+         call pg%inquire(axis_min=axis_min)
       endif
 
-      if (C_ASSOCIATED(axis_maxima_ptr)) then
+      if (C_ASSOCIATED(axis_max_ptr)) then
          call pg%inquire(rank=rank_)
-         call C_F_POINTER(axis_maxima_ptr, axis_maxima, [rank_])
-         call pg%inquire(axis_maxima=axis_maxima)
+         call C_F_POINTER(axis_max_ptr, axis_max, [rank_])
+         call pg%inquire(axis_max=axis_max)
       endif
 
       call pg%inquire(rank=rank)
@@ -314,16 +278,16 @@ contains
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(C_DOUBLE)'), &
                                           ('D_moment', 'D', 'l', 'integer(C_INT)'))
 
-      subroutine specgrid_interp_${name}$(ptr, vx, ${arg_var}$, w_0, n_w, ${var}$, stat, vderiv) bind(C)
+      subroutine specgrid_interp_${name}$(ptr, vx, ${arg_var}$, n, lam, ${var}$, stat, vderiv) bind(C)
 
          type(C_PTR), value    :: ptr
          real(C_DOUBLE)        :: vx(*)
          ${arg_type}$, value   :: ${arg_var}$
-         real(C_DOUBLE), value :: w_0
-         integer(C_INT), value :: n_w
-         real(C_DOUBLE)        :: ${var}$(n_w)
+         integer(C_INT), value :: n
+         real(C_DOUBLE)        :: lam(n)
+         real(C_DOUBLE)        :: ${var}$(n)
          integer(C_INT)        :: stat
-         logical(C_BOOL)       :: vderiv(*)
+         logical(C_BOOL)       :: vderiv(n)
 
          type(specgrid_t), pointer :: sg
          integer                   :: rank
@@ -336,7 +300,7 @@ contains
 
          call sg%inquire(rank=rank)
 
-         call sg%interp_${name}$(vx(1:rank), ${arg_var}$, w_0, ${var}$, stat, LOGICAL(vderiv(1:rank)))
+         call sg%interp_${name}$(vx(1:rank), ${arg_var}$, lam, ${var}$, stat, LOGICAL(vderiv(1:rank)))
 
          ! Finish
 
@@ -380,13 +344,13 @@ contains
       
    #:for name, var in (('flux', 'F'),)
 
-      subroutine specgrid_interp_${name}$(ptr, vx, w_0, n_w, ${var}$, stat, vderiv) bind(C)
+      subroutine specgrid_interp_${name}$(ptr, vx, n, lam, ${var}$, stat, vderiv) bind(C)
 
          type(C_PTR), value    :: ptr
          real(C_DOUBLE)        :: vx(*)
-         real(C_DOUBLE), value :: w_0
-         integer(C_INT), value :: n_w
-         real(C_DOUBLE)        :: ${var}$(n_w)
+         integer(C_INT), value :: n
+         real(C_DOUBLE)        :: lam(n)
+         real(C_DOUBLE)        :: ${var}$(n)
          integer(C_INT)        :: stat
          logical(C_BOOL)       :: vderiv(*)
 
@@ -401,7 +365,7 @@ contains
 
          call sg%inquire(rank=rank)
 
-         call sg%interp_${name}$(vx(1:rank), w_0, ${var}$, stat, LOGICAL(vderiv(1:rank)))
+         call sg%interp_${name}$(vx(1:rank), lam, ${var}$, stat, LOGICAL(vderiv(1:rank)))
 
          ! Finish
 

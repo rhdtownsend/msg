@@ -64,43 +64,19 @@ creating a new :py:class:`pymsg.SpecGrid` object:
    sg = pymsg.SpecGrid('sg-demo.h5')
 
 This object has a number of (read-only) properties that tell us about
-the parameter space covered by the grid:
+the parameter space spanned by the grid:
 
 .. jupyter-execute::
 
-   print('Atmosphere parameters:')
+   print('Grid parameters:')
+
    for i, axis_label in enumerate(sg.axis_labels):
       print(f'  {axis_label} ({sg.axis_minima[i]} -> {sg.axis_maxima[i]})')
 
-   print()
-
-   print('Spectral abcissa parameters:')
-   print(f'  w_0: {sg.w_0}')
-   print(f'   dw: {sg.dw}')
-   print(f'  n_w: {sg.n_w}')
-
-The ``logT`` and ``logg`` atmosphere parameters are familiar enough,
-corresponding (respectively) to :math:`\log_{10}(\Teff/\kelvin)` and
-:math:`\log_{10}(g/\cm\,\second^{-2})`. However, what are those three
-'spectral abscissa' parameters? In brief, MSG represents the abscissa
-(x-axis) of spectra using
-
-.. math:: w \equiv \log(\lambda/\angstrom)
-
-instead of the usual wavelength :math:`\lambda`. Moreover, it divides
-spectra up into a sequence of bins with uniform width in
-:math:`w`-space. For a collection of ``n_w`` such bins, the
-:math:`k`'th bin (:math:`k = 1,\ldots,{\tt n\_w}`) spans the interval
-:math:`[w_{k}, w_{k+1}]`, where
-
-.. math:: w_{k} \equiv {\tt w\_0} + (k-1)\, {\tt dw}
-
-The detailed rationale for these choices are discussed in the
-:ref:`spectral-abscissa` chapter. For now, note that the bin width
-:math:`{\tt dw}` is directly connected to the resolution :math:`R` of
-the spectrum via
-
-.. math:: R = \frac{1}{\tt dw}.
+   print(f'  lambda ({sg.lam_min} -> {sg.lam_max})')
+      
+Here, ``logT`` and ``logg`` correspond (respectively) to the :math:`\log_{10}(\Teff/\kelvin)` and
+:math:`\log_{10}(g/\cm\,\second^{-2})` atmosphere parameters, while ``lambda`` is wavelength.
 
 Plotting the Flux
 =================

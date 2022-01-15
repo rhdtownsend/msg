@@ -1,7 +1,7 @@
 ! Module   : ferre_to_specint
 ! Purpose  : create specint files from FERRE grid files
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -228,15 +228,7 @@ contains
       real(RD), allocatable             :: values(:)
       integer                           :: j
       integer                           :: k
-      real(RD), allocatable             :: H_w(:)
-      real(RD)                          :: w_0
-      real(RD)                          :: dw
-      real(RD)                          :: lambda_a
-      real(RD)                          :: lambda_b
-      real(RD)                          :: w_a
-      real(RD)                          :: w_b
-      integer                           :: k_a
-      integer                           :: k_b
+      real(RD), allocatable             :: lam(:)
       real(RD), allocatable             :: I(:,:)
       type(limb_t)                      :: li
       type(specint_t)                   :: si
@@ -274,37 +266,21 @@ contains
 
       end do
 
-      ! Evaluate H_w from H_lambda=data, converting from
-      ! (erg/cm^2/s)/A to (erg/cm^2/s)/w, where as usual w=LOG(lambda)
+      ! Set up the wavelength abscissa
 
-      allocate(H_w(fh%npix))
-
-      w_0 = LOG(10._RD)*(fh%wave(1) - 0.5_RD*fh%wave(2))
-      dw = LOG(10._RD)*fh%wave(2)
-
-      do k = 1, fh%npix
-
-         lambda_a = 10**(fh%wave(1) - 0.5_RD*fh%wave(2) + (k-1)*fh%wave(2))
-         lambda_b = 10**(fh%wave(1) - 0.5_RD*fh%wave(2) + (k  )*fh%wave(2))
-
-         w_a = w_0 + (k-1)*dw
-         w_b = w_0 + (k  )*dw
-
-         H_w(k) = H_lambda(k)*(lambda_b - lambda_a)/(w_b - w_a)
-
-      end do
+      lam = [(10**(fh%wave(1) + (k-1.5_RD)*fh%wave(2)),k=1,fh%npix+1)]
 
       ! Set up the intensity data
 
       allocate(I(1,fh%npix))
 
-      I(1,:) = 4._RD*H_w
+      I(1,:) = 4._RD*H_lambda
 
       ! Create the specint_t
 
       li = limb_t('CONST')
 
-      si = specint_t(I, [1._RD], li, w_0, dw)
+      si = specint_t(I, [1._RD], lam, li)
 
       ! Write it
 

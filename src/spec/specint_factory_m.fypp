@@ -1,7 +1,7 @@
 ! Module   : specint_factory_m
 ! Purpose  : factory procedures for specint_t type
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -49,14 +49,12 @@ module specint_factory_m
 
 contains
 
-   function specint_t_table_(I, mu, lambda, w_0, dw, n_w, li) result (si)
+   function specint_t_table_(I, mu, lam, lam_si, li) result (si)
 
       real(RD), intent(in)     :: I(:,:)
       real(RD), intent(in)     :: mu(:)
-      real(RD), intent(in)     :: lambda(:)
-      real(RD), intent(in)     :: w_0
-      real(RD), intent(in)     :: dw
-      integer, intent(in)      :: n_w
+      real(RD), intent(in)     :: lam(:)
+      real(RD), intent(in)     :: lam_si(:)
       type(limb_t), intent(in) :: li
       type(specint_t)          :: si
 
@@ -74,6 +72,7 @@ contains
       @:CHECK_BOUNDS(SIZE(I, 2), SIZE(lambda))
 
       ! Construct the specint_t from the tabulated I(mu,lambda) data
+      ! (understood to be 
 
       ! Using piecewise linear integration, transform the intensity
       ! data onto the uniform-w (ln lambda) grid

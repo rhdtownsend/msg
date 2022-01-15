@@ -32,8 +32,8 @@ module stat_m
    integer, parameter :: STAT_OK = 0
    integer, parameter :: STAT_OUT_OF_BOUNDS_AXIS_LO = 1
    integer, parameter :: STAT_OUT_OF_BOUNDS_AXIS_HI = 2
-   integer, parameter :: STAT_OUT_OF_BOUNDS_W_LO = 3
-   integer, parameter :: STAT_OUT_OF_BOUNDS_W_HI = 4
+   integer, parameter :: STAT_OUT_OF_BOUNDS_LAM_LO = 3
+   integer, parameter :: STAT_OUT_OF_BOUNDS_LAM_HI = 4
    integer, parameter :: STAT_OUT_OF_BOUNDS_MU_LO = 5
    integer, parameter :: STAT_OUT_OF_BOUNDS_MU_HI = 6
    integer, parameter :: STAT_INVALID_L = 7
@@ -46,8 +46,8 @@ module stat_m
    public :: STAT_OK
    public :: STAT_OUT_OF_BOUNDS_AXIS_LO
    public :: STAT_OUT_OF_BOUNDS_AXIS_HI
-   public :: STAT_OUT_OF_BOUNDS_W_LO
-   public :: STAT_OUT_OF_BOUNDS_W_HI
+   public :: STAT_OUT_OF_BOUNDS_LAM_LO
+   public :: STAT_OUT_OF_BOUNDS_LAM_HI
    public :: STAT_OUT_OF_BOUNDS_MU_LO
    public :: STAT_OUT_OF_BOUNDS_MU_HI
    public :: STAT_INVALID_L

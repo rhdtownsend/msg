@@ -1,7 +1,7 @@
 ! Module  : specint_m
 ! Purpose : define specint_t type, for representing spectral intensity
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -39,18 +39,18 @@ module specint_m
 
    type specint_t
       private
-      type(limb_t)          :: li
       real(RD), allocatable :: c(:,:)
-      real(RD)              :: w_0
-      real(RD)              :: dw
-      integer               :: n_w
-      integer               :: n_b
+      real(RD), allocatable :: lam(:)
+      type(limb_t)          :: li
+      integer               :: n
+      integer               :: m
    contains
       private
       procedure, public :: inquire
       #:for name in ('intensity', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
+      procedure :: interp_f_
    end type specint_t
 
    ! Interfaces
@@ -58,12 +58,11 @@ module specint_m
    interface specint_t
       module procedure specint_t_
       module procedure specint_t_fit_
-      module procedure specint_t_rebin_
    end interface specint_t
 
-   interface photint_t
-      module procedure photint_t_specint_
-   end interface photint_t
+  interface photint_t
+     module procedure photint_t_specint_
+  end interface photint_t
 
    interface read
       module procedure read_
@@ -86,32 +85,32 @@ module specint_m
 
 contains
 
-   function specint_t_(c, li, w_0, dw) result (si)
+   function specint_t_(c, lam, li) result (si)
 
       real(RD), intent(in)     :: c(:,:)
+      real(RD), intent(in)     :: lam(:)
       type(limb_t), intent(in) :: li
-      real(RD), intent(in)     :: w_0
-      real(RD), intent(in)     :: dw
       type(specint_t)          :: si
 
-      integer :: n_w
-      integer :: n_b
+      integer :: n
+      integer :: m
 
       ! Construct the specint_t from the supplied data
 
-      n_w = SIZE(c, 2)
-      n_b = li%n_basis()
+      n = SIZE(c, 1)
+      m = SIZE(c, 2)
 
-      @:CHECK_BOUNDS(SIZE(c, 1), n_b)
+      @:CHECK_BOUNDS(n, li%n_basis())
+      @:CHECK_BOUNDS(m, SIZE(lam)-1)
 
-      si%li = li
+      @:ASSERT_DEBUG(ALL(lam(2:) > lam(:m)),'Non-monotonic wavelength data')
+
       si%c = c
+      si%lam = lam
+      si%li = li
 
-      si%w_0 = w_0
-      si%dw = dw
-
-      si%n_w = n_w
-      si%n_b = n_b
+      si%n = n
+      si%m = m
       
       ! Finish
 
@@ -121,23 +120,22 @@ contains
 
    !****
 
-   function specint_t_fit_(I, mu, li, w_0, dw) result (si)
+   function specint_t_fit_(I, mu, lam, li) result (si)
 
       real(RD), intent(in)     :: I(:,:)
       real(RD), intent(in)     :: mu(:)
+      real(RD), intent(in)     :: lam(:)
       type(limb_t), intent(in) :: li
-      real(RD), intent(in)     :: w_0
-      real(RD), intent(in)     :: dw
       type(specint_t)          :: si
 
       real(RD), allocatable :: c(:,:)
 
-      ! Construct the specint_t by fitting the supplied I(mu,w)
+      ! Construct the specint_t by fitting the supplied I(mu,lambda)
       ! intensity data
 
       call li%fit_intensity(I, mu, c)
 
-      si = specint_t(c, li, w_0, dw)
+      si = specint_t(c, lam, li)
 
       ! Finish
 
@@ -147,74 +145,16 @@ contains
 
    !****
 
-   function specint_t_rebin_ (si_in, w_0, dw, n_w) result (si)
-
-      type(specint_t), intent(in) :: si_in
-      real(RD), intent(in)        :: w_0
-      real(RD), intent(in)        :: dw
-      integer, intent(in)         :: n_w
-      type(specint_t)             :: si
-
-      real(RD), allocatable :: w_in(:)
-      real(RD), allocatable :: w(:)
-      integer               :: n_b
-      real(RD), allocatable :: c(:,:)
-      integer               :: j
-      integer               :: k
-      real(RD), allocatable :: y(:)
-
-      @:ASSERT(w_0 >= si_in%w_0, 'out-of-bounds rebin')
-      @:ASSERT(w_0+dw*n_w <= si_in%w_0+si_in%dw*si_in%n_w, 'out-of-bounds rebin')
-
-      ! Construct the specint_t by rebinning si_in
-
-      ! First, evaluate the w-axes
-
-      w_in = si_in%w_0 + si_in%dw*[(k-1,k=1,si_in%n_w+1)]
-      w = w_0 + dw*[(k-1,k=1,n_w+1)]
-
-      ! Allocate the new coefficient array
-
-      n_b = si_in%li%n_basis()
-
-      allocate(c(n_b,n_w))
-
-      ! Do the rebinning
-
-      do j = 1, n_b
-
-         y = si_in%c(j,:)
-
-         do k = 1, n_w
-            c(j,k) = integrate_con(w_in, y, w(k), w(k+1))/(w(k+1) - w(k))
-         end do
-
-      end do
-            
-      ! Create the specint_t
-
-      si = specint_t(c, si_in%li, w_0, dw)
-
-      ! Finish
-
-      return
-
-   end function specint_t_rebin_
-
-   !****
-
-   subroutine inquire(self, w_0, dw, n_w)
+   subroutine inquire(self, lam_min, lam_max)
 
       class(specint_t), intent(in)    :: self
-      real(RD), intent(out), optional :: w_0
-      real(RD), intent(out), optional :: dw
-      integer, intent(out), optional  :: n_w
+      real(RD), intent(out), optional :: lam_min
+      real(RD), intent(out), optional :: lam_max
 
       ! Inquire metadata
 
-      if (PRESENT(w_0)) w_0 = self%w_0
-      if (PRESENT(dw)) dw = self%dw
-      if (PRESENT(n_w)) n_w = self%n_w
+      if (PRESENT(lam_min)) lam_min = self%lam(1)
+      if (PRESENT(lam_max)) lam_max = self%lam(self%m)
 
       ! Finish
 
@@ -225,48 +165,17 @@ contains
    !****
 
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                          ('D_moment', 'D', 'l', 'integer'))
+                                     ('D_moment', 'D', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, ${arg_var}$, w_0, ${var}$, stat)
+      subroutine interp_${name}$(self, ${arg_var}$, lam, ${var}$, stat)
 
          class(specint_t), intent(inout) :: self
          ${arg_type}$, intent(in)        :: ${arg_var}$
-         real(RD), intent(in)            :: w_0
+         real(RD), intent(in)            :: lam(:)
          real(RD), intent(out)           :: ${var}$(:)
          integer, intent(out), optional  :: stat
 
-         integer  :: n_w
-         integer  :: k_a
-         integer  :: k_b
-         real(RD) :: u
-         real(RD) :: b(self%n_b)
-
-         ! Set up the interpolation
-
-         n_w = SIZE(${var}$)
-
-         call locate(self%w_0, self%dw, w_0, k_a)
-         k_b = k_a + n_w
-
-         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
-         
-         if (k_a < 1) then
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_W_LO
-               return
-            else
-               @:ABORT('out-of-bounds (lo) w')
-            endif
-         endif
-
-         if (k_b > self%n_w+1 .OR. (k_b == self%n_w+1 .AND. u /= 0._RD)) then
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_W_HI
-               return
-            else
-               @:ABORT('out-of-bounds (hi) w')
-            endif
-         endif
+         real(RD) :: b(self%n)
 
          ! Set up the basis functions
 
@@ -275,18 +184,9 @@ contains
             if (stat /= STAT_OK) return
          endif
 
-         ! Interpolate ${name}$ (done with two matmul's to avoid
-         ! creating a temporary)
+         ! Do the interpolation
 
-         if (u == 0._RD) then
-            ${var}$ = MATMUL(b, self%c(:,k_a:k_b-1))
-         else if (u == 1._RD) then
-            ${var}$ = MATMUL(b, self%c(:,k_a+1:k_b))
-         else
-            ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
-         endif
-
-         if (PRESENT(stat)) stat = STAT_OK
+         call self%interp_f_(b, lam, ${var}$, stat)
 
          ! Finish
 
@@ -298,48 +198,16 @@ contains
       
    !****
 
-   #:for name, var in (('flux', 'F'), )
+   #:for name, var in (('flux', 'F'),)
 
-      subroutine interp_${name}$(self, w_0, ${var}$, stat)
+      subroutine interp_${name}$(self, lam, ${var}$, stat)
 
          class(specint_t), intent(inout) :: self
-         real(RD), intent(in)            :: w_0
+         real(RD), intent(in)            :: lam(:)
          real(RD), intent(out)           :: ${var}$(:)
          integer, intent(out), optional  :: stat
 
-         integer  :: n_w
-         integer  :: k_a
-         integer  :: k_b
-         real(RD) :: u
-         real(RD) :: b(self%n_b)
-
-         ! Set up the interpolation
-
-         n_w = SIZE(${var}$)
-
-         call locate(self%w_0, self%dw, w_0, k_a)
-         k_b = k_a + n_w
-
-         u = (w_0 - (self%w_0 + self%dw*(k_a-1)))/self%dw
-         
-         if (k_a < 1) then
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_W_LO
-               return
-            else
-               @:ABORT('out-of-bounds (lo) w')
-            endif
-         endif
-
-         if (k_b > self%n_w+1 .OR. (k_b == self%n_w+1 .AND. u /= 0._RD)) then
-            print *,'k_b, n_w, u', k_b, self%n_w, u
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_W_HI
-               return
-            else
-               @:ABORT('out-of-bounds (hi) w')
-            endif
-         endif
+         real(RD) :: b(self%n)
 
          ! Set up the basis functions
 
@@ -348,18 +216,9 @@ contains
             if (stat /= STAT_OK) return
          endif
 
-         ! Interpolate ${name}$ (done with two matmul's to avoid
-         ! creating a temporary)
+         ! Do the interpolation
 
-         if (u == 0._RD) then
-            ${var}$ = MATMUL(b, self%c(:,k_a:k_b-1))
-         else if (u == 1._RD) then
-            ${var}$ = MATMUL(b, self%c(:,k_a+1:k_b))
-         else
-            ${var}$ = (1._RD-u)*MATMUL(b, self%c(:,k_a:k_b-1)) + u*MATMUL(b, self%c(:,k_a+1:k_b))
-         endif
-
-         if (PRESENT(stat)) stat = STAT_OK
+         call self%interp_f_(b, lam, ${var}$, stat)
 
          ! Finish
 
@@ -370,6 +229,76 @@ contains
    #:endfor
 
    !****
+      
+   subroutine interp_f_(self, b, lam, f, stat)
+
+      class(specint_t), intent(inout) :: self
+      real(RD), intent(in)            :: b(:)
+      real(RD), intent(in)            :: lam(:)
+      real(RD), intent(out)           :: f(:)
+      integer, intent(out), optional  :: stat
+
+      integer  :: i
+      integer  :: j
+      integer  :: m
+      real(RD) :: lam_a
+      real(RD) :: lam_b
+
+      @:CHECK_BOUNDS(SIZE(f), SIZE(lam))
+
+      ! Set up indices
+         
+      call locate(self%lam, lam(1), i)
+
+      if (i < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) lam')
+         endif
+      endif
+
+      if (i > self%m) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_HI
+            return
+         else
+            @:ABORT('out-of-bounds (hi) lam')
+         endif
+      endif
+
+      j = 1
+      m = SIZE(f)
+
+      ! Perform the interpolation (conservative piecewise-constant
+      ! rebin)
+
+      f = 0._RD
+
+      interp_loop : do
+
+         if (j > m) exit interp_loop
+
+         lam_a = MAX(self%lam(i), lam(j))
+         lam_b = MIN(self%lam(i+1), lam(j+1))
+
+         f(j) = f(j) + (lam_b - lam_a)/(lam(j+1) - lam(j))*DOT_PRODUCT(b, self%c(:,i))
+
+         if (lam_b == self%lam(i+1)) i = i + 1
+         if (lam_b == lam(j+1)) j = j + 1
+
+      end do interp_loop
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   end subroutine interp_f_
+
+   !****
 
    function photint_t_specint_(si, pb, norm) result(pi)
 
@@ -378,44 +307,39 @@ contains
       logical, intent(in), optional :: norm
       type(photint_t)               :: pi
 
-      real(RD) :: lambda_min
-      real(RD) :: lambda_max
-      real(RD) :: w_a
-      real(RD) :: w_b
-      real(RD) :: c(si%n_b)
-      integer  :: k
+      real(RD) :: lam_min
+      real(RD) :: lam_max
+      real(RD) :: lam_min_pb
+      real(RD) :: lam_max_pb
+      real(RD) :: c(si%n)
+      integer  :: i
       real(RD) :: P
 
       ! Create a photint_t from the specint_t
 
       ! First check that the spectrum is defined across the passband support
 
-      call pb%get_support(lambda_min, lambda_max)
+      call si%inquire(lam_min=lam_min, lam_max=lam_max)
+      call pb%get_support(lam_min_pb, lam_max_pb)
 
-      w_a = si%w_0
-      w_b = si%w_0 + si%dw*si%n_w
-
-      @:ASSERT(EXP(w_a) <= lambda_min, 'spectrum does not span passband support')
-      @:ASSERT(EXP(w_b) >= lambda_max, 'spectrum does not span passband support')
+      @:ASSERT(lam_min_pb <= lam_min, 'spectrum does not span passband support')
+      @:ASSERT(lam_max_pb >= lam_max, 'spectrum does not span passband support')
 
       ! Evaluate the coefficients
 
       c = 0._RD
 
-      do k = 1, si%n_w
+      coeff_loop : do i = 1, si%m
 
          ! Evaluate the passthrough
 
-         w_a = si%w_0 + si%dw*(k-1)
-         w_b = si%w_0 + si%dw*(k  )
-
-         P = pb%passthru(EXP(w_a), EXP(w_b), norm)
+         P = pb%passthru(si%lam(i), si%lam(i+1), norm)
 
          ! Add the contribution to c
 
-         c = c + P*si%c(:,k)
+         c = c + P*si%c(:,i)
 
-      end do
+      end do coeff_loop
 
       ! Construct the photint
 
@@ -435,8 +359,7 @@ contains
       type(specint_t), intent(out)  :: si
 
       character(TYPE_LEN)   :: type
-      real(RD)              :: w_0
-      real(RD)              :: dw
+      real(RD), allocatable :: lam(:)
       real(RD), allocatable :: c(:,:)
       type(hdf5io_t)        :: hi_li
       type(limb_t)          :: li
@@ -446,16 +369,14 @@ contains
       call hi%read_attr('TYPE', type)
       @:ASSERT(type == 'specint_t', 'invalid type')
 
-      call hi%read_attr('w_0', w_0)
-      call hi%read_attr('dw', dw)
-
+      call hi%alloc_read_dset('lam', lam)
       call hi%alloc_read_dset('c', c)
 
       hi_li = hdf5io_t(hi, 'li')
       call read(hi_li, li)
       call hi_li%final()
 
-      si = specint_t(c, li, w_0, dw)
+      si = specint_t(c, lam, li)
 
       ! Finish
 
@@ -465,23 +386,25 @@ contains
 
    !****
 
-   subroutine write_ (hi, si)
+   subroutine write_(hi, si)
 
       type(hdf5io_t), intent(inout) :: hi
       type(specint_t), intent(in)   :: si
 
+      real(RD)       :: lam_min
+      real(RD)       :: lam_max
       type(hdf5io_t) :: hi_li
 
       ! Write the specint_t
 
       call hi%write_attr('TYPE', 'specint_t')
 
-      call hi%write_attr('w_0', si%w_0)
-      call hi%write_attr('dw', si%dw)
+      call si%inquire(lam_min=lam_min, lam_max=lam_max)
 
-      call hi%write_attr('n_w', si%n_w)
-      call hi%write_attr('n_b', si%n_b)
+      call hi%write_attr('lam_min', lam_min)
+      call hi%write_attr('lam_max', lam_max)
 
+      call hi%write_dset('lam', si%lam)
       call hi%write_dset('c', si%c)
 
       hi_li = hdf5io_t(hi, 'li')

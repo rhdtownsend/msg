@@ -2,7 +2,7 @@
 ! Purpose : define ngrid_t type, a simple base type for N-dimensional
 !           interpolating grids
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -122,13 +122,13 @@ contains
 
    !****
 
-   subroutine inquire(self, shape, rank, axis_minima, axis_maxima, axis_labels)
+   subroutine inquire(self, shape, rank, axis_min, axis_max, axis_labels)
 
       class(ngrid_t), intent(in)          :: self
       integer, intent(out), optional      :: shape(:)
       integer, intent(out), optional      :: rank
-      real(RD), intent(out), optional     :: axis_minima(:)
-      real(RD), intent(out), optional     :: axis_maxima(:)
+      real(RD), intent(out), optional     :: axis_min(:)
+      real(RD), intent(out), optional     :: axis_max(:)
       character(*), intent(out), optional :: axis_labels(:)
 
       integer :: j
@@ -137,12 +137,12 @@ contains
          @:CHECK_BOUNDS(SIZE(shape), self%rank)
       end if
 
-      if (PRESENT(axis_minima)) then
-         @:CHECK_BOUNDS(SIZE(axis_minima), self%rank)
+      if (PRESENT(axis_min)) then
+         @:CHECK_BOUNDS(SIZE(axis_min), self%rank)
       end if
 
-      if (PRESENT(axis_maxima)) then
-         @:CHECK_BOUNDS(SIZE(axis_maxima), self%rank)
+      if (PRESENT(axis_max)) then
+         @:CHECK_BOUNDS(SIZE(axis_max), self%rank)
       end if
 
       if (PRESENT(axis_labels)) then
@@ -154,15 +154,15 @@ contains
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
 
-      if (PRESENT(axis_minima)) then
+      if (PRESENT(axis_min)) then
          do j = 1, self%rank
-            call self%ax(j)%inquire(minimum=axis_minima(j))
+            call self%ax(j)%inquire(min=axis_min(j))
          end do
       end if
 
-      if (PRESENT(axis_maxima)) then
+      if (PRESENT(axis_max)) then
          do j = 1, self%rank
-            call self%ax(j)%inquire(maximum=axis_maxima(j))
+            call self%ax(j)%inquire(max=axis_max(j))
          end do
       end if
 
