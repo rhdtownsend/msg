@@ -258,17 +258,17 @@ contains
       integer               :: k
       integer               :: j
 
-      @:CHECK_BOUNDS(SIZE(I_in, 2), SIZE(lam_in)-1)
+      @:CHECK_BOUNDS(SIZE(I_in, 2), SIZE(lam_in))
       @:CHECK_BOUNDS(SIZE(I, 2), SIZE(lam)-1)
 
       ! Convert the piecewise-linear intensity data I_in(:,lam_in) to the binned data I(:,lam)
 
       n_mu = SIZE(I_in, 1)
-      n_lam = SIZE(I, 1)
+      n_lam = SIZE(lam)
 
       mu_loop : do j = 1, n_mu
 
-         lam_loop : do k = 1, n_lam
+         lam_loop : do k = 1, n_lam-1
             I(j,k) = integrate_lin(lam_in, I_in(j,:), lam(k), lam(k+1))/(lam(k+1) - lam(k))
          end do lam_loop
 
