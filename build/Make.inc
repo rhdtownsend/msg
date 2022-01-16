@@ -117,7 +117,7 @@ vpath %.h ../src/include
 
 # Explicit rules
 
-.PHONY: all install lib-install exec-install headers-install clean almostclean
+.PHONY: all install lib-install pym-install exec-install headers-install clean almostclean
 
 all : ${LIB_TARGETS_} ${PYM_TARGETS_} ${EXEC_TARGETS}
 
