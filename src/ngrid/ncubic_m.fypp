@@ -59,10 +59,7 @@ contains
       logical  :: dim_mask(4,rank)
       logical  :: dim_mask_try(4,rank)
       integer  :: n_match_try
-      real(RD) :: u
       real(RD) :: dim_K(4)
-      real(RD) :: dim_K_a(4)
-      real(RD) :: dim_K_b(4)
 
       @:CHECK_BOUNDS(SIZE(mask), 4**rank)
 

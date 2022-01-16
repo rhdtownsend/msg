@@ -287,8 +287,6 @@ contains
       real(RD)                     :: lam_max
       real(RD)                     :: lam_min_pb
       real(RD)                     :: lam_max_pb
-      real(RD)                     :: w_a
-      real(RD)                     :: w_b
       integer                      :: n_li
       type(photint_t), allocatable :: pi(:)
 

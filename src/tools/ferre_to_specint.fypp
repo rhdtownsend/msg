@@ -152,7 +152,6 @@ contains
       integer             :: npix
       real(RD)            :: llimits(N_MAX)
       real(RD)            :: steps(N_MAX)
-      integer             :: multi
       character(CHAR_LEN) :: synthfile_internal
       character(CHAR_LEN) :: id
       character(CHAR_LEN) :: date
