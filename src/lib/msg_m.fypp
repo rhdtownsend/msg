@@ -31,7 +31,6 @@ module msg_m
    use photint_m
    use specgrid_m
    use specint_m
-!   use specint_factory_m
    use stat_m
 
    use ISO_FORTRAN_ENV
