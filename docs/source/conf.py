@@ -137,7 +137,7 @@ for rep_ext_key, rep_ext_val in rep_exts.items():
 
 macros = {}
 
-with open('macros.def') as f:
+with open('macros.def', encoding='utf-8') as f:
     line = f.readline()
     while line:
         key, value = line.rstrip().split('\t')
