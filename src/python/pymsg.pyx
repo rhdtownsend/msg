@@ -3,7 +3,7 @@
 # Module  : msg
 # Purpose : Cython interface to libcmsg
 #
-# Copyright 2021 Rich Townsend & The MSG Team
+# Copyright 2021-2022 Rich Townsend & The MSG Team
 #
 # This file is part of MSG. MSG is free software: you can redistribute
 # it and/or modify it under the terms of the GNU General Public
@@ -27,19 +27,30 @@ cdef extern from "cmsg.h":
 
     void *specgrid_load(const char *filename)
     void specgrid_unload(void *ptr)
-    void specgrid_inquire(void *ptr, double *lam_min, double *lam_max, int shape[], int *rank, double axis_min[], double axis_max[])
+    void specgrid_inquire(void *ptr, double *lam_min, double *lam_max,
+                          int shape[], int *rank, double axis_min[],
+                          double axis_max[])
     void specgrid_get_axis_label(void *ptr, int i, char *axis_label)
-    void specgrid_interp_intensity(void *ptr, double *vx, double mu, int n, double lam[], double I[], int *stat, bool *vderiv)
-    void specgrid_interp_d_moment(void *ptr, double *vx, int l, int n, double lam[], double D[], int *stat, bool *vderiv)
-    void specgrid_interp_flux(void *ptr, double *vx, int n, double lam[], double F[], int *stat, bool *vderiv)
+    void specgrid_interp_intensity(void *ptr, double *vx, double mu,
+                                   int n, double lam[], double I[],
+                                   int *stat, bool *vderiv)
+    void specgrid_interp_d_moment(void *ptr, double *vx, int l, int n,
+                                  double lam[], double D[], int *stat,
+                                  bool *vderiv)
+    void specgrid_interp_flux(void *ptr, double *vx, int n, double lam[],
+                              double F[], int *stat, bool *vderiv)
 
     void *photgrid_load(const char *filename)
     void photgrid_unload(void *ptr)
-    void photgrid_inquire(void *ptr, int shape[], int *rank, double axis_min[], double axis_max[])
+    void photgrid_inquire(void *ptr, int shape[], int *rank,
+                          double axis_min[], double axis_max[])
     void photgrid_get_axis_label(void *ptr, int i, char *axis_label)
-    void photgrid_interp_intensity(void *ptr, double *vx, double mu, double *I, int *stat, bool *vderiv)
-    void photgrid_interp_d_moment(void *ptr, double *vx, int l, double *D, int *stat, bool *vderiv)
-    void photgrid_interp_flux(void *ptr, double *vx, double *F, int *stat, bool *vderiv)
+    void photgrid_interp_intensity(void *ptr, double *vx, double mu,
+                                   double *I, int *stat, bool *vderiv)
+    void photgrid_interp_d_moment(void *ptr, double *vx, int l,
+                                  double *D, int *stat, bool *vderiv)
+    void photgrid_interp_flux(void *ptr, double *vx, double *F,
+                              int *stat, bool *vderiv)
 
 
 @cython.binding(True)
@@ -47,8 +58,8 @@ cdef class SpecGrid:
     r"""A SpecGrid represents a grid of spectral intensity data.
 
     This grid may be used to interpolate the specific intensity (or
-    related quantities) across a wavelength abscissa and for
-    a set of atmospheric parameter values.
+    related quantities) across a wavelength abscissa and for a set of
+    atmospheric parameter values.
 
     """
 
@@ -59,9 +70,9 @@ cdef class SpecGrid:
     cdef readonly double lam_max
     """double: Wavelength abscissa maxmimum value."""
     cdef readonly int rank
-    """int: Number of atmospheric parameters axes."""
+    """int: Number of atmospheric parameters."""
     cdef readonly list axis_labels
-    """list: Atmospheric parameter axes labels."""
+    """list: Atmospheric parameter axis labels."""
     
     cdef int[:] _shape
     cdef double[:] _axis_min
@@ -71,18 +82,22 @@ cdef class SpecGrid:
         """SpecGrid constructor.
 
         Args:
-            filename (string): Full pathname of grid file to load.
+            filename (string): Filename of grid to load. If the file does
+                not exist, MSG will prepend MSG_DIR/data/ to the filename
+                and try again.
         """
 
         self.ptr = specgrid_load(filename.encode('ascii'))
 
-        specgrid_inquire(self.ptr, &self.lam_min, &self.lam_max, NULL, &self.rank, NULL, NULL)
+        specgrid_inquire(self.ptr, &self.lam_min, &self.lam_max, NULL,
+                         &self.rank, NULL, NULL)
 
         self._shape = np.empty(self.rank, dtype=np.intc)
         self._axis_min = np.empty(self.rank, dtype=np.double)
         self._axis_max = np.empty(self.rank, dtype=np.double)
         
-        specgrid_inquire(self.ptr, NULL, NULL, &self._shape[0], NULL, &self._axis_min[0], &self._axis_max[0])
+        specgrid_inquire(self.ptr, NULL, NULL, &self._shape[0], NULL,
+                         &self._axis_min[0], &self._axis_max[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
@@ -101,7 +116,8 @@ cdef class SpecGrid:
         vx = np.array([dx[key] for key in self.axis_labels])
 
         if deriv is not None:
-            vderiv = np.array([key in deriv for key in self.axis_labels], dtype=np.uint8)
+            vderiv = np.array([key in deriv for key in self.axis_labels],
+                              dtype=np.uint8)
         else:
             vderiv = np.array([False]*self.rank, dtype=np.uint8)
 
@@ -126,22 +142,24 @@ cdef class SpecGrid:
         return np.asarray(self._axis_max)
 
     
-    def intensity(self, dict dx, double mu, double[:] lam, dict deriv=None):
-        r"""Evaluate the spectroscopic intensity :math:`I(\mu,lam)`.
+    def intensity(self, dict dx, double mu, double[:] lam,
+                  dict deriv=None):
+        r"""Evaluate the spectroscopic intensity.
 
         Args:
-            dx (dict): Atmospheric parameters; keys must match
+            dx (dict): Atmospheric parameters; keys must match 
                 `axis_labels` property, values must be double.
-            mu (double): Cosine of angle of emergence, :math:`\mu`, 
-                relative to surface normal.
-            lam[] (double): Wavelength abscissa.
-            deriv (dict, optional): Flags indicating whether to 
-                evaluate derivative wrt each atmospheric parameter;
+            mu (double): Cosine of angle of emergence relative to 
+                surface normal.
+            lam (numpy.ndarray): Wavelength abscissa (Å).
+            deriv (dict, optional): Flags indicating whether to evaluate 
+                derivative with respect to each atmospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
         Returns:
-            numpy.ndarray: spectroscopic intensity
+            numpy.ndarray: spectroscopic intensity (erg/cm^2/s/Å/sr) in
+            bins delineated by lam; length len(lam)-1.
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
@@ -162,7 +180,8 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        specgrid_interp_intensity(self.ptr, &vx[0], mu, n, &lam[0], &I[0], &stat, &vderiv[0])
+        specgrid_interp_intensity(self.ptr, &vx[0], mu, n, &lam[0],
+                                  &I[0], &stat, &vderiv[0])
 
         if stat != 0:
             handle_error(stat)
@@ -171,20 +190,21 @@ cdef class SpecGrid:
 
     
     def D_moment(self, dict dx, int l, double[:] lam, dict deriv=None):
-        r"""Evaluate the spectroscopic intensity moment :math:`D_{\ell}(w)`.
+        r"""Evaluate the spectroscopic intensity moment.
 
         Args:
             dx (dict): Atmospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             l (int): Harmonic degree of moment.
-            lam[] (doubley): Wavelength abscissa.
-            deriv (dict, optional): Flags indicating whether to 
-                evaluate derivative wrt each atmospheric parameter;
+            lam (numpy.ndarray): Wavelength abscissa (Å).
+            deriv (dict, optional): Flags indicating whether to evaluate 
+                derivative with respect to each atmospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
         Returns:
-            numpy.ndarray: spectroscopic intensity moment.
+            numpy.ndarray: spectroscopic intensity moment (erg/cm^2/s/Å) 
+            in bins delineated by lam; length len(lam)-1.
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
@@ -205,7 +225,8 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        specgrid_interp_d_moment(self.ptr, &vx[0], l, n, &lam[0], &D[0], &stat, &vderiv[0])
+        specgrid_interp_d_moment(self.ptr, &vx[0], l, n, &lam[0], &D[0],
+                                 &stat, &vderiv[0])
 
         if stat != 0:
             handle_error(stat)
@@ -214,19 +235,20 @@ cdef class SpecGrid:
 
     
     def flux(self, dict dx, double[:] lam, dict deriv=None):
-        r"""Evaluate the spectroscopic flux :math:`F(w)`.
+        r"""Evaluate the spectroscopic flux.
 
         Args:
             dx (dict): Atmospheric parameters; keys must match
                 `axis_labels` property, values must be double.
-            lam[] (double): Wavelength abscissa.
-            deriv (dict, optional): Flags indicating whether to 
-                evaluate derivative wrt each atmospheric parameter;
-                keys must match the `axis_labels` property, values must
+            lam (numpy.ndarray): Wavelength abscissa (Å)
+            deriv (dict, optional): Flags indicating whether to evaluate 
+                derivative with respect to each atmospheric parameter; 
+                keys must match the `axis_labels` property, values must 
                 be boolean.
 
         Returns:
-            numpy.ndarray: spectroscopic flux.
+            numpy.ndarray: spectroscopic flux (erg/cm^2/s/Å) in bins 
+            delineated by lam; length len(lam)-1.
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
@@ -247,7 +269,8 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        specgrid_interp_flux(self.ptr, &vx[0], n, &lam[0], &F[0], &stat, &vderiv[0])
+        specgrid_interp_flux(self.ptr, &vx[0], n, &lam[0], &F[0], &stat,
+                             &vderiv[0])
         if stat != 0:
             handle_error(stat)
         
@@ -289,7 +312,8 @@ cdef class PhotGrid:
         self._axis_min = np.empty(self.rank, dtype=np.double)
         self._axis_max = np.empty(self.rank, dtype=np.double)
 
-        photgrid_inquire(self.ptr, &self._shape[0], NULL, &self._axis_min[0], &self._axis_max[0])
+        photgrid_inquire(self.ptr, &self._shape[0], NULL,
+                         &self._axis_min[0], &self._axis_max[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
@@ -308,7 +332,8 @@ cdef class PhotGrid:
         vx = np.array([dx[key] for key in self.axis_labels])
 
         if deriv is not None:
-            vderiv = np.array([key in deriv for key in self.axis_labels], dtype=np.uint8)
+            vderiv = np.array([key in deriv for key in self.axis_labels],
+                              dtype=np.uint8)
         else:
             vderiv = np.array([False]*self.rank, dtype=np.uint8)
 
@@ -337,17 +362,17 @@ cdef class PhotGrid:
         r"""Evaluate the photometric intensity :math:`I_{x}(\mu)`.
 
         Args:
-            dx (dict): Atmospheric parameters; keys must match
-                the `axis_labels` property, values must be double.
-            mu (double): Cosine of angle of emergence, :math:`\mu`, 
-                relative to surface normal.
-            deriv (dict, optional): Flags indicating whether to 
-                evaluate derivative wrt each atmospheric parameter;
-                keys must match the `axis_labels` property, values must
+            dx (dict): Atmospheric parameters; keys must match 
+                `axis_labels` property, values must be double.
+            mu (double): Cosine of angle of emergence relative to 
+                surface normal.
+            deriv (dict, optional): Flags indicating whether to evaluate 
+                derivative with respect to each atmospheric parameter; 
+                keys must match the `axis_labels` property, values must 
                 be boolean.
 
         Returns:
-            double: photometric intensity
+            double: photometric intensity (erg/cm^2/s/sr).
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
@@ -364,7 +389,8 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,  &vderiv[0])
+        photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,
+                                  &vderiv[0])
         if stat != 0:
             handle_error(stat)
 
@@ -372,19 +398,19 @@ cdef class PhotGrid:
 
     
     def D_moment(self, dict dx, int l, dict deriv=None):
-        r"""Evaluate the photometric intensity moment :math:`D_{\ell,x}`.
+        r"""Evaluate the photometric intensity moment.
 
         Args:
             dx (dict): Atmospheric parameters; keys must match
-                axis_labels property, values must be double.
-            l (int): Harmonic degree of Legendre function :math:`P_{\ell}`.
-            deriv (dict, optional): Flags indicating whether to 
-                evaluate derivative wrt each atmospheric parameter;
-                keys must match axis_labels property, values must be 
-                boolean.
+                `axis_labels` property, values must be double.
+            l (int): Harmonic degree of moment.
+            deriv (dict, optional): Flags indicating whether to evaluate 
+                derivative with respect to each atmospheric parameter; 
+                keys must match the `axis_labels` property, values must 
+                be boolean.
 
         Returns:
-            double: photometric intensity moment.
+            double: photometric intensity moment (erg/cm^2/s).
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
@@ -401,7 +427,8 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        photgrid_interp_d_moment(self.ptr, &vx[0], l, &D, &stat, &vderiv[0])
+        photgrid_interp_d_moment(self.ptr, &vx[0], l, &D, &stat,
+                                 &vderiv[0])
         if stat != 0:
             handle_error(stat)
 
@@ -409,23 +436,24 @@ cdef class PhotGrid:
 
     
     def flux(self, dict dx, dict deriv=None):
-        r"""Evaluate the photometric flux :math:`F_{x}`.
+        r"""Evaluate the photometric flux.
 
         Args:
             dx (dict): Atmospheric parameters; keys must match
-                axis_labels property, values must be double.
-            deriv (dict, optional): Flags indicating whether to 
-                evaluate derivative wrt each atmospheric parameter;
-                keys must match axis_labels property, values must be 
-                boolean.
+                `axis_labels` property, values must be double.
+            deriv (dict, optional): Flags indicating whether to evaluate 
+                derivative with respect to each atmospheric parameter; 
+                keys must match the `axis_labels` property, values must 
+                be boolean.
 
         Returns:
-            double: photometric flux.
+            double: photometric flux (erg/cm^2/s).
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
                 `axis_labels` property.
-            ValueError: If `dx` falls outside the bounds of the grid.
+            ValueError: If `dx` or `l` falls outside the bounds of the 
+                grid.
             LookupError: If `dx` falls in a grid void.
        """
 
