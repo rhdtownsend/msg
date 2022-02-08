@@ -1,7 +1,7 @@
 ! Module  : stat_m
 ! Purpose : status value definitions
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -38,6 +38,8 @@ module stat_m
    integer, parameter :: STAT_OUT_OF_BOUNDS_MU_HI = 6
    integer, parameter :: STAT_INVALID_L = 7
    integer, parameter :: STAT_UNAVAILABLE_DATA = 8
+   integer, parameter :: STAT_INVALID_TYPE = 9
+   integer, parameter :: STAT_FILE_NOT_FOUND = 10
 
    ! Access specifiers
 
@@ -52,5 +54,7 @@ module stat_m
    public :: STAT_OUT_OF_BOUNDS_MU_HI
    public :: STAT_INVALID_L
    public :: STAT_UNAVAILABLE_DATA
+   public :: STAT_INVALID_TYPE
+   public :: STAT_FILE_NOT_FOUND
 
 end module stat_m

@@ -26,9 +26,10 @@ module dyn_photint_m
    use hdf5io_m
    use order_m
 
-   use specint_m
    use photint_m
    use passband_m
+   use specint_m
+   use stat_m
 
    use ISO_FORTRAN_ENV
 
@@ -157,19 +158,34 @@ contains
 
    !****
 
-   subroutine read_(hi, pb, pi)
+   subroutine read_(hi, pb, pi, stat)
 
       type(hdf5io_t), intent(inout)    :: hi
       type(passband_t), intent(in)     :: pb
       type(dyn_photint_t), intent(out) :: pi
+      integer, intent(out), optional   :: stat
+
+      character(TYPE_LEN) :: type
 
       ! Read the dyn_photint_t (the photint_t supertype is set in a
       ! later call to load_)
+
+      call hi%read_attr('TYPE', type)
+      if (type /= 'specint_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       pi%hi = hi
       pi%pb = pb
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

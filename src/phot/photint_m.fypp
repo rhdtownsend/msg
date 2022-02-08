@@ -195,10 +195,11 @@ contains
 
    !****
 
-   subroutine read_(hi, pi)
+   subroutine read_(hi, pi, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(photint_t), intent(out)  :: pi
+      type(hdf5io_t), intent(inout)  :: hi
+      type(photint_t), intent(out)   :: pi
+      integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
       real(RD), allocatable :: c(:)
@@ -208,7 +209,14 @@ contains
       ! Read the photint_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'photint_t', 'invalid type')
+      if (type /= 'photint_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%alloc_read_dset('c', c)
 
@@ -219,6 +227,8 @@ contains
       pi = photint_t(c, li)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

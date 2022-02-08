@@ -36,28 +36,29 @@ module cmsg_m
 
    private
 
-   #:for prefix in ('specgrid', 'photgrid')
-      public :: ${prefix}$_load
-      public :: ${prefix}$_unload
-      public :: ${prefix}$_inquire
-      public :: ${prefix}$_interp_intensity
-      public :: ${prefix}$_interp_D_moment
-      public :: ${prefix}$_interp_flux
+   #:for suffix in ('specgrid', 'photgrid')
+      public :: c_load_${suffix}$
+      public :: c_unload_${suffix}$
+      public :: c_inquire_${suffix}$
+      public :: c_interp_intensity_${suffix}$
+      public :: c_interp_D_moment_${suffix}$
+      public :: c_interp_flux_${suffix}$
    #:endfor
 
-   public :: photgrid_load_specgrid
+   public :: c_load_photgrid_from_specgrid
 
    ! Procedures
 
 contains
 
-   #:for prefix, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
+   #:for suffix, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
 
-      function ${prefix}$_load(c_filename) result(ptr) bind(C)
+   subroutine c_load_${suffix}$(c_filename, ptr, stat) bind(C)
 
          character(C_CHAR) :: c_filename(*)
          type(C_PTR)       :: ptr
-
+         integer(C_INT)    :: stat
+         
          type(${type}$), pointer   :: gr
          character(:), allocatable :: filename
 
@@ -69,7 +70,11 @@ contains
 
          call c_f_string(c_filename, filename)
 
-         gr = ${type}$(filename)
+         call load_${suffix}$(filename, gr, stat)
+         if (stat /= STAT_OK) then
+            deallocate(gr)
+            return
+         endif
 
          ! Set up the C pointer
 
@@ -79,11 +84,11 @@ contains
 
          return
 
-      end function ${prefix}$_load
+      end subroutine c_load_${suffix}$
 
       !****
 
-      subroutine ${prefix}$_unload(ptr) bind(C)
+      subroutine c_unload_${suffix}$(ptr) bind(C)
 
          type(C_PTR), value :: ptr
 
@@ -101,17 +106,18 @@ contains
 
          return
 
-      end subroutine ${prefix}$_unload
+      end subroutine c_unload_${suffix}$
 
    #:endfor
 
    !****
 
-   function photgrid_load_specgrid(c_filename, c_passband_filename) result(ptr) bind(C)
+   subroutine c_load_photgrid_from_specgrid(c_filename, c_passband_filename, ptr, stat) bind(C)
 
       character(C_CHAR) :: c_filename(*)
       character(C_CHAR) :: c_passband_filename(*)
       type(C_PTR)       :: ptr
+      integer(C_INT)    :: stat
 
       type(${type}$), pointer   :: gr
       character(:), allocatable :: filename
@@ -126,7 +132,11 @@ contains
       call c_f_string(c_filename, filename)
       call c_f_string(c_passband_filename, passband_filename)
 
-      gr = ${type}$(filename, passband_filename)
+      call load_photgrid_from_specgrid(filename, passband_filename, gr, stat)
+      if (stat /= STAT_OK) then
+         deallocate(gr)
+         return
+      endif
 
       ! Set up the C pointer
 
@@ -136,11 +146,11 @@ contains
 
       return
 
-   end function photgrid_load_specgrid
+   end subroutine c_load_photgrid_from_specgrid
 
    !****
 
-   subroutine specgrid_inquire(ptr, lam_min, lam_max, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
+   subroutine c_inquire_specgrid(ptr, lam_min, lam_max, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
 
       type(C_PTR), value :: ptr
       real(C_DOUBLE)     :: lam_min
@@ -186,11 +196,11 @@ contains
 
       return
 
-   end subroutine specgrid_inquire
+   end subroutine c_inquire_specgrid
 
    !****
 
-   subroutine photgrid_inquire(ptr, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
+   subroutine c_inquire_photgrid(ptr, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
 
       type(C_PTR), value :: ptr
       type(C_PTR), value :: shape_ptr
@@ -234,11 +244,11 @@ contains
 
       return
 
-   end subroutine photgrid_inquire
+   end subroutine c_inquire_photgrid
 
    !****
 
-   subroutine specgrid_get_axis_label(ptr, i, axis_label) bind(C)
+   subroutine c_get_axis_label_specgrid(ptr, i, axis_label) bind(C)
 
       type(C_PTR), value    :: ptr
       integer(C_INT), value :: i
@@ -270,11 +280,11 @@ contains
 
       return
 
-   end subroutine specgrid_get_axis_label
+   end subroutine c_get_axis_label_specgrid
 
    !****
 
-   subroutine photgrid_get_axis_label(ptr, i, axis_label) bind(C)
+   subroutine c_get_axis_label_photgrid(ptr, i, axis_label) bind(C)
 
       type(C_PTR), value    :: ptr
       integer(C_INT), value :: i
@@ -306,14 +316,14 @@ contains
 
       return
 
-   end subroutine photgrid_get_axis_label
+   end subroutine c_get_axis_label_photgrid
 
    !****
 
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(C_DOUBLE)'), &
                                           ('D_moment', 'D', 'l', 'integer(C_INT)'))
 
-      subroutine specgrid_interp_${name}$(ptr, vx, ${arg_var}$, n, lam, ${var}$, stat, vderiv) bind(C)
+      subroutine c_interp_${name}$_specgrid(ptr, vx, ${arg_var}$, n, lam, ${var}$, stat, vderiv) bind(C)
 
          type(C_PTR), value    :: ptr
          real(C_DOUBLE)        :: vx(*)
@@ -341,11 +351,11 @@ contains
 
          return
 
-      end subroutine specgrid_interp_${name}$
+      end subroutine c_interp_${name}$_specgrid
 
       !****
 
-      subroutine photgrid_interp_${name}$(ptr, vx, ${arg_var}$, ${var}$, stat, vderiv) bind(C)
+      subroutine c_interp_${name}$_photgrid(ptr, vx, ${arg_var}$, ${var}$, stat, vderiv) bind(C)
 
          type(C_PTR), value  :: ptr
          real(C_DOUBLE)      :: vx(*)
@@ -371,7 +381,7 @@ contains
 
          return
 
-      end subroutine photgrid_interp_${name}$
+      end subroutine c_interp_${name}$_photgrid
 
    #:endfor
 
@@ -379,7 +389,7 @@ contains
       
    #:for name, var in (('flux', 'F'),)
 
-      subroutine specgrid_interp_${name}$(ptr, vx, n, lam, ${var}$, stat, vderiv) bind(C)
+      subroutine c_interp_${name}$_specgrid(ptr, vx, n, lam, ${var}$, stat, vderiv) bind(C)
 
          type(C_PTR), value    :: ptr
          real(C_DOUBLE)        :: vx(*)
@@ -406,11 +416,11 @@ contains
 
          return
 
-      end subroutine specgrid_interp_${name}$
+      end subroutine c_interp_${name}$_specgrid
 
       !****
 
-      subroutine photgrid_interp_${name}$(ptr, vx, ${var}$, stat, vderiv) bind(C)
+      subroutine c_interp_${name}$_photgrid(ptr, vx, ${var}$, stat, vderiv) bind(C)
 
          type(C_PTR), value :: ptr
          real(C_DOUBLE)     :: vx(*)
@@ -435,7 +445,7 @@ contains
 
          return
 
-      end subroutine photgrid_interp_${name}$
+      end subroutine c_interp_${name}$_photgrid
 
    #:endfor
 

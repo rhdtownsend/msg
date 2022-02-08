@@ -25,6 +25,7 @@ module dyn_specint_m
    use forum_m
 
    use specint_m
+   use stat_m
 
    use ISO_FORTRAN_ENV
 
@@ -183,20 +184,35 @@ contains
 
    !****
 
-   subroutine read_(hi, si)
+   subroutine read_(hi, si, stat)
 
       type(hdf5io_t), intent(inout)    :: hi
       type(dyn_specint_t), intent(out) :: si
+      integer, intent(out), optional   :: stat
+
+      character(TYPE_LEN) :: type
 
       ! Read the dyn_specint_t (the specint_t supertype is set in a
       ! later call to load_)
 
-      si%hi = hi
+      call hi%read_attr('TYPE', type)
+      if (type /= 'specint_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%read_attr('lam_min', si%lam_min)
       call hi%read_attr('lam_max', si%lam_max)
 
+      si%hi = hi
+
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

@@ -341,10 +341,11 @@ contains
 
    !****
 
-   subroutine read_(hi, sg)
+   subroutine read_(hi, sg, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(specgrid_t), intent(out) :: sg
+      type(hdf5io_t), intent(inout)  :: hi
+      type(specgrid_t), intent(out)  :: sg
+      integer, intent(out), optional :: stat
 
       character(TYPE_LEN)              :: type
       integer, allocatable             :: shape(:)
@@ -356,7 +357,14 @@ contains
       ! Read the specgrid_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'specgrid_t', 'invalid type')
+      if (type /= 'specgrid_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%alloc_read_attr('shape', shape)
       
@@ -373,6 +381,8 @@ contains
       sg = specgrid_t(si, ng)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

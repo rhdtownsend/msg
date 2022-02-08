@@ -352,10 +352,11 @@ contains
 
    !****
 
-   subroutine read_(hi, si)
+   subroutine read_(hi, si, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(specint_t), intent(out)  :: si
+      type(hdf5io_t), intent(inout)  :: hi
+      type(specint_t), intent(out)   :: si
+      integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
       real(RD), allocatable :: lam(:)
@@ -366,7 +367,14 @@ contains
       ! Read the specint_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'specint_t', 'invalid type')
+      if (type /= 'specint_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%alloc_read_dset('lam', lam)
       call hi%alloc_read_dset('c', c)
@@ -378,6 +386,8 @@ contains
       si = specint_t(c, lam, li)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

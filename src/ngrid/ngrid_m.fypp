@@ -582,12 +582,13 @@ contains
 
    !****
 
-   subroutine read_(hi, ng)
+   subroutine read_(hi, ng, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(ngrid_t), intent(out)    :: ng
+      type(hdf5io_t), intent(inout)  :: hi
+      type(ngrid_t), intent(out)     :: ng
+      integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)       :: file_type
+      character(TYPE_LEN)       :: type
       integer                   :: rank
       logical, allocatable      :: mask(:)
       type(axis_t), allocatable :: ax(:)
@@ -596,24 +597,35 @@ contains
 
       ! Read the ngrid_t
 
-      call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'ngrid_t', 'invalid type')
+      call hi%read_attr('TYPE', type)
+      if (type /= 'ngrid_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%read_attr('rank', rank)
 
       allocate(ax(rank))
 
-      do j = 1, rank
+      ax_loop : do j = 1, rank
          hi_ax = hdf5io_t(hi, ax_name_(j))
          call read(hi_ax, ax(j))
          call hi_ax%final()
-      end do
+      end do ax_loop
 
       call hi%alloc_read_dset('mask', mask)
 
       ng = ngrid_t(ax, mask)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
 
    end subroutine read_
 

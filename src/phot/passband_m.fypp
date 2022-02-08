@@ -24,6 +24,7 @@ module passband_m
    use forum_m
 
    use cubint_m
+   use stat_m
 
    use ISO_FORTRAN_ENV
 
@@ -179,12 +180,13 @@ contains
 
    !****
 
-   subroutine read_(hi, pb)
+   subroutine read_(hi, pb, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(passband_t), intent(out) :: pb
+      type(hdf5io_t), intent(inout)  :: hi
+      type(passband_t), intent(out)  :: pb
+      integer, intent(out), optional :: stat
 
-      character(TYPE_LEN) :: file_type
+      character(TYPE_LEN) :: type
       real(RD)            :: D
       real(RD)            :: ZP
       type(hdf5io_t)      :: hi_ci
@@ -192,8 +194,14 @@ contains
 
       ! Read the passband_t
 
-      call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'passband_t', 'invalid type')
+      call hi%read_attr('TYPE', type)
+      if (type /= 'passband_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%read_attr('D', D)
       call hi%read_attr('ZP', ZP)

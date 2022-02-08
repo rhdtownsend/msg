@@ -25,34 +25,35 @@ from libcpp cimport bool
 
 cdef extern from "cmsg.h":
 
-    void *specgrid_load(const char *filename)
-    void specgrid_unload(void *ptr)
-    void specgrid_inquire(void *ptr, double *lam_min, double *lam_max,
-                          int shape[], int *rank, double axis_min[],
-                          double axis_max[])
-    void specgrid_get_axis_label(void *ptr, int i, char *axis_label)
-    void specgrid_interp_intensity(void *ptr, double *vx, double mu,
-                                   int n, double lam[], double I[],
-                                   int *stat, bool *vderiv)
-    void specgrid_interp_d_moment(void *ptr, double *vx, int l, int n,
-                                  double lam[], double D[], int *stat,
-                                  bool *vderiv)
-    void specgrid_interp_flux(void *ptr, double *vx, int n, double lam[],
-                              double F[], int *stat, bool *vderiv)
+    void c_load_specgrid(const char *filename, void **ptr, int *stat)
+    void c_unload_specgrid(void *ptr)
+    void c_inquire_specgrid(void *ptr, double *lam_min, double *lam_max,
+                            int shape[], int *rank, double axis_min[],
+                            double axis_max[])
+    void c_get_axis_label_specgrid(void *ptr, int i, char *axis_label)
+    void c_interp_intensity_specgrid(void *ptr, double *vx, double mu,
+                                     int n, double lam[], double I[],
+                                     int *stat, bool *vderiv)
+    void c_interp_d_moment_specgrid(void *ptr, double *vx, int l, int n,
+                                    double lam[], double D[], int *stat,
+                                    bool *vderiv)
+    void c_interp_flux_specgrid(void *ptr, double *vx, int n, double lam[],
+                                double F[], int *stat, bool *vderiv)
 
-    void *photgrid_load(const char *filename)
-    void *photgrid_load_specgrid(const char *specgrid_filename,
-                                 const char *passband_filename)
-    void photgrid_unload(void *ptr)
-    void photgrid_inquire(void *ptr, int shape[], int *rank,
-                          double axis_min[], double axis_max[])
-    void photgrid_get_axis_label(void *ptr, int i, char *axis_label)
-    void photgrid_interp_intensity(void *ptr, double *vx, double mu,
-                                   double *I, int *stat, bool *vderiv)
-    void photgrid_interp_d_moment(void *ptr, double *vx, int l,
-                                  double *D, int *stat, bool *vderiv)
-    void photgrid_interp_flux(void *ptr, double *vx, double *F,
-                              int *stat, bool *vderiv)
+    void c_load_photgrid(const char *filename, void **ptr, int *stat)
+    void c_load_photgrid_from_specgrid(const char *specgrid_filename,
+                                       const char *passband_filename,
+                                       void **ptr, int *stat)
+    void c_unload_photgrid(void *ptr)
+    void c_inquire_photgrid(void *ptr, int shape[], int *rank,
+                            double axis_min[], double axis_max[])
+    void c_get_axis_label_photgrid(void *ptr, int i, char *axis_label)
+    void c_interp_intensity_photgrid(void *ptr, double *vx, double mu,
+                                     double *I, int *stat, bool *vderiv)
+    void c_interp_d_moment_photgrid(void *ptr, double *vx, int l,
+                                    double *D, int *stat, bool *vderiv)
+    void c_interp_flux_photgrid(void *ptr, double *vx, double *F,
+                                int *stat, bool *vderiv)
 
 
 @cython.binding(True)
@@ -89,28 +90,33 @@ cdef class SpecGrid:
                 and try again.
         """
 
-        self.ptr = specgrid_load(filename.encode('ascii'))
+        cdef int stat
 
-        specgrid_inquire(self.ptr, &self.lam_min, &self.lam_max, NULL,
-                         &self.rank, NULL, NULL)
+        c_load_specgrid(filename.encode('ascii'), &self.ptr, &stat)
+
+        if stat != 0:
+            handle_error(stat)
+
+        c_inquire_specgrid(self.ptr, &self.lam_min, &self.lam_max, NULL,
+                           &self.rank, NULL, NULL)
 
         self._shape = np.empty(self.rank, dtype=np.intc)
         self._axis_min = np.empty(self.rank, dtype=np.double)
         self._axis_max = np.empty(self.rank, dtype=np.double)
         
-        specgrid_inquire(self.ptr, NULL, NULL, &self._shape[0], NULL,
-                         &self._axis_min[0], &self._axis_max[0])
+        c_inquire_specgrid(self.ptr, NULL, NULL, &self._shape[0], NULL,
+                           &self._axis_min[0], &self._axis_max[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
-            specgrid_get_axis_label(self.ptr, j+1, axis_label)
+            c_get_axis_label_specgrid(self.ptr, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
 
         
     def __dealloc__(self):
 
-        specgrid_unload(self.ptr)
+        c_unload_specgrid(self.ptr)
 
 
     def _vector_args(self, dx, deriv):
@@ -182,8 +188,8 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        specgrid_interp_intensity(self.ptr, &vx[0], mu, n, &lam[0],
-                                  &I[0], &stat, &vderiv[0])
+        c_interp_intensity_specgrid(self.ptr, &vx[0], mu, n, &lam[0],
+                                    &I[0], &stat, &vderiv[0])
 
         if stat != 0:
             handle_error(stat)
@@ -227,8 +233,8 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        specgrid_interp_d_moment(self.ptr, &vx[0], l, n, &lam[0], &D[0],
-                                 &stat, &vderiv[0])
+        c_interp_d_moment_specgrid(self.ptr, &vx[0], l, n, &lam[0], &D[0],
+                                   &stat, &vderiv[0])
 
         if stat != 0:
             handle_error(stat)
@@ -271,8 +277,8 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        specgrid_interp_flux(self.ptr, &vx[0], n, &lam[0], &F[0], &stat,
-                             &vderiv[0])
+        c_interp_flux_specgrid(self.ptr, &vx[0], n, &lam[0], &F[0], &stat,
+                               &vderiv[0])
         if stat != 0:
             handle_error(stat)
         
@@ -308,31 +314,34 @@ cdef class PhotGrid:
                loading from a specgrid)
         """
 
-        if passband_filename is not None:
-            self.ptr = photgrid_load_specgrid(filename.encode('ascii'),
-                                              passband_filename.encode('ascii'))
-        else:
-            self.ptr = photgrid_load(filename.encode('ascii'))
+        cdef int stat
 
-        photgrid_inquire(self.ptr, NULL, &self.rank, NULL, NULL)
+        if passband_filename is not None:
+            c_load_photgrid_from_specgrid(filename.encode('ascii'),
+                                          passband_filename.encode('ascii'),
+                                          &self.ptr, &stat)
+        else:
+            c_load_photgrid(filename.encode('ascii'), &self.ptr, &stat)
+
+        c_inquire_photgrid(self.ptr, NULL, &self.rank, NULL, NULL)
 
         self._shape = np.empty(self.rank, dtype=np.intc)
         self._axis_min = np.empty(self.rank, dtype=np.double)
         self._axis_max = np.empty(self.rank, dtype=np.double)
 
-        photgrid_inquire(self.ptr, &self._shape[0], NULL,
-                         &self._axis_min[0], &self._axis_max[0])
+        c_inquire_photgrid(self.ptr, &self._shape[0], NULL,
+                           &self._axis_min[0], &self._axis_max[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
-            photgrid_get_axis_label(self.ptr, j+1, axis_label)
+            c_get_axis_label_photgrid(self.ptr, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
 
         
     def __dealloc__(self):
         
-        photgrid_unload(self.ptr)
+        c_unload_photgrid(self.ptr)
 
         
     def _vector_args(self, dx, deriv):
@@ -397,8 +406,8 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        photgrid_interp_intensity(self.ptr, &vx[0], mu, &I, &stat,
-                                  &vderiv[0])
+        c_interp_intensity_photgrid(self.ptr, &vx[0], mu, &I, &stat,
+                                    &vderiv[0])
         if stat != 0:
             handle_error(stat)
 
@@ -435,8 +444,8 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        photgrid_interp_d_moment(self.ptr, &vx[0], l, &D, &stat,
-                                 &vderiv[0])
+        c_interp_d_moment_photgrid(self.ptr, &vx[0], l, &D, &stat,
+                                   &vderiv[0])
         if stat != 0:
             handle_error(stat)
 
@@ -472,7 +481,8 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        photgrid_interp_flux(self.ptr, &vx[0], &F, &stat, &vderiv[0])
+        c_interp_flux_photgrid(self.ptr, &vx[0], &F, &stat, &vderiv[0])
+
         if stat != 0:
             handle_error(stat)
 
@@ -499,6 +509,10 @@ def handle_error(stat):
         raise ValueError('invalid l')
     elif stat == 8:
         raise LookupError('unavailable data')
+    elif stat == 9:
+        raise TypeError('invalid type')
+    elif stat == 10:
+        raise FileNotFoundError('file not found')
     else:
         raise Exception(f'error with unknown stat code: {stat}')
     

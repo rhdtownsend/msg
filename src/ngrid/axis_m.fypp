@@ -178,6 +178,7 @@ contains
       if (i < 1) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+            return
          else
             @:ABORT('out-of-bounds (lo) on '//self%label//' axis')
          endif
@@ -186,6 +187,7 @@ contains
       if (i > self%n_x) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+            return
          else
             @:ABORT('out-of-bounds (hi) on '//self%label//' axis')
          endif
@@ -203,10 +205,11 @@ contains
 
    !****
 
-   subroutine read_(hi, ax)
+   subroutine read_(hi, ax, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(axis_t), intent(out)     :: ax
+      type(hdf5io_t), intent(inout)  :: hi
+      type(axis_t), intent(out)      :: ax
+      integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
       character(LABEL_LEN)  :: label
@@ -215,7 +218,14 @@ contains
       ! Read the axis_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'axis_t', 'invalid type')
+      if (type /= 'axis_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%read_attr('label', label)
       
@@ -224,6 +234,8 @@ contains
       ax = axis_t(x, label)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

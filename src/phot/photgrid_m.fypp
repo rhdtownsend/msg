@@ -76,10 +76,10 @@ module photgrid_m
    public :: write
 
    ! Procedures
-
+   
 contains
 
-   function photgrid_t_ (pi, ng) result (pg)
+   function photgrid_t_(pi, ng) result (pg)
 
       class(photint_t), intent(in) :: pi(:)
       type(ngrid_t), intent(in)    :: ng
@@ -223,10 +223,11 @@ contains
 
    !****
 
-   subroutine read_(hi, pg)
+   subroutine read_(hi, pg, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(photgrid_t), intent(out) :: pg
+      type(hdf5io_t), intent(inout)  :: hi
+      type(photgrid_t), intent(out)  :: pg
+      integer, intent(out), optional :: stat
 
       character(TYPE_LEN)          :: type
       integer, allocatable         :: shape(:)
@@ -238,7 +239,14 @@ contains
       ! Read the photgrid_t with no rebinning
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'photgrid_t', 'invalid type')
+      if (type /= 'photgrid_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%alloc_read_attr('shape', shape)
 
@@ -255,6 +263,8 @@ contains
       pg = photgrid_t(pi, ng)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -286,11 +296,12 @@ contains
 
    !****
 
-   subroutine read_specgrid_(hi, pb, pg)
+   subroutine read_specgrid_(hi, pb, pg, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(passband_t), intent(in)  :: pb
-      type(photgrid_t), intent(out) :: pg
+      type(hdf5io_t), intent(inout)  :: hi
+      type(passband_t), intent(in)   :: pb
+      type(photgrid_t), intent(out)  :: pg
+      integer, intent(out), optional :: stat
 
       character(TYPE_LEN)              :: type
       integer, allocatable             :: shape(:)
@@ -300,7 +311,14 @@ contains
       type(dyn_photint_t), allocatable :: pi(:)
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'specgrid_t', 'invalid type')
+      if (type /= 'specgrid_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%alloc_read_attr('shape', shape)
 
@@ -317,6 +335,8 @@ contains
       pg = photgrid_t(pi, ng)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

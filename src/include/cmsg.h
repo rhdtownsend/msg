@@ -17,32 +17,30 @@
 
 #include "stdbool.h"
 
-void *specgrid_load(const char *filename);
+// specgrid interface
 
-void *specgrid_load_rebin(const char *filename, double w_0, double dw, int n_w);
+void c_load_specgrid(const char *filename, void **ptr, int *stat);
+void c_unload_specgrid(void *ptr);
 
-void specgrid_unload(void *ptr);
+void c_inquire_specgrid(void *ptr, double *lam_min, double *lam_max, int shape[], int *rank, double axis_min[], double axis_max[]);
 
-void specgrid_inquire(void *ptr, double *lam_min, double *lam_max, int shape[], int *rank, double axis_min[], double axis_max[]);
+void c_get_axis_label_specgrid(void *ptr, int i, char *axis_label);
 
-void specgrid_get_axis_label(void *ptr, int i, char *axis_label);
+void c_interp_intensity_specgrid(void *ptr, double vx[], double mu, int n, double lam[], double I[], int *stat, bool vderiv[]);
+void c_interp_d_moment_specgrid(void *ptr, double vx[], int l, int n, double lam[], double D[], int *stat, bool vderiv[]);
+void c_interp_flux_specgrid(void *ptr, double vx[], int n, double lam[], double F[], int *stat, bool vderiv[]);
 
-void specgrid_interp_intensity(void *ptr, double vx[], double mu, int n, double lam[], double I[], int *stat, bool vderiv[]);
-void specgrid_interp_d_moment(void *ptr, double vx[], int l, int n, double lam[], double D[], int *stat, bool vderiv[]);
-void specgrid_interp_flux(void *ptr, double vx[], int n, double lam[], double F[], int *stat, bool vderiv[]);
+// photgrid interface
 
+void c_load_photgrid(const char *filename, void **ptr, int *stat);
+void c_load_photgrid_from_specgrid(const char *filename, const char *passbad_filename, void **ptr, int *stat);
 
-void *photgrid_load(const char *filename);
-void *photgrid_load_specgrid(const char *filename, const char *passbad_filename);
+void c_unload_photgrid(void *ptr);
 
-void photgrid_unload(void *ptr);
+void c_inquire_photgrid(void *ptr, int shape[], int *rank, double axis_min[], double axis_max[]);
 
-void photgrid_inquire(void *ptr, int shape[], int *rank, double axis_min[], double axis_max[]);
+void c_get_axis_label_photgrid(void *ptr, int i, char *axis_label);
 
-void photgrid_get_axis_label(void *ptr, int i, char *axis_label);
-
-void photgrid_interp_intensity(void *ptr, double vx[], double mu, double *I, int *stat, bool vderiv[]);
-
-void photgrid_interp_d_moment(void *ptr, double vx[], int l, double *D, int *stat, bool vderiv[]);
-
-void photgrid_interp_flux(void *ptr, double vx[], double *F, int *stat, bool vderiv[]);
+void c_interp_intensity_photgrid(void *ptr, double vx[], double mu, double *I, int *stat, bool vderiv[]);
+void c_interp_d_moment_photgrid(void *ptr, double vx[], int l, double *D, int *stat, bool vderiv[]);
+void c_interp_flux_photgrid(void *ptr, double vx[], double *F, int *stat, bool vderiv[]);

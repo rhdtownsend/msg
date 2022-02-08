@@ -39,17 +39,6 @@ module msg_m
 
    implicit none
 
-   ! Interfaces
-
-   interface specgrid_t
-      module procedure specgrid_t_
-   end interface specgrid_t
-   
-   interface photgrid_t
-      module procedure photgrid_t_
-      module procedure photgrid_t_specgrid_
-   end interface photgrid_t
-
    ! Access specifiers
 
    private
@@ -66,76 +55,106 @@ module msg_m
    public :: specint_t
    public :: read
    public :: write
+   public :: load_specgrid
+   public :: load_photgrid
+   public :: load_photgrid_from_specgrid
 
 contains
 
-   #:for type in ('specgrid_t', 'photgrid_t')
+   #:for name, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
 
-      function ${type}$_(filename) result(gr)
+      subroutine load_${name}$(filename, gr, stat)
 
-         character(*), intent(in) :: filename
-         type(${type}$)           :: gr
+         character(*), intent(in)       :: filename
+         type(${type}$), intent(out)    :: gr
+         integer, intent(out), optional :: stat
 
          type(hdf5io_t) :: hi
 
          ! Create the ${type}$ from file
 
-         call open_file_(filename, hi)
-         call read(hi, gr)
+         call open_file_(filename, hi, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+
+         call read(hi, gr, stat)
+
          call hi%final()
 
          ! Finish
 
          return
 
-      end function ${type}$_
+      end subroutine load_${name}$
 
    #:endfor
 
    !****
       
-   function photgrid_t_specgrid_(specgrid_filename, passband_filename) result(pg)
+   subroutine load_photgrid_from_specgrid(filename, passband_filename, pg, stat)
 
-      character(*), intent(in) :: specgrid_filename
-      character(*), intent(in) :: passband_filename
-      type(photgrid_t)         :: pg
+      character(*), intent(in)       :: filename
+      character(*), intent(in)       :: passband_filename
+      type(photgrid_t), intent(out)  :: pg
+      integer, intent(out), optional :: stat
 
       type(passband_t) :: pb
       type(hdf5io_t)   :: hi
 
       ! Create the photgrid_t from files
 
-      call open_file_(passband_filename, hi)
-      call read(hi, pb)
+      call open_file_(passband_filename, hi, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+      
+      call read(hi, pb, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+      
       call hi%final()
 
-      call open_file_(specgrid_filename, hi)
-      call read(hi, pb, pg)
+      call open_file_(filename, hi, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+
+      call read(hi, pb, pg, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+
       call hi%final()
 
       ! Finish
 
       return
 
-   end function photgrid_t_specgrid_
+   end subroutine load_photgrid_from_specgrid
          
    !****
 
-   subroutine open_file_(filename, hi)
+   subroutine open_file_(filename, hi, stat)
 
-      character(*), intent(in)    :: filename
-      type(hdf5io_t), intent(out) :: hi
+      character(*), intent(in)       :: filename
+      type(hdf5io_t), intent(out)    :: hi
+      integer, intent(out), optional :: stat
 
+      logical                   :: opened
       integer                   :: status
       character(:), allocatable :: msg_dir
-      character(:), allocatable :: filename_dir
+      character(:), allocatable :: alt_filename
 
       ! Open the file
+
+      opened = .FALSE.
 
       if (is_hdf5(filename)) then
 
          hi = hdf5io_t(filename, OPEN_FILE_RO)
-         return
+         opened = .TRUE.
 
       else
 
@@ -143,20 +162,30 @@ contains
 
          if (status == 0) then
 
-            filename_dir = msg_dir//'/data/'//filename
+            alt_filename = msg_dir//'/data/'//filename
 
-            if (is_hdf5(filename_dir)) then
-
-               hi = hdf5io_t(filename_dir, OPEN_FILE_RO)
-               return
-
+            if (is_hdf5(alt_filename)) then
+               hi = hdf5io_t(alt_filename, OPEN_FILE_RO)
+               opened = .TRUE.
             endif
 
          endif
 
       endif
 
-      @:ABORT('file not found')
+      ! Finish
+
+      if (opened) then
+         if (PRESENT(stat)) stat = STAT_OK
+      else
+         if (PRESENT(stat)) then
+            stat = STAT_FILE_NOT_FOUND
+         else
+            @:ABORT('file not found')
+         endif
+      end if
+
+      return
 
    end subroutine open_file_
 
