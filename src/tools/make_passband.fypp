@@ -1,7 +1,7 @@
 ! Module   : make_passband
 ! Purpose  : create passband files from ASCII tables
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -38,7 +38,7 @@ program make_passband
 
    integer               :: unit
    integer               :: n
-   real(RD), allocatable :: lambda(:)
+   real(RD), allocatable :: lam(:)
    real(RD), allocatable :: S(:)
    integer               :: i
    type(passband_t)      :: pb
@@ -67,18 +67,18 @@ program make_passband
 
    rewind(unit)
 
-   allocate(lambda(n))
+   allocate(lam(n))
    allocate(S(n))
 
    read_loop : do i = 1, n
-      read(unit, *) lambda(i), S(i)
+      read(unit, *) lam(i), S(i)
    end do read_loop
 
    close(unit)
 
    ! Create the passband_t
 
-   pb = passband_t(S, lambda, ZP)
+   pb = passband_t(S, lam, ZP)
 
    ! Write the passband_t
 
