@@ -37,7 +37,6 @@ program specgrid_to_photgrid
    character(:), allocatable :: photgrid_filename
 
    type(hdf5io_t)   :: hi
-   type(specgrid_t) :: sg
    type(passband_t) :: pb
    type(photgrid_t) :: pg
 
@@ -48,24 +47,20 @@ program specgrid_to_photgrid
    call get_arg(1, specgrid_filename)
    call get_arg(2, passband_filename)
    call get_arg(3, photgrid_filename)
-
-   ! Read the specgrid_t
-
-   hi = hdf5io_t(specgrid_filename, OPEN_FILE_RO)
-   call read(hi, sg)
-   call hi%final()
-
+ 
    ! Read data from the passband file
 
    hi = hdf5io_t(passband_filename, OPEN_FILE_RO)
    call read(hi, pb)
    call hi%final()
 
-   ! Create the photgrid
+   ! Read the photgrid_t from the specgrid_t
 
-   pg = photgrid_t(sg, pb, norm=.TRUE.)
+   hi = hdf5io_t(specgrid_filename, OPEN_FILE_RO)
+   call read(hi, pb, pg)
+   call hi%final()
 
-   ! Write it
+   ! Write the photgrid_t
 
    hi = hdf5io_t(photgrid_filename, CREATE_FILE)
    call write(hi, pg)
