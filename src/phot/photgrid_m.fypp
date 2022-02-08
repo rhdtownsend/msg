@@ -2,7 +2,7 @@
 ! Purpose : define photgrid_t type, for representing photometric intensity
 !           grids
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -25,7 +25,9 @@ module photgrid_m
    use forum_m
 
    use ngrid_m
+   use passband_m
    use photint_m
+   use dyn_photint_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -38,10 +40,10 @@ module photgrid_m
 
    type :: photgrid_t
       private
-      type(photint_t), allocatable :: pi(:)
-      type(ngrid_t)                :: ng
-      integer, allocatable         :: shape(:)
-      integer                      :: rank
+      class(photint_t), allocatable :: pi(:)
+      type(ngrid_t)                 :: ng
+      integer, allocatable          :: shape(:)
+      integer                       :: rank
    contains
       private
       procedure, public :: inquire
@@ -58,6 +60,7 @@ module photgrid_m
 
    interface read
       module procedure read_
+      module procedure read_specgrid_
    end interface read
 
    interface write
@@ -225,14 +228,23 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(photgrid_t), intent(out) :: pg
 
-      type(ngrid_t)                :: ng
+      character(TYPE_LEN)          :: type
       integer, allocatable         :: shape(:)
+      type(hdf5io_t)               :: hi_ng
+      type(ngrid_t)                :: ng
       integer                      :: n_pi
       type(photint_t), allocatable :: pi(:)
 
       ! Read the photgrid_t with no rebinning
 
-      call read_base_(hi, ng, shape)
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'photgrid_t', 'invalid type')
+
+      call hi%alloc_read_attr('shape', shape)
+
+      hi_ng = hdf5io_t(hi, 'ng')
+      call read(hi_ng, ng)
+      call hi_ng%final()
 
       n_pi = PRODUCT(shape)
 
@@ -274,19 +286,21 @@ contains
 
    !****
 
-   subroutine read_base_(hi, ng, shape)
+   subroutine read_specgrid_(hi, pb, pg)
 
-      type(hdf5io_t), intent(inout)     :: hi
-      type(ngrid_t), intent(out)        :: ng
-      integer, allocatable, intent(out) :: shape(:)
+      type(hdf5io_t), intent(inout) :: hi
+      type(passband_t), intent(in)  :: pb
+      type(photgrid_t), intent(out) :: pg
 
-      character(TYPE_LEN) :: file_type
-      type(hdf5io_t)      :: hi_ng
+      character(TYPE_LEN)              :: type
+      integer, allocatable             :: shape(:)
+      type(hdf5io_t)                   :: hi_ng
+      type(ngrid_t)                    :: ng
+      integer                          :: n_pi
+      type(dyn_photint_t), allocatable :: pi(:)
 
-      ! Read base components of the photgrid_t
-
-      call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'photgrid_t', 'invalid type')
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'specgrid_t', 'invalid type')
 
       call hi%alloc_read_attr('shape', shape)
 
@@ -294,18 +308,50 @@ contains
       call read(hi_ng, ng)
       call hi_ng%final()
 
+      n_pi = PRODUCT(shape)
+
+      allocate(pi(n_pi))
+
+      call ng%map(read_dyn_photint_)
+
+      pg = photgrid_t(pi, ng)
+
       ! Finish
 
       return
 
-   end subroutine read_base_
+   contains
+
+      subroutine read_dyn_photint_(vi, stat)
+
+         integer, intent(in)            :: vi(:)
+         integer, intent(out), optional :: stat
+
+         integer        :: li
+         type(hdf5io_t) :: hi_pi
+
+         ! Read the dyn_photint_t for the node
+
+         li = ng%li_from_vi(vi)
+ 
+         hi_pi = hdf5io_t(hi, si_name_(li))
+         call read(hi_pi, pb, pi(li))
+         call hi_pi%final()
+
+         ! Finish
+
+         return
+
+      end subroutine read_dyn_photint_
+
+   end subroutine read_specgrid_
 
    !****
 
    subroutine write_(hi, pg)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(photgrid_t), intent(in)  :: pg
+      type(hdf5io_t), intent(inout)   :: hi
+      type(photgrid_t), intent(inout) :: pg
 
       type(hdf5io_t) :: hi_ng
 
@@ -339,9 +385,16 @@ contains
          ! Write the photint_t for the node
 
          li = pg%ng%li_from_vi(vi)
- 
+
          hi_pi = hdf5io_t(hi, pi_name_(li))
-         call write(hi_pi, pg%pi(li))
+
+         select type (pi => pg%pi)
+         type is (photint_t)
+            call write(hi_pi, pi(li))
+         type is (dyn_photint_t)
+            call write(hi_pi, pi(li))
+         end select
+
          call hi_pi%final()
 
          ! Finish
@@ -363,5 +416,17 @@ contains
 100   format('pi(',I0,')')
 
    end function pi_name_
+
+   !****
+
+   function si_name_(li) result (name)
+
+      integer, intent(in) :: li
+      character(256)      :: name
+
+      write(name, 100) li
+100   format('si(',I0,')')
+
+   end function si_name_
 
 end module photgrid_m
