@@ -329,7 +329,7 @@ contains
          
          li = sg%ng%li_from_vi(vi)
 
-         pi(li) = photint_t(sg%si(li), pb, norm)
+         pi(li) = photint_t(sg%si(li), pb)
 
          ! Finish
 

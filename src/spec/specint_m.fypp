@@ -300,11 +300,10 @@ contains
 
    !****
 
-   function photint_t_specint_(si, pb, norm) result(pi)
+   function photint_t_specint_(si, pb) result(pi)
 
       type(specint_t), intent(in)   :: si
       type(passband_t), intent(in)  :: pb
-      logical, intent(in), optional :: norm
       type(photint_t)               :: pi
 
       real(RD) :: lam_min
@@ -322,8 +321,8 @@ contains
       call si%inquire(lam_min=lam_min, lam_max=lam_max)
       call pb%get_support(lam_min_pb, lam_max_pb)
 
-      @:ASSERT(lam_min_pb <= lam_min, 'spectrum does not span passband support')
-      @:ASSERT(lam_max_pb >= lam_max, 'spectrum does not span passband support')
+      @:ASSERT(lam_min <= lam_min_pb, 'spectrum does not span passband support')
+      @:ASSERT(lam_max >= lam_max_pb, 'spectrum does not span passband support')
 
       ! Evaluate the coefficients
 
@@ -333,7 +332,7 @@ contains
 
          ! Evaluate the passthrough
 
-         P = pb%passthru(si%lam(i), si%lam(i+1), norm)
+         P = pb%passthru(si%lam(i), si%lam(i+1))
 
          ! Add the contribution to c
 
