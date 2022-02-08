@@ -41,6 +41,8 @@ cdef extern from "cmsg.h":
                               double F[], int *stat, bool *vderiv)
 
     void *photgrid_load(const char *filename)
+    void *photgrid_load_specgrid(const char *specgrid_filename,
+                                 const char *passband_filename)
     void photgrid_unload(void *ptr)
     void photgrid_inquire(void *ptr, int shape[], int *rank,
                           double axis_min[], double axis_max[])
@@ -297,14 +299,20 @@ cdef class PhotGrid:
     cdef double[:] _axis_min
     cdef double[:] _axis_max
 
-    def __init__(self, str filename):
+    def __init__(self, str filename, str passband_filename=None):
         """PhotGrid constructor.
 
         Args:
             filename (string): Full pathname of grid file to load.
+            passband (string): Full pathname of passband (for dynamic 
+               loading from a specgrid)
         """
 
-        self.ptr = photgrid_load(filename.encode('ascii'))
+        if passband_filename is not None:
+            self.ptr = photgrid_load_specgrid(filename.encode('ascii'),
+                                              passband_filename.encode('ascii'))
+        else:
+            self.ptr = photgrid_load(filename.encode('ascii'))
 
         photgrid_inquire(self.ptr, NULL, &self.rank, NULL, NULL)
 

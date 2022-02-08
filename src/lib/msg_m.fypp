@@ -47,6 +47,7 @@ module msg_m
    
    interface photgrid_t
       module procedure photgrid_t_
+      module procedure photgrid_t_specgrid_
    end interface photgrid_t
 
    ! Access specifiers
@@ -70,16 +71,16 @@ contains
 
    #:for type in ('specgrid_t', 'photgrid_t')
 
-      function ${type}$_(file_name) result(gr)
+      function ${type}$_(filename) result(gr)
 
-         character(*), intent(in) :: file_name
+         character(*), intent(in) :: filename
          type(${type}$)           :: gr
 
          type(hdf5io_t) :: hi
 
-         ! Create the ${type}$
+         ! Create the ${type}$ from file
 
-         call open_file_(file_name, hi)
+         call open_file_(filename, hi)
          call read(hi, gr)
          call hi%final()
 
@@ -92,21 +93,48 @@ contains
    #:endfor
 
    !****
+      
+   function photgrid_t_specgrid_(specgrid_filename, passband_filename) result(pg)
 
-   subroutine open_file_(file_name, hi)
+      character(*), intent(in) :: specgrid_filename
+      character(*), intent(in) :: passband_filename
+      type(photgrid_t)         :: pg
 
-      character(*), intent(in)    :: file_name
+      type(passband_t) :: pb
+      type(hdf5io_t)   :: hi
+
+      ! Create the photgrid_t from files
+
+      call open_file_(passband_filename, hi)
+      call read(hi, pb)
+      call hi%final()
+
+      call open_file_(specgrid_filename, hi)
+      call read(hi, pb, pg)
+      call hi%final()
+
+      ! Finish
+
+      return
+
+   end function photgrid_t_specgrid_
+         
+   !****
+
+   subroutine open_file_(filename, hi)
+
+      character(*), intent(in)    :: filename
       type(hdf5io_t), intent(out) :: hi
 
       integer                   :: status
       character(:), allocatable :: msg_dir
-      character(:), allocatable :: file_name_dir
+      character(:), allocatable :: filename_dir
 
       ! Open the file
 
-      if (is_hdf5(file_name)) then
+      if (is_hdf5(filename)) then
 
-         hi = hdf5io_t(file_name, OPEN_FILE_RO)
+         hi = hdf5io_t(filename, OPEN_FILE_RO)
          return
 
       else
@@ -115,11 +143,11 @@ contains
 
          if (status == 0) then
 
-            file_name_dir = msg_dir//'/data/'//file_name
+            filename_dir = msg_dir//'/data/'//filename
 
-            if (is_hdf5(file_name_dir)) then
+            if (is_hdf5(filename_dir)) then
 
-               hi = hdf5io_t(file_name_dir, OPEN_FILE_RO)
+               hi = hdf5io_t(filename_dir, OPEN_FILE_RO)
                return
 
             endif

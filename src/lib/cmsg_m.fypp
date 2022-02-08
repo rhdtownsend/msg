@@ -45,19 +45,21 @@ module cmsg_m
       public :: ${prefix}$_interp_flux
    #:endfor
 
+   public :: photgrid_load_specgrid
+
    ! Procedures
 
 contains
 
    #:for prefix, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
 
-      function ${prefix}$_load(c_file_name) result(ptr) bind(C)
+      function ${prefix}$_load(c_filename) result(ptr) bind(C)
 
-         character(C_CHAR) :: c_file_name(*)
+         character(C_CHAR) :: c_filename(*)
          type(C_PTR)       :: ptr
 
          type(${type}$), pointer   :: gr
-         character(:), allocatable :: file_name
+         character(:), allocatable :: filename
 
          ! Allocate the grid
 
@@ -65,9 +67,9 @@ contains
 
          ! Load it from the file
 
-         call c_f_string(c_file_name, file_name)
+         call c_f_string(c_filename, filename)
 
-         gr = ${type}$(file_name)
+         gr = ${type}$(filename)
 
          ! Set up the C pointer
 
@@ -102,6 +104,39 @@ contains
       end subroutine ${prefix}$_unload
 
    #:endfor
+
+   !****
+
+   function photgrid_load_specgrid(c_filename, c_passband_filename) result(ptr) bind(C)
+
+      character(C_CHAR) :: c_filename(*)
+      character(C_CHAR) :: c_passband_filename(*)
+      type(C_PTR)       :: ptr
+
+      type(${type}$), pointer   :: gr
+      character(:), allocatable :: filename
+      character(:), allocatable :: passband_filename
+
+      ! Allocate the grid
+
+      allocate(gr)
+
+      ! Load it from the file
+
+      call c_f_string(c_filename, filename)
+      call c_f_string(c_passband_filename, passband_filename)
+
+      gr = ${type}$(filename, passband_filename)
+
+      ! Set up the C pointer
+
+      ptr = C_LOC(gr)
+
+      ! Finish
+
+      return
+
+   end function photgrid_load_specgrid
 
    !****
 
