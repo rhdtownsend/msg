@@ -54,8 +54,8 @@ libforum_OBJS = forum_m.o cinter_m.o const_m.o hdf5io_m.o kinds_m.o memory_m.o \
                 order_m.o system_m.o
 
 libmsg_OBJS = msg_m.o axis_m.o ngrid_m.o ncubic_m.o specgrid_m.o specint_m.o \
-              dyn_specint_m.o photgrid_m.o photint_m.o passband_m.o cubint_m.o \
-              stat_m.o fit_m.o limb_m.o math_m.o
+              dyn_specint_m.o photgrid_m.o photint_m.o dyn_photint_m.o passband_m.o \
+              cubint_m.o stat_m.o fit_m.o limb_m.o math_m.o
 libmsg_LIBS = libforum
 libmsg_DEPS = forum_m
 
