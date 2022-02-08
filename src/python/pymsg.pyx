@@ -1,6 +1,6 @@
 #cython: language_level=3
 #
-# Module  : msg
+# Module  : pymsg
 # Purpose : Cython interface to libcmsg
 #
 # Copyright 2021-2022 Rich Townsend & The MSG Team
@@ -76,11 +76,13 @@ cdef class SpecGrid:
     """int: Number of atmospheric parameters."""
     cdef readonly list axis_labels
     """list: Atmospheric parameter axis labels."""
+    cdef readonly dict axis_min
+    """dict: Atmospheric parameter axis minima."""
+    cdef readonly dict axis_max
+    """dict: Atmospheric parameter axis maxima."""
     
     cdef int[:] _shape
-    cdef double[:] _axis_min
-    cdef double[:] _axis_max
-
+    
     def __init__(self, str filename):
         """SpecGrid constructor.
 
@@ -94,6 +96,8 @@ cdef class SpecGrid:
         """
 
         cdef int stat
+        cdef double[:] axis_min_vals
+        cdef double[:] axis_max_vals
 
         c_load_specgrid(filename.encode('ascii'), &self.ptr, &stat)
 
@@ -104,17 +108,21 @@ cdef class SpecGrid:
                            &self.rank, NULL, NULL)
 
         self._shape = np.empty(self.rank, dtype=np.intc)
-        self._axis_min = np.empty(self.rank, dtype=np.double)
-        self._axis_max = np.empty(self.rank, dtype=np.double)
+
+        axis_min_vals = np.empty(self.rank, dtype=np.double)
+        axis_max_vals = np.empty(self.rank, dtype=np.double)
         
         c_inquire_specgrid(self.ptr, NULL, NULL, &self._shape[0], NULL,
-                           &self._axis_min[0], &self._axis_max[0])
+                           &axis_min_vals[0], &axis_max_vals[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
             c_get_axis_label_specgrid(self.ptr, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
+
+        self.axis_min = dict(zip(self.axis_labels, axis_min_vals))
+        self.axis_max = dict(zip(self.axis_labels, axis_max_vals))
 
         
     def __dealloc__(self):
@@ -139,18 +147,6 @@ cdef class SpecGrid:
     def shape(self):
         """dict: Atmospheric parameter axes lengths."""
         return dict(zip(self.axis_labels, self._shape))
-
-    
-    @property
-    def axis_min(self):
-        """dict: Atmospheric parameter axes minimia."""
-        return dict(zip(self.axis_labels, self._axis_min))
-
-    
-    @property
-    def axis_max(self):
-        """dict: Atmospheric parameter axes max."""
-        return dict(zip(self.axis_labels, self._axis_max))
 
     
     def intensity(self, dict dx, double mu, double[:] lam,
@@ -303,10 +299,12 @@ cdef class PhotGrid:
     """int: Number of atmospheric parameter axes."""
     cdef readonly list axis_labels
     """list: Atmospheric parameter axes labels."""
-    
+    cdef readonly dict axis_min
+    """dict: Atmospheric parameter axis minima."""
+    cdef readonly dict axis_max
+    """dict: Atmospheric parameter axis maxima."""
+
     cdef int[:] _shape
-    cdef double[:] _axis_min
-    cdef double[:] _axis_max
 
     def __init__(self, str filename, str passband_filename=None):
         """PhotGrid constructor.
@@ -321,6 +319,8 @@ cdef class PhotGrid:
         """
 
         cdef int stat
+        cdef double[:] axis_min_vals
+        cdef double[:] axis_max_vals
 
         if passband_filename is not None:
             c_load_photgrid_from_specgrid(filename.encode('ascii'),
@@ -335,17 +335,20 @@ cdef class PhotGrid:
         c_inquire_photgrid(self.ptr, NULL, &self.rank, NULL, NULL)
 
         self._shape = np.empty(self.rank, dtype=np.intc)
-        self._axis_min = np.empty(self.rank, dtype=np.double)
-        self._axis_max = np.empty(self.rank, dtype=np.double)
+        axis_min_vals = np.empty(self.rank, dtype=np.double)
+        axis_max_vals = np.empty(self.rank, dtype=np.double)
 
         c_inquire_photgrid(self.ptr, &self._shape[0], NULL,
-                           &self._axis_min[0], &self._axis_max[0])
+                           &axis_min_vals[0], &axis_max_vals[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
             c_get_axis_label_photgrid(self.ptr, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
+
+        self.axis_min = dict(zip(self.axis_labels, axis_min_vals))
+        self.axis_max = dict(zip(self.axis_labels, axis_max_vals))
 
         
     def __dealloc__(self):
@@ -370,18 +373,6 @@ cdef class PhotGrid:
     def shape(self):
         """dict: Atmospheric parameter axes lengths."""
         return dict(zip(self.axis_labels, self._shape))
-
-    
-    @property
-    def axis_min(self):
-        """dict: Atmospheric parameter axes minimia."""
-        return dict(zip(self.axis_labels, self._axis_min))
-
-    
-    @property
-    def axis_max(self):
-        """dict: Atmospheric parameter axes max."""
-        return dict(zip(self.axis_labels, self._axis_max))
 
     
     def intensity(self, dict dx, double mu, dict deriv=None):
