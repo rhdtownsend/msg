@@ -1,7 +1,7 @@
 ! Module  : passband_m
 ! Purpose : define passband_t type, representing a photometric passband
 !
-! Copyright 2021 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -38,8 +38,8 @@ module passband_m
       type(cubint_t) :: ci
       real(RD)       :: D
       real(RD)       :: ZP
-      real(RD)       :: lambda_min
-      real(RD)       :: lambda_max
+      real(RD)       :: lam_min
+      real(RD)       :: lam_max
    contains
       private
       procedure, public :: get_support
@@ -73,29 +73,29 @@ module passband_m
 
 contains
 
-   function passband_t_(S, lambda, ZP) result(pb)
+   function passband_t_(S, lam, ZP) result(pb)
 
       real(RD), intent(in) :: S(:)
-      real(RD), intent(in) :: lambda(:)
+      real(RD), intent(in) :: lam(:)
       real(RD), intent(in) :: ZP
       type(passband_t)     :: pb
 
-      real(RD)       :: lambda_min
-      real(RD)       :: lambda_max
+      real(RD)       :: lam_min
+      real(RD)       :: lam_max
       type(cubint_t) :: ci
       real(RD)       :: D
 
-      @:CHECK_BOUNDS(SIZE(lambda), SIZE(S))
+      @:CHECK_BOUNDS(SIZE(lam), SIZE(S))
 
       ! Construct the passband_t from the supplied data
 
-      lambda_min = lambda(1)
-      lambda_max = lambda(SIZE(lambda))
+      lam_min = lam(1)
+      lam_max = lam(SIZE(lam))
 
-      ci = cubint_t(lambda, C_LIGHT*S/lambda, 'SPLINE')
-      D = ci%integ(lambda_max) - ci%integ(lambda_min)
+      ci = cubint_t(lam, C_LIGHT*S/lam, 'SPLINE')
+      D = ci%integ(lam_max) - ci%integ(lam_min)
 
-      pb = passband_t(cubint_t(lambda, S, 'SPLINE'), D, ZP)
+      pb = passband_t(cubint_t(lam, S, 'SPLINE'), D, ZP)
 
       ! Finish
 
@@ -112,20 +112,20 @@ contains
       real(RD), intent(in)       :: ZP
       type(passband_t)           :: pb
 
-      real(RD) :: lambda_min
-      real(RD) :: lambda_max
+      real(RD) :: lam_min
+      real(RD) :: lam_max
 
       ! Construct the passband_t from the supplied data
 
-      call ci%get_domain(lambda_min, lambda_max)
+      call ci%get_domain(lam_min, lam_max)
 
       pb%ci = ci
 
       pb%D = D
       pb%ZP = ZP
 
-      pb%lambda_min = lambda_min
-      pb%lambda_max = lambda_max
+      pb%lam_min = lam_min
+      pb%lam_max = lam_max
 
       ! Finish
 
@@ -135,16 +135,16 @@ contains
 
    !****
 
-   subroutine get_support(self, lambda_min, lambda_max)
+   subroutine get_support(self, lam_min, lam_max)
 
       class(passband_t), intent(in) :: self
-      real(RD), intent(out)         :: lambda_min
-      real(RD), intent(out)         :: lambda_max
+      real(RD), intent(out)         :: lam_min
+      real(RD), intent(out)         :: lam_max
 
       ! Get the support (non-zero interval) of the passband response
 
-      lambda_min = self%lambda_min
-      lambda_max = self%lambda_max
+      lam_min = self%lam_min
+      lam_max = self%lam_max
 
       ! Finish
 
@@ -154,29 +154,22 @@ contains
 
    !****
 
-   function passthru(self, lambda_a, lambda_b, norm) result (P)
+   function passthru(self, lam_a, lam_b) result (P)
 
       class(passband_t), intent(in) :: self
-      real(RD), intent(in)          :: lambda_a
-      real(RD), intent(in)          :: lambda_b
-      logical, intent(in), optional :: norm
+      real(RD), intent(in)          :: lam_a
+      real(RD), intent(in)          :: lam_b
       real(RD)                      :: P
 
-      real(RD) :: lambda_a_
-      real(RD) :: lambda_b_
+      real(RD) :: lam_a_
+      real(RD) :: lam_b_
 
-      ! Evaluate the passthru P = int_a^b S(lambda) dlambda
+      ! Evaluate the passthru P = int_a^b S(lam) dlam
 
-      lambda_a_ = MIN(MAX(lambda_a, self%lambda_min), self%lambda_max)
-      lambda_b_ = MIN(MAX(lambda_b, self%lambda_min), self%lambda_max)
+      lam_a_ = MIN(MAX(lam_a, self%lam_min), self%lam_max)
+      lam_b_ = MIN(MAX(lam_b, self%lam_min), self%lam_max)
 
-      P = self%ci%integ(lambda_b_) - self%ci%integ(lambda_a_)
-
-      ! If necessary, normalize
-
-      if (PRESENT(norm)) then
-         if (norm) P = P/self%D*10._RD**((48.60_RD + self%ZP)/2.5_RD)
-      endif
+      P = self%ci%integ(lam_b_) - self%ci%integ(lam_a_)
 
       ! Finish
 
