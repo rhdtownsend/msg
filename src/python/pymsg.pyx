@@ -126,20 +126,20 @@ cdef class SpecGrid:
     
     @property
     def shape(self):
-        """numpy.ndarray: Atmospheric parameter axes lengths."""
-        return np.asarray(self._shape)
+        """dict: Atmospheric parameter axes lengths."""
+        return dict(zip(self.axis_labels, self._shape))
 
     
     @property
     def axis_min(self):
-        """numpy.ndarray: Atmospheric parameter axes minimia."""
-        return np.asarray(self._axis_min)
+        """dict: Atmospheric parameter axes minimia."""
+        return dict(zip(self.axis_labels, self._axis_min))
 
     
     @property
     def axis_max(self):
-        """numpy.ndarray: Atmospheric parameter axes max."""
-        return np.asarray(self._axis_max)
+        """dict: Atmospheric parameter axes max."""
+        return dict(zip(self.axis_labels, self._axis_max))
 
     
     def intensity(self, dict dx, double mu, double[:] lam,
@@ -342,20 +342,20 @@ cdef class PhotGrid:
         
     @property
     def shape(self):
-        """numpy.ndarray: Atmospheric parameter axes lengths."""
-        return np.asarray(self._shape)
+        """dict: Atmospheric parameter axes lengths."""
+        return dict(zip(self.axis_labels, self._shape))
 
     
     @property
     def axis_min(self):
-        """numpy.ndarray: Atmospheric parameter axes minimia."""
-        return np.asarray(self._axis_min)
+        """dict: Atmospheric parameter axes minimia."""
+        return dict(zip(self.axis_labels, self._axis_min))
 
     
     @property
     def axis_max(self):
-        """numpy.ndarray: Atmospheric parameter axes max."""
-        return np.asarray(self._axis_max)
+        """dict: Atmospheric parameter axes max."""
+        return dict(zip(self.axis_labels, self._axis_max))
 
     
     def intensity(self, dict dx, double mu, dict deriv=None):
