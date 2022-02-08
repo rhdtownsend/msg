@@ -24,8 +24,6 @@ module dyn_specint_m
 
    use forum_m
 
-   use passband_m
-   use photint_m
    use specint_m
 
    use ISO_FORTRAN_ENV
@@ -53,10 +51,6 @@ module dyn_specint_m
 
    ! Interfaces
 
-   interface photint_t
-      module procedure photint_t_dyn_specint_
-   end interface photint_t
-
    interface read
       module procedure read_
    end interface read
@@ -70,7 +64,6 @@ module dyn_specint_m
    private
 
    public :: dyn_specint_t
-   public :: photint_t
    public :: read
    public :: write
 
@@ -161,29 +154,6 @@ contains
 
    !****
 
-   function photint_t_dyn_specint_(si, pb, norm) result(pi)
-
-      type(dyn_specint_t), intent(inout) :: si
-      type(passband_t), intent(in)       :: pb
-      logical, intent(in), optional      :: norm
-      type(photint_t)                    :: pi
-
-      ! If necessary, load
-
-      if (.NOT. si%loaded) call si%load_()
-         
-      ! Pass
-
-      pi = photint_t(si%specint_t, pb, norm)
-
-      ! Finish
-
-      return
-
-   end function photint_t_dyn_specint_
-
-   !****
-
    subroutine load_(self)
       
       class(dyn_specint_t), intent(inout) :: self
@@ -221,7 +191,7 @@ contains
       ! Read the dyn_specint_t (the specint_t supertype is set in a
       ! later call to load_)
 
-      si%hi = hdf5io_t(hi, '.')
+      si%hi = hi
 
       call hi%read_attr('lam_min', si%lam_min)
       call hi%read_attr('lam_max', si%lam_max)
