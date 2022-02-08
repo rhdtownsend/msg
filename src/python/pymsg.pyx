@@ -88,6 +88,9 @@ cdef class SpecGrid:
             filename (string): Filename of grid to load. If the file does
                 not exist, MSG will prepend MSG_DIR/data/ to the filename
                 and try again.
+        Raises:
+            FileNotFound: If the the file cannot be found.
+            TypeError: If the file contains an incorrect datatype.
         """
 
         cdef int stat
@@ -312,6 +315,9 @@ cdef class PhotGrid:
             filename (string): Full pathname of grid file to load.
             passband (string): Full pathname of passband (for dynamic 
                loading from a specgrid)
+        Raises:
+            FileNotFound: If the the file cannot be found.
+            TypeError: If the file contains an incorrect datatype.
         """
 
         cdef int stat
@@ -322,6 +328,9 @@ cdef class PhotGrid:
                                           &self.ptr, &stat)
         else:
             c_load_photgrid(filename.encode('ascii'), &self.ptr, &stat)
+
+        if stat != 0:
+            handle_error(stat)
 
         c_inquire_photgrid(self.ptr, NULL, &self.rank, NULL, NULL)
 
