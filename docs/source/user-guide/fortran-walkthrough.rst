@@ -4,24 +4,46 @@
 Fortran Walkthrough
 *******************
 
-This chapter provides a walkthrough of using the Fortran MSG interface
-to evaluate intensity and flux spectra for a model of Sirius (alpha
-Canis Majoris).
+This chapter provides a walkthrough of using the MSG Fortran interface
+to evaluate flux and intensity spectra for a model of Sirius
+(:math:`\alpha` Canis Majoris). In that respect it mirrors the
+:ref:`python-walkthrough`; but rather than using a notebook the focus
+is on a short program. It's presumed that you've already downloaded
+the :grid:`demo grid <sg-demo.h5>` and placed it in your working
+directory.
 
-.. _fortran-walkthrough-grid:
+Source Code
+===========
 
-Downloading the Demo Grid
-=========================
+Create a new file, :file:`demo_msg.f90`, and paste in the following
+source code:
 
-The demo grid is a small, low-resolution temperature-gravity grid of
-intensity spectra, useful for learning about MSG's
-capabilities. Download the grid from here (it's size is around 100
-MB); you can store it in any directory, but make a note of where
-you've put it.
+.. literalinclude:: demo_msg.f90
+   :language: fortran
 
-Writing the Code
-================
+A few comments on the code:
 
+* The `use forum_m` statement provides access to the :git:`Fortran
+  Utility Module (ForUM) <rhdtownsend/forum/>`. For the purposes of
+the demo program, this module defines the `RD` kind type parameter
+  for double precision real variables.
 
+* The `use msg_m` statement provides access to the MSG Fortran interface
 
+* Because Fortran doesn't have `dict` datatypes, the atmosphere
+  parameters must be passed to MSG as a plain array (here, stored in
+  the variable `vx`). The ordering of parameters in the array should
+  match the case-sensitive alphabetical ordering of the parameter
+  labels.
+
+Compiling
+=========
+
+The next step is to compile the demo program. Make sure the
+:envvar:`MSG_DIR` environment variable is set, as described in the
+:ref:`quick-start` chapter. Then, enter the following on the command line:
+
+.. prompt:: bash
+
+   gfortran -o demo_msg demo_msg -I $MSG_DIR/include -L $MSG_DIR/lib -lmsg
 

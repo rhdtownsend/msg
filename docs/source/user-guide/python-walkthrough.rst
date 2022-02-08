@@ -15,11 +15,12 @@ into a Python script should work also.
 The Demo Grid
 =============
 
-The demo grid is a small, low-resolution temperature-gravity grid of
-intensity spectra, useful for learning about MSG's
-capabilities. Download the grid from :grid:`here <sg-demo.h5>` (its
-size is around 18 MB); you should store it in the same directory as
-where you plan to run Jupyter (or Python).
+The demo grid is a temperature-gravity grid of low-resolution
+intensity spectra (based on the solar-metallicity
+:ads_citet:`Castelli:2003` atmospheres), useful for learning about
+MSG's capabilities. Download the grid from :grid:`here <sg-demo.h5>`
+(its size is around 40 MB); you should store it in the same directory
+as where you plan to run Jupyter (or Python).
 
 The PyMSG Module
 ================
@@ -59,7 +60,7 @@ creating a new :py:class:`pymsg.SpecGrid` object:
 
 .. jupyter-execute::
 
-   # Create a new SpecGrid
+   # Load the SpecGrid
 
    sg = pymsg.SpecGrid('sg-demo.h5')
 
@@ -68,15 +69,19 @@ the parameter space spanned by the grid:
 
 .. jupyter-execute::
 
+   # Inspect grid parameters
+
    print('Grid parameters:')
 
    for i, axis_label in enumerate(sg.axis_labels):
-      print(f'  {axis_label} ({sg.axis_minima[i]} -> {sg.axis_maxima[i]})')
+      print(f'  {axis_label} ({sg.axis_min[i]} -> {sg.axis_max[i]})')
 
-   print(f'  lambda ({sg.lam_min} -> {sg.lam_max})')
+   print(f'  lam ({sg.lam_min} -> {sg.lam_max})')
       
-Here, ``logT`` and ``logg`` correspond (respectively) to the :math:`\log_{10}(\Teff/\kelvin)` and
-:math:`\log_{10}(g/\cm\,\second^{-2})` atmosphere parameters, while ``lambda`` is wavelength.
+Here, ``logT`` and ``logg`` correspond (respectively) to the
+:math:`\log_{10}(\Teff/\kelvin)` and
+:math:`\log_{10}(g/\cm\,\second^{-2})` atmosphere parameters, while
+``lam`` is wavelength :math:`\lambda` in :math:`\angstrom`.
 
 Plotting the Flux
 =================
@@ -91,97 +96,69 @@ parameters for the star in a dict called ``dx``:
 
    dx = {'logT': np.log10(9940.), 'logg': 4.33}
 
-(these data are taken from `Wikipedia's` :wiki:`Sirius` entry). Then,
-let's set up spectral abcissa parameters for a spectrum running from
-3,000 to 7,000 Angstroms:
+(these data are taken from `Wikipedia's` :wiki:`Sirius` entry). Then
+set up a wavelength abcissa for a spectrum spanning the visible range,
+:math:`3,000\,\angstrom` to :math:`7,000\,\angstrom`.
 
 .. jupyter-execute::
 
-   # Set wavelength bounds
+   # Set up the wavelength abscissa
 
-   lambda_min = 3000.
-   lambda_max = 7000.
+   lam_min = 3000.
+   lam_max = 7000.
 
-   # Set up corresponding w bounds
+   lam = np.linspace(lam_min, lam_max, 501)
 
-   w_min = np.log(lambda_min)
-   w_max = np.log(lambda_max)
+   lam_c = 0.5*(lam[1:] + lam[:-1])
 
-   # Set up spectral abscissa parameters
-
-   w_0 = w_min
-   dw = sg.dw
-   n_w = np.ceil((w_max - w_min)/dw)
-
-Note that we don't get to choose the bin width ``dw`` --- it's
-constrained to be the same as the bin width ``sg.dw`` of the ``sg``
-object. This may seem overly restrictive, but there are ways to change
-the latter; see the XXXX section.
+Here, the array ``lam`` defines the boundaries of 500 wavelength bins
+:math:`\{\lambda_{i},\lambda_{i+1}\}` (:math:`i=1,\ldots,500`) and the
+array ``lam_c`` stores the central wavelength of each bin.
 
 With all our parameters defined, let's now evaluate and plot the flux
 spectrum using a call to the :py:func:`pymsg.SpecGrid.flux` function:
 
 .. jupyter-execute::
 
-   # Evaluate the center wavelength of the bins
+   # Evaluate the flux
 
-   lambda_c = np.exp(w_0 + 0.5*dw + np.arange(n_w)*dw)
-
-   # Evaluate the flux; note the parameters!
-
-   F_w = sg.flux(dx, w_0, n_w)
-
-   # Convert flux from per-unit-w to per-unit-lambda
-
-   F_lambda = F_w/lambda_c
+   F_lam = sg.flux(dx, lam)
 
    # Plot
 
    plt.figure(figsize=[8,8])
-   plt.plot(lambda_c, F_lambda)
+   plt.plot(lam_c, F_lam)
 
    plt.xlabel(r'$\lambda ({\AA})$')
-   plt.ylabel(r'$F_{\lambda} ({\rm erg\,cm^{-2}\,s^{-1}}\,\AA^{-1})$')
+   plt.ylabel(r'$F_{\lambda}\ ({\rm erg\,cm^{-2}\,s^{-1}}\,\AA^{-1})$')
    
-
 This looks about right --- we can clearly see the Balmer series,
 starting with H\ :math:`\alpha` at :math:`6563\,\angstrom`.
 
 Plotting the Intensity
 ======================
 
-Sometimes we need to know the specific intensity of the radiation
+Sometimes we want to know the specific intensity of the radiation
 emerging from a star's atmosphere; an example might be when we're
-modeling eclipse or transit phenomena, when we need to know the angle
-dependence of the local radiation field. For this, we can use the
-:py:func:`pymsg.SpecGrid.intensity` function.
+modeling eclipse or transit phenomena, which requires detailed
+knowlege of the stellar-surface radiation field. For this, we can use
+the :py:func:`pymsg.SpecGrid.intensity` function.
 
 Here's a demonstration of this function in action, plotting the
-specific intensity for ten different values of the cosine
-:math:`mu=0.1,0.2,\ldots,1.0` of the emergence angle (relative to the
-surface normal):
+specific intensity across the H\ :math:`\alpha` line profile for ten
+different values of the cosine :math:`\mu=0.1,0.2,\ldots,1.0` of the
+emergence angle (relative to the surface normal):
 
 .. jupyter-execute::
 
-   # Set wavelength bounds
+   # Set up the wavelength abscissa
 
-   lambda_min = 6300.
-   lambda_max = 6800.
+   lam_min = 6300.
+   lam_max = 6800.
 
-   # Set up corresponding w bounds
+   lam = np.linspace(lam_min, lam_max, 100)
 
-   w_min = np.log(lambda_min)
-   w_max = np.log(lambda_max)
-
-   # Set up spectral abscissa parameters
-
-   w_0 = w_min
-   dw = sg.dw
-   n_w = np.ceil((w_max - w_min)/dw)
-
-   # Evaluate the center wavelength of the bins
-
-   lambda_c = np.exp(w_0 + 0.5*dw + np.arange(n_w)*dw)
+   lam_c = 0.5*(lam[1:] + lam[:-1])
 
    # Loop over mu
 
@@ -189,13 +166,9 @@ surface normal):
 
    for mu in np.linspace(1.0, 0.1, 10):
 
-       # Evaluate the intensity; note the parameters!
+       # Evaluate the intensity
 
-       I_w = sg.intensity(dx, mu, w_0, n_w)
-
-       # Convert intensity from per-unit-w to per-unit-lambda
-
-       I_lambda = I_w/lambda_c
+       I_lam = sg.intensity(dx, mu, lam)
 
        # Plot
 
@@ -204,32 +177,17 @@ surface normal):
        else:
            label=None
 
-       plt.plot(lambda_c, I_lambda, label=label)
+       plt.plot(lam_c, I_lam, label=label)
 
    plt.xlabel(r'$\lambda ({\AA})$')
-   plt.ylabel(r'$I_{\lambda} ({\rm erg\,cm^{-2}\,s^{-1}}\,\AA^{-1}\,srad^{-1})$')
+   plt.ylabel(r'$I_{\lambda}\ ({\rm erg\,cm^{-2}\,s^{-1}}\,\AA^{-1}\,srad^{-1})$')
 
    plt.legend()
 
-The plot focuses on the H\ :math:`\alpha` line, and we can clearly see
-that limb-darkening in the line core is much weaker than in the
-continuum --- exactly what we expect from such a strong line.
-
-Changing the Resolution
-=======================
-
-Although the :py:func:`pymsg.SpecGrid.flux` and
-:py:func:`pymsg.SpecGrid.intensity` functions are constrained to adopt
-the same bin size/resolution as the underlying
-:py:func:`pymsg.Specgrid` object, it's possible to change the spectral
-abscissa parameters when the object is first created. This is done by
-passing values for the parameters to the constructor (TBD)
+We can clearly see that limb-darkening in the line core is much weaker
+than in the continuum --- exactly what we expect from such a strong
+line.
 
 .. rubric:: Footnotes
 
-.. [#memory] In fact, MSG is a bit smarter than that; it only loads
-             data into memory when they are needed.
-
-
-
-
+.. [#memory] Behind the scenes, the grid data is loaded on demand; see XXX for further details.
