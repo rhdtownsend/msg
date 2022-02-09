@@ -330,9 +330,9 @@ contains
          ${arg_type}$, value   :: ${arg_var}$
          integer(C_INT), value :: n
          real(C_DOUBLE)        :: lam(n)
-         real(C_DOUBLE)        :: ${var}$(n)
+         real(C_DOUBLE)        :: ${var}$(n-1)
          integer(C_INT)        :: stat
-         logical(C_BOOL)       :: vderiv(n)
+         logical(C_BOOL)       :: vderiv(*)
 
          type(specgrid_t), pointer :: sg
          integer                   :: rank
@@ -395,7 +395,7 @@ contains
          real(C_DOUBLE)        :: vx(*)
          integer(C_INT), value :: n
          real(C_DOUBLE)        :: lam(n)
-         real(C_DOUBLE)        :: ${var}$(n)
+         real(C_DOUBLE)        :: ${var}$(n-1)
          integer(C_INT)        :: stat
          logical(C_BOOL)       :: vderiv(*)
 
