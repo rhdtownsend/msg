@@ -69,9 +69,9 @@ cdef class SpecGrid:
     cdef void *ptr
     
     cdef readonly double lam_min
-    """double: Wavelength abscissa minimum value."""
+    """double: Wavelength abscissa minimum."""
     cdef readonly double lam_max
-    """double: Wavelength abscissa maxmimum value."""
+    """double: Wavelength abscissa maxmimum."""
     cdef readonly int rank
     """int: Number of atmospheric parameters."""
     cdef readonly list axis_labels
