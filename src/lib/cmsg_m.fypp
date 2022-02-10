@@ -52,16 +52,16 @@ contains
 
    #:for name, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
 
-   subroutine load_${name}$(${name}$_filename, grid, stat) bind(C)
+   subroutine load_${name}$(${name}$_filename, ${name}$, stat) bind(C)
 
          character(C_CHAR) :: ${name}$_filename(*)
-         type(C_PTR)       :: grid
+         type(C_PTR)       :: ${name}$
          integer(C_INT)    :: stat
 
          type(hdf5io_t)          :: hi
          type(${type}$), pointer :: gr
 
-         ! Load the ${type}$ from file
+         ! Load the ${name}$ from file
 
          call open_file_(${name}$_filename, hi, stat)
          if (stat /= STAT_OK) return
@@ -78,7 +78,7 @@ contains
 
          ! Set up the C pointer
 
-         grid = C_LOC(gr)
+         ${name}$ = C_LOC(gr)
 
          ! Finish
 
@@ -88,15 +88,15 @@ contains
 
       !****
 
-      subroutine unload_${name}$(grid) bind(C)
+      subroutine unload_${name}$(${name}$) bind(C)
 
-         type(C_PTR), value :: grid
+         type(C_PTR), value :: ${name}$
 
          type(${type}$), pointer :: gr
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(grid, gr)
+         call C_F_POINTER(${name}$, gr)
 
          ! Deallocate the grid
 
@@ -112,18 +112,18 @@ contains
 
    !****
 
-   subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, grid, stat) bind(C)
+   subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, photgrid, stat) bind(C)
 
       character(C_CHAR) :: specgrid_filename(*)
       character(C_CHAR) :: passband_filename(*)
-      type(C_PTR)       :: grid
+      type(C_PTR)       :: photgrid
       integer(C_INT)    :: stat
 
       type(hdf5io_t)            :: hi
       type(passband_t)          :: pb
       type(photgrid_t), pointer :: pg
 
-      ! Load the photgrid_t from specgrid_t and passband_t files
+      ! Load the photgrid from specgrid and passband files
 
       call open_file_(passband_filename, hi, stat)
       if (stat /= STAT_OK) return
@@ -148,7 +148,7 @@ contains
 
       ! Set up the C pointer
 
-      grid = C_LOC(pg)
+      photgrid = C_LOC(pg)
 
       ! Finish
 
@@ -158,9 +158,9 @@ contains
 
    !****
 
-   subroutine inquire_specgrid(grid, lam_min, lam_max, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
+   subroutine inquire_specgrid(specgrid, lam_min, lam_max, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
 
-      type(C_PTR), value :: grid
+      type(C_PTR), value :: specgrid
       real(C_DOUBLE)     :: lam_min
       real(C_DOUBLE)     :: lam_max
       type(C_PTR), value :: shape_ptr
@@ -176,7 +176,7 @@ contains
 
       ! Set up the Fortran pointer
 
-      call C_F_POINTER(grid, sg)
+      call C_F_POINTER(specgrid, sg)
 
       ! Inquire metadata
 
@@ -208,9 +208,9 @@ contains
 
    !****
 
-   subroutine inquire_photgrid(grid, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
+   subroutine inquire_photgrid(photgrid, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
 
-      type(C_PTR), value :: grid
+      type(C_PTR), value :: photgrid
       type(C_PTR), value :: shape_ptr
       integer(C_INT)     :: rank
       type(C_PTR), value :: axis_min_ptr
@@ -224,7 +224,7 @@ contains
 
       ! Set up the Fortran pointer
 
-      call C_F_POINTER(grid, pg)
+      call C_F_POINTER(photgrid, pg)
 
       ! Inquire metadata
 
@@ -256,9 +256,9 @@ contains
 
    !****
 
-   subroutine get_axis_label_specgrid(grid, i, axis_label) bind(C)
+   subroutine get_axis_label_specgrid(specgrid, i, axis_label) bind(C)
 
-      type(C_PTR), value    :: grid
+      type(C_PTR), value    :: specgrid
       integer(C_INT), value :: i
       character(C_CHAR)     :: axis_label(*)
 
@@ -268,7 +268,7 @@ contains
 
       ! Set up the Fortran pointer
 
-      call C_F_POINTER(grid, sg)
+      call C_F_POINTER(specgrid, sg)
 
       ! Get the i'th label
 
@@ -292,9 +292,9 @@ contains
 
    !****
 
-   subroutine get_axis_label_photgrid(grid, i, axis_label) bind(C)
+   subroutine get_axis_label_photgrid(photgrid, i, axis_label) bind(C)
 
-      type(C_PTR), value    :: grid
+      type(C_PTR), value    :: photgrid
       integer(C_INT), value :: i
       character(C_CHAR)     :: axis_label(*)
 
@@ -304,7 +304,7 @@ contains
 
       ! Set up the Fortran pointer
 
-      call C_F_POINTER(grid, pg)
+      call C_F_POINTER(photgrid, pg)
 
       ! Get the i'th label
 
@@ -331,9 +331,9 @@ contains
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(C_DOUBLE)'), &
                                           ('D_moment', 'D', 'l', 'integer(C_INT)'))
 
-      subroutine interp_${name}$_specgrid(grid, vx, ${arg_var}$, n, lam, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_specgrid(specgrid, vx, ${arg_var}$, n, lam, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value    :: grid
+         type(C_PTR), value    :: specgrid
          real(C_DOUBLE)        :: vx(*)
          ${arg_type}$, value   :: ${arg_var}$
          integer(C_INT), value :: n
@@ -347,7 +347,7 @@ contains
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(grid, sg)
+         call C_F_POINTER(specgrid, sg)
 
          ! Interpolate the ${name}$
 
@@ -363,9 +363,9 @@ contains
 
       !****
 
-      subroutine interp_${name}$_photgrid(grid, vx, ${arg_var}$, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_photgrid(photgrid, vx, ${arg_var}$, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value  :: grid
+         type(C_PTR), value  :: photgrid
          real(C_DOUBLE)      :: vx(*)
          ${arg_type}$, value :: ${arg_var}$
          real(C_DOUBLE)      :: ${var}$
@@ -377,7 +377,7 @@ contains
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(grid, pg)
+         call C_F_POINTER(photgrid, pg)
 
          ! Interpolate the ${name}$
 
@@ -397,9 +397,9 @@ contains
       
    #:for name, var in (('flux', 'F'),)
 
-      subroutine interp_${name}$_specgrid(grid, vx, n, lam, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_specgrid(specgrid, vx, n, lam, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value    :: grid
+         type(C_PTR), value    :: specgrid
          real(C_DOUBLE)        :: vx(*)
          integer(C_INT), value :: n
          real(C_DOUBLE)        :: lam(n)
@@ -412,7 +412,7 @@ contains
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(grid, sg)
+         call C_F_POINTER(specgrid, sg)
 
          ! Interpolate the ${name}$
 
@@ -428,9 +428,9 @@ contains
 
       !****
 
-      subroutine interp_${name}$_photgrid(grid, vx, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_photgrid(photgrid, vx, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value :: grid
+         type(C_PTR), value :: photgrid
          real(C_DOUBLE)     :: vx(*)
          real(C_DOUBLE)     :: ${var}$
          integer(C_INT)     :: stat
@@ -441,7 +441,7 @@ contains
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(grid, pg)
+         call C_F_POINTER(photgrid, pg)
 
          ! Interpolate the ${name}$
 

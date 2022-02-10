@@ -27,40 +27,40 @@ cdef extern from "cmsg.h":
 
     # specgrid interface
 
-    ctypedef void *specgrid
+    ctypedef void *specgrid_t
 
-    void load_specgrid(const char *specgrid_filename, specgrid *grid, int *stat)
-    void unload_specgrid(specgrid grid)
-    void inquire_specgrid(specgrid grid, double *lam_min, double *lam_max,
+    void load_specgrid(const char *specgrid_filename, specgrid_t *specgrid, int *stat)
+    void unload_specgrid(specgrid_t specgrid)
+    void inquire_specgrid(specgrid_t specgrid, double *lam_min, double *lam_max,
                           int shape[], int *rank, double axis_min[],
                           double axis_max[])
-    void get_axis_label_specgrid(specgrid grid, int i, char *axis_label)
-    void interp_intensity_specgrid(specgrid grid, double *vx, double mu,
+    void get_axis_label_specgrid(specgrid_t specgrid, int i, char *axis_label)
+    void interp_intensity_specgrid(specgrid_t specgrid, double *vx, double mu,
                                    int n, double lam[], double I[],
                                    int *stat, bool *vderiv)
-    void interp_d_moment_specgrid(specgrid grid, double *vx, int l, int n,
+    void interp_d_moment_specgrid(specgrid_t specgrid, double *vx, int l, int n,
                                   double lam[], double D[], int *stat,
                                   bool *vderiv)
-    void interp_flux_specgrid(specgrid grid, double *vx, int n, double lam[],
+    void interp_flux_specgrid(specgrid_t specgrid, double *vx, int n, double lam[],
                               double F[], int *stat, bool *vderiv)
 
     # photgrid interface
 
-    ctypedef void *photgrid
+    ctypedef void *photgrid_t
 
-    void load_photgrid(const char *photgrid_filename, specgrid *grid, int *stat)
+    void load_photgrid(const char *photgrid_filename, photgrid_t *photgrid, int *stat)
     void load_photgrid_from_specgrid(const char *specgrid_filename,
                                      const char *passband_filename,
-                                     specgrid *grid, int *stat)
-    void unload_photgrid(photgrid grid)
-    void inquire_photgrid(photgrid grid, int shape[], int *rank,
+                                     photgrid_t *photgrid, int *stat)
+    void unload_photgrid(photgrid_t photgrid)
+    void inquire_photgrid(photgrid_t photgrid, int shape[], int *rank,
                           double axis_min[], double axis_max[])
-    void get_axis_label_photgrid(photgrid grid, int i, char *axis_label)
-    void interp_intensity_photgrid(photgrid grid, double *vx, double mu,
+    void get_axis_label_photgrid(photgrid_t photgrid, int i, char *axis_label)
+    void interp_intensity_photgrid(photgrid_t photgrid, double *vx, double mu,
                                    double *I, int *stat, bool *vderiv)
-    void interp_d_moment_photgrid(photgrid grid, double *vx, int l,
+    void interp_d_moment_photgrid(photgrid_t photgrid, double *vx, int l,
                                   double *D, int *stat, bool *vderiv)
-    void interp_flux_photgrid(photgrid grid, double *vx, double *F,
+    void interp_flux_photgrid(photgrid_t photgrid, double *vx, double *F,
                               int *stat, bool *vderiv)
 
 
@@ -74,7 +74,7 @@ cdef class SpecGrid:
 
     """
 
-    cdef specgrid grid
+    cdef specgrid_t specgrid
     
     cdef readonly double lam_min
     """double: Wavelength abscissa minimum."""
@@ -105,12 +105,12 @@ cdef class SpecGrid:
         cdef double[:] axis_min_vals
         cdef double[:] axis_max_vals
 
-        load_specgrid(filename.encode('ascii'), &self.grid, &stat)
+        load_specgrid(filename.encode('ascii'), &self.specgrid, &stat)
 
         if stat != 0:
             handle_error(stat)
 
-        inquire_specgrid(self.grid, &self.lam_min, &self.lam_max, NULL,
+        inquire_specgrid(self.specgrid, &self.lam_min, &self.lam_max, NULL,
                          &self.rank, NULL, NULL)
 
         self._shape = np.empty(self.rank, dtype=np.intc)
@@ -118,13 +118,13 @@ cdef class SpecGrid:
         axis_min_vals = np.empty(self.rank, dtype=np.double)
         axis_max_vals = np.empty(self.rank, dtype=np.double)
         
-        inquire_specgrid(self.grid, NULL, NULL, &self._shape[0], NULL,
+        inquire_specgrid(self.specgrid, NULL, NULL, &self._shape[0], NULL,
                          &axis_min_vals[0], &axis_max_vals[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
-            get_axis_label_specgrid(self.grid, j+1, axis_label)
+            get_axis_label_specgrid(self.specgrid, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
 
         self.axis_min = dict(zip(self.axis_labels, axis_min_vals))
@@ -133,7 +133,7 @@ cdef class SpecGrid:
         
     def __dealloc__(self):
 
-        unload_specgrid(self.grid)
+        unload_specgrid(self.specgrid)
 
 
     def _vector_args(self, dx, deriv):
@@ -193,7 +193,7 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_intensity_specgrid(self.grid, &vx[0], mu, n, &lam[0],
+        interp_intensity_specgrid(self.specgrid, &vx[0], mu, n, &lam[0],
                                   &I[0], &stat, &vderiv[0])
 
         if stat != 0:
@@ -238,7 +238,7 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_d_moment_specgrid(self.grid, &vx[0], l, n, &lam[0], &D[0],
+        interp_d_moment_specgrid(self.specgrid, &vx[0], l, n, &lam[0], &D[0],
                                  &stat, &vderiv[0])
 
         if stat != 0:
@@ -282,7 +282,7 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_flux_specgrid(self.grid, &vx[0], n, &lam[0], &F[0], &stat,
+        interp_flux_specgrid(self.specgrid, &vx[0], n, &lam[0], &F[0], &stat,
                              &vderiv[0])
         if stat != 0:
             handle_error(stat)
@@ -299,7 +299,7 @@ cdef class PhotGrid:
 
     """
 
-    cdef photgrid grid
+    cdef photgrid_t photgrid
     
     cdef readonly int rank
     """int: Number of atmospheric parameter axes."""
@@ -331,26 +331,26 @@ cdef class PhotGrid:
         if passband_filename is not None:
             load_photgrid_from_specgrid(filename.encode('ascii'),
                                         passband_filename.encode('ascii'),
-                                        &self.grid, &stat)
+                                        &self.photgrid, &stat)
         else:
-            load_photgrid(filename.encode('ascii'), &self.grid, &stat)
+            load_photgrid(filename.encode('ascii'), &self.photgrid, &stat)
 
         if stat != 0:
             handle_error(stat)
 
-        inquire_photgrid(self.grid, NULL, &self.rank, NULL, NULL)
+        inquire_photgrid(self.photgrid, NULL, &self.rank, NULL, NULL)
 
         self._shape = np.empty(self.rank, dtype=np.intc)
         axis_min_vals = np.empty(self.rank, dtype=np.double)
         axis_max_vals = np.empty(self.rank, dtype=np.double)
 
-        inquire_photgrid(self.grid, &self._shape[0], NULL,
+        inquire_photgrid(self.photgrid, &self._shape[0], NULL,
                          &axis_min_vals[0], &axis_max_vals[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
-            get_axis_label_photgrid(self.grid, j+1, axis_label)
+            get_axis_label_photgrid(self.photgrid, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
 
         self.axis_min = dict(zip(self.axis_labels, axis_min_vals))
@@ -359,7 +359,7 @@ cdef class PhotGrid:
         
     def __dealloc__(self):
         
-        unload_photgrid(self.grid)
+        unload_photgrid(self.photgrid)
 
         
     def _vector_args(self, dx, deriv):
@@ -412,7 +412,7 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_intensity_photgrid(self.grid, &vx[0], mu, &I, &stat,
+        interp_intensity_photgrid(self.photgrid, &vx[0], mu, &I, &stat,
                                   &vderiv[0])
         if stat != 0:
             handle_error(stat)
@@ -450,7 +450,7 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_d_moment_photgrid(self.grid, &vx[0], l, &D, &stat,
+        interp_d_moment_photgrid(self.photgrid, &vx[0], l, &D, &stat,
                                  &vderiv[0])
         if stat != 0:
             handle_error(stat)
@@ -487,7 +487,7 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_flux_photgrid(self.grid, &vx[0], &F, &stat, &vderiv[0])
+        interp_flux_photgrid(self.photgrid, &vx[0], &F, &stat, &vderiv[0])
 
         if stat != 0:
             handle_error(stat)
