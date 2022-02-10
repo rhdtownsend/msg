@@ -45,5 +45,12 @@ The next step is to compile the demo program. Make sure the
 
 .. prompt:: bash
 
-   gfortran -o demo_msg demo_msg.f90 -I$MSG_DIR/include -L$MSG_DIR/lib -lmsg -lfmsg
+   gfortran -o demo_msg demo_msg.f90 -I$MSG_DIR/include `$MSG_DIR/scripts/fmsg_link`
+
+The :code:`-I$MSG_DIR/include` option tells the compiler where to find
+the module definition (:file:`.mod`) files, while the
+:code:`$MSG_DIR/scripts/fmsg_link` clause (note the enclosing
+backticks) runs a link script that returns the compiler flags
+necessary to link the program.
+
 
