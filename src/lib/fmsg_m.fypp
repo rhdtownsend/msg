@@ -1,0 +1,162 @@
+! Module  : fmsg_m
+! Purpose : Fortran public interface for MSG
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module fmsg_m
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: LABEL_LEN
+   public :: STAT_OK
+   public :: STAT_OUT_OF_BOUNDS_AXIS_LO
+   public :: STAT_OUT_OF_BOUNDS_AXIS_HI
+   public :: STAT_OUT_OF_BOUNDS_LAM_LO
+   public :: STAT_OUT_OF_BOUNDS_LAM_HI
+   public :: STAT_OUT_OF_BOUNDS_MU_LO
+   public :: STAT_OUT_OF_BOUNDS_MU_HI
+   public :: STAT_INVALID_L
+   public :: STAT_UNAVAILABLE_DATA
+   public :: STAT_INVALID_TYPE
+   public :: STAT_FILE_NOT_FOUND
+   public :: photgrid_t
+   public :: specgrid_t
+   public :: load_specgrid
+   public :: load_photgrid
+   public :: load_photgrid_from_specgrid
+
+contains
+
+   #:for name, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
+
+      subroutine load_${name}$(filename, gr, stat)
+
+         character(*), intent(in)       :: filename
+         type(${type}$), intent(out)    :: gr
+         integer, intent(out), optional :: stat
+
+         type(hdf5io_t) :: hi
+
+         ! Load the ${type}$ from file
+
+         call open_file_(filename, hi, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+
+         call read(hi, gr, stat)
+
+         call hi%final()
+
+         ! Finish
+
+         return
+
+      end subroutine load_${name}$
+
+   #:endfor
+
+   !****
+      
+   subroutine load_photgrid_from_specgrid(filename, passband_filename, pg, stat)
+
+      character(*), intent(in)       :: filename
+      character(*), intent(in)       :: passband_filename
+      type(photgrid_t), intent(out)  :: pg
+      integer, intent(out), optional :: stat
+
+      type(passband_t) :: pb
+      type(hdf5io_t)   :: hi
+
+      ! Load the photgrid_t from specgrid_t and passband_t files
+
+      call open_file_(passband_filename, hi, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+      
+      call read(hi, pb, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+      
+      call hi%final()
+
+      call open_file_(filename, hi, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+
+      call read(hi, pb, pg, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+
+      call hi%final()
+
+      ! Finish
+
+      return
+
+   end subroutine load_photgrid_from_specgrid
+         
+   !****
+
+   subroutine open_file_(filename, hi, stat)
+
+      character(*), intent(in)       :: filename
+      type(hdf5io_t), intent(out)    :: hi
+      integer, intent(out), optional :: stat
+
+      ! Open the file
+
+      if (is_hdf5(filename)) then
+
+         hi = hdf5io_t(filename, OPEN_FILE_RO)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+      else
+
+         if (PRESENT(stat)) then
+            stat = STAT_FILE_NOT_FOUND
+         else
+            @:ABORT('file not found')
+         endif
+
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine open_file_
+
+end module fmsg_m

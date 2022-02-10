@@ -1,5 +1,5 @@
 ! Module  : msg_m
-! Purpose : Fortran public interface for MSG
+! Purpose : Low-level interface for MSG
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -21,8 +21,6 @@ module msg_m
 
    ! Uses
 
-   use forum_m
-
    use axis_m
    use limb_m
    use ngrid_m
@@ -33,161 +31,4 @@ module msg_m
    use specint_m
    use stat_m
 
-   use ISO_FORTRAN_ENV
-
-   ! No implicit typing
-
-   implicit none
-
-   ! Access specifiers
-
-   private
-
-   public :: LABEL_LEN
-   public :: STAT_OK
-   public :: axis_t
-   public :: limb_t
-   public :: ngrid_t
-   public :: passband_t
-   public :: photgrid_t
-   public :: photint_t
-   public :: specgrid_t
-   public :: specint_t
-   public :: read
-   public :: write
-   public :: load_specgrid
-   public :: load_photgrid
-   public :: load_photgrid_from_specgrid
-
-contains
-
-   #:for name, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
-
-      subroutine load_${name}$(filename, gr, stat)
-
-         character(*), intent(in)       :: filename
-         type(${type}$), intent(out)    :: gr
-         integer, intent(out), optional :: stat
-
-         type(hdf5io_t) :: hi
-
-         ! Create the ${type}$ from file
-
-         call open_file_(filename, hi, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
-
-         call read(hi, gr, stat)
-
-         call hi%final()
-
-         ! Finish
-
-         return
-
-      end subroutine load_${name}$
-
-   #:endfor
-
-   !****
-      
-   subroutine load_photgrid_from_specgrid(filename, passband_filename, pg, stat)
-
-      character(*), intent(in)       :: filename
-      character(*), intent(in)       :: passband_filename
-      type(photgrid_t), intent(out)  :: pg
-      integer, intent(out), optional :: stat
-
-      type(passband_t) :: pb
-      type(hdf5io_t)   :: hi
-
-      ! Create the photgrid_t from files
-
-      call open_file_(passband_filename, hi, stat)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      endif
-      
-      call read(hi, pb, stat)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      endif
-      
-      call hi%final()
-
-      call open_file_(filename, hi, stat)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      endif
-
-      call read(hi, pb, pg, stat)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      endif
-
-      call hi%final()
-
-      ! Finish
-
-      return
-
-   end subroutine load_photgrid_from_specgrid
-         
-   !****
-
-   subroutine open_file_(filename, hi, stat)
-
-      character(*), intent(in)       :: filename
-      type(hdf5io_t), intent(out)    :: hi
-      integer, intent(out), optional :: stat
-
-      logical                   :: opened
-      integer                   :: status
-      character(:), allocatable :: msg_dir
-      character(:), allocatable :: alt_filename
-
-      ! Open the file
-
-      opened = .FALSE.
-
-      if (is_hdf5(filename)) then
-
-         hi = hdf5io_t(filename, OPEN_FILE_RO)
-         opened = .TRUE.
-
-      else
-
-         call GET_ENV('MSG_DIR', msg_dir, status)
-
-         if (status == 0) then
-
-            alt_filename = msg_dir//'/data/'//filename
-
-            if (is_hdf5(alt_filename)) then
-               hi = hdf5io_t(alt_filename, OPEN_FILE_RO)
-               opened = .TRUE.
-            endif
-
-         endif
-
-      endif
-
-      ! Finish
-
-      if (opened) then
-         if (PRESENT(stat)) stat = STAT_OK
-      else
-         if (PRESENT(stat)) then
-            stat = STAT_FILE_NOT_FOUND
-         else
-            @:ABORT('file not found')
-         endif
-      end if
-
-      return
-
-   end subroutine open_file_
-
 end module msg_m
-

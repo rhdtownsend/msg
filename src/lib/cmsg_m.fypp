@@ -22,7 +22,6 @@ module cmsg_m
    ! Uses
 
    use forum_m
-
    use msg_m
 
    use ISO_FORTRAN_ENV
@@ -36,67 +35,68 @@ module cmsg_m
 
    private
 
-   #:for suffix in ('specgrid', 'photgrid')
-      public :: c_load_${suffix}$
-      public :: c_unload_${suffix}$
-      public :: c_inquire_${suffix}$
-      public :: c_interp_intensity_${suffix}$
-      public :: c_interp_D_moment_${suffix}$
-      public :: c_interp_flux_${suffix}$
+   #:for name in ('specgrid', 'photgrid')
+      public :: load_${name}$
+      public :: unload_${name}$
+      public :: inquire_${name}$
+      public :: interp_intensity_${name}$
+      public :: interp_D_moment_${name}$
+      public :: interp_flux_${name}$
    #:endfor
 
-   public :: c_load_photgrid_from_specgrid
+   public :: load_photgrid_from_specgrid
 
    ! Procedures
 
 contains
 
-   #:for suffix, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
+   #:for name, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
 
-   subroutine c_load_${suffix}$(c_filename, ptr, stat) bind(C)
+   subroutine load_${name}$(${name}$_filename, grid, stat) bind(C)
 
-         character(C_CHAR) :: c_filename(*)
-         type(C_PTR)       :: ptr
+         character(C_CHAR) :: ${name}$_filename(*)
+         type(C_PTR)       :: grid
          integer(C_INT)    :: stat
-         
-         type(${type}$), pointer   :: gr
-         character(:), allocatable :: filename
 
-         ! Allocate the grid
+         type(hdf5io_t)          :: hi
+         type(${type}$), pointer :: gr
+
+         ! Load the ${type}$ from file
+
+         call open_file_(${name}$_filename, hi, stat)
+         if (stat /= STAT_OK) return
 
          allocate(gr)
 
-         ! Load it from the file
-
-         call c_f_string(c_filename, filename)
-
-         call load_${suffix}$(filename, gr, stat)
-         if (stat /= STAT_OK) then
+         call read(hi, gr, stat)
+         if (STAT /= STAT_OK) then
             deallocate(gr)
             return
          endif
 
+         call hi%final()
+
          ! Set up the C pointer
 
-         ptr = C_LOC(gr)
+         grid = C_LOC(gr)
 
          ! Finish
 
          return
 
-      end subroutine c_load_${suffix}$
+      end subroutine load_${name}$
 
       !****
 
-      subroutine c_unload_${suffix}$(ptr) bind(C)
+      subroutine unload_${name}$(grid) bind(C)
 
-         type(C_PTR), value :: ptr
+         type(C_PTR), value :: grid
 
          type(${type}$), pointer :: gr
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(ptr, gr)
+         call C_F_POINTER(grid, gr)
 
          ! Deallocate the grid
 
@@ -106,53 +106,61 @@ contains
 
          return
 
-      end subroutine c_unload_${suffix}$
+      end subroutine unload_${name}$
 
    #:endfor
 
    !****
 
-   subroutine c_load_photgrid_from_specgrid(c_filename, c_passband_filename, ptr, stat) bind(C)
+   subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, grid, stat) bind(C)
 
-      character(C_CHAR) :: c_filename(*)
-      character(C_CHAR) :: c_passband_filename(*)
-      type(C_PTR)       :: ptr
+      character(C_CHAR) :: specgrid_filename(*)
+      character(C_CHAR) :: passband_filename(*)
+      type(C_PTR)       :: grid
       integer(C_INT)    :: stat
 
-      type(${type}$), pointer   :: gr
-      character(:), allocatable :: filename
-      character(:), allocatable :: passband_filename
+      type(hdf5io_t)            :: hi
+      type(passband_t)          :: pb
+      type(photgrid_t), pointer :: pg
 
-      ! Allocate the grid
+      ! Load the photgrid_t from specgrid_t and passband_t files
 
-      allocate(gr)
+      call open_file_(passband_filename, hi, stat)
+      if (stat /= STAT_OK) return
+      
+      call read(hi, pb, stat)
+      if (stat /= STAT_OK) return
 
-      ! Load it from the file
+      call hi%final()
 
-      call c_f_string(c_filename, filename)
-      call c_f_string(c_passband_filename, passband_filename)
+      call open_file_(specgrid_filename, hi, stat)
+      if (stat /= STAT_OK) return
 
-      call load_photgrid_from_specgrid(filename, passband_filename, gr, stat)
+      allocate(pg)
+
+      call read(hi, pb, pg, stat)
       if (stat /= STAT_OK) then
-         deallocate(gr)
+         deallocate(pg)
          return
       endif
 
+      call hi%final()
+
       ! Set up the C pointer
 
-      ptr = C_LOC(gr)
+      grid = C_LOC(pg)
 
       ! Finish
 
       return
 
-   end subroutine c_load_photgrid_from_specgrid
+   end subroutine load_photgrid_from_specgrid
 
    !****
 
-   subroutine c_inquire_specgrid(ptr, lam_min, lam_max, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
+   subroutine inquire_specgrid(grid, lam_min, lam_max, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
 
-      type(C_PTR), value :: ptr
+      type(C_PTR), value :: grid
       real(C_DOUBLE)     :: lam_min
       real(C_DOUBLE)     :: lam_max
       type(C_PTR), value :: shape_ptr
@@ -168,7 +176,7 @@ contains
 
       ! Set up the Fortran pointer
 
-      call C_F_POINTER(ptr, sg)
+      call C_F_POINTER(grid, sg)
 
       ! Inquire metadata
 
@@ -196,13 +204,13 @@ contains
 
       return
 
-   end subroutine c_inquire_specgrid
+   end subroutine inquire_specgrid
 
    !****
 
-   subroutine c_inquire_photgrid(ptr, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
+   subroutine inquire_photgrid(grid, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
 
-      type(C_PTR), value :: ptr
+      type(C_PTR), value :: grid
       type(C_PTR), value :: shape_ptr
       integer(C_INT)     :: rank
       type(C_PTR), value :: axis_min_ptr
@@ -216,7 +224,7 @@ contains
 
       ! Set up the Fortran pointer
 
-      call C_F_POINTER(ptr, pg)
+      call C_F_POINTER(grid, pg)
 
       ! Inquire metadata
 
@@ -244,13 +252,13 @@ contains
 
       return
 
-   end subroutine c_inquire_photgrid
+   end subroutine inquire_photgrid
 
    !****
 
-   subroutine c_get_axis_label_specgrid(ptr, i, axis_label) bind(C)
+   subroutine get_axis_label_specgrid(grid, i, axis_label) bind(C)
 
-      type(C_PTR), value    :: ptr
+      type(C_PTR), value    :: grid
       integer(C_INT), value :: i
       character(C_CHAR)     :: axis_label(*)
 
@@ -260,7 +268,7 @@ contains
 
       ! Set up the Fortran pointer
 
-      call C_F_POINTER(ptr, sg)
+      call C_F_POINTER(grid, sg)
 
       ! Get the i'th label
 
@@ -280,13 +288,13 @@ contains
 
       return
 
-   end subroutine c_get_axis_label_specgrid
+   end subroutine get_axis_label_specgrid
 
    !****
 
-   subroutine c_get_axis_label_photgrid(ptr, i, axis_label) bind(C)
+   subroutine get_axis_label_photgrid(grid, i, axis_label) bind(C)
 
-      type(C_PTR), value    :: ptr
+      type(C_PTR), value    :: grid
       integer(C_INT), value :: i
       character(C_CHAR)     :: axis_label(*)
 
@@ -296,7 +304,7 @@ contains
 
       ! Set up the Fortran pointer
 
-      call C_F_POINTER(ptr, pg)
+      call C_F_POINTER(grid, pg)
 
       ! Get the i'th label
 
@@ -316,16 +324,16 @@ contains
 
       return
 
-   end subroutine c_get_axis_label_photgrid
+   end subroutine get_axis_label_photgrid
 
    !****
 
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(C_DOUBLE)'), &
                                           ('D_moment', 'D', 'l', 'integer(C_INT)'))
 
-      subroutine c_interp_${name}$_specgrid(ptr, vx, ${arg_var}$, n, lam, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_specgrid(grid, vx, ${arg_var}$, n, lam, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value    :: ptr
+         type(C_PTR), value    :: grid
          real(C_DOUBLE)        :: vx(*)
          ${arg_type}$, value   :: ${arg_var}$
          integer(C_INT), value :: n
@@ -339,7 +347,7 @@ contains
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(ptr, sg)
+         call C_F_POINTER(grid, sg)
 
          ! Interpolate the ${name}$
 
@@ -351,13 +359,13 @@ contains
 
          return
 
-      end subroutine c_interp_${name}$_specgrid
+      end subroutine interp_${name}$_specgrid
 
       !****
 
-      subroutine c_interp_${name}$_photgrid(ptr, vx, ${arg_var}$, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_photgrid(grid, vx, ${arg_var}$, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value  :: ptr
+         type(C_PTR), value  :: grid
          real(C_DOUBLE)      :: vx(*)
          ${arg_type}$, value :: ${arg_var}$
          real(C_DOUBLE)      :: ${var}$
@@ -369,7 +377,7 @@ contains
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(ptr, pg)
+         call C_F_POINTER(grid, pg)
 
          ! Interpolate the ${name}$
 
@@ -381,7 +389,7 @@ contains
 
          return
 
-      end subroutine c_interp_${name}$_photgrid
+      end subroutine interp_${name}$_photgrid
 
    #:endfor
 
@@ -389,9 +397,9 @@ contains
       
    #:for name, var in (('flux', 'F'),)
 
-      subroutine c_interp_${name}$_specgrid(ptr, vx, n, lam, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_specgrid(grid, vx, n, lam, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value    :: ptr
+         type(C_PTR), value    :: grid
          real(C_DOUBLE)        :: vx(*)
          integer(C_INT), value :: n
          real(C_DOUBLE)        :: lam(n)
@@ -404,7 +412,7 @@ contains
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(ptr, sg)
+         call C_F_POINTER(grid, sg)
 
          ! Interpolate the ${name}$
 
@@ -416,13 +424,13 @@ contains
 
          return
 
-      end subroutine c_interp_${name}$_specgrid
+      end subroutine interp_${name}$_specgrid
 
       !****
 
-      subroutine c_interp_${name}$_photgrid(ptr, vx, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_photgrid(grid, vx, ${var}$, stat, vderiv) bind(C)
 
-         type(C_PTR), value :: ptr
+         type(C_PTR), value :: grid
          real(C_DOUBLE)     :: vx(*)
          real(C_DOUBLE)     :: ${var}$
          integer(C_INT)     :: stat
@@ -433,7 +441,7 @@ contains
 
          ! Set up the Fortran pointer
 
-         call C_F_POINTER(ptr, pg)
+         call C_F_POINTER(grid, pg)
 
          ! Interpolate the ${name}$
 
@@ -445,8 +453,44 @@ contains
 
          return
 
-      end subroutine c_interp_${name}$_photgrid
+      end subroutine interp_${name}$_photgrid
 
    #:endfor
+
+   !****
+
+   subroutine open_file_(c_filename, hi, stat)
+
+      character(C_CHAR)              :: c_filename(*)
+      type(hdf5io_t), intent(out)    :: hi
+      integer, intent(out), optional :: stat
+
+      character(:), allocatable :: filename
+      
+      ! Open the file
+
+      call c_f_string(c_filename, filename)
+
+      if (is_hdf5(filename)) then
+
+         hi = hdf5io_t(filename, OPEN_FILE_RO)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+      else
+
+         if (PRESENT(stat)) then
+            stat = STAT_FILE_NOT_FOUND
+         else
+            @:ABORT('file not found')
+         endif
+
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine open_file_
 
 end module cmsg_m
