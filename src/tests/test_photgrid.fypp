@@ -1,21 +1,17 @@
 program test_photgrid
 
    use forum_m
-
-   use msg_m
+   use fmsg_m
 
    implicit none
 
    type(photgrid_t)     :: pg
-   type(hdf5io_t)       :: hi
    real(RD)             :: I
    integer              :: stat
    integer              :: rank
    character(LABEL_LEN) :: axis_labels(2)
 
-   hi = hdf5io_t('pg.h5', OPEN_FILE_RO)
-   call read(hi, pg)
-   call hi%final()
+   call load_photgrid('pg.h5', pg)
 
    call pg%inquire(rank=rank, axis_labels=axis_labels)
 
@@ -24,7 +20,7 @@ program test_photgrid
 
    call pg%interp_intensity([log10(14660._RD), 2.80_RD], 0.5_RD, I, stat)
    if (stat /= STAT_OK) then
-      print *,'Stat is:',stat
+      print *,'Failed in interp_intensity with stat:',stat
       stop
    end if
 

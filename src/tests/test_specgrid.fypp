@@ -1,8 +1,7 @@
 program test_specgrid
 
    use forum_m
-
-   use msg_m
+   use fmsg_m
 
    implicit none
 
@@ -10,9 +9,8 @@ program test_specgrid
 
    integer               :: k
    real(RD), allocatable :: lam(:)
-   type(specgrid_t)      :: sg
-   type(hdf5io_t)        :: hi
    real(RD), allocatable :: F(:)
+   type(specgrid_t)      :: sg
    integer               :: j
    integer               :: stat
    character(LABEL_LEN)  :: axis_labels(3)
@@ -21,16 +19,13 @@ program test_specgrid
 
    allocate(F(n-1))
 
-   hi = hdf5io_t('sg.h5', OPEN_FILE_RO)
-   call read(hi, sg)
-   call hi%final()
+   call load_specgrid('sg.h5', sg)
 
    call sg%inquire(axis_labels=axis_labels)
 
-   !call sg%interp_flux( 3.6179505639835581_RD, 1.0862246753338889_RD, w_0, F, stat)
    call sg%interp_intensity([0._RD, 4.0_RD, 3.5_RD], 1.0_RD, lam, F, stat)
    if (stat /= STAT_OK) then
-      print *,'Stat is:',stat
+      print *,'Failed in interp_intensity with stat:',stat
       stop
    end if
 
