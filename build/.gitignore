@@ -1,9 +1,11 @@
 # Pre-processed source
 *.f90
 
-# Compiled Object files
+# Compiled object/library files
 *.lo
 *.o
+*.so
+*.dylib
 
 # Fortran module files
 *.mod
