@@ -17,7 +17,7 @@ The Demo Grid
 
 The demo grid is a temperature-gravity grid of low-resolution
 intensity spectra (based on the solar-metallicity
-:ads_citet:`Castelli:2003` atmospheres), useful for learning about
+:ads_citet:`castelli:2003` atmospheres), useful for learning about
 MSG's capabilities. Download the grid from :grid:`here <sg-demo.h5>`
 (its size is around 40 MB); you should store it in the same directory
 as where you plan to run Jupyter (or Python).
@@ -62,7 +62,7 @@ creating a new :py:class:`pymsg.SpecGrid` object:
 
    # Load the SpecGrid
 
-   sg = pymsg.SpecGrid('sg-demo.h5')
+   specgrid = pymsg.SpecGrid('sg-demo.h5')
 
 This object has a number of (read-only) properties that tell us about
 the parameter space spanned by the grid:
@@ -73,15 +73,15 @@ the parameter space spanned by the grid:
 
    print('Grid parameters:')
 
-   for i, axis_label in enumerate(sg.axis_labels):
-      print(f'  {axis_label} ({sg.axis_min[i]} -> {sg.axis_max[i]})')
+   for label in specgrid.axis_labels:
+      print(f'  {label} ({specgrid.axis_min[label]} -> {specgrid.axis_max[label]})')
 
-   print(f'  lam ({sg.lam_min} -> {sg.lam_max})')
+   print(f'  lam ({specgrid.lam_min} -> {specgrid.lam_max})')
       
 Here, ``logT`` and ``logg`` correspond (respectively) to the
 :math:`\log_{10}(\Teff/\kelvin)` and
 :math:`\log_{10}(g/\cm\,\second^{-2})` atmosphere parameters, while
-``lam`` is wavelength :math:`\lambda` in :math:`\angstrom`.
+``lam`` is wavelength :math:`\lambda/\angstrom`.
 
 Plotting the Flux
 =================
@@ -122,7 +122,7 @@ spectrum using a call to the :py:func:`pymsg.SpecGrid.flux` function:
 
    # Evaluate the flux
 
-   F_lam = sg.flux(dx, lam)
+   F_lam = specgrid.flux(dx, lam)
 
    # Plot
 
@@ -168,7 +168,7 @@ emergence angle (relative to the surface normal):
 
        # Evaluate the intensity
 
-       I_lam = sg.intensity(dx, mu, lam)
+       I_lam = specgrid.intensity(dx, mu, lam)
 
        # Plot
 

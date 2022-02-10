@@ -25,10 +25,10 @@ A few comments on the code:
 
 * The `use forum_m` statement provides access to the :git:`Fortran
   Utility Module (ForUM) <rhdtownsend/forum/>`. For the purposes of
-the demo program, this module defines the `RD` kind type parameter
+  the demo program, this module defines the `RD` kind type parameter
   for double precision real variables.
 
-* The `use msg_m` statement provides access to the MSG Fortran interface
+* The `use fmsg_m` statement provides access to the MSG high-level Fortran interface.
 
 * Because Fortran doesn't have `dict` datatypes, the atmosphere
   parameters must be passed to MSG as a plain array (here, stored in
@@ -45,5 +45,5 @@ The next step is to compile the demo program. Make sure the
 
 .. prompt:: bash
 
-   gfortran -o demo_msg demo_msg -I $MSG_DIR/include -L $MSG_DIR/lib -lmsg
+   gfortran -o demo_msg demo_msg.f90 -I$MSG_DIR/include -L$MSG_DIR/lib -lmsg -lfmsg
 
