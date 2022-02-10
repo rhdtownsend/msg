@@ -91,10 +91,10 @@ ifeq ($(shell uname -s),Darwin)
   PYM_LDFLAGS = ${LIB_LDFLAGS} -undefined dynamic_lookup 
 else			   
   LIB_SUFFIX = .so
-  LIB_LDFLAGS = -shared
+  LIB_LDFLAGS = -shared -Wl,-rpath -Wl,${MSG_DIR}/lib
   EXEC_LDFLAGS = -Wl,-rpath -Wl,${MSG_DIR}/lib
   PYM_SUFFIX = $(shell python3-config --extension-suffix)
-  PYM_LDFLAGS = ${LIB_LDFLAGS} -Wl,-rpath -Wl,${MSG_DIR}/lib
+  PYM_LDFLAGS = ${LIB_LDFLAGS}
 endif
 
 # Targets-related variables
