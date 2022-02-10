@@ -33,7 +33,7 @@ void c_interp_flux_specgrid(void *ptr, double vx[], int n, double lam[], double 
 // photgrid interface
 
 void c_load_photgrid(const char *filename, void **ptr, int *stat);
-void c_load_photgrid_from_specgrid(const char *filename, const char *passbad_filename, void **ptr, int *stat);
+void c_load_photgrid_from_specgrid(const char *filename, const char *passband_filename, void **ptr, int *stat);
 
 void c_unload_photgrid(void *ptr);
 
