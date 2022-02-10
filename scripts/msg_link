@@ -1,5 +1,5 @@
 #!/bin/sh
 #
-# Link script for MSG low-level interface
+# Link script for MSG Fortran low-level interface
 
-echo -Wl,-rpath=${MSG_ROOT}/lib -L${MSG_ROOT}/lib -lmsg
+echo -Wl,-rpath -Wl,${MSG_DIR}/lib -L${MSG_DIR}/lib -lmsg
