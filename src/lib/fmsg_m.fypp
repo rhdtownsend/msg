@@ -56,22 +56,22 @@ contains
 
    #:for name, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
 
-      subroutine load_${name}$(filename, gr, stat)
+      subroutine load_${name}$(${name}$_filename, ${name}$, stat)
 
-         character(*), intent(in)       :: filename
-         type(${type}$), intent(out)    :: gr
+         character(*), intent(in)       :: ${name}$_filename
+         type(${type}$), intent(out)    :: ${name}$
          integer, intent(out), optional :: stat
 
          type(hdf5io_t) :: hi
 
          ! Load the ${type}$ from file
 
-         call open_file_(filename, hi, stat)
+         call open_file_(${name}$_filename, hi, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          endif
 
-         call read(hi, gr, stat)
+         call read(hi, ${name}$, stat)
 
          call hi%final()
 
@@ -85,11 +85,11 @@ contains
 
    !****
       
-   subroutine load_photgrid_from_specgrid(filename, passband_filename, pg, stat)
+   subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, photgrid, stat)
 
-      character(*), intent(in)       :: filename
+      character(*), intent(in)       :: specgrid_filename
       character(*), intent(in)       :: passband_filename
-      type(photgrid_t), intent(out)  :: pg
+      type(photgrid_t), intent(out)  :: photgrid
       integer, intent(out), optional :: stat
 
       type(passband_t) :: pb
@@ -109,12 +109,12 @@ contains
       
       call hi%final()
 
-      call open_file_(filename, hi, stat)
+      call open_file_(specgrid_filename, hi, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
 
-      call read(hi, pb, pg, stat)
+      call read(hi, pb, photgrid, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
