@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# Link script for MSG Fortran interface
+
+echo -Wl,-rpath=${MSG_ROOT}/lib -L${MSG_ROOT}/lib -lfmsg -lmsg
+
+

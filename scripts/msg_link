@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# Link script for MSG low-level interface
+
+echo -Wl,-rpath=${MSG_ROOT}/lib -L${MSG_ROOT}/lib -lmsg
