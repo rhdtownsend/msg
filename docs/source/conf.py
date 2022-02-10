@@ -48,7 +48,8 @@ extensions = [
     'sphinx-prompt',
     'sphinx_substitution_extensions',
     'jupyter_sphinx',
-    'ads_cite'
+    'ads_cite',
+    'sphinxfortran.fortran_domain'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
