@@ -58,10 +58,10 @@ cdef extern from "cmsg.h":
 
 @cython.binding(True)
 cdef class SpecGrid:
-    r"""A SpecGrid represents a grid of spectral intensity data.
+    r"""The SpecGrid class represents a grid of spectroscopic intensity data.
 
-    This grid may be used to interpolate the specific intensity (or
-    related quantities) across a wavelength abscissa and for a set of
+    This grid may be used to interpolate the intensity (or related
+    quantities) across a wavelength abscissa and for a set of
     atmospheric parameter values.
 
     """
@@ -155,7 +155,7 @@ cdef class SpecGrid:
 
         Args:
             dx (dict): Atmospheric parameters; keys must match 
-                `axis_labels` property, values must be double.
+                `axis_labels` property, values must be double.b
             mu (double): Cosine of angle of emergence relative to 
                 surface normal.
             lam (numpy.ndarray): Wavelength abscissa (Å).
@@ -165,7 +165,7 @@ cdef class SpecGrid:
                 be boolean.
 
         Returns:
-            numpy.ndarray: spectroscopic intensity (erg/cm^2/s/Å/sr) in
+            numpy.ndarray: Spectroscopic intensity (erg/cm^2/s/Å/sr) in
             bins delineated by lam; length len(lam)-1.
 
         Raises:
@@ -210,7 +210,7 @@ cdef class SpecGrid:
                 be boolean.
 
         Returns:
-            numpy.ndarray: spectroscopic intensity moment (erg/cm^2/s/Å) 
+            numpy.ndarray: Spectroscopic intensity moment (erg/cm^2/s/Å) 
             in bins delineated by lam; length len(lam)-1.
 
         Raises:
@@ -254,7 +254,7 @@ cdef class SpecGrid:
                 be boolean.
 
         Returns:
-            numpy.ndarray: spectroscopic flux (erg/cm^2/s/Å) in bins 
+            numpy.ndarray: Spectroscopic flux (erg/cm^2/s/Å) in bins 
             delineated by lam; length len(lam)-1.
 
         Raises:
@@ -286,10 +286,10 @@ cdef class SpecGrid:
 
 @cython.binding(True)
 cdef class PhotGrid:
-    r"""A PhotGrid represents a grid of photometric intensity data.
+    r"""The PhotGrid class represents a grid of photometric intensity data.
 
-    This grid may be used to interpolate the photometric intensity (or
-    related quantities) for a set of atmospheric parameter values.
+    This grid may be used to interpolate the intensity (or related
+    quantities) for a set of atmospheric parameter values.
 
     """
 
@@ -376,7 +376,7 @@ cdef class PhotGrid:
 
     
     def intensity(self, dict dx, double mu, dict deriv=None):
-        r"""Evaluate the photometric intensity :math:`I_{x}(\mu)`.
+        r"""Evaluate the photometric intensity.
 
         Args:
             dx (dict): Atmospheric parameters; keys must match 
