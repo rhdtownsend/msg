@@ -23,7 +23,7 @@ FPE ?= yes
 
 # Targets
 
-LIB_TARGETS = libforum libmsg libcmsg
+LIB_TARGETS = libforum libmsg libfmsg libcmsg
 EXEC_TARGETS =
 PYM_TARGETS = 
 
@@ -58,6 +58,10 @@ libmsg_OBJS = msg_m.o axis_m.o ngrid_m.o ncubic_m.o specgrid_m.o specint_m.o \
               cubint_m.o stat_m.o fit_m.o limb_m.o math_m.o
 libmsg_LIBS = libforum
 libmsg_DEPS = forum_m
+
+libfmsg_OBJS = fmsg_m.o
+libfmsg_LIBS = libforum libmsg
+libfmsg_DEPS = forum_m msg_m
 
 libcmsg_OBJS = cmsg_m.o
 libcmsg_LIBS = libforum libmsg
@@ -99,12 +103,12 @@ make_passband_LIBS = libforum libmsg
 make_passband_DEPS = forum_m msg_m
 
 test_specgrid_OBJS = test_specgrid.o
-test_specgrid_LIBS = libforum libmsg
-test_specgrid_DEPS = forum_m msg_m
+test_specgrid_LIBS = libforum libmsg libfmsg
+test_specgrid_DEPS = forum_m fmsg_m
 
 test_photgrid_OBJS = test_photgrid.o
-test_photgrid_LIBS = libforum libmsg
-test_photgrid_DEPS = forum_m msg_m
+test_photgrid_LIBS = libforum libmsg libfmsg
+test_photgrid_DEPS = forum_m fmsg_m
 
 # Search subdirs
 
