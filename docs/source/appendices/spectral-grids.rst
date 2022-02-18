@@ -1,11 +1,12 @@
-.. _data-grids:
+.. _specgral-grids:
 
-**********
-Data Grids
-**********
+**************
+Spectral Grids
+**************
 
-Due to their large size, the data grids used by MSG are not shipped as
-part of the :git:`rhdtownsend/msg` git repository; they must be
+Due to their large size and gradually evolving content (as
+improvements are made), the spectral grids used by MSG are not shipped
+as part of the :git:`rhdtownsend/msg` git repository; they must be
 downloaded separately. This chapter describes the various grids
 available for download, and discusses how custom grids can be created.
 
@@ -23,19 +24,18 @@ data.
    :header-rows: 1	
    :widths: 20 12 12 12 44
 	 
-
    * - File
      - :math:`\Teff/{\rm K}`
      - :math:`\log g`
      - :math:`[{\rm Fe}/{\rm H}]`
      - Notes
-   * - :grid:`sg-cap18-coarse-base.h5`
+   * - :grids:`CAP18/sg-coarse-base.h5`
      - 3,500 -- 30,000
      - 0.0 -- 5.0
      - -5.0 -- 0.5
      - Based on nsc (coarse) grid, subsetted to the wavelength range
        :math:`3,000\,\angstrom - 25,000\,\angstrom`
-   * - :grid:`sg-cap18-coarse-3000.h5`
+   * - :grids:`CAP18/sg-coarse-3000.h5`
      - 3,500 -- 30,000
      - 0.0 -- 5.0
      - -5.0 -- 0.5

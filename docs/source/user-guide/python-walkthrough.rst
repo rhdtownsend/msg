@@ -188,6 +188,63 @@ We can clearly see that limb-darkening in the line core is much weaker
 than in the continuum --- exactly what we expect from such a strong
 line.
 
+Evaluating Magnitudes & Colors
+==============================
+
+As a final step in this walkthrough, let's evaluate the magnitude and
+colors of Sirius in the Johnson system. We can do this by creating a
+new :py:class:`pymsg.PhotGrid` object for each passband:
+
+.. jupyter-execute::
+
+   # Load the PhotGrids
+
+   photgrid_U = pymsg.PhotGrid('sg-demo.h5', 'pb-Generic-Johnson.U-Vega.h5')
+   photgrid_B = pymsg.PhotGrid('sg-demo.h5', 'pb-Generic-Johnson.B-Vega.h5')
+   photgrid_V = pymsg.PhotGrid('sg-demo.h5', 'pb-Generic-Johnson.V-Vega.h5')
+
+In the calls to the object constructor, the first argument is the name
+of a spectral grid (i.e., the demo grid), and the second argument is
+the name of a passband file. (Note that 'Vega' appears in the names is
+because we're using the VEGAMAG magnitude system). The normalized
+*surface* fluxes of Sirius can then be found using the
+:py:func:`pymsg.PhotGrid.flux` function:
+
+.. jupyter-execute::
+   
+   # Evaluate the surface fluxes
+
+   F_surf_U = photgrid_U.flux(dx)
+   F_surf_B = photgrid_B.flux(dx)
+   F_surf_V = photgrid_V.flux(dx)
+
+To convert these into apparent magnitudes, we first convert them to
+Earth fluxes using the inverse-square law, and then use :wiki:`Pogson's <N._R._Pogson>`
+logarithmic formula:
+
+.. jupyter-execute::
+
+   # Set the radius and distance to Sirius
+
+   R = 1.711 * 6.955E10
+   d = 2.670 * 3.0857E18
+
+   # Evaluate the Earth fluxes
+
+   F_U = F_surf_U*R**2/d**2
+   F_B = F_surf_B*R**2/d**2
+   F_V = F_surf_V*R**2/d**2
+
+   # Evaluate apparent magnitudes and print out magnitude & color
+
+   U = -2.5*np.log10(F_U)
+   B = -2.5*np.log10(F_B)
+   V = -2.5*np.log10(F_V)
+
+   print(f'V={V}, U-B={U-B}, B-V={B-V}')
+
+Reassuringly, the resulting values are within 10 mmag of Sirius' apparent magnitude and color!
+
 .. rubric:: Footnotes
 
 .. [#memory] Behind the scenes, the grid data is loaded on demand; see XXX for further details.

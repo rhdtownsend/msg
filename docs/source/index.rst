@@ -31,4 +31,10 @@ condiment to add flavor to your science!`
    ref-guide/fortran-interface.rst
    ref-guide/c-interface.rst
    ref-guide/python-interface.rst
-   ref-guide/data-grids.rst
+
+.. toctree::
+   :caption: Appendices
+   :name: appendices
+
+   appendices/spectral-grids.rst
+   appendices/passband-files.rst
