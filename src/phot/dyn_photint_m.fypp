@@ -91,7 +91,14 @@ contains
 
          ! If necessary, load
 
-         if (.NOT. self%loaded) call self%load_()
+         if (.NOT. self%loaded) then
+
+            call self%load_(stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+         endif
          
          ! Pass
 
@@ -117,7 +124,14 @@ contains
 
          ! If necessary, load
 
-         if (.NOT. self%loaded) call self%load_()
+         if (.NOT. self%loaded) then
+
+            call self%load_(stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+         endif
          
          ! Pass
 
@@ -133,9 +147,10 @@ contains
 
    !****
 
-   subroutine load_(self)
+   subroutine load_(self, stat)
       
       class(dyn_photint_t), intent(inout) :: self
+      integer, intent(out), optional      :: stat
 
       type(specint_t) :: si
 
@@ -144,7 +159,10 @@ contains
       call read(self%hi, si)
       call self%hi%final()
 
-      self%photint_t = photint_t(si, self%pb)
+      call si%apply_passband(self%pb, self%photint_t, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
 
       self%loaded = .TRUE.
 
@@ -153,6 +171,10 @@ contains
       deallocate(self%pb)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
 
    end subroutine load_
 

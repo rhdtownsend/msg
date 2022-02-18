@@ -112,7 +112,14 @@ contains
 
          ! If necessary, load
 
-         if (.NOT. self%loaded) call self%load_()
+         if (.NOT. self%loaded) then
+
+            call self%load_(stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+         endif
          
          ! Pass
 
@@ -139,7 +146,14 @@ contains
 
          ! If necessary, load
 
-         if (.NOT. self%loaded) call self%load_()
+         if (.NOT. self%loaded) then
+
+            call self%load_(stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+         endif
          
          ! Pass
 
@@ -155,9 +169,10 @@ contains
 
    !****
 
-   subroutine load_(self)
+   subroutine load_(self, stat)
       
       class(dyn_specint_t), intent(inout) :: self
+      integer, intent(out), optional      :: stat
 
       real(RD) :: lam_min
       real(RD) :: lam_max
@@ -177,6 +192,8 @@ contains
       @:ASSERT(lam_max == self%lam_max, 'inconsistent lam_max')
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
