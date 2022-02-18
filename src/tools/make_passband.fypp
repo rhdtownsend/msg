@@ -33,7 +33,7 @@ program make_passband
    ! Variables
 
    character(:), allocatable :: table_filename
-   real(RD)                  :: ZP
+   real(RD)                  :: F_0
    character(:), allocatable :: passband_filename
 
    integer               :: unit
@@ -46,10 +46,10 @@ program make_passband
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: table_filename ZP passband_filename}')
+   @:ASSERT(n_arg() == 3, 'Syntax: table_filename F_0 passband_filename}')
 
    call get_arg(1, table_filename)
-   call get_arg(2, ZP)
+   call get_arg(2, F_0)
    call get_arg(3, passband_filename)
 
    ! Read the table data
@@ -78,7 +78,7 @@ program make_passband
 
    ! Create the passband_t
 
-   pb = passband_t(S, lam, ZP)
+   pb = passband_t(S, lam, F_0)
 
    ! Write the passband_t
 
