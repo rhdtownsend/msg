@@ -50,7 +50,8 @@ module specint_m
       #:for name in ('intensity', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
-      procedure :: interp_f_
+      procedure         :: interp_f_
+      procedure, public :: apply_passband
    end type specint_t
 
    ! Interfaces
@@ -59,10 +60,6 @@ module specint_m
       module procedure specint_t_
       module procedure specint_t_fit_
    end interface specint_t
-
-  interface photint_t
-     module procedure photint_t_specint_
-  end interface photint_t
 
    interface read
       module procedure read_
@@ -77,7 +74,6 @@ module specint_m
    private
 
    public :: specint_t
-   public :: photint_t
    public :: read
    public :: write
 
@@ -300,55 +296,73 @@ contains
 
    !****
 
-   function photint_t_specint_(si, pb) result(pi)
+   subroutine apply_passband(self, pb, pi, stat)
 
-      type(specint_t), intent(in)   :: si
-      type(passband_t), intent(in)  :: pb
-      type(photint_t)               :: pi
+      class(specint_t), intent(in)   :: self
+      type(passband_t), intent(in)   :: pb
+      type(photint_t), intent(out)   :: pi
+      integer, intent(out), optional :: stat
 
       real(RD) :: lam_min
       real(RD) :: lam_max
       real(RD) :: lam_min_pb
       real(RD) :: lam_max_pb
-      real(RD) :: c(si%n)
+      real(RD) :: c(self%n)
       integer  :: i
       real(RD) :: P
 
-      ! Create a photint_t from the specint_t
+      ! Apply the passband, to yield a photint_t
 
       ! First check that the spectrum is defined across the passband support
 
-      call si%inquire(lam_min=lam_min, lam_max=lam_max)
-      call pb%get_support(lam_min_pb, lam_max_pb)
+      call self%inquire(lam_min=lam_min, lam_max=lam_max)
+      call pb%inquire(lam_min=lam_min_pb, lam_max=lam_max_pb)
 
-      @:ASSERT(lam_min <= lam_min_pb, 'spectrum does not span passband support')
-      @:ASSERT(lam_max >= lam_max_pb, 'spectrum does not span passband support')
+      if (lam_min_pb < lam_min) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) lam')
+         endif
+      endif
+
+      if (lam_max_pb > lam_max) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_HI
+            return
+         else
+            @:ABORT('out-of-bounds (hi) lam')
+         endif
+      endif
 
       ! Evaluate the coefficients
 
       c = 0._RD
 
-      coeff_loop : do i = 1, si%m
+      coeff_loop : do i = 1, self%m
 
          ! Evaluate the passthrough
 
-         P = pb%passthru(si%lam(i), si%lam(i+1))
+         P = pb%passthru(self%lam(i), self%lam(i+1))
 
          ! Add the contribution to c
 
-         c = c + P*si%c(:,i)
+         c = c + P*self%c(:,i)
 
       end do coeff_loop
 
       ! Construct the photint
 
-      pi = photint_t(c, si%li)
+      pi = photint_t(c, self%li)
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
-   end function photint_t_specint_
+   end subroutine apply_passband
 
    !****
 
