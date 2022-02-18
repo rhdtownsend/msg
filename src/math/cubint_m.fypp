@@ -44,7 +44,7 @@ module cubint_m
       integer               :: n       
    contains
       private
-      procedure, public :: get_domain
+      procedure, public :: inquire
       procedure         :: func_0_
       procedure         :: func_1_
       generic, public   :: func => func_0_, func_1_
@@ -367,22 +367,22 @@ contains
 
    !****
    
-   subroutine get_domain(self, x_min, x_max)
+   subroutine inquire(self, x_min, x_max)
 
-      class(cubint_t), intent(in) :: self
-      real(RD), intent(out)       :: x_min
-      real(RD), intent(out)       :: x_max
+      class(cubint_t), intent(in)     :: self
+      real(RD), intent(out), optional :: x_min
+      real(RD), intent(out), optional :: x_max
 
-      ! Return the function range
+      ! Inquire metadata
 
-      x_min = self%x(1)
-      x_max = self%x(self%n)
+      if (PRESENT(x_min)) x_min = self%x(1)
+      if (PRESENT(x_max)) x_max = self%x(self%n)
 
-      ! FInish
+      ! Finish
 
       return
 
-   end subroutine get_domain
+   end subroutine inquire
 
    !****
 
@@ -621,15 +621,15 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(cubint_t), intent(out)   :: ci
 
-      character(TYPE_LEN)   :: file_type
+      character(TYPE_LEN)   :: type
       real(RD), allocatable :: x(:)
       real(RD), allocatable :: f(:)
       real(RD), allocatable :: df_dx(:)
 
       ! Read the cubint_t
 
-      call hi%read_attr('TYPE', file_type)
-      @:ASSERT(file_type == 'cubint_t', 'invalid type')
+      call hi%read_attr('TYPE', type)
+      @:ASSERT(type == 'cubint_t', 'invalid type')
 
       call hi%alloc_read_dset('x', x)
       call hi%alloc_read_dset('f', f)
