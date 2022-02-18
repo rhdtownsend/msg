@@ -54,6 +54,7 @@ module specgrid_m
       #:for name in ('intensity', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
+      procedure, public :: apply_passband   
    end type specgrid_t
 
    ! Interfaces
@@ -62,10 +63,6 @@ module specgrid_m
       module procedure specgrid_t_
    end interface specgrid_t
 
-   interface photgrid_t
-      module procedure photgrid_t_specgrid_
-   end interface photgrid_t
-   
    interface read
       module procedure read_
    end interface read
@@ -79,7 +76,6 @@ module specgrid_m
    private
 
    public :: specgrid_t
-   public :: photgrid_t
    public :: read
    public :: write
 
@@ -276,43 +272,36 @@ contains
 
    !****
 
-   function photgrid_t_specgrid_(sg, pb, norm) result(pg)
+   subroutine apply_passband(self, pb, pg, stat)
 
-      type(specgrid_t), intent(inout) :: sg
-      type(passband_t), intent(in)    :: pb
-      logical, intent(in), optional   :: norm
-      type(photgrid_t)                :: pg
+      class(specgrid_t), intent(inout) :: self
+      type(passband_t), intent(in)     :: pb
+      type(photgrid_t), intent(out)    :: pg
+      integer, intent(out), optional   :: stat
 
-      real(RD)                     :: lam_min
-      real(RD)                     :: lam_max
-      real(RD)                     :: lam_min_pb
-      real(RD)                     :: lam_max_pb
       integer                      :: n_li
       type(photint_t), allocatable :: pi(:)
-
-      ! Construct the photgrid_t from the specgrid_t
-
-      ! First check that the specgrid is defined across the passband support
-
-      call sg%inquire(lam_min=lam_min, lam_max=lam_max)
-      call pb%get_support(lam_min_pb, lam_max_pb)
-
-      @:ASSERT(lam_min_pb <= lam_min, 'specgrid does not span passband support')
-      @:ASSERT(lam_max_pb >= lam_max, 'specgrid does not span passband support')
+ 
+      ! Apply the passband, to yield a photint_t
 
       ! Evaluate the photint_t data
 
-      n_li = PRODUCT(sg%shape)
+      n_li = PRODUCT(self%shape)
 
       allocate(pi(n_li))
 
-      call sg%ng%map(photint_proc_)
+      call self%ng%map(photint_proc_, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
 
       ! Create the photgrid_t
 
-      pg = photgrid_t(pi, sg%ng)
+      pg = photgrid_t(pi, self%ng)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -327,9 +316,9 @@ contains
 
          ! Construct the photint_t
          
-         li = sg%ng%li_from_vi(vi)
+         li = self%ng%li_from_vi(vi)
 
-         pi(li) = photint_t(sg%si(li), pb)
+         call self%si(li)%apply_passband(pb, pi(li), stat)
 
          ! Finish
 
@@ -337,7 +326,7 @@ contains
 
       end subroutine photint_proc_
 
-   end function photgrid_t_specgrid_
+   end subroutine apply_passband
 
    !****
 
