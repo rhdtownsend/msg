@@ -51,9 +51,11 @@ module cmsg_m
 
 contains
 
-   #:for name, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
+   #:for cname, type in (('SpecGrid', 'specgrid_t'), ('PhotGrid', 'photgrid_t'))
 
-   subroutine load_${name}$(${name}$_filename, ${name}$, stat) bind(C)
+      #:set name = cname.lower()
+
+      subroutine load_${name}$(${name}$_filename, ${name}$, stat) bind(C, name='load_${cname}$')
 
          character(C_CHAR) :: ${name}$_filename(*)
          type(C_PTR)       :: ${name}$
@@ -89,7 +91,7 @@ contains
 
       !****
 
-      subroutine unload_${name}$(${name}$) bind(C)
+      subroutine unload_${name}$(${name}$) bind(C, name='unload_${cname}$')
 
          type(C_PTR), value :: ${name}$
 
@@ -113,7 +115,8 @@ contains
 
    !****
 
-   subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, photgrid, stat) bind(C)
+   subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, &
+                                          photgrid, stat) bind(C, name='load_PhotGrid_from_SpecGrid')
 
       character(C_CHAR) :: specgrid_filename(*)
       character(C_CHAR) :: passband_filename(*)
@@ -154,12 +157,13 @@ contains
       ! Finish
 
       return
-
+      
    end subroutine load_photgrid_from_specgrid
 
    !****
 
-   subroutine inquire_specgrid(specgrid, lam_min, lam_max, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
+   subroutine inquire_specgrid(specgrid, lam_min, lam_max, shape_ptr, rank, &
+                               axis_min_ptr, axis_max_ptr) bind(C, name='inquire_SpecGrid')
 
       type(C_PTR), value :: specgrid
       real(C_DOUBLE)     :: lam_min
@@ -209,7 +213,8 @@ contains
 
    !****
 
-   subroutine inquire_photgrid(photgrid, shape_ptr, rank, axis_min_ptr, axis_max_ptr) bind(C)
+   subroutine inquire_photgrid(photgrid, shape_ptr, rank, &
+                               axis_min_ptr, axis_max_ptr) bind(C, name='inquire_PhotGrid')
 
       type(C_PTR), value :: photgrid
       type(C_PTR), value :: shape_ptr
@@ -257,7 +262,7 @@ contains
 
    !****
 
-   subroutine get_axis_label_specgrid(specgrid, i, axis_label) bind(C)
+   subroutine get_axis_label_specgrid(specgrid, i, axis_label) bind(C, name='get_axis_label_SpecGrid')
 
       type(C_PTR), value    :: specgrid
       integer(C_INT), value :: i
@@ -293,7 +298,7 @@ contains
 
    !****
 
-   subroutine get_axis_label_photgrid(photgrid, i, axis_label) bind(C)
+   subroutine get_axis_label_photgrid(photgrid, i, axis_label) bind(C, name='get_axis_label_PhotGrid')
 
       type(C_PTR), value    :: photgrid
       integer(C_INT), value :: i
@@ -333,7 +338,8 @@ contains
                                           ('E_moment', 'E', 'k', 'integer(C_INT)'), &
                                           ('D_moment', 'D', 'l', 'integer(C_INT)'))
 
-      subroutine interp_${name}$_specgrid(specgrid, vx, ${arg_var}$, n, lam, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_SpecGrid(specgrid, vx, ${arg_var}$, n, lam, ${var}$, &
+                                          stat, vderiv) bind(C, name='interp_${name}$_SpecGrid')
 
          type(C_PTR), value    :: specgrid
          real(C_DOUBLE)        :: vx(*)
@@ -365,7 +371,8 @@ contains
 
       !****
 
-      subroutine interp_${name}$_photgrid(photgrid, vx, ${arg_var}$, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_photgrid(photgrid, vx, ${arg_var}$, ${var}$, &
+                                          stat, vderiv) bind(C, name='interp_${name}$_PhotGrid')
 
          type(C_PTR), value  :: photgrid
          real(C_DOUBLE)      :: vx(*)
@@ -399,7 +406,8 @@ contains
       
    #:for name, var in (('flux', 'F'),)
 
-      subroutine interp_${name}$_specgrid(specgrid, vx, n, lam, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_specgrid(specgrid, vx, n, lam, ${var}$, &
+                                          stat, vderiv) bind(C, name='interp_${name}$_SpecGrid')
 
          type(C_PTR), value    :: specgrid
          real(C_DOUBLE)        :: vx(*)
@@ -430,7 +438,8 @@ contains
 
       !****
 
-      subroutine interp_${name}$_photgrid(photgrid, vx, ${var}$, stat, vderiv) bind(C)
+      subroutine interp_${name}$_photgrid(photgrid, vx, ${var}$, &
+                                          stat, vderiv) bind(C, name='interp_${name}$_PhotGrid')
 
          type(C_PTR), value :: photgrid
          real(C_DOUBLE)     :: vx(*)

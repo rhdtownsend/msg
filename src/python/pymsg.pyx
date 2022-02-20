@@ -27,40 +27,41 @@ cdef extern from "cmsg.h":
 
     # specgrid interface
 
-    ctypedef void *specgrid_t
-
-    void load_specgrid(const char *specgrid_filename, specgrid_t *specgrid, int *stat)
-    void unload_specgrid(specgrid_t specgrid)
-    void inquire_specgrid(specgrid_t specgrid, double *lam_min, double *lam_max,
+    void load_SpecGrid(const char *specgrid_filename, void **specgrid, int *stat)
+    void unload_SpecGrid(void *specgrid)
+    void inquire_SpecGrid(void *specgrid, double *lam_min, double *lam_max,
                           int shape[], int *rank, double axis_min[],
                           double axis_max[])
-    void get_axis_label_specgrid(specgrid_t specgrid, int i, char *axis_label)
-    void interp_intensity_specgrid(specgrid_t specgrid, double *vx, double mu,
+    void get_axis_label_SpecGrid(void *specgrid, int i, char *axis_label)
+    void interp_intensity_SpecGrid(void *specgrid, double *vx, double mu,
                                    int n, double lam[], double I[],
                                    int *stat, bool *vderiv)
-    void interp_d_moment_specgrid(specgrid_t specgrid, double *vx, int l, int n,
+    void interp_E_moment_SpecGrid(void *specgrid, double *vx, int k, int n,
+                                  double lam[], double E[], int *stat,
+                                  bool *vderiv)
+    void interp_D_moment_SpecGrid(void *specgrid, double *vx, int l, int n,
                                   double lam[], double D[], int *stat,
                                   bool *vderiv)
-    void interp_flux_specgrid(specgrid_t specgrid, double *vx, int n, double lam[],
+    void interp_flux_SpecGrid(void *specgrid, double *vx, int n, double lam[],
                               double F[], int *stat, bool *vderiv)
 
     # photgrid interface
 
-    ctypedef void *photgrid_t
-
-    void load_photgrid(const char *photgrid_filename, photgrid_t *photgrid, int *stat)
-    void load_photgrid_from_specgrid(const char *specgrid_filename,
+    void load_PhotGrid(const char *photgrid_filename, void **photgrid, int *stat)
+    void load_PhotGrid_from_SpecGrid(const char *specgrid_filename,
                                      const char *passband_filename,
-                                     photgrid_t *photgrid, int *stat)
-    void unload_photgrid(photgrid_t photgrid)
-    void inquire_photgrid(photgrid_t photgrid, int shape[], int *rank,
+                                     void **photgrid, int *stat)
+    void unload_PhotGrid(void *photgrid)
+    void inquire_PhotGrid(void *photgrid, int shape[], int *rank,
                           double axis_min[], double axis_max[])
-    void get_axis_label_photgrid(photgrid_t photgrid, int i, char *axis_label)
-    void interp_intensity_photgrid(photgrid_t photgrid, double *vx, double mu,
+    void get_axis_label_PhotGrid(void *photgrid, int i, char *axis_label)
+    void interp_intensity_PhotGrid(void *photgrid, double *vx, double mu,
                                    double *I, int *stat, bool *vderiv)
-    void interp_d_moment_photgrid(photgrid_t photgrid, double *vx, int l,
+    void interp_E_moment_PhotGrid(void *photgrid, double *vx, int k,
+                                  double *E, int *stat, bool *vderiv)
+    void interp_D_moment_PhotGrid(void *photgrid, double *vx, int l,
                                   double *D, int *stat, bool *vderiv)
-    void interp_flux_photgrid(photgrid_t photgrid, double *vx, double *F,
+    void interp_flux_PhotGrid(void *photgrid, double *vx, double *F,
                               int *stat, bool *vderiv)
 
 
@@ -74,7 +75,7 @@ cdef class SpecGrid:
 
     """
 
-    cdef specgrid_t specgrid
+    cdef void *specgrid
     
     cdef readonly double lam_min
     """double: Wavelength abscissa minimum."""
@@ -105,12 +106,12 @@ cdef class SpecGrid:
         cdef double[:] axis_min_vals
         cdef double[:] axis_max_vals
 
-        load_specgrid(filename.encode('ascii'), &self.specgrid, &stat)
+        load_SpecGrid(filename.encode('ascii'), &self.specgrid, &stat)
 
         if stat != 0:
             handle_error(stat)
 
-        inquire_specgrid(self.specgrid, &self.lam_min, &self.lam_max, NULL,
+        inquire_SpecGrid(self.specgrid, &self.lam_min, &self.lam_max, NULL,
                          &self.rank, NULL, NULL)
 
         self._shape = np.empty(self.rank, dtype=np.intc)
@@ -118,13 +119,13 @@ cdef class SpecGrid:
         axis_min_vals = np.empty(self.rank, dtype=np.double)
         axis_max_vals = np.empty(self.rank, dtype=np.double)
         
-        inquire_specgrid(self.specgrid, NULL, NULL, &self._shape[0], NULL,
+        inquire_SpecGrid(self.specgrid, NULL, NULL, &self._shape[0], NULL,
                          &axis_min_vals[0], &axis_max_vals[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
-            get_axis_label_specgrid(self.specgrid, j+1, axis_label)
+            get_axis_label_SpecGrid(self.specgrid, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
 
         self.axis_min = dict(zip(self.axis_labels, axis_min_vals))
@@ -133,7 +134,7 @@ cdef class SpecGrid:
         
     def __dealloc__(self):
 
-        unload_specgrid(self.specgrid)
+        unload_SpecGrid(self.specgrid)
 
 
     def _vector_args(self, dx, deriv):
@@ -193,7 +194,7 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_intensity_specgrid(self.specgrid, &vx[0], mu, n, &lam[0],
+        interp_intensity_SpecGrid(self.specgrid, &vx[0], mu, n, &lam[0],
                                   &I[0], &stat, &vderiv[0])
 
         if stat != 0:
@@ -202,8 +203,53 @@ cdef class SpecGrid:
         return np.asarray(I)
 
     
+    def E_moment(self, dict dx, int k, double[:] lam, dict deriv=None):
+        r"""Evaluate the spectroscopic intensity E-moment.
+
+        Args:
+            dx (dict): Atmospheric parameters; keys must match
+                `axis_labels` property, values must be double.
+            k (int): Degree of moment.
+            lam (numpy.ndarray): Wavelength abscissa (Å).
+            deriv (dict, optional): Flags indicating whether to evaluate 
+                derivative with respect to each atmospheric parameter; 
+                keys must match the `axis_labels` property, values must 
+                be boolean.
+
+        Returns:
+            numpy.ndarray: Spectroscopic intensity E-moment 
+            (erg/cm^2/s/Å) in bins delineated by lam; length len(lam)-1.
+
+        Raises:
+            KeyError: If `dx` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `dx`, `k`, or any part of the wavelength
+                abscissa falls outside the bounds of the grid.
+            LookupError: If `dx` falls in a grid void.
+        """
+
+        cdef double[:] E
+        cdef int stat
+        cdef double[:] vx
+        cdef bool[:] vderiv
+
+        n = len(lam)
+
+        E = np.empty(n-1, dtype=np.double)
+
+        vx, vderiv = self._vector_args(dx, deriv)
+
+        interp_D_moment_SpecGrid(self.specgrid, &vx[0], k, n, &lam[0], &E[0],
+                                 &stat, &vderiv[0])
+
+        if stat != 0:
+            handle_error(stat)
+
+        return np.asarray(E)
+
+    
     def D_moment(self, dict dx, int l, double[:] lam, dict deriv=None):
-        r"""Evaluate the spectroscopic intensity moment.
+        r"""Evaluate the spectroscopic intensity D-moment.
 
         Args:
             dx (dict): Atmospheric parameters; keys must match
@@ -216,8 +262,8 @@ cdef class SpecGrid:
                 be boolean.
 
         Returns:
-            numpy.ndarray: Spectroscopic intensity moment (erg/cm^2/s/Å) 
-            in bins delineated by lam; length len(lam)-1.
+            numpy.ndarray: Spectroscopic intensity D-moment 
+            (erg/cm^2/s/Å) in bins delineated by lam; length len(lam)-1.
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
@@ -238,7 +284,7 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_d_moment_specgrid(self.specgrid, &vx[0], l, n, &lam[0], &D[0],
+        interp_D_moment_SpecGrid(self.specgrid, &vx[0], l, n, &lam[0], &D[0],
                                  &stat, &vderiv[0])
 
         if stat != 0:
@@ -282,7 +328,7 @@ cdef class SpecGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_flux_specgrid(self.specgrid, &vx[0], n, &lam[0], &F[0], &stat,
+        interp_flux_SpecGrid(self.specgrid, &vx[0], n, &lam[0], &F[0], &stat,
                              &vderiv[0])
         if stat != 0:
             handle_error(stat)
@@ -299,7 +345,7 @@ cdef class PhotGrid:
 
     """
 
-    cdef photgrid_t photgrid
+    cdef void *photgrid
     
     cdef readonly int rank
     """int: Number of atmospheric parameter axes."""
@@ -329,28 +375,28 @@ cdef class PhotGrid:
         cdef double[:] axis_max_vals
 
         if passband_filename is not None:
-            load_photgrid_from_specgrid(filename.encode('ascii'),
+            load_PhotGrid_from_SpecGrid(filename.encode('ascii'),
                                         passband_filename.encode('ascii'),
                                         &self.photgrid, &stat)
         else:
-            load_photgrid(filename.encode('ascii'), &self.photgrid, &stat)
+            load_PhotGrid(filename.encode('ascii'), &self.photgrid, &stat)
 
         if stat != 0:
             handle_error(stat)
 
-        inquire_photgrid(self.photgrid, NULL, &self.rank, NULL, NULL)
+        inquire_PhotGrid(self.photgrid, NULL, &self.rank, NULL, NULL)
 
         self._shape = np.empty(self.rank, dtype=np.intc)
         axis_min_vals = np.empty(self.rank, dtype=np.double)
         axis_max_vals = np.empty(self.rank, dtype=np.double)
 
-        inquire_photgrid(self.photgrid, &self._shape[0], NULL,
+        inquire_PhotGrid(self.photgrid, &self._shape[0], NULL,
                          &axis_min_vals[0], &axis_max_vals[0])
 
         self.axis_labels = []
         cdef char axis_label[17]
         for j in range(self.rank):
-            get_axis_label_photgrid(self.photgrid, j+1, axis_label)
+            get_axis_label_PhotGrid(self.photgrid, j+1, axis_label)
             self.axis_labels += [axis_label.decode('ascii')]
 
         self.axis_min = dict(zip(self.axis_labels, axis_min_vals))
@@ -359,7 +405,7 @@ cdef class PhotGrid:
         
     def __dealloc__(self):
         
-        unload_photgrid(self.photgrid)
+        unload_PhotGrid(self.photgrid)
 
         
     def _vector_args(self, dx, deriv):
@@ -382,7 +428,8 @@ cdef class PhotGrid:
 
     
     def intensity(self, dict dx, double mu, dict deriv=None):
-        r"""Evaluate the photometric intensity.
+        r"""Evaluate the photometric intensity, normalized to the zero-
+            point flux.
 
         Args:
             dx (dict): Atmospheric parameters; keys must match 
@@ -395,7 +442,7 @@ cdef class PhotGrid:
                 be boolean.
 
         Returns:
-            double: photometric intensity (erg/cm^2/s/sr).
+            double: photometric intensity (/sr).
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
@@ -412,7 +459,7 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_intensity_photgrid(self.photgrid, &vx[0], mu, &I, &stat,
+        interp_intensity_PhotGrid(self.photgrid, &vx[0], mu, &I, &stat,
                                   &vderiv[0])
         if stat != 0:
             handle_error(stat)
@@ -420,8 +467,48 @@ cdef class PhotGrid:
         return I
 
     
+    def E_moment(self, dict dx, int k, dict deriv=None):
+        r"""Evaluate the photometric intensity E-moment, normalized to
+            the zero-point flux.
+
+        Args:
+            dx (dict): Atmospheric parameters; keys must match
+                `axis_labels` property, values must be double.
+            k (int): Degree of moment.
+            deriv (dict, optional): Flags indicating whether to evaluate 
+                derivative with respect to each atmospheric parameter; 
+                keys must match the `axis_labels` property, values must 
+                be boolean.
+
+        Returns:
+            double: photometric intensity E-moment.
+
+        Raises:
+            KeyError: If `dx` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `dx` or `k` falls outside the bounds of the 
+                grid.
+            LookupError: If `dx` falls in a grid void.
+       """
+
+        cdef double E
+        cdef int stat
+        cdef double[:] vx
+        cdef bool[:] vderiv
+
+        vx, vderiv = self._vector_args(dx, deriv)
+
+        interp_E_moment_PhotGrid(self.photgrid, &vx[0], k, &E, &stat,
+                                 &vderiv[0])
+        if stat != 0:
+            handle_error(stat)
+
+        return E
+
+    
     def D_moment(self, dict dx, int l, dict deriv=None):
-        r"""Evaluate the photometric intensity moment.
+        r"""Evaluate the photometric intensity D-moment, normalized to
+            the zero-point flux.
 
         Args:
             dx (dict): Atmospheric parameters; keys must match
@@ -433,7 +520,7 @@ cdef class PhotGrid:
                 be boolean.
 
         Returns:
-            double: photometric intensity moment (erg/cm^2/s).
+            double: photometric intensity D-moment.
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
@@ -450,7 +537,7 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_d_moment_photgrid(self.photgrid, &vx[0], l, &D, &stat,
+        interp_D_moment_PhotGrid(self.photgrid, &vx[0], l, &D, &stat,
                                  &vderiv[0])
         if stat != 0:
             handle_error(stat)
@@ -459,7 +546,8 @@ cdef class PhotGrid:
 
     
     def flux(self, dict dx, dict deriv=None):
-        r"""Evaluate the photometric flux.
+        r"""Evaluate the photometric flux, normalized to the zero-point
+            flux.
 
         Args:
             dx (dict): Atmospheric parameters; keys must match
@@ -470,7 +558,7 @@ cdef class PhotGrid:
                 be boolean.
 
         Returns:
-            double: photometric flux (erg/cm^2/s).
+            double: photometric flux.
 
         Raises:
             KeyError: If `dx` does not define all keys appearing in the
@@ -487,7 +575,7 @@ cdef class PhotGrid:
 
         vx, vderiv = self._vector_args(dx, deriv)
 
-        interp_flux_photgrid(self.photgrid, &vx[0], &F, &stat, &vderiv[0])
+        interp_flux_PhotGrid(self.photgrid, &vx[0], &F, &stat, &vderiv[0])
 
         if stat != 0:
             handle_error(stat)
@@ -512,13 +600,12 @@ def handle_error(stat):
     elif stat == 6:
         raise ValueError('out-of-bounds (hi) mu')
     elif stat == 7:
-        raise ValueError('invalid l')
-    elif stat == 8:
         raise LookupError('unavailable data')
+    elif stat == 8:
+        raise ValueError('invalid argument')
     elif stat == 9:
         raise TypeError('invalid type')
     elif stat == 10:
         raise FileNotFoundError('file not found')
     else:
         raise Exception(f'error with unknown stat code: {stat}')
-    
