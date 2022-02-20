@@ -40,6 +40,7 @@ module cmsg_m
       public :: unload_${name}$
       public :: inquire_${name}$
       public :: interp_intensity_${name}$
+      public :: interp_E_moment_${name}$
       public :: interp_D_moment_${name}$
       public :: interp_flux_${name}$
    #:endfor
@@ -329,6 +330,7 @@ contains
    !****
 
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(C_DOUBLE)'), &
+                                          ('E_moment', 'E', 'k', 'integer(C_INT)'), &
                                           ('D_moment', 'D', 'l', 'integer(C_INT)'))
 
       subroutine interp_${name}$_specgrid(specgrid, vx, ${arg_var}$, n, lam, ${var}$, stat, vderiv) bind(C)

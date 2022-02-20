@@ -47,7 +47,7 @@ module specint_m
    contains
       private
       procedure, public :: inquire
-      #:for name in ('intensity', 'D_moment', 'flux')
+      #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
       procedure         :: interp_f_
@@ -161,7 +161,8 @@ contains
    !****
 
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                     ('D_moment', 'D', 'l', 'integer'))
+                                          ('E_moment', 'E', 'k', 'integer'), &
+                                          ('D_moment', 'D', 'l', 'integer'))
 
       subroutine interp_${name}$(self, ${arg_var}$, lam, ${var}$, stat)
 

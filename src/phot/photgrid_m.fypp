@@ -47,7 +47,7 @@ module photgrid_m
    contains
       private
       procedure, public :: inquire
-      #:for name in ('intensity', 'D_moment', 'flux')
+      #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
    end type photgrid_t
@@ -142,6 +142,7 @@ contains
    !****
 
    #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
+                                          ('E_moment', 'E', 'k', 'integer'), &
                                           ('D_moment', 'D', 'l', 'integer'))
 
       subroutine interp_${name}$(self, vx, ${arg_var}$, ${var}$, stat, vderiv)

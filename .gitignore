@@ -3,3 +3,6 @@ __pycache__
 
 # Emacs backup files
 *~
+
+# Build subdirectory
+build

@@ -36,8 +36,8 @@ module stat_m
    integer, parameter :: STAT_OUT_OF_BOUNDS_LAM_HI = 4
    integer, parameter :: STAT_OUT_OF_BOUNDS_MU_LO = 5
    integer, parameter :: STAT_OUT_OF_BOUNDS_MU_HI = 6
-   integer, parameter :: STAT_INVALID_L = 7
-   integer, parameter :: STAT_UNAVAILABLE_DATA = 8
+   integer, parameter :: STAT_UNAVAILABLE_DATA = 7
+   integer, parameter :: STAT_INVALID_ARGUMENT = 8
    integer, parameter :: STAT_INVALID_TYPE = 9
    integer, parameter :: STAT_FILE_NOT_FOUND = 10
 
@@ -52,8 +52,8 @@ module stat_m
    public :: STAT_OUT_OF_BOUNDS_LAM_HI
    public :: STAT_OUT_OF_BOUNDS_MU_LO
    public :: STAT_OUT_OF_BOUNDS_MU_HI
-   public :: STAT_INVALID_L
    public :: STAT_UNAVAILABLE_DATA
+   public :: STAT_INVALID_ARGUMENT
    public :: STAT_INVALID_TYPE
    public :: STAT_FILE_NOT_FOUND
 
