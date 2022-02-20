@@ -23,32 +23,42 @@
    
    .. f:subroutine:: interp_intensity(vx, mu, I, stat, vderiv)
 
-      Interpolate the photometric intensity.
+      Interpolate the photometric intensity, normalized to the zero-point flux.
 
       :p real(RD) vx(:) [in]: Atmospheric parameter values.
-      :p real(RD) mu [in]: Cosine of angle of emergence relative to 
-	 surface normal.
-      :p real(RD) I [out]: Photometric intensity (erg/cm^2/s/sr).
+      :p real(RD) mu [in]: Cosine of angle of emergence relative to surface normal.
+      :p real(RD) I [out]: Photometric intensity (/sr).
       :o integer(RD) stat [out]: Status code.
       :o logical vderiv(:) [in]: Derivative flags.
 
 			 
+   .. f:subroutine:: interp_E_moment(vx, k, E, stat, vderiv)
+
+      Interpolate the photometric E-moment, normalized to the zero-point flux.
+
+      :p real(RD) vx(:) [in]: Atmospheric parameter values.
+      :p integer k [in]: Degree of of moment.
+      :p real(RD) E [out]: Photometric E-moment.
+      :o integer(RD) stat [out]: Status code.
+      :o logical vderiv(:) [in]: Derivative flags.
+
+
    .. f:subroutine:: interp_D_moment(vx, l, D, stat, vderiv)
 
-      Interpolate the photometric intensity moment.
+      Interpolate the photometric D-moment, normalized to the zero-point flux.
 
       :p real(RD) vx(:) [in]: Atmospheric parameter values.
       :p integer l [in]: Harmonic degree of moment.
-      :p real(RD) D [out]: Photometric intensity moment (erg/cm^2/s).
+      :p real(RD) D [out]: Photometric D-moment.
       :o integer(RD) stat [out]: Status code.
       :o logical vderiv(:) [in]: Derivative flags.
 
 
    .. f:subroutine:: interp_flux(vx, F, stat, vderiv)
 
-      Interpolate the photometric flux.
+      Interpolate the photometric flux, normalized to the zero-point flux.
 
       :p real(RD) vx(:) [in]: Atmospheric parameter values.
-      :p real(RD) F [out]: Photometric flux (erg/cm^2/s).
+      :p real(RD) F [out]: Photometric flux.
       :o integer(RD) stat [out]: Status code.
       :o logical vderiv(:) [in]: Derivative flags.

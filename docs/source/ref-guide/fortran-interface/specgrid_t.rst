@@ -37,15 +37,28 @@
       :o logical vderiv(:) [in]: Derivative flags.
 
 			 
+   .. f:subroutine:: interp_E_moment(vx, k, lam, E, stat, vderiv)
+
+      Interpolate the spectroscopic intensity E-moment.
+
+      :p real(RD) vx(:) [in]: Atmospheric parameter values.
+      :p integer k [in]: Degree of moment.
+      :p real(RD) lam(:) [in]: Wavelength abscissa (Å).
+      :p real(RD) E(:) [out]: Spectroscopic intensity E-moment (erg/cm^2/s/Å)
+            in bins delineated by lam; length LEN(lam)-1.
+      :o integer(RD) stat [out]: Status code.
+      :o logical vderiv(:) [in]: Derivative flags.
+
+
    .. f:subroutine:: interp_D_moment(vx, l, lam, D, stat, vderiv)
 
-      Interpolate the spectroscopic intensity moment.
+      Interpolate the spectroscopic intensity D-moment.
 
       :p real(RD) vx(:) [in]: Atmospheric parameter values.
       :p integer l [in]: Harmonic degree of moment.
       :p real(RD) lam(:) [in]: Wavelength abscissa (Å).
-      :p real(RD) D(:) [out]: Spectroscopic intensity moment (erg/cm^2/s/Å) in
-            bins delineated by lam; length LEN(lam)-1.
+      :p real(RD) D(:) [out]: Spectroscopic intensity D-moment (erg/cm^2/s/Å)
+            in bins delineated by lam; length LEN(lam)-1.
       :o integer(RD) stat [out]: Status code.
       :o logical vderiv(:) [in]: Derivative flags.
 

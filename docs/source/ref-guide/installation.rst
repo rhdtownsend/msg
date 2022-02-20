@@ -61,26 +61,9 @@ Compile MSG using the :command:`make` utility:
 
    make -j -C $MSG_DIR
    
-(the :command:`-j` flags tells :command:`make` to use multiple cores, speeding up the build).
-
-Test
-----
-
-To check that MSG has compiled correctly and gives reasonable
-results, you can run the calculation test suite via the command
-
-.. prompt:: bash
-
-   make -C $MSG_DIR test
-
-The initial output from the tests should look something like this:
-
-.. literalinclude:: installation/make-test.out
-   :language: console
-   :lines: 1-10
-
-If things go awry, consult the :ref:`troubleshooting`
-chapter.
+(the :command:`-j` flags tells :command:`make` to use multiple cores,
+speeding up the build).  If things go awry, consult the
+:ref:`troubleshooting` chapter.
 
 Custom Builds
 =============
