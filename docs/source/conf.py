@@ -155,11 +155,11 @@ for key, value in macros.items():
     else:
         mathjax_macros[key] = value
 
-mathjax_config = {                  
-    'TeX': { 
-        'Macros': mathjax_macros
-    }
-}
+#mathjax_config = {                  
+#    'TeX': { 
+#        'Macros': mathjax_macros
+#    }
+#}
 mathjax3_config = {                  
     'tex': { 
         'macros': mathjax_macros

@@ -20,7 +20,7 @@ condiment to add flavor to your science!`
    user-guide/quick-start.rst
    user-guide/python-walkthrough.rst
    user-guide/fortran-walkthrough.rst
-   user-guide/spectral-abscissa.rst
+   user-guide/how-it-works.rst
 
 .. toctree::
    :caption: Reference Guide

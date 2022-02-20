@@ -12,51 +12,59 @@ into a Python script should work also.
 
 .. _python-walkthrough-grid:
 
-The Demo Grid
-=============
+Preparation
+===========
 
-The demo grid is a temperature-gravity grid of low-resolution
-intensity spectra (based on the solar-metallicity
-:ads_citet:`castelli:2003` atmospheres), useful for learning about
-MSG's capabilities. Download the grid from :grid:`here <sg-demo.h5>`
-(its size is around 40 MB); you should store it in the same directory
-as where you plan to run Jupyter (or Python).
+Before starting Jupyter, you'll need to download a couple of files:
 
-The PyMSG Module
-================
+* :grids:`sg-demo.h5` is a temperature-gravity grid of low-resolution
+  intensity spectra (based on the solar-metallicity
+  :ads_citet:`castelli:2003` atmospheres), useful for learning about
+  MSG's capabilities.
+* :passbands:`SVO-Generic-Johnson.tar.bz2` is a tar archive containing
+  passband definitions for the Johnson photometric system.
 
-To use MSG from Python, first make sure the :envvar:`MSG_DIR`
-environment variable is set, as described in the :ref:`quick-start`
-chapter. Then, fire up Jupyter, create a new notebook, and paste the
-following statements into the first cell:
+Place these files in your working directory (where you will be running
+Python from), and unpack the tar archive using the command
+:command:`tar xf SVO-Generic-Johnson.tar.bz2`.
+
+Importing the PyMSG Module
+==========================
+
+Make sure that the :envvar:`MSG_DIR` environment variable is set, as
+described in the :ref:`quick-start` chapter. Then, fire up Jupyter,
+create a new notebook, and paste the following statements into the
+first cell:
 
 .. jupyter-execute::
 
-   # Import pymsg
+   # Import standard modules
 
    import sys
    import os
+   import numpy as np
+   import matplotlib.pyplot as plt
+
+   # Import pymsg
+
    sys.path.insert(0, os.path.join(os.environ['MSG_DIR'], 'lib'))
    import pymsg
 
-   # Import standard modules and configure them
-
-   import numpy as np
-   import matplotlib.pyplot as plt
+   # Set plot parameters
 
    %matplotlib inline
    plt.rcParams.update({'font.size': 16})
 
-The first four statements take care of importing the :py:mod:`pymsg`
-module, which provides the Python interface to MSG. We also take the
-liberty of importing standard modules such as :py:mod:`matplotlib` and
-:py:mod:`numpy`.
+The `sys.path.insert` statement adds the directory :file:$MSG_DIR/lib`
+to the search path, allowing Python to find and import the
+:py:mod:`pymsg` module. This module provides the Python interface to
+MSG.
 
 Loading & Inspecting the Grid
 =============================
 
-The next step is to load the demo grid into memory [#memory]_, by
-creating a new :py:class:`pymsg.SpecGrid` object:
+The next step is to load the :file:`sg-demo.h5` grid into memory
+[#memory]_, by creating a new :py:class:`pymsg.SpecGrid` object:
 
 .. jupyter-execute::
 
@@ -86,9 +94,8 @@ Here, ``logT`` and ``logg`` correspond (respectively) to the
 Plotting the Flux
 =================
 
-Armed with this knowledge, we're now in a position to evaluate and
-plot a flux spectrum for Sirius. First, let's store atmosphere
-parameters for the star in a dict called ``dx``:
+With the grid loaded, let's evaluate and plot a flux spectrum for
+Sirius. First, store atmosphere parameters for the star in a dict:
 
 .. jupyter-execute::
 
@@ -115,8 +122,8 @@ Here, the array ``lam`` defines the boundaries of 500 wavelength bins
 :math:`\{\lambda_{i},\lambda_{i+1}\}` (:math:`i=1,\ldots,500`) and the
 array ``lam_c`` stores the central wavelength of each bin.
 
-With all our parameters defined, let's now evaluate and plot the flux
-spectrum using a call to the :py:func:`pymsg.SpecGrid.flux` function:
+With all our parameters defined, evaluate the flux spectrum using a
+call to the :py:func:`pymsg.SpecGrid.flux` function, and then plot it:
 
 .. jupyter-execute::
 
@@ -205,9 +212,9 @@ new :py:class:`pymsg.PhotGrid` object for each passband:
 
 In the calls to the object constructor, the first argument is the name
 of a spectral grid (i.e., the demo grid), and the second argument is
-the name of a passband file. (Note that 'Vega' appears in the names is
-because we're using the VEGAMAG magnitude system). The normalized
-*surface* fluxes of Sirius can then be found using the
+the name of a passband definition file. (Note that 'Vega' appears in
+the names is because we're using the VEGAMAG magnitude system). The
+normalized *surface* fluxes of Sirius are then be found using the
 :py:func:`pymsg.PhotGrid.flux` function:
 
 .. jupyter-execute::
@@ -218,9 +225,9 @@ because we're using the VEGAMAG magnitude system). The normalized
    F_surf_B = photgrid_B.flux(dx)
    F_surf_V = photgrid_V.flux(dx)
 
-To convert these into apparent magnitudes, we first convert them to
-Earth fluxes using the inverse-square law, and then use :wiki:`Pogson's <N._R._Pogson>`
-logarithmic formula:
+To convert these into apparent magnitudes, we first dilute them to
+Earth fluxes using the inverse-square law, and then use
+:wiki:`Pogson's <N._R._Pogson>` logarithmic formula:
 
 .. jupyter-execute::
 
@@ -242,8 +249,9 @@ logarithmic formula:
    V = -2.5*np.log10(F_V)
 
    print(f'V={V}, U-B={U-B}, B-V={B-V}')
-
-Reassuringly, the resulting values are within 10 mmag of Sirius' apparent magnitude and color!
+   
+Reassuringly, the resulting values are within 10 mmag of Sirius'
+apparent magnitude and color (again, as given by the Wikipedia entry).
 
 .. rubric:: Footnotes
 

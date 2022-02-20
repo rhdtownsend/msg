@@ -9,7 +9,7 @@ to evaluate flux and intensity spectra for a model of Sirius
 (:math:`\alpha` Canis Majoris). In that respect it mirrors the
 :ref:`python-walkthrough`; but rather than using a notebook the focus
 is on a short program. It's presumed that you've already downloaded
-the :grid:`demo grid <sg-demo.h5>` and placed it in your working
+the :grids:`sg-demo.h5` file and placed it in your working
 directory.
 
 Source Code
@@ -28,7 +28,8 @@ A few comments on the code:
   the demo program, this module defines the `RD` kind type parameter
   for double precision real variables.
 
-* The `use fmsg_m` statement provides access to the MSG high-level Fortran interface.
+* The `use fmsg_m` statement provides access to the MSG high-level
+  Fortran interface.
 
 * Because Fortran doesn't have `dict` datatypes, the atmosphere
   parameters must be passed to MSG as a plain array (here, stored in
@@ -52,5 +53,10 @@ the module definition (:file:`.mod`) files, while the
 :code:`$MSG_DIR/scripts/fmsg_link` clause (note the enclosing
 backticks) runs a link script that returns the compiler flags
 necessary to link the program.
+
+Running
+=======
+
+
 
 
