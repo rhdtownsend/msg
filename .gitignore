@@ -6,3 +6,8 @@ __pycache__
 
 # Build subdirectory
 build
+!build/Makefile
+!build/Make.inc
+!build/check_sdk_version
+
+
