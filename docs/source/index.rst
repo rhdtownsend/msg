@@ -20,7 +20,7 @@ condiment to add flavor to your science!`
    user-guide/quick-start.rst
    user-guide/python-walkthrough.rst
    user-guide/fortran-walkthrough.rst
-   user-guide/how-it-works.rst
+   user-guide/fundamentals.rst
 
 .. toctree::
    :caption: Reference Guide
@@ -31,6 +31,7 @@ condiment to add flavor to your science!`
    ref-guide/fortran-interface.rst
    ref-guide/c-interface.rst
    ref-guide/python-interface.rst
+   ref-guide/troubleshooting.rst
 
 .. toctree::
    :caption: Appendices

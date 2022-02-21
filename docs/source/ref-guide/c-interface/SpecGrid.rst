@@ -54,23 +54,9 @@
    :param vderiv: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_d_moment_SpecGrid(SpecGrid specgrid, double vx[], int l, int n, double lam[], double D[], int *stat, bool vderiv[])
+.. c:function:: void interp_E_moment_SpecGrid(SpecGrid specgrid, double vx[], int k, int n, double lam[], double E[], int *stat, bool vderiv[])
 
-   Interpolate the spectroscopic intensity moment.
-
-   :param specgrid: Grid object.
-   :param vx: Atmospheric parameter values.
-   :param l: Harmonic degree of moment.
-   :param n: Number of points in wavelength abscissa.
-   :param lam[n]: Wavelength abscissa (Å).
-   :param D[n-1]: Returned spectroscopic intensity moment (erg/cm^2/s/Å) in bins delineated by lam
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
-   :param vderiv: Derivative flags (set to :c:expr:`NULL` if not required).
-
-		  
-.. c:function:: void interp_e_moment_SpecGrid(SpecGrid specgrid, double vx[], int k, int n, double lam[], double E[], int *stat, bool vderiv[])
-
-   Interpolate the spectroscopic intensity D-moment.
+   Interpolate the spectroscopic intensity E-moment.
 
    :param specgrid: Grid object.
    :param vx: Atmospheric parameter values.
@@ -82,7 +68,7 @@
    :param vderiv: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_d_moment_SpecGrid(SpecGrid specgrid, double vx[], int l, int n, double lam[], double D[], int *stat, bool vderiv[])
+.. c:function:: void interp_D_moment_SpecGrid(SpecGrid specgrid, double vx[], int l, int n, double lam[], double D[], int *stat, bool vderiv[])
 
    Interpolate the spectroscopic intensity D-moment.
 

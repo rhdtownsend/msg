@@ -62,7 +62,7 @@
    :param vderiv: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_e_moment_PhotGrid(PhotGrid photgrid, double vx[], int k, double *E, int *stat, bool vderiv[])
+.. c:function:: void interp_E_moment_PhotGrid(PhotGrid photgrid, double vx[], int k, double *E, int *stat, bool vderiv[])
 
    Interpolate the photometric intensity E-moment, normalized to the zero-point flux.
 
@@ -74,7 +74,7 @@
    :param vderiv: Derivative flags (set to :c:expr:`NULL` if not required).
 		  
 		
-.. c:function:: void interp_d_moment_PhotGrid(PhotGrid photgrid, double vx[], int l, double *D, int *stat, bool vderiv[])
+.. c:function:: void interp_D_moment_PhotGrid(PhotGrid photgrid, double vx[], int l, double *D, int *stat, bool vderiv[])
 
    Interpolate the photometric intensity D-moment, normalized to the zero-point flux.
 

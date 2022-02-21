@@ -9,3 +9,4 @@ kelvin	{\rm K}
 radian	{\rm rad}
 steradian	{\rm srad}
 barye	{\rm Ba}
+diff	\operatorname{d}

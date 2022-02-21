@@ -4,7 +4,7 @@
 
 .. f:type:: specgrid_t
 
-   The specgrid_t type represents a grid of spectroscopic intensity data.
+The specgrid_t type represents a grid of spectroscopic intensity data.
 
    This grid may be used to interpolate the intensity (or related
    quantities) across a wavelength abscissa and for a set of

@@ -12,7 +12,7 @@ Spectral Representation
 
 MSG represents the wavelength dependence of spectral quantities such
 as specific intensity or flux density, as piecewise-constant
-functions. A wavelength abscissa :math:\{\lambda_{i}\}`
+functions. A wavelength abscissa :math:`\{\lambda_{i}\}`
 (:math:`i=1,2,\ldots`) defines the intervals over which the spectral
 quantities are constant. Thus, for instance, the flux density
 :math:`F_{\lambda}` is expressed as
@@ -32,7 +32,7 @@ values become
 
 .. math::
 
-   F'_{j} = \frac{1}{\lambda'_{j+1} - \lambda'_{j}} \int_{\lambda'_{j}}^{\lambda'_{j+1}} F_{\lambda} \,\diff{\lambda}.
+   F'_{j} = \frac{1}{\lambda'_{j+1} - \lambda'_{j}} \int_{\lambda'_{j}}^{\lambda'_{j+1}} F_{\lambda} \,\diff\lambda.
 
 Limb Darkening
 ==============
@@ -43,39 +43,40 @@ form
 
 .. math::
 
-   I_{\lambda} (\mu) = \sum_{i=1}^{N} c_{\lambda;i} b_{i}(\mu).
+   I_{\lambda} (\mu) = \sum_{i=1}^{N} c_{i;\lambda} b_{i}(\mu).
 
 Here, :math:`c_{\lambda;i}` (:math:`i=1,2,\ldots,N`) are a set of
 wavelength-dependent coefficients, :math:`b_{i}(\mu)` are a set of
 basis functions, and :math:`\mu \equiv \cos\theta`. In this form, the
-canonical linear limb darkening law
+canonical linear limb darkening law first introduced by
+:ads_citet:`milne:1921`,
 
 .. math::
 
-   I_{\lambda} (\mu) = I(1) \left[ 1 - u_{\lambda} (1 - \mu) \right]
+   I_{\lambda} (\mu) = I(1) \left[ 1 - u_{\lambda} (1 - \mu) \right],
 
-(see, e.g, XXXX) is represented with the basis functions
+can be represented with the basis functions
 
 .. math::
 
-   b_{1} = 1, \qquad b_{2} = \mu
+   b_{1} = 1, \qquad b_{2} = - (1 - \mu)
 
 and the coefficients
 
 .. math::
 
-   c_{\lambda;1} = I_{\lambda}(1) (1 - u_{\lambda}), \qquad c_{\lambda;2} = I_{\lambda}(1) u_{\lambda}.
+   c_{\lambda;1} = I_{\lambda}(1), \qquad c_{\lambda;2} = I_{\lambda}(1) \, u_{\lambda}.
 
 However, MSG can also handle more-complex laws, such as the
-square-root law :ads_citep:`claret:2004` and the 4-coefficient law
+square-root law :ads_citep:`diaz-cordoves:1992` and the 4-coefficient law
 introduced by :ads_citet:`claret:2000`.
 
 Typically, stellar atmosphere codes tabulate the specific intensity at
 a set number of angle parameters $\mu=\mu_{1},\mu_{2},\ldots$. To
 determine the coefficients :math:`c_{\lambda;i}` from these data, MSG
 performs a least-squared minimization on the function
-:math:`y_{\lambda}(mu) = 1 - I(\mu)/I(1)`, constrained so that
-:math:`y_{\lambda}(1) = 0`.
+:math:`y(\mu) = 1 - I(\mu)/I(1)`, constrained so that
+:math:`y(1) = 0`.
 
 Fluxes & Moments
 ================
@@ -96,14 +97,14 @@ MSG uses a similar approach to evaluate the :math:`\mathcal{E}`
 
 .. math::
 
-   E_{k;\lambda} \equiv \frac{1}{2} \int_{0}^{1} \mu_{k} I_{\lambda}(\mu) \,\diff{\mu}
+   \mathcal{E}_{k;\lambda} \equiv \frac{1}{2} \int_{0}^{1} \mu^{k} I_{\lambda}(\mu) \,\diff{\mu}
 
 (:math:`k \geq 0`) and the :math:`\mathcal{D}` (differential flux
 function) moments
 
 .. math::
 
-   D_{\ell;\lambda} \equiv \int_{0}^{1} \mu P_{\ell}(\mu) I_{\lambda}(\mu) \,\diff{\mu}
+   \mathcal{D}_{\ell;\lambda} \equiv \int_{0}^{1} \mu P_{\ell}(\mu) I_{\lambda}(\mu) \,\diff{\mu}
 
 introduced by :ads_citet:`townsend:2003` (and labelled as
 :math:`I_{\ell;\lambda}` therin).
