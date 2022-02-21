@@ -45,6 +45,17 @@ module cmsg_m
       public :: interp_flux_${name}$
    #:endfor
 
+   public :: STAT_OK
+   public :: STAT_OUT_OF_BOUNDS_AXIS_LO
+   public :: STAT_OUT_OF_BOUNDS_AXIS_HI
+   public :: STAT_OUT_OF_BOUNDS_LAM_LO
+   public :: STAT_OUT_OF_BOUNDS_LAM_HI
+   public :: STAT_OUT_OF_BOUNDS_MU_LO
+   public :: STAT_OUT_OF_BOUNDS_MU_HI
+   public :: STAT_UNAVAILABLE_DATA
+   public :: STAT_INVALID_ARGUMENT
+   public :: STAT_INVALID_TYPE
+   public :: STAT_FILE_NOT_FOUND
    public :: load_photgrid_from_specgrid
 
    ! Procedures

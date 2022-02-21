@@ -23,9 +23,11 @@ cimport cython
 
 from libcpp cimport bool
 
+# C definitions
+
 cdef extern from "cmsg.h":
 
-    # specgrid interface
+    # SpecGrid interface
 
     void load_SpecGrid(const char *specgrid_filename, void **specgrid, int *stat)
     void unload_SpecGrid(void *specgrid)
@@ -45,7 +47,7 @@ cdef extern from "cmsg.h":
     void interp_flux_SpecGrid(void *specgrid, double *vx, int n, double lam[],
                               double F[], int *stat, bool *vderiv)
 
-    # photgrid interface
+    # PhotGrid interface
 
     void load_PhotGrid(const char *photgrid_filename, void **photgrid, int *stat)
     void load_PhotGrid_from_SpecGrid(const char *specgrid_filename,
@@ -63,6 +65,21 @@ cdef extern from "cmsg.h":
                                   double *D, int *stat, bool *vderiv)
     void interp_flux_PhotGrid(void *photgrid, double *vx, double *F,
                               int *stat, bool *vderiv)
+
+    # enums etc
+    
+    cdef enum:
+       STAT_OK,
+       STAT_OUT_OF_BOUNDS_AXIS_LO,
+       STAT_OUT_OF_BOUNDS_AXIS_HI,
+       STAT_OUT_OF_BOUNDS_LAM_LO,
+       STAT_OUT_OF_BOUNDS_LAM_HI,
+       STAT_OUT_OF_BOUNDS_MU_LO,
+       STAT_OUT_OF_BOUNDS_MU_HI,
+       STAT_UNAVAILABLE_DATA,
+       STAT_INVALID_ARGUMENT,
+       STAT_INVALID_TYPE,
+       STAT_FILE_NOT_FOUND
 
 
 @cython.binding(True)
@@ -108,7 +125,7 @@ cdef class SpecGrid:
 
         load_SpecGrid(filename.encode('ascii'), &self.specgrid, &stat)
 
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
 
         inquire_SpecGrid(self.specgrid, &self.lam_min, &self.lam_max, NULL,
@@ -197,7 +214,7 @@ cdef class SpecGrid:
         interp_intensity_SpecGrid(self.specgrid, &vx[0], mu, n, &lam[0],
                                   &I[0], &stat, &vderiv[0])
 
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
 
         return np.asarray(I)
@@ -242,7 +259,7 @@ cdef class SpecGrid:
         interp_D_moment_SpecGrid(self.specgrid, &vx[0], k, n, &lam[0], &E[0],
                                  &stat, &vderiv[0])
 
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
 
         return np.asarray(E)
@@ -287,7 +304,7 @@ cdef class SpecGrid:
         interp_D_moment_SpecGrid(self.specgrid, &vx[0], l, n, &lam[0], &D[0],
                                  &stat, &vderiv[0])
 
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
 
         return np.asarray(D)
@@ -330,7 +347,7 @@ cdef class SpecGrid:
 
         interp_flux_SpecGrid(self.specgrid, &vx[0], n, &lam[0], &F[0], &stat,
                              &vderiv[0])
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
         
         return np.asarray(F)
@@ -381,7 +398,7 @@ cdef class PhotGrid:
         else:
             load_PhotGrid(filename.encode('ascii'), &self.photgrid, &stat)
 
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
 
         inquire_PhotGrid(self.photgrid, NULL, &self.rank, NULL, NULL)
@@ -461,7 +478,7 @@ cdef class PhotGrid:
 
         interp_intensity_PhotGrid(self.photgrid, &vx[0], mu, &I, &stat,
                                   &vderiv[0])
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
 
         return I
@@ -500,7 +517,7 @@ cdef class PhotGrid:
 
         interp_E_moment_PhotGrid(self.photgrid, &vx[0], k, &E, &stat,
                                  &vderiv[0])
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
 
         return E
@@ -539,7 +556,7 @@ cdef class PhotGrid:
 
         interp_D_moment_PhotGrid(self.photgrid, &vx[0], l, &D, &stat,
                                  &vderiv[0])
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
 
         return D
@@ -577,7 +594,7 @@ cdef class PhotGrid:
 
         interp_flux_PhotGrid(self.photgrid, &vx[0], &F, &stat, &vderiv[0])
 
-        if stat != 0:
+        if stat != STAT_OK:
             handle_error(stat)
 
         return F
@@ -587,25 +604,25 @@ def handle_error(stat):
 
     # Use the stat value to throw an appropriate exception
 
-    if stat == 1:
+    if stat == STAT_OUT_OF_BOUNDS_AXIS_LO:
         raise ValueError('out-of-bounds (lo) axis')
-    elif stat == 2:
+    elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
         raise ValueError('out-of-bounds (hi) axis')
-    elif stat == 3:
+    elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:
         raise ValueError('out-of-bounds (lo) lam')
-    elif stat == 4:
+    elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:
         raise ValueError('out-of-bounds (hi) lam')
-    elif stat == 5:
+    elif stat == STAT_OUT_OF_BOUNDS_MU_LO:
         raise ValueError('out-of-bounds (lo) mu')
-    elif stat == 6:
+    elif stat == STAT_OUT_OF_BOUNDS_MU_HI:
         raise ValueError('out-of-bounds (hi) mu')
-    elif stat == 7:
+    elif stat == STAT_UNAVAILABLE_DATA:
         raise LookupError('unavailable data')
-    elif stat == 8:
+    elif stat == STAT_INVALID_ARGUMENT:
         raise ValueError('invalid argument')
-    elif stat == 9:
+    elif stat == STAT_INVALID_TYPE:
         raise TypeError('invalid type')
-    elif stat == 10:
+    elif stat == STAT_FILE_NOT_FOUND:
         raise FileNotFoundError('file not found')
     else:
         raise Exception(f'error with unknown stat code: {stat}')

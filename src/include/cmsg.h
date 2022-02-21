@@ -50,3 +50,19 @@ void interp_intensity_PhotGrid(PhotGrid photgrid, double vx[], double mu, double
 void interp_E_moment_PhotGrid(PhotGrid photgrid, double vx[], int k, double *E, int *stat, bool vderiv[]);
 void interp_D_moment_PhotGrid(PhotGrid photgrid, double vx[], int l, double *D, int *stat, bool vderiv[]);
 void interp_flux_PhotGrid(PhotGrid photgrid, double vx[], double *F, int *stat, bool vderiv[]);
+
+// enums etc
+
+enum {
+  STAT_OK,
+  STAT_OUT_OF_BOUNDS_AXIS_LO,
+  STAT_OUT_OF_BOUNDS_AXIS_HI,
+  STAT_OUT_OF_BOUNDS_LAM_LO,
+  STAT_OUT_OF_BOUNDS_LAM_HI,
+  STAT_OUT_OF_BOUNDS_MU_LO,
+  STAT_OUT_OF_BOUNDS_MU_HI,
+  STAT_UNAVAILABLE_DATA,
+  STAT_INVALID_ARGUMENT,
+  STAT_INVALID_TYPE,
+  STAT_FILE_NOT_FOUND
+};

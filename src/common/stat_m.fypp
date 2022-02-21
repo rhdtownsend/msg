@@ -29,17 +29,19 @@ module stat_m
 
    ! Parameter definitions
 
-   integer, parameter :: STAT_OK = 0
-   integer, parameter :: STAT_OUT_OF_BOUNDS_AXIS_LO = 1
-   integer, parameter :: STAT_OUT_OF_BOUNDS_AXIS_HI = 2
-   integer, parameter :: STAT_OUT_OF_BOUNDS_LAM_LO = 3
-   integer, parameter :: STAT_OUT_OF_BOUNDS_LAM_HI = 4
-   integer, parameter :: STAT_OUT_OF_BOUNDS_MU_LO = 5
-   integer, parameter :: STAT_OUT_OF_BOUNDS_MU_HI = 6
-   integer, parameter :: STAT_UNAVAILABLE_DATA = 7
-   integer, parameter :: STAT_INVALID_ARGUMENT = 8
-   integer, parameter :: STAT_INVALID_TYPE = 9
-   integer, parameter :: STAT_FILE_NOT_FOUND = 10
+   enum, bind(C)
+      enumerator :: STAT_OK
+      enumerator :: STAT_OUT_OF_BOUNDS_AXIS_LO
+      enumerator :: STAT_OUT_OF_BOUNDS_AXIS_HI
+      enumerator :: STAT_OUT_OF_BOUNDS_LAM_LO
+      enumerator :: STAT_OUT_OF_BOUNDS_LAM_HI
+      enumerator :: STAT_OUT_OF_BOUNDS_MU_LO
+      enumerator :: STAT_OUT_OF_BOUNDS_MU_HI
+      enumerator :: STAT_UNAVAILABLE_DATA
+      enumerator :: STAT_INVALID_ARGUMENT
+      enumerator :: STAT_INVALID_TYPE
+      enumerator :: STAT_FILE_NOT_FOUND
+   end enum
 
    ! Access specifiers
 
