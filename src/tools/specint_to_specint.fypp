@@ -1,0 +1,217 @@
+! Module   : specint_to_photint
+! Purpose  : create a specint file by rebinning / subsetting an existing
+!            specint file
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program specint_to_specint
+
+   ! Uses
+
+   use forum_m, PI_ => PI
+   use msg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: specint_filename_in
+   character(:), allocatable :: specint_filename
+   real(RD)                  :: lam_min
+   real(RD)                  :: lam_max
+   real(RD)                  :: dlam
+   real(RD)                  :: R
+   character(:), allocatable :: just
+   logical                   :: lam_min_set
+   logical                   :: lam_max_set
+   logical                   :: dlam_set
+   logical                   :: R_set
+   logical                   :: just_set
+
+   integer                           :: status
+   type(hdf5io_t)                    :: hi
+   type(specint_t)                   :: si_in
+   type(hdf5io_t)                    :: hi_la
+   character(LABEL_LEN), allocatable :: labels(:)
+   integer                           :: n_labels
+   real(RD), allocatable             :: values(:)
+   integer                           :: j
+   real(RD)                          :: lam_min_in
+   real(RD)                          :: lam_max_in
+   real(RD), allocatable             :: lam(:)
+   type(specint_t)                   :: si
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() >= 2, 'Syntax: specint_to_specint specint_filename_in specint_filename [lam_min=...] [lam_max=...] [R=...|dlam=...] [just=...]')
+
+   call get_arg(1, specint_filename_in)
+   call get_arg(2, specint_filename)
+
+   call get_arg('lam_min', lam_min, status, first=3)
+   lam_min_set = status == 0
+
+   call get_arg('lam_max', lam_max, status, first=3)
+   lam_max_set = status == 0
+   
+   call get_arg('dlam', dlam, status, first=3)
+   dlam_set = status == 0
+   
+   call get_arg('R', R, status, first=3)
+   R_set = status == 0
+   
+   call get_arg('just', just, status, first=3)
+   just_set = status == 0
+
+   ! Read data from the specint file
+
+   hi = hdf5io_t(specint_filename_in, OPEN_FILE_RO)
+   call read(hi, si_in)
+
+   hi_la = hdf5io_t(hi, 'labels')
+
+   labels = hi_la%dset_names()
+   n_labels = SIZE(labels)
+
+   allocate(values(n_labels))
+
+   do j = 1, SIZE(labels)
+      call hi_la%read_dset(labels(j), values(j))
+   end do
+
+   call hi_la%final()
+   call hi%final()
+
+   ! Check/set wavelength bounds
+
+   call si_in%inquire(lam_min=lam_min_in, lam_max=lam_max_in)
+
+   if (lam_min_set) then
+      @:ASSERT(lam_min >= lam_min_in, 'lam_min must be >= lam_min_in')
+   else
+      lam_min = lam_min_in
+   endif
+
+   call si_in%inquire(lam_min=lam_min, lam_max=lam_max)
+
+   if (lam_min_set) then
+      @:ASSERT(lam_min >= lam_min_in, 'lam_min must be >= lam_min_in')
+   else
+      lam_min = lam_min_in
+   endif
+
+   if (.NOT. just_set) just = 'C'
+
+   ! Check/set resolution parameters
+
+   @:ASSERT(.NOT. (R_set .AND. dlam_set),'R and dlam cannot be set together')
+
+   ! Create the new spectrum
+
+   if (R_set .OR. dlam_set) then
+
+      ! Set up the new wavelength axis
+
+      if (R_set) then
+         lam = EXP(eval_lam(LOG(lam_min), LOG(lam_max), 1._RD/R, just))
+      else
+         lam = eval_lam(lam_min, lam_max, dlam, just)
+      endif
+
+      ! Create the spectrum by interpolation onto the new wavelength
+      ! axis
+
+      si = specint_t(si_in, lam)
+
+   else
+
+      ! Create the spectrum by subsetting
+
+      si = specint_t(si_in, lam_min, lam_max)
+
+   endif
+
+   ! Write data to the specint file
+
+   hi = hdf5io_t(specint_filename, CREATE_FILE)
+   call write(hi, si)
+
+   hi_la = hdf5io_t(hi, 'labels')
+
+   do j = 1, n_labels
+      call hi_la%write_dset(labels(j), values(j))
+   end do
+
+   call hi%final()
+
+   ! Finish
+
+contains
+
+   function eval_lam(lam_min, lam_max, dlam, just) result(lam)
+
+      real(RD), intent(in)     :: lam_min
+      real(RD), intent(in)     :: lam_max
+      real(RD), intent(in)     :: dlam
+      character(*), intent(in) :: just
+      real(RD), allocatable   :: lam(:)
+
+      integer  :: n_lam
+      real(RD) :: lam_a
+      real(RD) :: lam_b
+      integer  :: k
+
+      ! Evaluate the wavelength axis
+
+      ! Determine number of points
+
+      n_lam = FLOOR((lam_max - lam_min)/dlam) + 1
+
+      ! Determine start and stop values
+
+      select case (just)
+      case ('L')
+         lam_a = lam_min
+         lam_b = lam_min + dlam*(n_lam-1)
+      case ('R')
+         lam_a = lam_max - dlam*(n_lam-1)
+         lam_b = lam_max
+      case ('C')
+         lam_a = 0.5_RD*(lam_min + lam_max - dlam*(n_lam-1))
+         lam_b = 0.5_RD*(lam_min + lam_max + dlam*(n_lam-1))
+      case default
+         @:ABORT('invalid just')
+      end select
+
+      lam_a = MAX(lam_a, lam_min)
+      lam_b = MIN(lam_b, lam_max)
+
+      ! Set up the axis
+
+      lam = [((lam_a*(n_lam-k) + lam_b*(k-1))/(n_lam-1),k=1,n_lam)]
+
+      ! Finish
+
+      return
+
+   end function eval_lam
+      
+end program specint_to_specint

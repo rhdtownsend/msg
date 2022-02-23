@@ -37,7 +37,7 @@ endif
 
 ifeq (${TOOLS},yes)
 EXEC_TARGETS := ${EXEC_TARGETS} synspec_to_specint ferre_to_specint \
-	        specgrid_to_photgrid make_specgrid \
+                specint_to_specint specgrid_to_photgrid make_specgrid \
                 make_photgrid make_bb_photgrid make_passband
 endif
 
