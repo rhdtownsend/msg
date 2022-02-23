@@ -59,6 +59,8 @@ module specint_m
    interface specint_t
       module procedure specint_t_
       module procedure specint_t_fit_
+      module procedure specint_t_interp_
+      module procedure specint_t_subset_
    end interface specint_t
 
    interface read
@@ -138,6 +140,71 @@ contains
       return
 
    end function specint_t_fit_
+
+   !****
+
+   function specint_t_interp_(si_in, lam) result (si)
+
+      type(specint_t), intent(inout) :: si_in
+      real(RD), intent(in)           :: lam(:)
+      type(specint_t)                :: si
+
+      integer               :: m
+      real(RD), allocatable :: c(:,:)
+      integer               :: p
+      real(RD)              :: b(si_in%n)
+
+      ! Construct the specint_t by interpolating the supplied
+      ! specint_t onto the lam abscissa
+
+      m = SIZE(lam) - 1
+
+      allocate(c(si_in%n,m))
+
+      do p = 1, si_in%n
+
+         b = 0._RD
+         b(p) = 1._RD
+
+         call si_in%interp_f_(b, lam, c(p,:))
+
+      end do
+
+      si = specint_t(c, lam, si_in%li)
+
+      ! Finish
+
+      return
+
+   end function specint_t_interp_
+
+   !****
+
+   function specint_t_subset_(si_in, lam_min, lam_max) result (si)
+
+      type(specint_t), intent(in) :: si_in
+      real(RD), intent(in)        :: lam_min
+      real(RD), intent(in)        :: lam_max
+      type(specint_t)             :: si
+
+      integer :: i_a
+      integer :: i_b
+
+      ! Construct the specint_t by subsetting the supplied specint_t
+
+      i_a = FINDLOC(si_in%lam >= lam_min, .TRUE., DIM=1)
+      i_b = FINDLOC(si_in%lam <= lam_max, .TRUE., DIM=1,BACK=.TRUE.)
+
+      i_a = MAX(i_a, 1)
+      i_b = MIN(i_b, si_in%m)
+
+      si = specint_t(si_in%c(:,i_a:i_b), si_in%lam(i_a:i_b+1), si_in%li)
+
+      ! Finish
+
+      return
+
+   end function specint_t_subset_
 
    !****
 
@@ -241,6 +308,7 @@ contains
       real(RD) :: lam_a
       real(RD) :: lam_b
 
+      @:CHECK_BOUNDS(SIZE(b), self%n)
       @:CHECK_BOUNDS(SIZE(f), SIZE(lam)-1)
 
       ! Set up indices
