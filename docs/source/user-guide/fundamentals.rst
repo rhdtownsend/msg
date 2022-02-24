@@ -65,18 +65,34 @@ and the coefficients
 
 .. math::
 
-   c_{\lambda;1} = I_{\lambda}(1), \qquad c_{\lambda;2} = I_{\lambda}(1) \, u_{\lambda}.
+   c_{1,\lambda} = I_{\lambda}(1), \qquad c_{2,\lambda} = I_{\lambda}(1) \, u_{\lambda}.
 
 However, MSG can also handle more-complex laws, such as the
 square-root law :ads_citep:`diaz-cordoves:1992` and the 4-coefficient law
 introduced by :ads_citet:`claret:2000`.
 
-Typically, stellar atmosphere codes tabulate the specific intensity at
-a set number of angle parameters $\mu=\mu_{1},\mu_{2},\ldots$. To
-determine the coefficients :math:`c_{\lambda;i}` from these data, MSG
-performs a least-squared minimization on the function
-:math:`y(\mu) = 1 - I(\mu)/I(1)`, constrained so that
-:math:`y(1) = 0`.
+For stellar atmosphere codes that tabulate the specific intensity at a
+set number of angle parameters, :math:`\mu=\mu_{1},\mu_{2},\ldots`,
+MSG determines the coefficients :math:`c_{\lambda;i}` by performing a
+least-squared minimization on the function :math:`y(\mu) = 1 -
+I(\mu)/I(1)`, constrained so that :math:`y(1) = 0`.
+
+It's more common, however, for atmosphere codes to provide only flux
+density data. In such cases, MSG uses a 'constant' (i.e., angle
+independent) limb darkening model with a single basis function
+
+.. math::
+
+   b_(1) = 1
+
+and a coefficient
+
+.. math::
+
+   c_{1;\lambda} = \frac{F_{\lambda}}{2}
+
+chosen to match the provided flux density. Of course, the specific
+intensity evaluated by MSG will clearly be meaningless.
 
 Fluxes & Moments
 ================
