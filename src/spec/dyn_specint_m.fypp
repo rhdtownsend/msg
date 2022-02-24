@@ -37,10 +37,12 @@ module dyn_specint_m
 
    type, extends(specint_t) :: dyn_specint_t
       private
-      type(hdf5io_t) :: hi
-      real(RD)       :: lam_min
-      real(RD)       :: lam_max
-      logical        :: loaded = .FALSE.
+      character(:), allocatable :: file_name
+      character(:), allocatable :: group_name
+      real(RD)                  :: lam_min
+      real(RD)                  :: lam_max
+      logical                   :: loaded = .FALSE.
+      logical                   :: sticky = .TRUE.
    contains
       private
       procedure, public :: inquire
@@ -129,6 +131,10 @@ contains
 
          call self%specint_t%interp_${name}$(${arg_var}$, lam, ${var}$, stat)
 
+         ! If necesarry, flush
+
+         if (.NOT. self%sticky) call self%flush()
+
          ! Finish
 
          return
@@ -163,6 +169,10 @@ contains
 
          call self%specint_t%interp_${name}$(lam, ${var}$, stat)
 
+         ! If necesarry, flush
+
+         if (.NOT. self%sticky) call self%flush()
+
          ! Finish
 
          return
@@ -175,21 +185,25 @@ contains
 
    subroutine flush(self)
 
-      class(dyn_specint_t), intent(inout) :: self
+      class(dyn_specint_t), intent(out) :: self
 
-      type(hdf5io_t) :: hi
+      ! Flush the dyn_specint_t
 
-      ! Flush the dyn_specint_t by re-reading it
+      call flush_si_(self%specint_t)
 
-      hi = self%hi
-
-      call read(hi, self)
-
-      call hi%final()
+      self%loaded = .FALSE.
 
       ! Finish
 
       return
+
+   contains
+
+      subroutine flush_si_(si)
+
+         type(specint_t), intent(out) :: si
+
+      end subroutine flush_si_
 
    end subroutine flush
 
@@ -200,13 +214,20 @@ contains
       class(dyn_specint_t), intent(inout) :: self
       integer, intent(out), optional      :: stat
 
-      real(RD) :: lam_min
-      real(RD) :: lam_max
+      type(hdf5io_t) :: hi
+      type(hdf5io_t) :: hi_si
+      real(RD)       :: lam_min
+      real(RD)       :: lam_max
 
       ! Load data for the specint_t
 
-      call read(self%hi, self%specint_t)
-      !call self%hi%final()
+      hi = hdf5io_t(self%file_name, OPEN_FILE_RO)
+      hi_si = hdf5io_t(hi, self%group_name)
+
+      call read(hi_si, self%specint_t)
+
+      call hi_si%final()
+      call hi%final()
 
       self%loaded = .TRUE.
 
@@ -227,12 +248,14 @@ contains
 
    !****
 
-   subroutine read_(hi, si, stat)
+   subroutine read_(hi, si, stat, sticky)
 
       type(hdf5io_t), intent(inout)    :: hi
       type(dyn_specint_t), intent(out) :: si
       integer, intent(out), optional   :: stat
+      logical, intent(in), optional    :: sticky
 
+      logical             :: sticky_
       character(TYPE_LEN) :: type
 
       ! Read the dyn_specint_t (the specint_t supertype is set in a
@@ -251,7 +274,9 @@ contains
       call hi%read_attr('lam_min', si%lam_min)
       call hi%read_attr('lam_max', si%lam_max)
 
-      si%hi = hdf5io_t(hi, '.')
+      call hi%inquire(file_name=si%file_name, group_name=si%group_name)
+
+      if (PRESENT(sticky)) si%sticky = sticky
 
       ! Finish
 
@@ -270,21 +295,11 @@ contains
 
       ! Write the dyn_specint_t
 
-      if (.NOT. si%loaded) then
+      if (.NOT. si%loaded) call si%load_()
 
-         ! Temporary load to write
+      call write(hi, si%specint_t)
 
-         call si%load_()
-         
-         call write(hi, si%specint_t)
-
-         call si%flush()
-
-      else
-
-         call write(hi, si%specint_t)
-
-      endif
+      if (.NOT. si%sticky) call si%flush()
 
       ! Finish
 
