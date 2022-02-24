@@ -47,6 +47,7 @@ module dyn_specint_m
       #:for name in ('intensity', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
+      procedure, public :: flush
       procedure         :: load_
    end type dyn_specint_t
 
@@ -172,6 +173,28 @@ contains
 
    !****
 
+   subroutine flush(self)
+
+      class(dyn_specint_t), intent(inout) :: self
+
+      type(hdf5io_t) :: hi
+
+      ! Flush the dyn_specint_t by re-reading it
+
+      hi = self%hi
+
+      call read(hi, self)
+
+      call hi%final()
+
+      ! Finish
+
+      return
+
+   end subroutine flush
+
+   !****
+
    subroutine load_(self, stat)
       
       class(dyn_specint_t), intent(inout) :: self
@@ -180,10 +203,10 @@ contains
       real(RD) :: lam_min
       real(RD) :: lam_max
 
-      ! Load the specint
+      ! Load data for the specint_t
 
       call read(self%hi, self%specint_t)
-      call self%hi%final()
+      !call self%hi%final()
 
       self%loaded = .TRUE.
 
@@ -247,9 +270,21 @@ contains
 
       ! Write the dyn_specint_t
 
-      if (.NOT. si%loaded) call si%load_()
+      if (.NOT. si%loaded) then
+
+         ! Temporary load to write
+
+         call si%load_()
          
-      call write(hi, si%specint_t)
+         call write(hi, si%specint_t)
+
+         call si%flush()
+
+      else
+
+         call write(hi, si%specint_t)
+
+      endif
 
       ! Finish
 
