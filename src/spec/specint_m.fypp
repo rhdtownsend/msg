@@ -496,8 +496,8 @@ contains
       call hi%write_attr('lam_min', lam_min)
       call hi%write_attr('lam_max', lam_max)
 
-      call hi%write_dset('lam', si%lam, comp_level=9)
-      call hi%write_dset('c', si%c, comp_level=9)
+      call hi%write_dset('lam', si%lam)
+      call hi%write_dset('c', si%c)
 
       hi_li = hdf5io_t(hi, 'li')
       call write(hi_li, si%li)
