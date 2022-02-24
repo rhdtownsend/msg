@@ -179,7 +179,7 @@ contains
          call get_arg(n, node_filename)
 
          hi = hdf5io_t(node_filename, OPEN_FILE_RO)
-         call read(hi, si(li))
+         call read(hi, si(li), sticky=.FALSE.)
          call hi%final()
 
          mask(li) = .TRUE.
