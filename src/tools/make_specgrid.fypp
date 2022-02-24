@@ -24,6 +24,8 @@ program make_specgrid
    use forum_m
    use msg_m
 
+   use dyn_specint_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -35,10 +37,10 @@ program make_specgrid
    integer                   :: n_node
    character(:), allocatable :: specgrid_filename
 
-   type(specint_t), allocatable :: si(:)
-   type(ngrid_t)                :: ng
-   type(specgrid_t)             :: sg
-   type(hdf5io_t)               :: hi
+   type(dyn_specint_t), allocatable :: si(:)
+   type(ngrid_t)                    :: ng
+   type(specgrid_t)                 :: sg
+   type(hdf5io_t)                   :: hi
 
    ! Read command-line arguments
 
@@ -67,9 +69,9 @@ contains
 
    subroutine read_specint_grid(n_node, si, ng)
 
-      integer, intent(in)                       :: n_node
-      type(specint_t), allocatable, intent(out) :: si(:)
-      type(ngrid_t), intent(out)                :: ng
+      integer, intent(in)                           :: n_node
+      type(dyn_specint_t), allocatable, intent(out) :: si(:)
+      type(ngrid_t), intent(out)                    :: ng
 
       character(:), allocatable         :: node_filename
       integer                           :: n
