@@ -44,6 +44,7 @@ module specint_m
       type(limb_t)          :: li
       integer               :: n
       integer               :: m
+      logical               :: low_acc
    contains
       private
       procedure, public :: inquire
@@ -83,15 +84,23 @@ module specint_m
 
 contains
 
-   function specint_t_(c, lam, li) result (si)
+   function specint_t_(c, lam, li, low_acc) result (si)
 
-      real(RD), intent(in)     :: c(:,:)
-      real(RD), intent(in)     :: lam(:)
-      type(limb_t), intent(in) :: li
-      type(specint_t)          :: si
+      real(RD), intent(in)          :: c(:,:)
+      real(RD), intent(in)          :: lam(:)
+      type(limb_t), intent(in)      :: li
+      type(specint_t)               :: si
+      logical, intent(in), optional :: low_acc
 
+      logical :: low_acc_
       integer :: n
       integer :: m
+
+      if (PRESENT(low_acc)) then
+         low_acc_ = low_acc
+      else
+         low_acc_ = .FALSE.
+      endif
 
       ! Construct the specint_t from the supplied data
 
@@ -109,6 +118,8 @@ contains
 
       si%n = n
       si%m = m
+
+      si%low_acc = low_acc_
       
       ! Finish
 
@@ -118,13 +129,14 @@ contains
 
    !****
 
-   function specint_t_fit_(I, mu, lam, li) result (si)
+   function specint_t_fit_(I, mu, lam, li, low_acc) result (si)
 
-      real(RD), intent(in)     :: I(:,:)
-      real(RD), intent(in)     :: mu(:)
-      real(RD), intent(in)     :: lam(:)
-      type(limb_t), intent(in) :: li
-      type(specint_t)          :: si
+      real(RD), intent(in)          :: I(:,:)
+      real(RD), intent(in)          :: mu(:)
+      real(RD), intent(in)          :: lam(:)
+      type(limb_t), intent(in)      :: li
+      logical, intent(in), optional :: low_acc
+      type(specint_t)               :: si
 
       real(RD), allocatable :: c(:,:)
 
@@ -133,7 +145,7 @@ contains
 
       call li%fit_intensity(I, mu, c)
 
-      si = specint_t(c, lam, li)
+      si = specint_t(c, lam, li, low_acc)
 
       ! Finish
 
@@ -170,7 +182,7 @@ contains
 
       end do
 
-      si = specint_t(c, lam, si_in%li)
+      si = specint_t(c, lam, si_in%li, si_in%low_acc)
 
       ! Finish
 
@@ -182,10 +194,10 @@ contains
 
    function specint_t_subset_(si_in, lam_min, lam_max) result (si)
 
-      type(specint_t), intent(in) :: si_in
-      real(RD), intent(in)        :: lam_min
-      real(RD), intent(in)        :: lam_max
-      type(specint_t)             :: si
+      type(specint_t), intent(in)   :: si_in
+      real(RD), intent(in)          :: lam_min
+      real(RD), intent(in)          :: lam_max
+      type(specint_t)               :: si
 
       integer :: i_a
       integer :: i_b
@@ -198,7 +210,7 @@ contains
       i_a = MAX(i_a, 1)
       i_b = MIN(i_b, si_in%m)
 
-      si = specint_t(si_in%c(:,i_a:i_b), si_in%lam(i_a:i_b+1), si_in%li)
+      si = specint_t(si_in%c(:,i_a:i_b), si_in%lam(i_a:i_b+1), si_in%li, si_in%low_acc)
 
       ! Finish
 
@@ -208,16 +220,19 @@ contains
 
    !****
 
-   subroutine inquire(self, lam_min, lam_max)
+   subroutine inquire(self, lam_min, lam_max, low_acc)
 
       class(specint_t), intent(in)    :: self
       real(RD), intent(out), optional :: lam_min
       real(RD), intent(out), optional :: lam_max
+      logical, intent(out), optional  :: low_acc
 
       ! Inquire metadata
 
       if (PRESENT(lam_min)) lam_min = self%lam(1)
       if (PRESENT(lam_max)) lam_max = self%lam(self%m)
+
+      if (PRESENT(low_acc)) low_acc = self%low_acc
 
       ! Finish
 
@@ -446,6 +461,7 @@ contains
       real(RD), allocatable :: c(:,:)
       type(hdf5io_t)        :: hi_li
       type(limb_t)          :: li
+      logical               :: low_acc
 
       ! Read the specint_t
 
@@ -459,6 +475,8 @@ contains
          endif
       endif
 
+      call hi%read_attr('low_acc', low_acc)
+
       call hi%alloc_read_dset('lam', lam)
       call hi%alloc_read_dset('c', c)
 
@@ -466,7 +484,7 @@ contains
       call read(hi_li, li)
       call hi_li%final()
 
-      si = specint_t(c, lam, li)
+      si = specint_t(c, lam, li, low_acc)
 
       ! Finish
 
@@ -496,8 +514,15 @@ contains
       call hi%write_attr('lam_min', lam_min)
       call hi%write_attr('lam_max', lam_max)
 
+      call hi%write_attr('low_acc', si%low_acc)
+
       call hi%write_dset('lam', si%lam)
-      call hi%write_dset('c', si%c)
+
+      if (si%low_acc) then
+         call hi%write_dset('c', REAL(si%c, RS))
+      else
+         call hi%write_dset('c', si%c)
+      endif
 
       hi_li = hdf5io_t(hi, 'li')
       call write(hi_li, si%li)

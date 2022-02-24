@@ -55,6 +55,7 @@ program ferre_to_specint
    character(:), allocatable :: ferre_filetype
    character(:), allocatable :: specint_prefix
 
+   integer               :: status
    integer               :: unit
    type(ferre_hdr_t)     :: fh
    integer, allocatable  :: vi(:)
@@ -65,7 +66,7 @@ program ferre_to_specint
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: ferre_to_specint ferre_filename ferre_filetype specint_prefix]')
+   @:ASSERT(n_arg() == 3, 'Syntax: ferre_to_specint ferre_filename ferre_filetype specint_prefix')
 
    call get_arg(1, ferre_filename)
    call get_arg(2, ferre_filetype)
@@ -279,7 +280,7 @@ contains
 
       li = limb_t('CONST')
 
-      si = specint_t(I, [1._RD], lam, li)
+      si = specint_t(I, [1._RD], lam, li, low_acc=.TRUE.)
 
       ! Write it
 

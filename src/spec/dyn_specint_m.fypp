@@ -72,22 +72,25 @@ module dyn_specint_m
 
 contains
 
-   subroutine inquire(self, lam_min, lam_max)
+   subroutine inquire(self, lam_min, lam_max, low_acc)
 
       class(dyn_specint_t), intent(in) :: self
       real(RD), intent(out), optional  :: lam_min
       real(RD), intent(out), optional  :: lam_max
+      logical, intent(out), optional   :: low_acc
 
       ! Inquire metadata
 
       if (self%loaded) then
 
-         call self%specint_t%inquire(lam_min, lam_max)
+         call self%specint_t%inquire(lam_min, lam_max, low_acc)
 
       else
 
          if (PRESENT(lam_min)) lam_min = self%lam_min
          if (PRESENT(lam_max)) lam_max = self%lam_max
+
+         ! Do not handle low_acc
 
       endif
 
