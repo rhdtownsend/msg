@@ -55,7 +55,6 @@ module specgrid_m
          procedure, public :: interp_${name}$
       #:endfor
       procedure, public :: apply_passband
-      procedure, public :: flush
    end type specgrid_t
 
    ! Interfaces
@@ -329,46 +328,6 @@ contains
       end subroutine apply_passband_proc_
 
    end subroutine apply_passband
-
-   !****
-
-   subroutine flush(self)
-
-      class(specgrid_t), intent(inout) :: self
-
-      ! Flush the specgrid_t
-
-      call self%ng%map(flush_proc_)
-
-      ! Finish
-
-      return
-
-   contains
-
-      subroutine flush_proc_(vi, stat)
-
-         integer, intent(in)            :: vi(:)
-         integer, intent(out), optional :: stat
-
-         integer :: li
-
-         ! Flush the specint_t
-
-         li = self%ng%li_from_vi(vi)
-
-         select type(si => self%si(li))
-         class is(dyn_specint_t)
-            call si%flush()
-         end select
-
-         ! Finish
-
-         return
-
-      end subroutine flush_proc_
-
-   end subroutine flush
 
    !****
 
