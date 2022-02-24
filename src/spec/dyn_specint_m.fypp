@@ -225,7 +225,7 @@ contains
       call hi%read_attr('lam_min', si%lam_min)
       call hi%read_attr('lam_max', si%lam_max)
 
-      si%hi = hi
+      si%hi = hdf5io_t(hi, '.')
 
       ! Finish
 

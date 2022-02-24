@@ -202,7 +202,7 @@ contains
          endif
       endif
 
-      pi%hi = hi
+      pi%hi = hdf5io_t(hi, '.')
       pi%pb = pb
 
       ! Finish
