@@ -255,7 +255,6 @@ contains
       integer, intent(out), optional   :: stat
       logical, intent(in), optional    :: sticky
 
-      logical             :: sticky_
       character(TYPE_LEN) :: type
 
       ! Read the dyn_specint_t (the specint_t supertype is set in a
