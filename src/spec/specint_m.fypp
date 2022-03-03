@@ -339,7 +339,7 @@ contains
          endif
       endif
 
-      if (i >= self%m) then
+      if (i > self%m) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_LAM_HI
             return
