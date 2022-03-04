@@ -1,0 +1,90 @@
+! Submodule : range_sm
+! Purpose   : I/O routines for range_m
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (range_m) range_sm
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+
+   use tab_range_m, read_tr => read, write_tr => write
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+contains
+
+   subroutine read_(hi, ra)
+
+      type(hdf5io_t), intent(inout)            :: hi
+      class(range_t), allocatable, intent(out) :: ra
+
+      character(TYPE_LEN) :: type
+
+      ! Read the range_t
+
+      call hi%read_attr('TYPE', type)
+
+      select case(type)
+      case('tab_range_t')
+         allocate(tab_range_t::ra)
+      case default
+         @:ABORT('invalid type')
+      end select
+
+      select type(ra)
+      type is (tab_range_t)
+         call read_tr(hi, ra)
+      class default
+         @:ABORT('invalid type')
+      end select
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, ra)
+
+      type(hdf5io_t), intent(inout) :: hi
+      class(range_t), intent(in)    :: ra
+
+      ! Write the range_t
+
+      select type(ra)
+      type is (tab_range_t)
+         call write_tr(hi, ra)
+      class default
+         @:ABORT('invalid type')
+      end select
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+end submodule range_sm

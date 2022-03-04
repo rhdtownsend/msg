@@ -86,7 +86,7 @@ contains
 
       ! Construct the photint_t from the supplied data
 
-      n_b = li%n_basis()
+      call li%inquire(n=n_b)
 
       @:CHECK_BOUNDS(SIZE(c), n_b)
 

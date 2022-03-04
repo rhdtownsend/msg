@@ -31,6 +31,8 @@ module stat_m
 
    enum, bind(C)
       enumerator :: STAT_OK
+      enumerator :: STAT_OUT_OF_BOUNDS_RANGE_LO
+      enumerator :: STAT_OUT_OF_BOUNDS_RANGE_HI
       enumerator :: STAT_OUT_OF_BOUNDS_AXIS_LO
       enumerator :: STAT_OUT_OF_BOUNDS_AXIS_HI
       enumerator :: STAT_OUT_OF_BOUNDS_LAM_LO
@@ -48,6 +50,8 @@ module stat_m
    private
 
    public :: STAT_OK
+   public :: STAT_OUT_OF_BOUNDS_RANGE_LO
+   public :: STAT_OUT_OF_BOUNDS_RANGE_HI
    public :: STAT_OUT_OF_BOUNDS_AXIS_LO
    public :: STAT_OUT_OF_BOUNDS_AXIS_HI
    public :: STAT_OUT_OF_BOUNDS_LAM_LO

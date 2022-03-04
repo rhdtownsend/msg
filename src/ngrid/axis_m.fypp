@@ -23,8 +23,8 @@ module axis_m
 
    use kinds_m
    use hdf5io_m
-   use order_m
 
+   use range_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -41,14 +41,13 @@ module axis_m
 
    type axis_t
       private
-      real(RD), allocatable :: x(:)
-      integer               :: n_x
-      character(LABEL_LEN)  :: label
+      class(range_t), allocatable :: ra
+      character(LABEL_LEN)        :: label
    contains
       private
       procedure, public :: inquire
-      procedure, public :: locate => locate_
-      procedure, public :: get_x
+      procedure, public :: get
+      procedure, public :: locate
    end type axis_t
 
    ! Interfaces
@@ -78,21 +77,15 @@ module axis_m
 
 contains
 
-   function axis_t_(x, label) result (ax)
+   function axis_t_(ra, label) result (ax)
 
-      real(RD), intent(in)     :: x(:)
-      character(*), intent(in) :: label
-      type(axis_t)             :: ax
-
-      integer :: n_x
+      class(range_t), intent(in) :: ra
+      character(*), intent(in)   :: label
+      type(axis_t)               :: ax
 
       ! Construct the axis_t from the supplied data
 
-      n_x = SIZE(x)
-      @:ASSERT(ALL(x(2:) > x(:n_x-1)), 'non-monotonic '//TRIM(label)//' axis')
-
-      ax%x = x
-      ax%n_x = n_x
+      ax%ra = ra
 
       ax%label = label
 
@@ -104,20 +97,19 @@ contains
 
    !****
 
-   subroutine inquire(self, n_x, min, max, label)
+   subroutine inquire(self, n, min, max, label)
 
       class(axis_t), intent(in)           :: self
-      integer, intent(out), optional      :: n_x
+      integer, intent(out), optional      :: n
       real(RD), intent(out), optional     :: min
       real(RD), intent(out), optional     :: max
       character(*), intent(out), optional :: label
 
       ! Inquire metadata
 
-      if (PRESENT(n_x)) n_x = self%n_x
-      if (PRESENT(min)) min = self%x(1)
-      if (PRESENT(max)) max = self%x(self%n_x)
       if (PRESENT(label)) label = self%label
+
+      call self%ra%inquire(n=n, min=min, max=max)
 
       ! Finish
 
@@ -127,81 +119,40 @@ contains
 
    !****
 
-   subroutine locate_(self, x, i, stat)
-
-      class(axis_t), intent(in)      :: self
-      real(RD), intent(in)           :: x
-      integer, intent(out)           :: i
-      integer, intent(out), optional :: stat
-
-      ! Locate where along the axis x falls
-
-      call locate(self%x, x, i)
-
-      if (i < 1) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_AXIS_LO
-            return
-         else
-            @:ABORT('out-of-bounds (lo) on '//TRIM(self%label)//' axis')
-         endif
-      endif
-
-      if (i >= self%n_x) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_AXIS_HI
-            return
-         else
-            @:ABORT('out-of-bounds (hi) on '//TRIM(self%label)//' axis')
-         endif
-      endif
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine locate_
-
-   !****
-
-   subroutine get_x(self, i, x, stat)
+   subroutine get(self, i, x, stat)
 
       class(axis_t), intent(in)      :: self
       integer, intent(in)            :: i
-      real(RD)                       :: x
+      real(RD), intent(out)          :: x
       integer, intent(out), optional :: stat
 
       ! Get an x value
 
-      if (i < 1) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_AXIS_LO
-            return
-         else
-            @:ABORT('out-of-bounds (lo) on '//self%label//' axis')
-         endif
-      endif
-
-      if (i > self%n_x) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_AXIS_HI
-            return
-         else
-            @:ABORT('out-of-bounds (hi) on '//self%label//' axis')
-         endif
-      endif
-            
-      x = self%x(i)
+      call self%ra%get(i, x, stat)
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
+      return
+
+   end subroutine get
+
+   !****
+
+   subroutine locate(self, x, i)
+
+      class(axis_t), intent(in)      :: self
+      real(RD), intent(in)           :: x
+      integer, intent(inout)         :: i
+
+      ! Locate where along the axis x falls
+
+      call self%ra%locate(x, i)
+
+      ! Finish
 
       return
 
-   end subroutine get_x
+   end subroutine locate
 
    !****
 
@@ -211,9 +162,10 @@ contains
       type(axis_t), intent(out)      :: ax
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)   :: type
-      character(LABEL_LEN)  :: label
-      real(RD), allocatable :: x(:)
+      character(TYPE_LEN)         :: type
+      character(LABEL_LEN)        :: label
+      type(hdf5io_t)              :: hi_ra
+      class(range_t), allocatable :: ra
 
       ! Read the axis_t
 
@@ -228,10 +180,12 @@ contains
       endif
 
       call hi%read_attr('label', label)
-      
-      call hi%alloc_read_dset('x', x)
 
-      ax = axis_t(x, label)
+      hi_ra = hdf5io_t(hi, 'ra')
+      call read(hi_ra, ra)
+      call hi_ra%final()
+
+      ax = axis_t(ra, label)
 
       ! Finish
 
@@ -248,14 +202,17 @@ contains
       type(hdf5io_t), intent(inout) :: hi
       type(axis_t), intent(in)      :: ax
 
+      type(hdf5io_t) :: hi_ra
+      
       ! Writethe axis_t
 
       call hi%write_attr('TYPE', 'axis_t')
 
       call hi%write_attr('label', ax%label)
-      call hi%write_attr('n_x', ax%n_x)
-      
-      call hi%write_dset('x', ax%x)
+
+      hi_ra = hdf5io_t(hi, 'ra')
+      call write(hi_ra, ax%ra)
+      call hi_ra%final()
 
       ! Finish
 

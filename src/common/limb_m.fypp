@@ -46,10 +46,11 @@ module limb_m
 
    type limb_t
       private
-      integer, public :: law = -1
+      integer :: n
+      integer :: law = -1
    contains
       private
-      procedure, public :: n_basis
+      procedure, public :: inquire
       procedure, public :: eval_intensity_basis
       procedure, public :: eval_flux_basis
       procedure, public :: eval_E_moment_basis
@@ -94,6 +95,21 @@ contains
 
       li%law = str_to_law_(str)
 
+      select case (li%law)
+      case (CONST_LAW)
+         li%n = 1
+      case (LINEAR_LAW)
+         li%n = 2
+      case (SQRT_LAW)
+         li%n = 3
+      case (QUAD_LAW)
+         li%n = 3
+      case (CLARET_LAW)
+         li%n = 5
+      case default
+         @:ABORT('invalid law')
+      end select
+
       ! Finish
 
       return
@@ -129,7 +145,6 @@ contains
       return
 
    end function law_to_str_
-      
 
    !****
 
@@ -163,33 +178,20 @@ contains
 
    !****
 
-   function n_basis (self)
+   subroutine inquire(self, n)
+   
+      class(limb_t), intent(in)      :: self
+      integer, intent(out), optional :: n
 
-      class(limb_t), intent(in) :: self
-      integer                   :: n_basis
+      ! Inquire metadata
 
-      ! Return the number of basis functions
-
-      select case (self%law)
-      case (CONST_LAW)
-         n_basis = 1
-      case (LINEAR_LAW)
-         n_basis = 2
-      case (SQRT_LAW)
-         n_basis = 3
-      case (QUAD_LAW)
-         n_basis = 3
-      case (CLARET_LAW)
-         n_basis = 5
-      case default
-         @:ABORT('invalid law')
-      end select
+      if (PRESENT(n)) n = self%n
 
       ! Finish
 
       return
 
-   end function n_basis
+   end subroutine inquire
 
    !****
 
@@ -200,7 +202,7 @@ contains
       real(RD)                       :: b(:)
       integer, intent(out), optional :: stat
 
-      @:CHECK_BOUNDS(SIZE(b),self%n_basis())
+      @:CHECK_BOUNDS(SIZE(b), self%n)
 
       ! Evaluate the intensity basis functions
 
@@ -273,7 +275,7 @@ contains
       real(RD)                       :: b(:)
       integer, intent(out), optional :: stat
 
-      @:CHECK_BOUNDS(SIZE(b), self%n_basis())
+      @:CHECK_BOUNDS(SIZE(b), self%n)
 
       ! Evaluate the E (Eddington) moment basis functions
 
@@ -355,7 +357,7 @@ contains
       real(RD)                       :: b(:)
       integer, intent(out), optional :: stat
 
-      @:CHECK_BOUNDS(SIZE(b), self%n_basis())
+      @:CHECK_BOUNDS(SIZE(b), self%n)
 
       ! Evaluate the D (differential flux function) moment basis
       ! functions
@@ -447,7 +449,7 @@ contains
       real(RD)                       :: b(:)
       integer, intent(out), optional :: stat
 
-      @:CHECK_BOUNDS(SIZE(b), self%n_basis())
+      @:CHECK_BOUNDS(SIZE(b), self%n)
 
       ! Evaluate the flux basis functions
 
@@ -530,7 +532,6 @@ contains
       real(RD), intent(in)               :: mu(:)
       real(RD), allocatable, intent(out) :: c(:,:)
 
-      integer               :: n_b
       integer               :: n_mu
       integer               :: n_k
       integer               :: k
@@ -542,12 +543,10 @@ contains
       ! Fit the limb-darkening law to the intensity data. The fit is
       ! constrained to pass through I(mu=1)
 
-      n_b = self%n_basis()
-
       n_mu = SIZE(I, 1)
       n_k = SIZE(I, 2)
 
-      if (n_b > 1) then
+      if (self%n > 1) then
 
          ! Set up the fit data
 
@@ -557,13 +556,13 @@ contains
 
          ! Fit the a-coefficients
 
-         allocate(a(n_b-1,n_k))
+         allocate(a(self%n-1,n_k))
 
          call gls_fit(mu, y, f_, a)
 
          ! Tranform to c-coefficients
 
-         allocate(c(n_b,n_k))
+         allocate(c(self%n,n_k))
 
          c_loop : do k = 1, n_k
             c(1,k) = I(n_mu,k)
@@ -572,7 +571,7 @@ contains
 
       else
 
-         ! When n_b == 1, no fitting is (or can be) done; just copy
+         ! When self%n == 1, no fitting is (or can be) done; just copy
          ! over the normal intensity
 
          allocate(c(1,n_k))

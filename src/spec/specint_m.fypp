@@ -27,6 +27,7 @@ module specint_m
    use math_m
    use passband_m
    use photint_m
+   use range_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -39,12 +40,13 @@ module specint_m
 
    type specint_t
       private
-      real(RD), allocatable :: c(:,:)
-      real(RD), allocatable :: lam(:)
-      type(limb_t)          :: li
-      integer               :: n
-      integer               :: m
-      logical               :: low_acc
+      real(RD), allocatable       :: c(:,:)
+      real(RD), allocatable       :: lam(:)
+      class(range_t), allocatable :: ra
+      type(limb_t)                :: li
+      integer                     :: n_b
+      integer                     :: n_lam
+      logical                     :: low_acc
    contains
       private
       procedure, public :: inquire
@@ -61,7 +63,7 @@ module specint_m
       module procedure specint_t_
       module procedure specint_t_fit_
       module procedure specint_t_interp_
-      module procedure specint_t_subset_
+!      module procedure specint_t_subset_
    end interface specint_t
 
    interface read
@@ -84,17 +86,17 @@ module specint_m
 
 contains
 
-   function specint_t_(c, lam, li, low_acc) result (si)
+   function specint_t_(c, ra, li, low_acc) result (si)
 
       real(RD), intent(in)          :: c(:,:)
-      real(RD), intent(in)          :: lam(:)
+      class(range_t), intent(in)    :: ra
       type(limb_t), intent(in)      :: li
-      type(specint_t)               :: si
       logical, intent(in), optional :: low_acc
+      type(specint_t)               :: si
 
       logical :: low_acc_
-      integer :: n
-      integer :: m
+      integer :: n_b
+      integer :: n_lam 
 
       if (PRESENT(low_acc)) then
          low_acc_ = low_acc
@@ -104,20 +106,22 @@ contains
 
       ! Construct the specint_t from the supplied data
 
-      n = SIZE(c, 1)
-      m = SIZE(c, 2)
+      call li%inquire(n=n_b)
+      call ra%inquire(n=n_lam)
 
-      @:CHECK_BOUNDS(n, li%n_basis())
-      @:CHECK_BOUNDS(m, SIZE(lam)-1)
-
-      @:ASSERT_DEBUG(ALL(lam(2:) > lam(:m)),'Non-monotonic wavelength data')
+      @:CHECK_BOUNDS(n_b, SIZE(c, 1))
+      @:CHECK_BOUNDS(n_lam, SIZE(c, 2)+1)
 
       si%c = c
-      si%lam = lam
+
+      allocate(si%lam(n_lam))
+      call ra%expand(si%lam)
+
+      si%ra = ra
       si%li = li
 
-      si%n = n
-      si%m = m
+      si%n_b = n_b
+      si%n_lam = n_lam
 
       si%low_acc = low_acc_
       
@@ -129,11 +133,11 @@ contains
 
    !****
 
-   function specint_t_fit_(I, mu, lam, li, low_acc) result (si)
+   function specint_t_fit_(I, mu, ra, li, low_acc) result (si)
 
       real(RD), intent(in)          :: I(:,:)
       real(RD), intent(in)          :: mu(:)
-      real(RD), intent(in)          :: lam(:)
+      class(range_t), intent(in)    :: ra
       type(limb_t), intent(in)      :: li
       logical, intent(in), optional :: low_acc
       type(specint_t)               :: si
@@ -145,7 +149,7 @@ contains
 
       call li%fit_intensity(I, mu, c)
 
-      si = specint_t(c, lam, li, low_acc)
+      si = specint_t(c, ra, li, low_acc)
 
       ! Finish
 
@@ -155,25 +159,29 @@ contains
 
    !****
 
-   function specint_t_interp_(si_in, lam) result (si)
+   function specint_t_interp_(si_in, ra) result (si)
 
       type(specint_t), intent(inout) :: si_in
-      real(RD), intent(in)           :: lam(:)
+      class(range_t), intent(in)     :: ra
       type(specint_t)                :: si
 
-      integer               :: m
+      integer               :: n_lam
+      real(RD), allocatable :: lam(:)
       real(RD), allocatable :: c(:,:)
       integer               :: p
-      real(RD)              :: b(si_in%n)
+      real(RD)              :: b(si_in%n_b)
 
       ! Construct the specint_t by interpolating the supplied
-      ! specint_t onto the lam abscissa
+      ! specint_t onto the la abscissa
 
-      m = SIZE(lam) - 1
+      call ra%inquire(n=n_lam)
 
-      allocate(c(si_in%n,m))
+      allocate(lam(n_lam))
+      allocate(c(si_in%n_b,n_lam-1))
 
-      do p = 1, si_in%n
+      call ra%expand(lam)
+
+      do p = 1, si_in%n_b
 
          b = 0._RD
          b(p) = 1._RD
@@ -182,7 +190,7 @@ contains
 
       end do
 
-      si = specint_t(c, lam, si_in%li, si_in%low_acc)
+      si = specint_t(c, ra, si_in%li, si_in%low_acc)
 
       ! Finish
 
@@ -190,33 +198,33 @@ contains
 
    end function specint_t_interp_
 
-   !****
+   ! !****
 
-   function specint_t_subset_(si_in, lam_min, lam_max) result (si)
+   ! function specint_t_subset_(si_in, lam_min, lam_max) result (si)
 
-      type(specint_t), intent(in)   :: si_in
-      real(RD), intent(in)          :: lam_min
-      real(RD), intent(in)          :: lam_max
-      type(specint_t)               :: si
+   !    type(specint_t), intent(in)   :: si_in
+   !    real(RD), intent(in)          :: lam_min
+   !    real(RD), intent(in)          :: lam_max
+   !    type(specint_t)               :: si
 
-      integer :: i_a
-      integer :: i_b
+   !    integer :: i_a
+   !    integer :: i_b
 
-      ! Construct the specint_t by subsetting the supplied specint_t
+   !    ! Construct the specint_t by subsetting the supplied specint_t
 
-      i_a = FINDLOC(si_in%lam >= lam_min, .TRUE., DIM=1)
-      i_b = FINDLOC(si_in%lam <= lam_max, .TRUE., DIM=1,BACK=.TRUE.)
+   !    i_a = FINDLOC(si_in%lam >= lam_min, .TRUE., DIM=1)
+   !    i_b = FINDLOC(si_in%lam <= lam_max, .TRUE., DIM=1,BACK=.TRUE.)
 
-      i_a = MAX(i_a, 1)
-      i_b = MIN(i_b, si_in%m)
+   !    i_a = MAX(i_a, 1)
+   !    i_b = MIN(i_b, si_in%m)
 
-      si = specint_t(si_in%c(:,i_a:i_b), si_in%lam(i_a:i_b+1), si_in%li, si_in%low_acc)
+   !    si = specint_t(si_in%c(:,i_a:i_b), si_in%lam(i_a:i_b+1), si_in%li, si_in%low_acc)
 
-      ! Finish
+   !    ! Finish
 
-      return
+   !    return
 
-   end function specint_t_subset_
+   ! end function specint_t_subset_
 
    !****
 
@@ -230,7 +238,7 @@ contains
       ! Inquire metadata
 
       if (PRESENT(lam_min)) lam_min = self%lam(1)
-      if (PRESENT(lam_max)) lam_max = self%lam(self%m)
+      if (PRESENT(lam_max)) lam_max = self%lam(self%n_lam)
 
       if (PRESENT(low_acc)) low_acc = self%low_acc
 
@@ -254,7 +262,7 @@ contains
          real(RD), intent(out)           :: ${var}$(:)
          integer, intent(out), optional  :: stat
 
-         real(RD) :: b(self%n)
+         real(RD) :: b(self%n_b)
 
          ! Set up the basis functions
 
@@ -286,7 +294,7 @@ contains
          real(RD), intent(out)           :: ${var}$(:)
          integer, intent(out), optional  :: stat
 
-         real(RD) :: b(self%n)
+         real(RD) :: b(self%n_b)
 
          ! Set up the basis functions
 
@@ -323,7 +331,7 @@ contains
       real(RD) :: lam_a
       real(RD) :: lam_b
 
-      @:CHECK_BOUNDS(SIZE(b), self%n)
+      @:CHECK_BOUNDS(SIZE(b), self%n_b)
       @:CHECK_BOUNDS(SIZE(f), SIZE(lam)-1)
 
       ! Set up indices
@@ -339,7 +347,7 @@ contains
          endif
       endif
 
-      if (i >= self%m) then
+      if (i >= self%n_lam) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_LAM_HI
             return
@@ -391,7 +399,7 @@ contains
       real(RD) :: lam_max
       real(RD) :: lam_min_pb
       real(RD) :: lam_max_pb
-      real(RD) :: c(self%n)
+      real(RD) :: c(self%n_b)
       integer  :: i
       real(RD) :: P
 
@@ -424,7 +432,7 @@ contains
 
       c = 0._RD
 
-      coeff_loop : do i = 1, self%m
+      coeff_loop : do i = 1, self%n_lam
 
          ! Evaluate the passthrough
 
@@ -456,12 +464,13 @@ contains
       type(specint_t), intent(out)   :: si
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)   :: type
-      real(RD), allocatable :: lam(:)
-      real(RD), allocatable :: c(:,:)
-      type(hdf5io_t)        :: hi_li
-      type(limb_t)          :: li
-      logical               :: low_acc
+      character(TYPE_LEN)         :: type
+      real(RD), allocatable       :: c(:,:)
+      type(hdf5io_t)              :: hi_ra
+      class(range_t), allocatable :: ra
+      type(hdf5io_t)              :: hi_li
+      type(limb_t)                :: li
+      logical                     :: low_acc
 
       ! Read the specint_t
 
@@ -477,14 +486,17 @@ contains
 
       call hi%read_attr('low_acc', low_acc)
 
-      call hi%alloc_read_dset('lam', lam)
       call hi%alloc_read_dset('c', c)
+
+      hi_ra = hdf5io_t(hi, 'ra')
+      call read(hi_ra, ra)
+      call hi_ra%final()
 
       hi_li = hdf5io_t(hi, 'li')
       call read(hi_li, li)
       call hi_li%final()
 
-      si = specint_t(c, lam, li, low_acc)
+      si = specint_t(c, ra, li, low_acc)
 
       ! Finish
 
@@ -503,6 +515,7 @@ contains
 
       real(RD)       :: lam_min
       real(RD)       :: lam_max
+      type(hdf5io_t) :: hi_ra
       type(hdf5io_t) :: hi_li
 
       ! Write the specint_t
@@ -516,7 +529,9 @@ contains
 
       call hi%write_attr('low_acc', si%low_acc)
 
-      call hi%write_dset('lam', si%lam)
+      hi_ra = hdf5io_t(hi, 'ra')
+      call write(hi_ra, si%ra)
+      call hi_ra%final()
 
       if (si%low_acc) then
          call hi%write_dset('c', REAL(si%c, RS))

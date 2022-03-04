@@ -100,7 +100,7 @@ contains
       rank = SIZE(ax)
 
       do j = 1, rank
-         call ax(j)%inquire(n_x=shape(j))
+         call ax(j)%inquire(n=shape(j))
       end do
 
       @:CHECK_BOUNDS(SIZE(mask), PRODUCT(shape))
@@ -505,13 +505,14 @@ contains
       real(RD), intent(out)          :: vu(:)
       integer, intent(out), optional :: stat
 
-      integer  :: j
-      integer  :: si
-      integer  :: vi(self%rank)
-      integer  :: li
-      integer  :: l
-      integer  :: i
-      real(RD) :: x(4)
+      integer              :: j
+      character(LABEL_LEN) :: label
+      integer              :: si
+      integer              :: vi(self%rank)
+      integer              :: li
+      integer              :: l
+      integer              :: i
+      real(RD)             :: x(4)
 
       @:CHECK_BOUNDS(SIZE(vx), self%rank)
       @:CHECK_BOUNDS(SIZE(vi_cl), self%rank)
@@ -526,11 +527,28 @@ contains
 
       do j = 1, self%rank
 
-         call self%ax(j)%locate(vx(j), vi_cl(j), stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         end if
+         call self%ax(j)%locate(vx(j), vi_cl(j))
 
+         if (vi_cl(j) < 1) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+               return
+            else
+               call self%ax(j)%inquire(label=label)
+               @:ABORT('out-of-bounds (lo) on '//label//' axis')
+            endif
+         endif
+
+         if (vi_cl(j) > self%shape(j)) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+               return
+            else
+               call self%ax(j)%inquire(label=label)
+               @:ABORT('out-of-bounds (hi) on '//label//' axis')
+            endif
+         endif
+         
       end do
 
       ! Set up the mask
@@ -561,7 +579,7 @@ contains
             elseif (i > self%shape(j)) then
                x(l) = HUGE(0._RD)
             else
-               call self%ax(j)%get_x(i, x(l))
+               call self%ax(j)%get(i, x(l))
             endif
 
          end do
