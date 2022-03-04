@@ -1,5 +1,5 @@
 ! Submodule : range_sm
-! Purpose   : I/O routines for range_m
+! Purpose   : Factory & I/O routines for range_m
 !
 ! Copyright 2022 Rich Townsend & The MSG Team
 !
@@ -24,7 +24,9 @@ submodule (range_m) range_sm
    use kinds_m
    use hdf5io_m
 
-   use tab_range_m, read_tr => read, write_tr => write
+   use lin_range_m, read_lin => read, write_lin => write
+   use log_range_m, read_log => read, write_log => write
+   use tab_range_m, read_tab => read, write_tab => write
 
    use ISO_FORTRAN_ENV
 
@@ -34,6 +36,34 @@ submodule (range_m) range_sm
 
 contains
 
+   function range_t_subset_(ra_in, i_a, i_b) result(ra)
+
+      class(range_t), intent(in)  :: ra_in
+      integer, intent(in)         :: i_a
+      integer, intent(in)         :: i_b
+      class(range_t), allocatable :: ra
+
+      ! Construct the range_t by subsetting ra_in
+
+      select type(ra_in)
+      type is(lin_range_t)
+         ra = lin_range_t(ra_in, i_a, i_b)
+      type is (log_range_t)
+         ra = log_range_t(ra_in, i_a, i_b)
+      type is(tab_range_t)
+         ra = tab_range_t(ra_in, i_a, i_b)
+      class default
+         @:ABORT('invalid type')
+      end select
+
+      ! Finish
+
+      return
+
+   end function range_t_subset_
+         
+   !****
+   
    subroutine read_(hi, ra)
 
       type(hdf5io_t), intent(inout)            :: hi
@@ -46,6 +76,10 @@ contains
       call hi%read_attr('TYPE', type)
 
       select case(type)
+      case('lin_range_t')
+         allocate(lin_range_t::ra)
+      case('log_range_t')
+         allocate(log_range_t::ra)
       case('tab_range_t')
          allocate(tab_range_t::ra)
       case default
@@ -53,8 +87,12 @@ contains
       end select
 
       select type(ra)
+      type is (lin_range_t)
+         call read_lin(hi, ra)
+      type is (log_range_t)
+         call read_log(hi, ra)
       type is (tab_range_t)
-         call read_tr(hi, ra)
+         call read_tab(hi, ra)
       class default
          @:ABORT('invalid type')
       end select
@@ -75,8 +113,12 @@ contains
       ! Write the range_t
 
       select type(ra)
+      type is (lin_range_t)
+         call write_lin(hi, ra)
+      type is (log_range_t)
+         call write_log(hi, ra)
       type is (tab_range_t)
-         call write_tr(hi, ra)
+         call write_tab(hi, ra)
       class default
          @:ABORT('invalid type')
       end select

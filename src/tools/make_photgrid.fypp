@@ -136,7 +136,7 @@ contains
 
       do j = 1, rank
          k = unique_indices(node_x(j,:))
-         ax(j) = axis_t(node_x(j,k), labels(j))
+         ax(j) = axis_t(tab_range_t(node_x(j,k)), labels(j))
          shape(j) = SIZE(k)
       end do
 
@@ -162,7 +162,7 @@ contains
          do j = 1, rank
 
             do i = 1, shape(j)
-               call ax(j)%get_x(i, x)
+               call ax(j)%get(i, x)
                if (node_x(j,n) == x) exit
             end do
             

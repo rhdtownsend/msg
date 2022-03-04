@@ -27,6 +27,10 @@ module msg_m
    use passband_m
    use photgrid_m
    use photint_m
+   use range_m
+   use lin_range_m, only: lin_range_t
+   use log_range_m, only: log_range_t
+   use tab_range_m, only: tab_range_t
    use specgrid_m
    use specint_m
    use stat_m

@@ -1,0 +1,259 @@
+! Module  : log_range_m
+! Purpose : define log_range_t type, representing a logarithmically
+!           distributed range
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module log_range_m
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+   use order_m, locate_ => locate
+   use stat_m
+
+   use lin_range_m, only: lin_range_t, read_lin => read, write_lin => write
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(lin_range_t) :: log_range_t
+   contains
+      private
+      procedure, public :: inquire
+      procedure, public :: get
+      procedure, public :: get_all
+      procedure, public :: locate
+   end type log_range_t
+
+   ! Interfaces
+
+   interface log_range_t
+      module procedure log_range_t_
+      module procedure log_range_t_subset_
+   end interface log_range_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: log_range_t
+   public :: read
+   public :: write
+
+contains
+
+   function log_range_t_(logx_0, dlogx, n) result (ra)
+
+     real(RD), intent(in) :: logx_0
+     real(RD), intent(in) :: dlogx
+     integer, intent(in)  :: n
+     type(log_range_t)    :: ra
+
+     ! Construct the log_range_t from the supplied data
+
+     ra%lin_range_t = lin_range_t(logx_0, dlogx, n)
+
+     ! Finish
+
+     return
+
+   end function log_range_t_
+
+   !****
+
+   function log_range_t_subset_(ra_in, i_a, i_b) result(ra)
+
+     type(log_range_t), intent(in) :: ra_in
+     integer, intent(in)           :: i_a
+     integer, intent(in)           :: i_b
+     type(log_range_t)             :: ra
+
+     ! Construct the log_range_t by subsetting ra_in
+
+     ra%lin_range_t = lin_range_t(ra_in%lin_range_t, i_a, i_b)
+
+     ! Finish
+
+     return
+
+   end function log_range_t_subset_
+
+   !****
+
+   subroutine inquire(self, n, min, max)
+
+      class(log_range_t), intent(in)  :: self
+      integer, intent(out), optional  :: n
+      real(RD), intent(out), optional :: min
+      real(RD), intent(out), optional :: max
+
+      ! Inquire metadata
+
+      call self%lin_range_t%inquire(n=n, min=min, max=max)
+
+      if (PRESENT(min)) min = EXP(min)
+      if (PRESENT(max)) max = EXP(max)
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine get(self, i, x, stat)
+
+      class(log_range_t), intent(in) :: self
+      integer, intent(in)            :: i
+      real(RD), intent(out)          :: x
+      integer, intent(out), optional :: stat
+
+      ! Get the i'th value
+
+      call self%lin_range_t%get(i, x, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+
+      x = EXP(x)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine get
+
+   !****
+
+   subroutine get_all(self, x)
+
+      class(log_range_t), intent(in) :: self
+      real(RD), intent(out)          :: x(:)
+
+      ! Get all values
+
+      call self%lin_range_t%get_all(x)
+
+      x = EXP(x)
+
+      ! Finish
+
+      return
+
+   end subroutine get_all
+
+   !****
+
+   subroutine locate(self, x, i, right)
+
+      class(log_range_t), intent(in) :: self
+      real(RD), intent(in)           :: x
+      integer, intent(inout)         :: i
+      logical, intent(in), optional  :: right
+
+      ! Locate where in the range x falls
+
+      call self%lin_range_t%locate(LOG(x), i, right=right)
+
+      ! Finish
+
+      return
+
+   end subroutine locate
+
+   !****
+
+   subroutine read_(hi, ra, skip_type)
+
+      type(hdf5io_t), intent(inout)  :: hi
+      type(log_range_t), intent(out) :: ra
+      logical, intent(in), optional  :: skip_type
+
+      logical             :: skip_type_
+      character(TYPE_LEN) :: type
+
+      if (PRESENT(skip_type)) then
+         skip_type_ = skip_type
+      else
+         skip_type_ = .FALSE.
+      endif
+
+      ! Read the log_range_t
+
+      if (.NOT. skip_type_) then
+         call hi%read_attr('TYPE', type)
+         @:ASSERT(type == 'log_range_t', 'invalid type')
+      endif
+
+      call read_lin(hi, ra%lin_range_t, skip_type=.TRUE.)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, ra, skip_type)
+
+      type(hdf5io_t), intent(inout)  :: hi
+      class(log_range_t), intent(in) :: ra
+      logical, intent(in), optional  :: skip_type
+
+      logical :: skip_type_
+
+      if (PRESENT(skip_type)) then
+         skip_type_ = skip_type
+      else
+         skip_type_ = .FALSE.
+      endif
+
+      ! Write the log_range_t
+
+      if (.NOT. skip_type_) then
+         call hi%write_attr('TYPE', 'log_range_t')
+      endif
+
+      call write_lin(hi, ra%lin_range_t, skip_type=.TRUE.)
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+end module log_range_m

@@ -36,8 +36,8 @@ module range_m
    contains
       procedure(inquire_), deferred :: inquire
       procedure(get_), deferred     :: get
+      procedure(get_all_), deferred :: get_all
       procedure(locate_), deferred  :: locate
-      procedure(expand_), deferred  :: expand
    end type range_t
 
    ! Interfaces
@@ -62,23 +62,35 @@ module range_m
          integer, intent(out), optional :: stat
       end subroutine get_
 
-      subroutine locate_(self, x, i)
-         use kinds_m
-         import range_t
-         class(range_t), intent(in)     :: self
-         real(RD), intent(in)           :: x
-         integer, intent(inout)         :: i
-      end subroutine locate_
-
-      subroutine expand_(self, x)
+      subroutine get_all_(self, x)
          use kinds_m
          import range_t
          class(range_t), intent(in)  :: self
          real(RD), intent(out)       :: x(:)
-      end subroutine expand_
+      end subroutine get_all_
+
+      subroutine locate_(self, x, i, right)
+         use kinds_m
+         import range_t
+         class(range_t), intent(in)    :: self
+         real(RD), intent(in)          :: x
+         integer, intent(inout)        :: i
+         logical, intent(in), optional :: right
+      end subroutine locate_
 
    end interface
 
+   interface range_t
+
+      module function range_t_subset_(ra_in, i_a, i_b) result(ra)
+        class(range_t), intent(in)  :: ra_in
+        integer, intent(in)         :: i_a
+        integer, intent(in)         :: i_b
+        class(range_t), allocatable :: ra
+      end function range_t_subset_
+
+   end interface range_t
+   
    interface read
 
       module subroutine read_(hi, ra)
