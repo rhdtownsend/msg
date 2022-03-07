@@ -96,7 +96,7 @@ program ferre_to_specint
       ! Process the data
 
       write(specint_filename, 100) specint_prefix, l, '.h5'
-100   format(A,I5.5,A)
+100   format(A,I8.8,A)
 
       select case (ferre_filetype)
       case ('CAP18')
