@@ -85,7 +85,7 @@ contains
 
       ! Construct the lin_range_t from the supplied data
 
-      @:ASSERT(n >= 2,'insufficient data')
+      @:ASSERT(n >= 1,'insufficient data')
 
       ra%x_0 = x_0
       ra%dx = dx

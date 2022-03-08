@@ -86,7 +86,7 @@ contains
 
       n = SIZE(x)
 
-      @:ASSERT(n >= 2,'insufficient data')
+      @:ASSERT(n >= 1,'insufficient data')
       @:ASSERT_DEBUG(ALL(x(2:) > x(:n-1)),'non-monotonic data')
 
       ra%x = x
