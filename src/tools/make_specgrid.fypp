@@ -85,6 +85,7 @@ contains
       type(axis_t), allocatable         :: ax(:)
       integer, allocatable              :: shape(:)
       integer, allocatable              :: k(:)
+      type(tab_range_t)                 :: ra
       integer                           :: n_li
       logical, allocatable              :: mask(:)
       integer, allocatable              :: vi(:)
@@ -138,7 +139,8 @@ contains
 
       do j = 1, rank
          k = unique_indices(node_x(j,:))
-         ax(j) = axis_t(tab_range_t(node_x(j,k)), labels(j))
+         ra = tab_range_t(node_x(j,k))
+         ax(j) = axis_t(ra, labels(j))
          shape(j) = SIZE(k)
       end do
 
