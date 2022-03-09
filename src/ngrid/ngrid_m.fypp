@@ -549,6 +549,8 @@ contains
             endif
          endif
          
+         if (vi_cl(j) == self%shape(j)) vi_cl(j) = vi_cl(j) - 1
+
       end do
 
       ! Set up the mask

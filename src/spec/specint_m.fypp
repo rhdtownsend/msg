@@ -363,7 +363,8 @@ contains
       ! rebin)
 
       call locate(self%lam, lam(1), i)
-      if (i == self%n_lam) i = i-1
+
+      if (i == self%n_lam) i = i - 1
 
       j = 1
 
