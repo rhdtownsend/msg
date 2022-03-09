@@ -328,20 +328,20 @@ contains
       real(RD), intent(out)           :: f(:)
       integer, intent(out), optional  :: stat
 
+      integer  :: n_lam
       integer  :: i
       integer  :: j
-      integer  :: m
       real(RD) :: lam_a
       real(RD) :: lam_b
 
       @:CHECK_BOUNDS(SIZE(b), self%n_b)
       @:CHECK_BOUNDS(SIZE(f), SIZE(lam)-1)
 
-      ! Set up indices
-         
-      call locate(self%lam, lam(1), i)
+      ! Check lam is valid
 
-      if (i < 1) then
+      n_lam = SIZE(lam)
+
+      if (lam(1) < self%lam(1)) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_LAM_LO
             return
@@ -350,7 +350,7 @@ contains
          endif
       endif
 
-      if (i >= self%n_lam) then
+      if (lam(n_lam) > self%lam(self%n_lam)) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_LAM_HI
             return
@@ -359,17 +359,19 @@ contains
          endif
       endif
 
-      j = 1
-      m = SIZE(f)
-
       ! Perform the interpolation (conservative piecewise-constant
       ! rebin)
+
+      call locate(self%lam, lam(1), i)
+      if (i == self%n_lam) i = i-1
+
+      j = 1
 
       f = 0._RD
 
       interp_loop : do
 
-         if (j > m) exit interp_loop
+         if (j >= n_lam) exit interp_loop
 
          lam_a = MAX(self%lam(i), lam(j))
          lam_b = MIN(self%lam(i+1), lam(j+1))
@@ -435,7 +437,7 @@ contains
 
       c = 0._RD
 
-      coeff_loop : do i = 1, self%n_lam
+      coeff_loop : do i = 1, self%n_lam-1
 
          ! Evaluate the passthrough
 

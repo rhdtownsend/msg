@@ -511,11 +511,11 @@ contains
 
    function interp_ (self, x, n, g) result (f)
 
-      class(cubint_t), intent(in)   :: self
-      real(RD), intent(in)          :: x(:)
-      integer, intent(in)           :: n
-      real(RD), intent(in),optional :: g(:)
-      real(RD)                      :: f(SIZE(x))
+      class(cubint_t), intent(in)    :: self
+      real(RD), intent(in)           :: x(:)
+      integer, intent(in)            :: n
+      real(RD), intent(in), optional :: g(:)
+      real(RD)                       :: f(SIZE(x))
 
       integer  :: i
       integer  :: j
@@ -535,7 +535,9 @@ contains
          ! Update the bracketing index
 
          call locate(self%x, x(j), i)
-         @:ASSERT(i > 0 .AND. i < self%n, 'out-of-bounds interpolation')
+         @:ASSERT(i >= 1 .AND. i <= self%n, 'out-of-bounds interpolation')
+
+         if (i == self%n) i = i-1
 
          ! Set up the interpolation weights
 
