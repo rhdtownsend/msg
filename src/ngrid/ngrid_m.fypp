@@ -22,9 +22,7 @@ module ngrid_m
 
    ! Uses
    
-   use kinds_m
-   use hdf5io_m
-   use order_m
+   use forum_m, locate_ => locate
 
    use axis_m
    use ncubic_m
@@ -43,13 +41,19 @@ module ngrid_m
       type(axis_t), allocatable :: ax(:)
       logical, allocatable      :: mask(:)
       integer, allocatable      :: shape(:)
+      integer, allocatable      :: li_ci(:)
+      integer, allocatable      :: ci_li(:)
       integer                   :: rank
+      integer                   :: n_ci
       integer                   :: n_li
       integer                   :: n_si
    contains
       private
       procedure, public :: inquire
+      procedure, public :: locate
       procedure, public :: map
+      procedure, public :: ci_from_li
+      procedure, public :: li_from_ci
       procedure, public :: li_from_vi
       procedure, public :: vi_from_li
       procedure         :: vi_from_si_
@@ -94,6 +98,8 @@ contains
       integer :: rank
       integer :: j
       integer :: shape(SIZE(ax))
+      integer :: ci
+      integer :: li
 
       ! Construct the ngrid_t
 
@@ -111,7 +117,12 @@ contains
       ng%shape = shape
       ng%rank = rank
 
-      ng%n_li = PRODUCT(shape)
+      ng%n_ci = COUNT(mask)
+      ng%n_li = SIZE(mask)
+
+      ng%ci_li = UNPACK([(ci, ci=1,ng%n_ci)], mask, 0)
+      ng%li_ci = PACK([(li, li=1,ng%n_li)], ng%ci_li /= 0)
+
       ng%n_si = 4**rank
 
       ! Finish
@@ -122,9 +133,11 @@ contains
 
    !****
 
-   subroutine inquire(self, shape, rank, axis_min, axis_max, axis_labels)
+   subroutine inquire(self, n_ci, n_li, shape, rank, axis_min, axis_max, axis_labels)
 
       class(ngrid_t), intent(in)          :: self
+      integer, intent(out), optional      :: n_ci
+      integer, intent(out), optional      :: n_li
       integer, intent(out), optional      :: shape(:)
       integer, intent(out), optional      :: rank
       real(RD), intent(out), optional     :: axis_min(:)
@@ -150,6 +163,9 @@ contains
       end if
 
       ! Inquire metadata
+
+      if (PRESENT(n_ci)) n_ci = self%n_ci
+      if (PRESENT(n_li)) n_li = self%n_li
 
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
@@ -180,6 +196,57 @@ contains
 
    !****
 
+   subroutine locate(self, vx, vi, stat)
+
+      class(ngrid_t), intent(in)     :: self
+      real(RD), intent(in)           :: vx(:)
+      integer, intent(out)           :: vi(:)
+      integer, intent(out), optional :: stat
+
+      integer              :: j
+      character(LABEL_LEN) :: label
+
+      @:CHECK_BOUNDS(SIZE(vx), self%rank)
+      @:CHECK_BOUNDS(SIZE(vi), self%rank)
+
+      ! Locate vx in the grid
+
+      do j = 1, self%rank
+
+         call self%ax(j)%locate(vx(j), vi(j))
+
+         if (vi(j) < 1) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+               return
+            else
+               call self%ax(j)%inquire(label=label)
+               @:ABORT('out-of-bounds (lo) on '//label//' axis')
+            endif
+         endif
+
+         if (vi(j) > self%shape(j)) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+               return
+            else
+               call self%ax(j)%inquire(label=label)
+               @:ABORT('out-of-bounds (hi) on '//label//' axis')
+            endif
+         endif
+
+      end do
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine locate
+
+   !****
+
    subroutine map(self, map_proc, stat)
 
       class(ngrid_t), intent(in) :: self
@@ -195,7 +262,7 @@ contains
       integer :: li
       integer :: vi(self%rank)
 
-      ! Apply the map_proc function to each node in the grid
+      ! Apply the map_proc function to each unmasked node in the grid
 
       map_loop : do li = 1, self%n_li
 
@@ -217,6 +284,42 @@ contains
       return
 
    end subroutine map
+
+   !****
+
+   function ci_from_li(self, li) result(ci)
+
+      class(ngrid_t), intent(in) :: self
+      integer, intent(in)        :: li
+      integer                    :: ci
+
+      ! Calculate a contiguous index from a linear index
+
+      ci = self%ci_li(li)
+
+      ! Finish
+
+      return
+
+   end function ci_from_li
+
+   !****
+
+   function li_from_ci(self, ci) result(li)
+
+      class(ngrid_t), intent(in) :: self
+      integer, intent(in)        :: ci
+      integer                    :: li
+
+      ! Calculate a linear index from a contiguous index
+
+      li = self%li_ci(ci)
+
+      ! Finish
+
+      return
+
+   end function li_from_ci
 
    !****
 
@@ -505,14 +608,13 @@ contains
       real(RD), intent(out)          :: vu(:)
       integer, intent(out), optional :: stat
 
-      integer              :: j
-      character(LABEL_LEN) :: label
-      integer              :: si
-      integer              :: vi(self%rank)
-      integer              :: li
-      integer              :: l
-      integer              :: i
-      real(RD)             :: x(4)
+      integer  :: j
+      integer  :: si
+      integer  :: vi(self%rank)
+      integer  :: li
+      integer  :: l
+      integer  :: i
+      real(RD) :: x(4)
 
       @:CHECK_BOUNDS(SIZE(vx), self%rank)
       @:CHECK_BOUNDS(SIZE(vi_cl), self%rank)
@@ -525,33 +627,12 @@ contains
 
       ! Locate the interpolation cell
 
-      do j = 1, self%rank
+      call self%locate(vx, vi_cl, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
-         call self%ax(j)%locate(vx(j), vi_cl(j))
-
-         if (vi_cl(j) < 1) then
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_AXIS_LO
-               return
-            else
-               call self%ax(j)%inquire(label=label)
-               @:ABORT('out-of-bounds (lo) on '//label//' axis')
-            endif
-         endif
-
-         if (vi_cl(j) > self%shape(j)) then
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_AXIS_HI
-               return
-            else
-               call self%ax(j)%inquire(label=label)
-               @:ABORT('out-of-bounds (hi) on '//label//' axis')
-            endif
-         endif
-         
-         if (vi_cl(j) == self%shape(j)) vi_cl(j) = vi_cl(j) - 1
-
-      end do
+      vi_cl = MIN(vi_cl, self%shape-1)
 
       ! Set up the mask
 
@@ -633,8 +714,11 @@ contains
 
       ax_loop : do j = 1, rank
          hi_ax = hdf5io_t(hi, ax_name_(j))
-         call read(hi_ax, ax(j))
+         call read(hi_ax, ax(j), stat)
          call hi_ax%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
       end do ax_loop
 
       call hi%alloc_read_dset('mask', mask)
@@ -651,10 +735,11 @@ contains
 
    !****
 
-   subroutine write_(hi, ng)
+   subroutine write_(hi, ng, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(ngrid_t), intent(in)     :: ng
+      type(hdf5io_t), intent(inout)  :: hi
+      type(ngrid_t), intent(in)      :: ng
+      integer, intent(out), optional :: stat
 
       integer        :: j
       type(hdf5io_t) :: hi_ax
@@ -668,13 +753,18 @@ contains
 
       do j = 1, ng%rank
          hi_ax = hdf5io_t(hi, ax_name_(j))
-         call write(hi_ax, ng%ax(j))
+         call write(hi_ax, ng%ax(j), stat)
          call hi_ax%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
       end do
 
       call hi%write_dset('mask', ng%mask)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
