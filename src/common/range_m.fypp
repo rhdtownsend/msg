@@ -20,12 +20,6 @@
 
 module range_m
 
-   ! Uses
-
-   use kinds_m
-
-   use ISO_FORTRAN_ENV
-
    ! No implicit typing
 
    implicit none
@@ -93,20 +87,22 @@ module range_m
    
    interface read
 
-      module subroutine read_(hi, ra)
+      module subroutine read_(hi, ra, stat)
          use hdf5io_m
          type(hdf5io_t), intent(inout)            :: hi
          class(range_t), allocatable, intent(out) :: ra
+         integer, intent(out), optional           :: stat
       end subroutine read_
 
    end interface read
 
    interface write
 
-      module subroutine write_(hi, ra)
+      module subroutine write_(hi, ra, stat)
          use hdf5io_m
          type(hdf5io_t), intent(inout)  :: hi
-         class(range_t), intent(in)    :: ra
+         class(range_t), intent(in)     :: ra
+         integer, intent(out), optional :: stat
       end subroutine write_
 
    end interface write

@@ -22,10 +22,7 @@ module log_range_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use order_m, locate_ => locate
-   use stat_m
+   use forum_m, locate_ => locate
 
    use lin_range_m, only: lin_range_t, read_lin => read, write_lin => write
    use stat_m
@@ -196,10 +193,11 @@ contains
 
    !****
 
-   subroutine read_(hi, ra, skip_type)
+   subroutine read_(hi, ra, stat, skip_type)
 
       type(hdf5io_t), intent(inout)  :: hi
       type(log_range_t), intent(out) :: ra
+      integer, intent(out), optional :: stat
       logical, intent(in), optional  :: skip_type
 
       logical             :: skip_type_
@@ -215,10 +213,16 @@ contains
 
       if (.NOT. skip_type_) then
          call hi%read_attr('TYPE', type)
-         @:ASSERT(type == 'log_range_t', 'invalid type')
-      endif
+         if (type /= 'log_range_t') then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_TYPE
+            else
+               @:ABORT('invalid type')
+            end if
+         end if
+      end if
 
-      call read_lin(hi, ra%lin_range_t, skip_type=.TRUE.)
+      call read_lin(hi, ra%lin_range_t, stat=stat, skip_type=.TRUE.)
 
       ! Finish
 
@@ -228,10 +232,11 @@ contains
 
    !****
 
-   subroutine write_(hi, ra, skip_type)
+   subroutine write_(hi, ra, stat, skip_type)
 
       type(hdf5io_t), intent(inout)  :: hi
       class(log_range_t), intent(in) :: ra
+      integer, intent(out), optional :: stat
       logical, intent(in), optional  :: skip_type
 
       logical :: skip_type_
@@ -248,7 +253,7 @@ contains
          call hi%write_attr('TYPE', 'log_range_t')
       endif
 
-      call write_lin(hi, ra%lin_range_t, skip_type=.TRUE.)
+      call write_lin(hi, ra%lin_range_t, stat=stat, skip_type=.TRUE.)
 
       ! Finish
 

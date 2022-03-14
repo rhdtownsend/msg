@@ -22,10 +22,7 @@ module tab_range_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use order_m, locate_ => locate
-   use stat_m
+   use forum_m, locate_ => locate
 
    use range_m, only: range_t
    use stat_m
@@ -219,10 +216,11 @@ contains
 
    !****
 
-   subroutine read_(hi, ra)
+   subroutine read_(hi, ra, stat)
 
       type(hdf5io_t), intent(inout)  :: hi
       type(tab_range_t), intent(out) :: ra
+      integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
       real(RD), allocatable :: x(:)
@@ -230,7 +228,14 @@ contains
       ! Read the tab_range_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'tab_range_t', 'invalid type')
+      if (type /= 'tab_range_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
 
       call hi%alloc_read_dset('x', x)
   
@@ -238,16 +243,19 @@ contains
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
    end subroutine read_
 
    !****
 
-   subroutine write_(hi, ra)
+   subroutine write_(hi, ra, stat)
 
       type(hdf5io_t), intent(inout)  :: hi
       class(tab_range_t), intent(in) :: ra
+      integer, intent(out), optional :: stat
 
       ! Write the tab_range_t
 
@@ -256,6 +264,8 @@ contains
       call hi%write_dset('x', ra%x)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

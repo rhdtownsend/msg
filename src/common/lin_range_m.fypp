@@ -22,10 +22,7 @@ module lin_range_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use order_m, locate_ => locate
-   use stat_m
+   use forum_m, locate_ => locate
 
    use range_m, only: range_t
    use stat_m
@@ -224,10 +221,11 @@ contains
 
    !****
 
-   subroutine read_(hi, ra, skip_type)
+   subroutine read_(hi, ra, stat, skip_type)
 
       type(hdf5io_t), intent(inout)  :: hi
       type(lin_range_t), intent(out) :: ra
+      integer, intent(out), optional :: stat
       logical, intent(in), optional  :: skip_type
 
       logical             :: skip_type_
@@ -246,8 +244,15 @@ contains
 
       if (.NOT. skip_type_) then
          call hi%read_attr('TYPE', type)
-         @:ASSERT(type == 'lin_range_t', 'invalid type')
-      endif
+         if (type /= 'lin_range_t') then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_TYPE
+               return
+            else
+               @:ABORT('invalid type')
+            end if
+         end if
+      end if
 
       call hi%read_dset('x_0', x_0)
       call hi%read_dset('dx', dx)
@@ -257,16 +262,19 @@ contains
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
    end subroutine read_
 
    !****
 
-   subroutine write_(hi, ra, skip_type)
+   subroutine write_(hi, ra, stat, skip_type)
 
       type(hdf5io_t), intent(inout)  :: hi
       class(lin_range_t), intent(in) :: ra
+      integer, intent(out), optional :: stat
       logical, intent(in), optional  :: skip_type
 
       logical :: skip_type_
@@ -288,6 +296,8 @@ contains
       call hi%write_dset('n', ra%n)
      
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

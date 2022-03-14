@@ -604,10 +604,11 @@ contains
 
    !****
       
-   subroutine read_(hi, li)
+   subroutine read_(hi, li, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(limb_t), intent(out)     :: li
+      type(hdf5io_t), intent(inout)  :: hi
+      type(limb_t), intent(out)      :: li
+      integer, intent(out), optional :: stat
 
       character(TYPE_LEN) :: type
       character(STR_LEN)  :: str
@@ -615,7 +616,14 @@ contains
       ! Read the limb_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'limb_t', 'invalid type')
+      if (type /= 'limb_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         end if
+      end if
 
       call hi%read_attr('law', str)
   
@@ -623,16 +631,19 @@ contains
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
    end subroutine read_
 
    !****
 
-   subroutine write_ (hi, li)
+   subroutine write_ (hi, li, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(limb_t), intent(in)      :: li
+      type(hdf5io_t), intent(inout)  :: hi
+      type(limb_t), intent(in)       :: li
+      integer, intent(out), optional :: stat
 
       ! Write the limb_t
 
@@ -641,6 +652,8 @@ contains
       call hi%write_attr('law', law_to_str_(li%law))
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

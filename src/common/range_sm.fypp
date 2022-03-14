@@ -64,10 +64,11 @@ contains
          
    !****
    
-   subroutine read_(hi, ra)
+   subroutine read_(hi, ra, stat)
 
       type(hdf5io_t), intent(inout)            :: hi
       class(range_t), allocatable, intent(out) :: ra
+      integer, intent(out), optional           :: stat
 
       character(TYPE_LEN) :: type
 
@@ -88,11 +89,11 @@ contains
 
       select type(ra)
       type is (lin_range_t)
-         call read_lin(hi, ra)
+         call read_lin(hi, ra, stat)
       type is (log_range_t)
-         call read_log(hi, ra)
+         call read_log(hi, ra, stat)
       type is (tab_range_t)
-         call read_tab(hi, ra)
+         call read_tab(hi, ra, stat)
       class default
          @:ABORT('invalid type')
       end select
@@ -105,20 +106,21 @@ contains
 
    !****
 
-   subroutine write_(hi, ra)
+   subroutine write_(hi, ra, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      class(range_t), intent(in)    :: ra
+      type(hdf5io_t), intent(inout)  :: hi
+      class(range_t), intent(in)     :: ra
+      integer, intent(out), optional :: stat
 
       ! Write the range_t
 
       select type(ra)
       type is (lin_range_t)
-         call write_lin(hi, ra)
+         call write_lin(hi, ra, stat)
       type is (log_range_t)
-         call write_log(hi, ra)
+         call write_log(hi, ra, stat)
       type is (tab_range_t)
-         call write_tab(hi, ra)
+         call write_tab(hi, ra, stat)
       class default
          @:ABORT('invalid type')
       end select
