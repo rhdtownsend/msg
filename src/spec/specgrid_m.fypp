@@ -25,9 +25,6 @@ module specgrid_m
    use forum_m
 
    use ngrid_m
-!   use passband_m
-!   use photint_m
-!   use photgrid_m
    use specint_m
    use spectable_m
    use stat_m
@@ -248,64 +245,6 @@ contains
       end subroutine interp_${name}$
 
    #:endfor
-
-   ! !****
-
-   ! subroutine apply_passband(self, pb, pg, stat)
-
-   !    class(specgrid_t), intent(inout) :: self
-   !    type(passband_t), intent(in)     :: pb
-   !    type(photgrid_t), intent(out)    :: pg
-   !    integer, intent(out), optional   :: stat
-
-   !    integer                      :: n_li
-   !    type(photint_t), allocatable :: pi(:)
- 
-   !    ! Apply the passband, to yield a photint_t
-
-   !    ! Evaluate the photint_t data
-
-   !    n_li = PRODUCT(self%shape)
-
-   !    allocate(pi(n_li))
-
-   !    call self%ng%map(apply_passband_proc_, stat)
-   !    if (PRESENT(stat)) then
-   !       if (stat /= STAT_OK) return
-   !    endif
-
-   !    ! Create the photgrid_t
-
-   !    pg = photgrid_t(pi, self%ng)
-
-   !    ! Finish
-
-   !    if (PRESENT(stat)) stat = STAT_OK
-
-   !    return
-
-   ! contains
-
-   !    subroutine apply_passband_proc_(vi, stat)
-
-   !       integer, intent(in)            :: vi(:)
-   !       integer, intent(out), optional :: stat
-
-   !       integer  :: li
-
-   !       ! Construct the photint_t
-         
-   !       li = self%ng%li_from_vi(vi)
-
-   !       call self%st%apply_passband(li, pb, pi(li), stat)
-
-   !       ! Finish
-
-   !       return
-
-   !    end subroutine apply_passband_proc_
-
-   ! end subroutine apply_passband
 
    !****
 
