@@ -46,7 +46,8 @@ contains
       real(RD)                  :: lam_min
       real(RD)                  :: lam_max
       character(:), allocatable :: file_name
-      character(:), allocatable :: group_names(:)
+      character(:), allocatable :: group_name
+      character(:), allocatable :: subgroup_names(:)
       integer                   :: i
 
       ! Read the spectable_t
@@ -66,11 +67,11 @@ contains
       call hi%read_attr('lam_min', lam_min)
       call hi%read_attr('lam_max', lam_max)
 
-      call hi%inquire(file_name=file_name)
+      call hi%inquire(file_name=file_name, group_name=group_name)
 
-      group_names = [(si_group_name_(i), i=1,n)]
+      subgroup_names = [(si_subgroup_name_(i), i=1,n)]
 
-      st = hdf5_spectable_t(file_name, group_names, lam_min, lam_max)
+      st = hdf5_spectable_t(file_name, group_name//'/'//subgroup_names, lam_min, lam_max)
 
       ! Finish
 
@@ -113,7 +114,7 @@ contains
             if (stat /= STAT_OK) return
          end if
 
-         hi_si = hdf5io_t(hi, si_group_name_(i))
+         hi_si = hdf5io_t(hi, si_subgroup_name_(i))
          call write(hi_si, si, stat)
          call hi_si%final()
          if (PRESENT(stat)) then
@@ -130,7 +131,7 @@ contains
 
    !****
 
-   function si_group_name_(i) result(name)
+   function si_subgroup_name_(i) result(name)
 
       integer, intent(in) :: i
       character(256)      :: name
@@ -138,6 +139,6 @@ contains
       write(name, 100) i
 100   format('si(',I0,')')
       
-   end function si_group_name_
+   end function si_subgroup_name_
 
 end submodule spectable_sm
