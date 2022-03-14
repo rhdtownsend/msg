@@ -44,7 +44,8 @@ contains
       character(TYPE_LEN)       :: type
       integer                   :: n
       character(:), allocatable :: file_name
-      character(:), allocatable :: group_names(:)
+      character(:), allocatable :: group_name
+      character(:), allocatable :: subgroup_names(:)
       integer                   :: i
 
       ! Read the phottable_t
@@ -61,11 +62,11 @@ contains
 
       call hi%read_attr('n', n)
 
-      call hi%inquire(file_name=file_name)
+      call hi%inquire(file_name=file_name, group_name=group_name)
 
-      group_names = [(pi_group_name_(i), i=1,n)]
+      subgroup_names = [(pi_subgroup_name_(i), i=1,n)]
 
-      pt = hdf5_phottable_t(file_name, group_names)
+      pt = hdf5_phottable_t(file_name, group_name//'/'//subgroup_names)
 
       ! Finish
 
@@ -103,7 +104,7 @@ contains
             if (stat /= STAT_OK) return
          end if
 
-         hi_pi = hdf5io_t(hi, pi_group_name_(i))
+         hi_pi = hdf5io_t(hi, pi_subgroup_name_(i))
          call write(hi_pi, pi, stat)
          call hi_pi%final()
          if (PRESENT(stat)) then
@@ -120,7 +121,7 @@ contains
 
    !****
 
-   function pi_group_name_(i) result(name)
+   function pi_subgroup_name_(i) result(name)
 
       integer, intent(in) :: i
       character(256)      :: name
@@ -128,6 +129,6 @@ contains
       write(name, 100) i
 100   format('pi(',I0,')')
       
-   end function pi_group_name_
+   end function pi_subgroup_name_
 
 end submodule phottable_sm
