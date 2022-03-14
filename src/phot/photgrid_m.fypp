@@ -88,6 +88,7 @@ contains
       type(photgrid_t)               :: pg
 
       integer              :: n
+      integer              :: n_ci
       integer              :: rank
       integer, allocatable :: shape(:)
 
@@ -95,13 +96,13 @@ contains
 
       call pt%inquire(n=n)
 
-      call ng%inquire(rank=rank)
+      call ng%inquire(n_ci=n_ci, rank=rank)
+
+      @:CHECK_BOUNDS(n, n_ci)
 
       allocate(shape(rank))
 
       call ng%inquire(shape=shape)
-
-      @:CHECK_BOUNDS(n, PRODUCT(shape))
 
       pg%pt = pt
       pg%ng = ng
@@ -173,11 +174,13 @@ contains
             integer, intent(out), optional :: stat
 
             integer         :: li
+            integer         :: ci
             type(photint_t) :: pi
             
             li = self%ng%li_from_vi(vi)
+            ci = self%ng%ci_from_li(li)
 
-            call self%pt%fetch(li, pi, stat)
+            call self%pt%fetch(ci, pi, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
@@ -219,11 +222,13 @@ contains
             integer, intent(out), optional :: stat
 
             integer         :: li
+            integer         :: ci
             type(photint_t) :: pi
 
             li = self%ng%li_from_vi(vi)
+            ci = self%ng%ci_from_li(li)
 
-            call self%pt%fetch(li, pi, stat)
+            call self%pt%fetch(ci, pi, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
