@@ -1,0 +1,134 @@
+! Module  : phottable_sm
+! Purpose : factory & I/O routines for phottable_m
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (phottable_m) phottable_sm
+
+   ! Uses
+
+   use forum_m
+
+   use photint_m
+   use hdf5_phottable_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+contains
+
+   subroutine read_(hi, pt, stat)
+
+      type(hdf5io_t), intent(inout)                :: hi
+      class(phottable_t), allocatable, intent(out) :: pt
+      integer, intent(out), optional               :: stat
+
+      character(TYPE_LEN)       :: type
+      integer                   :: n
+      character(:), allocatable :: file_name
+      character(:), allocatable :: group_name
+      character(:), allocatable :: subgroup_names(:)
+      integer                   :: i
+
+      ! Read the phottable_t
+
+      call hi%read_attr('TYPE', type)
+      if (type /= 'phottable_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
+
+      call hi%read_attr('n', n)
+
+      call hi%inquire(file_name=file_name, group_name=group_name)
+
+      subgroup_names = [(pi_subgroup_name_(i), i=1,n)]
+
+      pt = hdf5_phottable_t(file_name, group_name//'/'//subgroup_names)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, pt, stat)
+
+      type(hdf5io_t), intent(inout)     :: hi
+      class(phottable_t), intent(inout) :: pt
+      integer, intent(out), optional    :: stat
+
+      integer         :: n
+      integer         :: i
+      type(photint_t) :: pi
+      type(hdf5io_t)  :: hi_pi
+
+      ! Write the phottable_t
+
+      call hi%write_attr('TYPE', 'phottable_t')
+
+      call pt%inquire(n=n)
+
+      call hi%write_attr('n', n)
+      
+      do i = 1, n
+
+         call pt%fetch(i, pi, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         hi_pi = hdf5io_t(hi, pi_subgroup_name_(i))
+         call write(hi_pi, pi, stat)
+         call hi_pi%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function pi_subgroup_name_(i) result(name)
+
+      integer, intent(in) :: i
+      character(256)      :: name
+
+      write(name, 100) i
+100   format('pi(',I0,')')
+      
+   end function pi_subgroup_name_
+
+end submodule phottable_sm

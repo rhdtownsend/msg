@@ -52,7 +52,7 @@ contains
     real(RD), intent(in) :: y(:)
     interface
        function f (x, n)
-         use kinds_m
+         use forum_m
          real(RD), intent(in) :: x
          integer, intent(in)  :: n
          real(RD)             :: f(n)
@@ -91,7 +91,7 @@ contains
     real(RD), intent(in) :: y(:,:)
     interface
        function f (x, n)
-         use kinds_m
+         use forum_m
          real(RD), intent(in) :: x
          integer, intent(in)  :: n
          real(RD)             :: f(n)

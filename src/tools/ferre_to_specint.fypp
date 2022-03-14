@@ -96,7 +96,7 @@ program ferre_to_specint
       ! Process the data
 
       write(specint_filename, 100) specint_prefix, l, '.h5'
-100   format(A,I5.5,A)
+100   format(A,I8.8,A)
 
       select case (ferre_filetype)
       case ('CAP18')
@@ -228,7 +228,7 @@ contains
       real(RD), allocatable             :: values(:)
       integer                           :: j
       integer                           :: k
-      real(RD), allocatable             :: lam(:)
+      type(log_range_t)                 :: ra
       real(RD), allocatable             :: I(:,:)
       type(limb_t)                      :: li
       type(specint_t)                   :: si
@@ -266,9 +266,9 @@ contains
 
       end do
 
-      ! Set up the wavelength abscissa
+      ! Set up the wavelength axis
 
-      lam = [(10**(fh%wave(1) + (k-1.5_RD)*fh%wave(2)),k=1,fh%npix+1)]
+      ra = log_range_t(fh%wave(1)-0.5*fh%wave(2), fh%wave(2), fh%npix+1)
 
       ! Set up the intensity data
 
@@ -280,7 +280,7 @@ contains
 
       li = limb_t('CONST')
 
-      si = specint_t(I, [1._RD], lam, li, low_acc=.TRUE.)
+      si = specint_t(I, [1._RD], ra, li, low_acc=.TRUE.)
 
       ! Write it
 

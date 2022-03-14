@@ -1,0 +1,89 @@
+! Module  : spectable_m
+! Purpose : define spectable_t abstract type, for representing a table
+!           of spectral intensities
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module spectable_m
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, abstract :: spectable_t
+   contains
+      procedure(inquire_), deferred :: inquire
+      procedure(fetch_), deferred   :: fetch
+   end type spectable_t
+
+   ! Interfaces
+
+   abstract interface
+
+      subroutine inquire_(self, n, lam_min, lam_max)
+         use forum_m
+         import spectable_t
+         class(spectable_t), intent(in)  :: self
+         integer, intent(out), optional  :: n
+         real(RD), intent(out), optional :: lam_min
+         real(RD), intent(out), optional :: lam_max
+      end subroutine inquire_
+
+      subroutine fetch_(self, i, si, stat)
+         use specint_m
+         import spectable_t
+         class(spectable_t), intent(inout) :: self
+         integer, intent(in)               :: i
+         type(specint_t), intent(out)      :: si
+         integer, intent(out), optional    :: stat
+      end subroutine fetch_
+
+   end interface
+      
+   interface read
+
+      module subroutine read_(hi, st, stat)
+         use hdf5io_m
+         type(hdf5io_t), intent(inout)                :: hi
+         class(spectable_t), allocatable, intent(out) :: st
+         integer, intent(out), optional               :: stat
+      end subroutine read_
+
+   end interface read
+
+   interface write
+
+      module subroutine write_(hi, st, stat)
+         use hdf5io_m
+         type(hdf5io_t), intent(inout)     :: hi
+         class(spectable_t), intent(inout) :: st
+         integer, intent(out), optional    :: stat
+      end subroutine write_
+
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: spectable_t
+   public :: read
+   public :: write
+
+end module spectable_m

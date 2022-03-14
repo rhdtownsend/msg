@@ -1,0 +1,118 @@
+! Module  : mem_phottable_m
+! Purpose : define mem_phottable_t type, for representing a memory-
+!           backed table of photometric intensities
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module mem_phottable_m
+
+   ! Uses
+
+   use forum_m
+
+   use photint_m
+   use phottable_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(phottable_t) :: mem_phottable_t
+      private
+      type(photint_t), allocatable :: pi(:)
+      integer                      :: n
+   contains
+      private
+      procedure, public :: inquire
+      procedure, public :: fetch
+   end type mem_phottable_t
+
+   ! Interfaces
+
+   interface mem_phottable_t
+      module procedure mem_phottable_t_
+   end interface mem_phottable_t
+
+   ! Access specifiers
+
+   private
+
+   public :: mem_phottable_t
+
+contains
+
+   function mem_phottable_t_(pi) result(pt)
+
+      type(photint_t), intent(in) :: pi(:)
+      type(mem_phottable_t)       :: pt
+
+      ! Construct the phottable_t from the photint_t's
+
+      pt%pi = pi
+
+      pt%n = SIZE(pi)
+
+      ! Finish
+
+      return
+
+   end function mem_phottable_t_
+
+   !****
+
+   subroutine inquire(self, n)
+
+      class(mem_phottable_t), intent(in) :: self
+      integer, intent(out), optional      :: n
+
+      ! Inquire metadata
+
+      if (PRESENT(n)) n = self%n
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine fetch(self, i, pi, stat)
+
+      class(mem_phottable_t), intent(inout) :: self
+      integer, intent(in)                   :: i
+      type(photint_t), intent(out)          :: pi
+      integer, intent(out), optional        :: stat
+
+      ! Fetch the photint_t
+         
+      pi = self%pi(i)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine fetch
+
+end module mem_phottable_m

@@ -27,7 +27,9 @@ module photgrid_m
    use ngrid_m
    use passband_m
    use photint_m
-   use dyn_photint_m
+   use phottable_m
+   use spec_phottable_m
+   use spectable_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -40,10 +42,10 @@ module photgrid_m
 
    type :: photgrid_t
       private
-      class(photint_t), allocatable :: pi(:)
-      type(ngrid_t)                 :: ng
-      integer, allocatable          :: shape(:)
-      integer                       :: rank
+      class(phottable_t), allocatable :: pt
+      type(ngrid_t)                   :: ng
+      integer, allocatable            :: shape(:)
+      integer                         :: rank
    contains
       private
       procedure, public :: inquire
@@ -79,27 +81,30 @@ module photgrid_m
    
 contains
 
-   function photgrid_t_(pi, ng) result (pg)
+   function photgrid_t_(pt, ng) result (pg)
 
-      class(photint_t), intent(in) :: pi(:)
-      type(ngrid_t), intent(in)    :: ng
-      type(photgrid_t)             :: pg
+      class(phottable_t), intent(in) :: pt
+      type(ngrid_t), intent(in)      :: ng
+      type(photgrid_t)               :: pg
 
+      integer              :: n
+      integer              :: n_ci
       integer              :: rank
       integer, allocatable :: shape(:)
 
       ! Construct the photgrid_t
 
-      call ng%inquire(rank=rank)
+      call pt%inquire(n=n)
+
+      call ng%inquire(n_ci=n_ci, rank=rank)
+
+      @:CHECK_BOUNDS(n, n_ci)
 
       allocate(shape(rank))
 
       call ng%inquire(shape=shape)
 
-      @:CHECK_BOUNDS(SIZE(pi), PRODUCT(shape))
-
-      allocate(pg%pi, SOURCE=pi)
-
+      pg%pt = pt
       pg%ng = ng
 
       pg%shape = shape
@@ -168,11 +173,19 @@ contains
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer :: li
-
+            integer         :: li
+            integer         :: ci
+            type(photint_t) :: pi
+            
             li = self%ng%li_from_vi(vi)
+            ci = self%ng%ci_from_li(li)
 
-            call self%pi(li)%interp_${name}$(${arg_var}$, f, stat)
+            call self%pt%fetch(ci, pi, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call pi%interp_${name}$(${arg_var}$, f, stat)
 
             return
 
@@ -208,11 +221,19 @@ contains
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer :: li
+            integer         :: li
+            integer         :: ci
+            type(photint_t) :: pi
 
             li = self%ng%li_from_vi(vi)
+            ci = self%ng%ci_from_li(li)
 
-            call self%pi(li)%interp_${name}$(f, stat)
+            call self%pt%fetch(ci, pi, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call pi%interp_${name}$(f, stat)
 
             return
 
@@ -230,14 +251,13 @@ contains
       type(photgrid_t), intent(out)  :: pg
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)          :: type
-      integer, allocatable         :: shape(:)
-      type(hdf5io_t)               :: hi_ng
-      type(ngrid_t)                :: ng
-      integer                      :: n_pi
-      type(photint_t), allocatable :: pi(:)
+      character(TYPE_LEN)             :: type
+      type(hdf5io_t)                  :: hi_pt
+      class(phottable_t), allocatable :: pt
+      type(hdf5io_t)                  :: hi_ng
+      type(ngrid_t)                   :: ng
 
-      ! Read the photgrid_t with no rebinning
+      ! Read the photgrid_t
 
       call hi%read_attr('TYPE', type)
       if (type /= 'photgrid_t') then
@@ -249,49 +269,27 @@ contains
          endif
       endif
 
-      call hi%alloc_read_attr('shape', shape)
+      hi_pt = hdf5io_t(hi, 'pt')
+      call read(hi_pt, pt, stat)
+      call hi_pt%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       hi_ng = hdf5io_t(hi, 'ng')
-      call read(hi_ng, ng)
+      call read(hi_ng, ng, stat)
       call hi_ng%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
-      n_pi = PRODUCT(shape)
-
-      allocate(pi(n_pi))
-
-      call ng%map(read_photint_)
-
-      pg = photgrid_t(pi, ng)
+      pg = photgrid_t(pt, ng)
 
       ! Finish
 
       if (PRESENT(stat)) stat = STAT_OK
 
       return
-
-   contains
-
-      subroutine read_photint_(vi, stat)
-
-         integer, intent(in)            :: vi(:)
-         integer, intent(out), optional :: stat
-
-         integer        :: li
-         type(hdf5io_t) :: hi_pi
-
-         ! Read the photint_t for the node
-
-         li = ng%li_from_vi(vi)
- 
-         hi_pi = hdf5io_t(hi, pi_name_(li))
-         call read(hi_pi, pi(li))
-         call hi_pi%final()
-
-         ! Finish
-
-         return
-
-      end subroutine read_photint_
 
    end subroutine read_
 
@@ -304,12 +302,13 @@ contains
       type(photgrid_t), intent(out)  :: pg
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)              :: type
-      integer, allocatable             :: shape(:)
-      type(hdf5io_t)                   :: hi_ng
-      type(ngrid_t)                    :: ng
-      integer                          :: n_pi
-      type(dyn_photint_t), allocatable :: pi(:)
+      character(TYPE_LEN)             :: type
+      type(hdf5io_t)                  :: hi_st
+      class(spectable_t), allocatable :: st
+      type(hdf5io_t)                  :: hi_ng
+      type(ngrid_t)                   :: ng
+
+      ! Read the photgrid_t from the specgrid_t
 
       call hi%read_attr('TYPE', type)
       if (type /= 'specgrid_t') then
@@ -321,19 +320,21 @@ contains
          endif
       endif
 
-      call hi%alloc_read_attr('shape', shape)
+      hi_st = hdf5io_t(hi, 'st')
+      call read(hi_st, st, stat)
+      call hi_st%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       hi_ng = hdf5io_t(hi, 'ng')
-      call read(hi_ng, ng)
+      call read(hi_ng, ng, stat)
       call hi_ng%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
-      n_pi = PRODUCT(shape)
-
-      allocate(pi(n_pi))
-
-      call ng%map(read_dyn_photint_)
-
-      pg = photgrid_t(pi, ng)
+      pg = photgrid_t(spec_phottable_t(st, pb), ng)
 
       ! Finish
 
@@ -341,39 +342,17 @@ contains
 
       return
 
-   contains
-
-      subroutine read_dyn_photint_(vi, stat)
-
-         integer, intent(in)            :: vi(:)
-         integer, intent(out), optional :: stat
-
-         integer        :: li
-         type(hdf5io_t) :: hi_pi
-
-         ! Read the dyn_photint_t for the node
-
-         li = ng%li_from_vi(vi)
- 
-         hi_pi = hdf5io_t(hi, si_name_(li))
-         call read(hi_pi, pb, pi(li))
-         call hi_pi%final()
-
-         ! Finish
-
-         return
-
-      end subroutine read_dyn_photint_
-
    end subroutine read_specgrid_
 
    !****
 
-   subroutine write_(hi, pg)
+   subroutine write_(hi, pg, stat)
 
       type(hdf5io_t), intent(inout)   :: hi
       type(photgrid_t), intent(inout) :: pg
+      integer, intent(out), optional  :: stat
 
+      type(hdf5io_t) :: hi_pt
       type(hdf5io_t) :: hi_ng
 
       ! Write the photgrid_t
@@ -383,71 +362,26 @@ contains
       call hi%write_attr('shape', pg%shape)
       call hi%write_attr('rank', pg%rank)
 
+      hi_pt = hdf5io_t(hi, 'pt')
+      call write(hi_pt, pg%pt, stat)
+      call hi_pt%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+      
       hi_ng = hdf5io_t(hi, 'ng')
-      call write(hi_ng, pg%ng)
+      call write(hi_ng, pg%ng, stat)
       call hi_ng%final()
-
-      call pg%ng%map(write_photint_)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
-   contains
-
-      subroutine write_photint_(vi, stat)
-
-         integer, intent(in)            :: vi(:)
-         integer, intent(out), optional :: stat
-
-         integer        :: li
-         type(hdf5io_t) :: hi_pi
-
-         ! Write the photint_t for the node
-
-         li = pg%ng%li_from_vi(vi)
-
-         hi_pi = hdf5io_t(hi, pi_name_(li))
-
-         select type (pi => pg%pi)
-         type is (photint_t)
-            call write(hi_pi, pi(li))
-         type is (dyn_photint_t)
-            call write(hi_pi, pi(li))
-         end select
-
-         call hi_pi%final()
-
-         ! Finish
-
-         return
-
-      end subroutine write_photint_
-
    end subroutine write_
-
-   !****
-
-   function pi_name_(li) result (name)
-
-      integer, intent(in) :: li
-      character(256)      :: name
-
-      write(name, 100) li
-100   format('pi(',I0,')')
-
-   end function pi_name_
-
-   !****
-
-   function si_name_(li) result (name)
-
-      integer, intent(in) :: li
-      character(256)      :: name
-
-      write(name, 100) li
-100   format('si(',I0,')')
-
-   end function si_name_
 
 end module photgrid_m

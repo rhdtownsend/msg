@@ -1,0 +1,134 @@
+! Submodule : range_sm
+! Purpose   : Factory & I/O routines for range_m
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (range_m) range_sm
+
+   ! Uses
+
+   use kinds_m
+   use hdf5io_m
+
+   use lin_range_m, read_lin => read, write_lin => write
+   use log_range_m, read_log => read, write_log => write
+   use tab_range_m, read_tab => read, write_tab => write
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+contains
+
+   function range_t_subset_(ra_in, i_a, i_b) result(ra)
+
+      class(range_t), intent(in)  :: ra_in
+      integer, intent(in)         :: i_a
+      integer, intent(in)         :: i_b
+      class(range_t), allocatable :: ra
+
+      ! Construct the range_t by subsetting ra_in
+
+      select type(ra_in)
+      type is(lin_range_t)
+         ra = lin_range_t(ra_in, i_a, i_b)
+      type is (log_range_t)
+         ra = log_range_t(ra_in, i_a, i_b)
+      type is(tab_range_t)
+         ra = tab_range_t(ra_in, i_a, i_b)
+      class default
+         @:ABORT('invalid type')
+      end select
+
+      ! Finish
+
+      return
+
+   end function range_t_subset_
+         
+   !****
+   
+   subroutine read_(hi, ra, stat)
+
+      type(hdf5io_t), intent(inout)            :: hi
+      class(range_t), allocatable, intent(out) :: ra
+      integer, intent(out), optional           :: stat
+
+      character(TYPE_LEN) :: type
+
+      ! Read the range_t
+
+      call hi%read_attr('TYPE', type)
+
+      select case(type)
+      case('lin_range_t')
+         allocate(lin_range_t::ra)
+      case('log_range_t')
+         allocate(log_range_t::ra)
+      case('tab_range_t')
+         allocate(tab_range_t::ra)
+      case default
+         @:ABORT('invalid type')
+      end select
+
+      select type(ra)
+      type is (lin_range_t)
+         call read_lin(hi, ra, stat)
+      type is (log_range_t)
+         call read_log(hi, ra, stat)
+      type is (tab_range_t)
+         call read_tab(hi, ra, stat)
+      class default
+         @:ABORT('invalid type')
+      end select
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, ra, stat)
+
+      type(hdf5io_t), intent(inout)  :: hi
+      class(range_t), intent(in)     :: ra
+      integer, intent(out), optional :: stat
+
+      ! Write the range_t
+
+      select type(ra)
+      type is (lin_range_t)
+         call write_lin(hi, ra, stat)
+      type is (log_range_t)
+         call write_log(hi, ra, stat)
+      type is (tab_range_t)
+         call write_tab(hi, ra, stat)
+      class default
+         @:ABORT('invalid type')
+      end select
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+end submodule range_sm

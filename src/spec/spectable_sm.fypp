@@ -1,0 +1,144 @@
+! Module  : spectable_sm
+! Purpose : factory & I/O routines for spectable_m
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (spectable_m) spectable_sm
+
+   ! Uses
+
+   use forum_m
+
+   use specint_m
+   use hdf5_spectable_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+contains
+
+   subroutine read_(hi, st, stat)
+
+      type(hdf5io_t), intent(inout)                :: hi
+      class(spectable_t), allocatable, intent(out) :: st
+      integer, intent(out), optional               :: stat
+
+      character(TYPE_LEN)       :: type
+      integer                   :: n
+      real(RD)                  :: lam_min
+      real(RD)                  :: lam_max
+      character(:), allocatable :: file_name
+      character(:), allocatable :: group_name
+      character(:), allocatable :: subgroup_names(:)
+      integer                   :: i
+
+      ! Read the spectable_t
+
+      call hi%read_attr('TYPE', type)
+      if (type /= 'spectable_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
+
+      call hi%read_attr('n', n)
+
+      call hi%read_attr('lam_min', lam_min)
+      call hi%read_attr('lam_max', lam_max)
+
+      call hi%inquire(file_name=file_name, group_name=group_name)
+
+      subgroup_names = [(si_subgroup_name_(i), i=1,n)]
+
+      st = hdf5_spectable_t(file_name, group_name//'/'//subgroup_names, lam_min, lam_max)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hi, st, stat)
+
+      type(hdf5io_t), intent(inout)     :: hi
+      class(spectable_t), intent(inout) :: st
+      integer, intent(out), optional    :: stat
+
+      integer         :: n
+      real(RD)        :: lam_min
+      real(RD)        :: lam_max
+      integer         :: i
+      type(specint_t) :: si
+      type(hdf5io_t)  :: hi_si
+
+      ! Write the spectable_t
+
+      call hi%write_attr('TYPE', 'spectable_t')
+
+      call st%inquire(n=n, lam_min=lam_min, lam_max=lam_max)
+
+      call hi%write_attr('n', n)
+      
+      call hi%write_attr('lam_min', lam_min)
+      call hi%write_attr('lam_max', lam_max)
+
+      do i = 1, n
+
+         call st%fetch(i, si, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         hi_si = hdf5io_t(hi, si_subgroup_name_(i))
+         call write(hi_si, si, stat)
+         call hi_si%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function si_subgroup_name_(i) result(name)
+
+      integer, intent(in) :: i
+      character(256)      :: name
+
+      write(name, 100) i
+100   format('si(',I0,')')
+      
+   end function si_subgroup_name_
+
+end submodule spectable_sm

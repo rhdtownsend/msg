@@ -56,7 +56,7 @@ program specint_to_specint
    integer                           :: j
    real(RD)                          :: lam_min_in
    real(RD)                          :: lam_max_in
-   real(RD), allocatable             :: lam(:)
+   class(range_t), allocatable       :: ra
    type(specint_t)                   :: si
 
    ! Read command-line arguments
@@ -131,15 +131,15 @@ program specint_to_specint
       ! Set up the new wavelength axis
 
       if (R_set) then
-         lam = EXP(eval_lam(LOG(lam_min), LOG(lam_max), 1._RD/R, just))
+         ra = log_range(lam_min, lam_max, R, just)
       else
-         lam = eval_lam(lam_min, lam_max, dlam, just)
+         ra = lin_range(lam_min, lam_max, R, just)
       endif
 
       ! Create the spectrum by interpolation onto the new wavelength
       ! axis
 
-      si = specint_t(si_in, lam)
+      si = specint_t(si_in, ra)
 
    else
 
@@ -166,52 +166,89 @@ program specint_to_specint
 
 contains
 
-   function eval_lam(lam_min, lam_max, dlam, just) result(lam)
+   function lin_range(lam_min, lam_max, dlam, just) result(ra)
 
       real(RD), intent(in)     :: lam_min
       real(RD), intent(in)     :: lam_max
       real(RD), intent(in)     :: dlam
       character(*), intent(in) :: just
-      real(RD), allocatable   :: lam(:)
+      type(lin_range_t)        :: ra
 
-      integer  :: n_lam
-      real(RD) :: lam_a
-      real(RD) :: lam_b
-      integer  :: k
-
-      ! Evaluate the wavelength axis
+      integer  :: n
+      real(RD) :: x_0
 
       ! Determine number of points
 
-      n_lam = FLOOR((lam_max - lam_min)/dlam) + 1
+      n = FLOOR((lam_max - lam_min)/dlam) + 1
 
-      ! Determine start and stop values
+      ! Determine start value
 
       select case (just)
       case ('L')
-         lam_a = lam_min
-         lam_b = lam_min + dlam*(n_lam-1)
+         x_0 = lam_min
       case ('R')
-         lam_a = lam_max - dlam*(n_lam-1)
-         lam_b = lam_max
+         x_0 = lam_max - dlam*(n-1)
       case ('C')
-         lam_a = 0.5_RD*(lam_min + lam_max - dlam*(n_lam-1))
-         lam_b = 0.5_RD*(lam_min + lam_max + dlam*(n_lam-1))
+         x_0 = 0.5_RD*(lam_min + lam_max - dlam*(n-1))
       case default
          @:ABORT('invalid just')
       end select
 
-      lam_a = MAX(lam_a, lam_min)
-      lam_b = MIN(lam_b, lam_max)
+      x_0 = MAX(x_0, lam_min)
 
-      ! Set up the axis
+      ! Set up the range
 
-      lam = [((lam_a*(n_lam-k) + lam_b*(k-1))/(n_lam-1),k=1,n_lam)]
+      ra = lin_range_t(x_0, dlam, n)
 
       ! Finish
 
       return
 
-   end function eval_lam
+   end function lin_range
+
+   !****
+   
+   function log_range(lam_min, lam_max, R, just) result(ra)
+
+      real(RD), intent(in)     :: lam_min
+      real(RD), intent(in)     :: lam_max
+      real(RD), intent(in)     :: R
+      character(*), intent(in) :: just
+      type(log_range_t)        :: ra
+
+      real(RD) :: dx
+      integer  :: n
+      real(RD) :: x_0
+
+      ! Determine number of points
+
+      dx = 1._RD/R
+
+      n = FLOOR((LOG(lam_max) - LOG(lam_min))/dx) + 1
+
+      ! Determine start value
+
+      select case (just)
+      case ('L')
+         x_0 = LOG(lam_min)
+      case ('R')
+         x_0 = LOG(lam_max) - dx*(n-1)
+      case ('C')
+         x_0 = 0.5_RD*(LOG(lam_min) + LOG(lam_max) - dx*(n-1))
+      case default
+         @:ABORT('invalid just')
+      end select
+
+      x_0 = MAX(x_0, LOG(lam_min))
+
+      ! Set up the range
+
+      ra = log_range_t(x_0, dx, n)
+
+      ! Finish
+
+      return
+
+   end function log_range
       
 end program specint_to_specint

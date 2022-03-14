@@ -4,7 +4,7 @@ module test_fit_m
 
   ! Uses
 
-  use kinds_m
+  use forum_m
   use fit_m
 
   use ISO_FORTRAN_ENV

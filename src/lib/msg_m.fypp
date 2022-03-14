@@ -27,8 +27,18 @@ module msg_m
    use passband_m
    use photgrid_m
    use photint_m
+   use phottable_m
+   use hdf5_phottable_m
+   use spec_phottable_m
+   use mem_phottable_m
+   use range_m
+   use lin_range_m, only: lin_range_t
+   use log_range_m, only: log_range_t
+   use tab_range_m, only: tab_range_t
    use specgrid_m
    use specint_m
+   use spectable_m
+   use hdf5_spectable_m
    use stat_m
 
 end module msg_m

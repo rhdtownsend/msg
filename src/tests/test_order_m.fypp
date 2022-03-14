@@ -4,7 +4,7 @@ module test_order_m
 
   ! Uses
 
-  use kinds_m
+  use forum_m
   use order_m
 
   use ISO_FORTRAN_ENV

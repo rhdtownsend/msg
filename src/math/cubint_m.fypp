@@ -2,7 +2,7 @@
 ! Purpose  : define cubint_t type, representing piecewise cubic
 !            interpolants
 !
-! Copyright 2021 Rich Townsend
+! Copyright 2021-2022 Rich Townsend
 !
 ! This file is part of the ForUM (Fortran Utility Modules)
 ! package. ForUM is free software: you can redistribute it and/or
@@ -24,6 +24,8 @@ module cubint_m
    ! Uses
 
    use forum_m
+
+   use stat_m
 
    use f95_lapack
 
@@ -511,11 +513,11 @@ contains
 
    function interp_ (self, x, n, g) result (f)
 
-      class(cubint_t), intent(in)   :: self
-      real(RD), intent(in)          :: x(:)
-      integer, intent(in)           :: n
-      real(RD), intent(in),optional :: g(:)
-      real(RD)                      :: f(SIZE(x))
+      class(cubint_t), intent(in)    :: self
+      real(RD), intent(in)           :: x(:)
+      integer, intent(in)            :: n
+      real(RD), intent(in), optional :: g(:)
+      real(RD)                       :: f(SIZE(x))
 
       integer  :: i
       integer  :: j
@@ -535,7 +537,9 @@ contains
          ! Update the bracketing index
 
          call locate(self%x, x(j), i)
-         @:ASSERT(i > 0 .AND. i < self%n, 'out-of-bounds interpolation')
+         @:ASSERT(i >= 1 .AND. i <= self%n, 'out-of-bounds interpolation')
+
+         if (i == self%n) i = i-1
 
          ! Set up the interpolation weights
 
@@ -616,10 +620,11 @@ contains
 
    !****
 
-   subroutine read_(hi, ci)
+   subroutine read_(hi, ci, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(cubint_t), intent(out)   :: ci
+      type(hdf5io_t), intent(inout)  :: hi
+      type(cubint_t), intent(out)    :: ci
+      integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
       real(RD), allocatable :: x(:)
@@ -629,7 +634,14 @@ contains
       ! Read the cubint_t
 
       call hi%read_attr('TYPE', type)
-      @:ASSERT(type == 'cubint_t', 'invalid type')
+      if (type /= 'cubint_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         end if
+      end if
 
       call hi%alloc_read_dset('x', x)
       call hi%alloc_read_dset('f', f)
@@ -639,16 +651,19 @@ contains
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
    end subroutine read_
 
    !****
 
-   subroutine write_(hi, ci)
+   subroutine write_(hi, ci, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(cubint_t), intent(in)    :: ci
+      type(hdf5io_t), intent(inout)  :: hi
+      type(cubint_t), intent(in)     :: ci
+      integer, intent(out), optional :: stat
 
       ! Write the cubint_t
 
@@ -661,6 +676,8 @@ contains
       call hi%write_dset('df_dx', ci%df_dx)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

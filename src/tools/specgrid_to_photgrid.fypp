@@ -32,9 +32,9 @@ program specgrid_to_photgrid
 
    ! Variables
 
-   character(:), allocatable :: specgrid_filename
-   character(:), allocatable :: passband_filename
-   character(:), allocatable :: photgrid_filename
+   character(:), allocatable :: specgrid_file_name
+   character(:), allocatable :: passband_file_name
+   character(:), allocatable :: photgrid_file_name
 
    type(hdf5io_t)   :: hi
    type(passband_t) :: pb
@@ -42,27 +42,27 @@ program specgrid_to_photgrid
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: specgrid_to_photgrid specgrid_filename passband_filename photgrid_filename')
+   @:ASSERT(n_arg() == 3, 'Syntax: specgrid_to_photgrid specgrid_file_name passband_filename photgrid_file_name')
 
-   call get_arg(1, specgrid_filename)
-   call get_arg(2, passband_filename)
-   call get_arg(3, photgrid_filename)
+   call get_arg(1, specgrid_file_name)
+   call get_arg(2, passband_file_name)
+   call get_arg(3, photgrid_file_name)
  
    ! Read data from the passband file
 
-   hi = hdf5io_t(passband_filename, OPEN_FILE_RO)
+   hi = hdf5io_t(passband_file_name, OPEN_FILE_RO)
    call read(hi, pb)
    call hi%final()
 
    ! Read the photgrid_t from the specgrid_t
 
-   hi = hdf5io_t(specgrid_filename, OPEN_FILE_RO)
+   hi = hdf5io_t(specgrid_file_name, OPEN_FILE_RO)
    call read(hi, pb, pg)
    call hi%final()
 
    ! Write the photgrid_t
 
-   hi = hdf5io_t(photgrid_filename, CREATE_FILE)
+   hi = hdf5io_t(photgrid_file_name, CREATE_FILE)
    call write(hi, pg)
    call hi%final()
 

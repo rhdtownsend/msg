@@ -50,7 +50,7 @@ program synspec_to_specint
    integer                   :: n_lam
    integer                   :: j
    real(RD), allocatable     :: mu(:)
-   integer                   :: k
+   type(log_range_t)         :: ra
    real(RD), allocatable     :: lam(:)
    real(RD), allocatable     :: I(:,:)
    type(specint_t)           :: si
@@ -90,17 +90,20 @@ program synspec_to_specint
    w_0 = LOG(lam_min)
    n_lam = FLOOR((LOG(lam_max) - LOG(lam_min))/dw) + 1
 
-   lam = EXP([(w_0 + (k-1)*dw, k=1, n_lam)])
+   ra = log_range_t(w_0, dw, n_lam)
+
+   allocate(lam(n_lam))
+   call ra%get_all(lam)
 
    ! Bin the data onto this axis
 
    allocate(I(n_mu,n_lam-1))
 
-   call bin_data(lam_in, I_in, lam, I)
+   call bin_data(lam_in, I_in, ra, I)
 
    ! Create the specint_t
 
-   si = specint_t(I, mu, lam, li)
+   si = specint_t(I, mu, ra, li)
 
    ! Write the specint_t (together with labels)
 
@@ -246,17 +249,19 @@ contains
 
    !****
 
-   subroutine bin_data(lam_in, I_in, lam, I)
+   subroutine bin_data(lam_in, I_in, ra, I)
 
-      real(RD), intent(in)  :: lam_in(:)
-      real(RD), intent(in)  :: I_in(:,:)
-      real(RD), intent(in)  :: lam(:)
-      real(RD), intent(out) :: I(:,:)
+      real(RD), intent(in)       :: lam_in(:)
+      real(RD), intent(in)       :: I_in(:,:)
+      class(range_t), intent(in) :: ra
+      real(RD), intent(out)      :: I(:,:)
 
-      integer               :: n_mu
-      integer               :: n_lam
-      integer               :: k
-      integer               :: j
+      integer  :: n_mu
+      integer  :: n_lam
+      integer  :: k
+      integer  :: j
+      real(RD) :: lam_a
+      real(RD) :: lam_b
 
       @:CHECK_BOUNDS(SIZE(I_in, 2), SIZE(lam_in))
       @:CHECK_BOUNDS(SIZE(I, 2), SIZE(lam)-1)
@@ -264,12 +269,16 @@ contains
       ! Convert the piecewise-linear intensity data I_in(:,lam_in) to the binned data I(:,lam)
 
       n_mu = SIZE(I_in, 1)
-      n_lam = SIZE(lam)
+      call ra%inquire(n=n_lam)
 
       mu_loop : do j = 1, n_mu
 
+         call ra%get(1, lam_b)
+
          lam_loop : do k = 1, n_lam-1
-            I(j,k) = integrate_lin(lam_in, I_in(j,:), lam(k), lam(k+1))/(lam(k+1) - lam(k))
+            lam_a = lam_b
+            call ra%get(k+1, lam_b)
+            I(j,k) = integrate_lin(lam_in, I_in(j,:), lam_a, lam_b)/(lam_b - lam_a)
          end do lam_loop
 
       end do mu_loop

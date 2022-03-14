@@ -1,0 +1,180 @@
+! Module  : spec_phottable_m
+! Purpose : define spec_phottable_t type, for representing a spectable_t-
+!           backed table of photometric intensities
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module spec_phottable_m
+
+   ! Uses
+
+   use forum_m
+
+   use passband_m
+   use photint_m
+   use phottable_m
+   use specint_m
+   use spectable_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(phottable_t) :: spec_phottable_t
+      private
+      type(photint_t), allocatable    :: pi(:)
+      class(spectable_t), allocatable :: st
+      type(passband_t)                :: pb
+      logical, allocatable            :: evaled(:)
+      integer                         :: n
+   contains
+      private
+      procedure, public :: inquire
+      procedure, public :: fetch
+      procedure         :: eval_
+   end type spec_phottable_t
+
+   ! Interfaces
+
+   interface spec_phottable_t
+      module procedure spec_phottable_t_
+   end interface spec_phottable_t
+
+   ! Access photifiers
+
+   private
+
+   public :: spec_phottable_t
+
+contains
+
+   function spec_phottable_t_(st, pb) result(pt)
+
+      class(spectable_t), intent(in) :: st
+      type(passband_t), intent(in)   :: pb
+      type(spec_phottable_t)         :: pt
+
+      integer :: n
+
+      ! Construct the phottable_t from the spectable_t and the
+      ! passband_t
+
+      call st%inquire(n=n)
+
+      allocate(pt%pi(n))
+
+      pt%st = st
+      pt%pb = pb
+
+      allocate(pt%evaled(n))
+      pt%evaled = .FALSE.
+
+      pt%n = n
+
+      ! Finish
+
+      return
+
+   end function spec_phottable_t_
+      
+   !****
+
+   subroutine inquire(self, n)
+
+      class(spec_phottable_t), intent(in) :: self
+      integer, intent(out), optional      :: n
+
+      ! Inquire metadata
+
+      if (PRESENT(n)) n = self%n
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine fetch(self, i, pi, stat)
+
+      class(spec_phottable_t), intent(inout) :: self
+      integer, intent(in)                    :: i
+      type(photint_t), intent(out)           :: pi
+      integer, intent(out), optional         :: stat
+
+      ! If necessary, eval
+
+      if (.NOT. self%evaled(i)) then
+
+         call self%eval_(i, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+         
+      endif
+
+      ! Fetch the photint_t
+         
+      pi = self%pi(i)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine fetch
+
+   !****
+
+   subroutine eval_(self, i, stat)
+      
+      class(spec_phottable_t), intent(inout) :: self
+      integer, intent(in)                    :: i
+      integer, intent(out), optional         :: stat
+
+      type(specint_t) :: si
+
+      ! Evaluate the photint_t
+
+      call self%st%fetch(i, si, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call si%apply_passband(self%pb, self%pi(i), stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      self%evaled(i) = .TRUE.
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine eval_
+
+end module spec_phottable_m
