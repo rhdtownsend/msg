@@ -52,6 +52,7 @@ program make_bb_photgrid
    real(RD), allocatable        :: mu(:)
    real(RD), allocatable        :: f_mu(:)
    type(photint_t), allocatable :: pi(:)
+   type(mem_phottable_t)        :: pt
    type(photgrid_t)             :: pg
    type(hdf5io_t)               :: hi
 
@@ -100,9 +101,13 @@ program make_bb_photgrid
 
    call ng%map(make_photint)
 
+   ! Create the phottable_t
+
+   pt = mem_phottable_t(pi)
+
    ! Create the photgrid_t
 
-   pg = photgrid_t(pi, ng)
+   pg = photgrid_t(pt, ng)
 
    ! Write it
 
