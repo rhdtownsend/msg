@@ -1,6 +1,6 @@
 program test_testgrid
 
-   use kinds_m
+   use forum_m
 
    use axis_m
    use testgrid_m

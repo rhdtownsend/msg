@@ -4,7 +4,7 @@ module test_cubint_m
 
   ! Uses
 
-  use kinds_m
+  use forum_m
   use cubint_m
 
   use ISO_FORTRAN_ENV

@@ -4,7 +4,7 @@ module test_interp_m
 
   ! Uses
 
-  use kinds_m
+  use forum_m
   use interp_m
   use order_m
 

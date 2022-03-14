@@ -22,8 +22,7 @@ module spec_phottable_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
+   use forum_m
 
    use passband_m
    use photint_m

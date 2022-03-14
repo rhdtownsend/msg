@@ -252,7 +252,7 @@ contains
       class(ngrid_t), intent(in) :: self
       interface
          subroutine map_proc(vi, stat)
-            use kinds_m
+            use forum_m
             integer, intent(in)            :: vi(:)
             integer, intent(out), optional :: stat
          end subroutine map_proc
@@ -424,7 +424,7 @@ contains
       class(ngrid_t), intent(in) :: self
       interface
          subroutine data_proc(vi, data, stat)
-            use kinds_m
+            use forum_m
             integer, intent(in)            :: vi(:)
             real(RD), intent(out)          :: data
             integer, intent(out), optional :: stat
@@ -507,7 +507,7 @@ contains
       class(ngrid_t), intent(in) :: self
       interface
          subroutine data_proc(vi, data, stat)
-            use kinds_m
+            use forum_m
             integer, intent(in)            :: vi(:)
             real(RD), intent(out)          :: data(:)
             integer, intent(out), optional :: stat

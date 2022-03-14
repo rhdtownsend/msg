@@ -37,7 +37,7 @@ module spectable_m
    abstract interface
 
       subroutine inquire_(self, n, lam_min, lam_max)
-         use kinds_m
+         use forum_m
          import spectable_t
          class(spectable_t), intent(in)  :: self
          integer, intent(out), optional  :: n

@@ -39,7 +39,7 @@ module range_m
    abstract interface
 
       subroutine inquire_(self, n, min, max)
-         use kinds_m
+         use forum_m
          import range_t
          class(range_t), intent(in)      :: self
          integer, intent(out), optional  :: n
@@ -48,7 +48,7 @@ module range_m
       end subroutine inquire_
 
       subroutine get_(self, i, x, stat)
-         use kinds_m
+         use forum_m
          import range_t
          class(range_t), intent(in)     :: self
          integer, intent(in)            :: i
@@ -57,14 +57,14 @@ module range_m
       end subroutine get_
 
       subroutine get_all_(self, x)
-         use kinds_m
+         use forum_m
          import range_t
          class(range_t), intent(in)  :: self
          real(RD), intent(out)       :: x(:)
       end subroutine get_all_
 
       subroutine locate_(self, x, i, right)
-         use kinds_m
+         use forum_m
          import range_t
          class(range_t), intent(in)    :: self
          real(RD), intent(in)          :: x

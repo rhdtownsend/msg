@@ -39,7 +39,6 @@ module phottable_m
    abstract interface
 
       subroutine inquire_(self, n)
-         use kinds_m
          import phottable_t
          class(phottable_t), intent(in)  :: self
          integer, intent(out), optional  :: n

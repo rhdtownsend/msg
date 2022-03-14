@@ -4,7 +4,7 @@ module test_math_m
 
    ! Uses
    
-   use kinds_m
+   use forum_m
    use math_m
 
    use ISO_FORTRAN_ENV
