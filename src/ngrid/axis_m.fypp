@@ -21,8 +21,7 @@ module axis_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
+   use forum_m, locate_ => locate
 
    use range_m
    use stat_m
@@ -182,8 +181,11 @@ contains
       call hi%read_attr('label', label)
 
       hi_ra = hdf5io_t(hi, 'ra')
-      call read(hi_ra, ra)
+      call read(hi_ra, ra, stat)
       call hi_ra%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       ax = axis_t(ra, label)
 
@@ -197,10 +199,11 @@ contains
 
    !****
 
-   subroutine write_(hi, ax)
+   subroutine write_(hi, ax, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(axis_t), intent(in)      :: ax
+      type(hdf5io_t), intent(inout)  :: hi
+      type(axis_t), intent(in)       :: ax
+      integer, intent(out), optional :: stat
 
       type(hdf5io_t) :: hi_ra
       
@@ -211,10 +214,15 @@ contains
       call hi%write_attr('label', ax%label)
 
       hi_ra = hdf5io_t(hi, 'ra')
-      call write(hi_ra, ax%ra)
+      call write(hi_ra, ax%ra, stat)
       call hi_ra%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
