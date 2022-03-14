@@ -75,18 +75,20 @@ contains
 
       integer :: n
 
-      ! Construct the phottable_t from the spectable_t and the passband_t
+      ! Construct the phottable_t from the spectable_t and the
+      ! passband_t
 
       call st%inquire(n=n)
 
       allocate(pt%pi(n))
 
       pt%st = st
+      pt%pb = pb
 
       allocate(pt%evaled(n))
       pt%evaled = .FALSE.
 
-      pt%pb = pb
+      pt%n = n
 
       ! Finish
 
