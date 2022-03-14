@@ -50,20 +50,27 @@ program make_specgrid
 
    character(:), allocatable :: manifest_file_name
    character(:), allocatable :: specgrid_file_name
+   logical                   :: allow_dupes
 
    type(specgrid_t) :: sg
    type(hdf5io_t)   :: hi
    
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 2, 'Syntax: make_specgrid manifest_file_name specgrid_file_name')
+   @:ASSERT(n_arg() == 2 .OR. n_arg() == 3, 'Syntax: make_specgrid manifest_file_name specgrid_file_name [allow_dupes]')
 
    call get_arg(1, manifest_file_name)
    call get_arg(2, specgrid_file_name)
 
+   if (n_arg() == 3) then
+      call get_arg(3, allow_dupes)
+   else
+      allow_dupes = .FALSE.
+   end if
+
    ! Create the grid
 
-   call create_grid(manifest_file_name, sg)
+   call create_grid(manifest_file_name, allow_dupes, sg)
 
    ! Write the grid
 
@@ -75,9 +82,10 @@ program make_specgrid
 
 contains
 
-   subroutine create_grid(manifest_file_name, sg)
+   subroutine create_grid(manifest_file_name, allow_dupes, sg)
 
       character(*), intent(in)      :: manifest_file_name
+      logical, intent(in)           :: allow_dupes
       type(specgrid_t), intent(out) :: sg
 
       type(node_t), allocatable :: nd(:)
@@ -90,7 +98,7 @@ contains
 
       call build_mask(nd, ax, mask)
 
-      call build_grid(nd, ax, mask, sg)
+      call build_grid(nd, ax, mask, allow_dupes, sg)
 
       ! Finish
 
@@ -273,11 +281,12 @@ contains
 
    !****
 
-   subroutine build_grid(nd, ax, mask, sg)
+   subroutine build_grid(nd, ax, mask, allow_dupes, sg)
 
       type(node_t), intent(in)      :: nd(:)
       type(axis_t), intent(in)      :: ax(:)
       logical, intent(in)           :: mask(:)
+      logical, intent(in)           :: allow_dupes
       type(specgrid_t), intent(out) :: sg
  
       integer                          :: rank
@@ -318,9 +327,10 @@ contains
          li = ng%li_from_vi(vi)
          ci = ng%ci_from_li(li)
 
-         if (file_names(ci) /= '') then
+         if (file_names(ci) /= '' .AND. .NOT. allow_dupes) then
             write(ERROR_UNIT, 100) TRIM(nd(i)%file_name), TRIM(file_names(ci)), nd(i)%vx
-100         format('warning: file ', A, ' replaces existing file ', A,'; axes =', 999(1X,E11.4))
+100         format('file ', A, ' replaces existing file ', A,'; axes =', 999(1X,E11.4))
+            @:ABORT('set the allow_dupes flag to proceed')
          end if
 
          file_names(ci) = nd(i)%file_name
