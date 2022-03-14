@@ -478,6 +478,8 @@ contains
       type(limb_t)                :: li
       logical                     :: low_acc
 
+      character(:), allocatable :: file_name
+
       ! Read the specint_t
 
       call hi%read_attr('TYPE', type)
@@ -493,6 +495,8 @@ contains
       call hi%read_attr('low_acc', low_acc)
 
       call hi%alloc_read_dset('c', c)
+
+      call hi%inquire(file_name=file_name)
 
       hi_ra = hdf5io_t(hi, 'ra')
       call read(hi_ra, ra)
@@ -514,10 +518,11 @@ contains
 
    !****
 
-   subroutine write_(hi, si)
+   subroutine write_(hi, si, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(specint_t), intent(in)   :: si
+      type(hdf5io_t), intent(inout)  :: hi
+      type(specint_t), intent(in)    :: si
+      integer, intent(out), optional :: stat
 
       real(RD)       :: lam_min
       real(RD)       :: lam_max
@@ -536,8 +541,11 @@ contains
       call hi%write_attr('low_acc', si%low_acc)
 
       hi_ra = hdf5io_t(hi, 'ra')
-      call write(hi_ra, si%ra)
+      call write(hi_ra, si%ra, stat)
       call hi_ra%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       if (si%low_acc) then
          call hi%write_dset('c', REAL(si%c, RS))
@@ -546,10 +554,15 @@ contains
       endif
 
       hi_li = hdf5io_t(hi, 'li')
-      call write(hi_li, si%li)
+      call write(hi_li, si%li, stat)
       call hi_li%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

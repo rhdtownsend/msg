@@ -25,11 +25,11 @@ module specgrid_m
    use forum_m
 
    use ngrid_m
-   use passband_m
-   use photint_m
-   use photgrid_m
+!   use passband_m
+!   use photint_m
+!   use photgrid_m
    use specint_m
-   use dyn_specint_m
+   use spectable_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -42,19 +42,17 @@ module specgrid_m
 
    type :: specgrid_t
       private
-      class(specint_t), allocatable :: si(:)
-      type(ngrid_t)                 :: ng
-      real(RD)                      :: lam_min
-      real(RD)                      :: lam_max
-      integer, allocatable          :: shape(:)
-      integer                       :: rank
+      class(spectable_t), allocatable :: st
+      type(ngrid_t)                   :: ng
+      integer, allocatable            :: shape(:)
+      integer                         :: rank
    contains
       private
       procedure, public :: inquire
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
-      procedure, public :: apply_passband
+!      procedure, public :: apply_passband
    end type specgrid_t
 
    ! Interfaces
@@ -83,40 +81,31 @@ module specgrid_m
 
 contains
 
-   function specgrid_t_ (si, ng) result (sg)
+   function specgrid_t_(st, ng) result (sg)
 
-      class(specint_t), intent(in) :: si(:)
-      type(ngrid_t), intent(in)    :: ng
-      type(specgrid_t)             :: sg
+      class(spectable_t), intent(in) :: st
+      type(ngrid_t), intent(in)      :: ng
+      type(specgrid_t)               :: sg
 
+      integer              :: n
+      integer              :: n_ci
       integer              :: rank
       integer, allocatable :: shape(:)
-      real(RD)             :: lam_min
-      real(RD)             :: lam_max
 
       ! Construct the specgrid_t
 
-      call ng%inquire(rank=rank)
+      call st%inquire(n=n)
+
+      call ng%inquire(n_ci=n_ci, rank=rank)
+
+      @:CHECK_BOUNDS(n, n_ci)
 
       allocate(shape(rank))
 
       call ng%inquire(shape=shape)
 
-      @:CHECK_BOUNDS(SIZE(si), PRODUCT(shape))
-
-      lam_min = -HUGE(0._RD)
-      lam_max = HUGE(0._RD)
-
-      call ng%map(meta_proc_)
-
-      @:ASSERT(lam_max > lam_min,'non-overlapping wavelength ranges')
- 
-      allocate(sg%si, SOURCE=si)
-
+      sg%st = st
       sg%ng = ng
-
-      sg%lam_min = lam_min
-      sg%lam_max = lam_max
 
       sg%shape = shape
       sg%rank = rank
@@ -124,32 +113,6 @@ contains
       ! Finish
 
       return
-
-   contains
-
-      subroutine meta_proc_(vi, stat)
-
-         integer, intent(in)            :: vi(:)
-         integer, intent(out), optional :: stat
-
-         integer  :: li
-         real(RD) :: lam_min_i
-         real(RD) :: lam_max_i
-
-         ! Set or check metadata
-
-         li = ng%li_from_vi(vi)
-
-         call si(li)%inquire(lam_min=lam_min_i, lam_max=lam_max_i)
-
-         lam_min = MAX(lam_min, lam_min_i)
-         lam_max = MIN(lam_max, lam_max_i)
-         
-         ! Finish
-
-         return
-
-      end subroutine meta_proc_
 
    end function specgrid_t_
 
@@ -172,11 +135,10 @@ contains
 
       ! Inquire metadata
 
-      if (PRESENT(lam_min)) lam_min = self%lam_min
-      if (PRESENT(lam_max)) lam_max = self%lam_max
-
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
+
+      call self%st%inquire(lam_min=lam_min, lam_max=lam_max)
 
       call self%ng%inquire(axis_min=axis_min, axis_max=axis_max, axis_labels=axis_labels)
 
@@ -216,11 +178,19 @@ contains
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer :: li
+            integer         :: li
+            integer         :: ci
+            type(specint_t) :: si
 
             li = self%ng%li_from_vi(vi)
+            ci = self%ng%ci_from_li(li)
 
-            call self%si(li)%interp_${name}$(${arg_var}$, lam, f, stat)
+            call self%st%fetch(ci, si, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call si%interp_${name}$(${arg_var}$, lam, f, stat)
 
             return
 
@@ -257,11 +227,19 @@ contains
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer :: li
+            integer         :: li
+            integer         :: ci
+            type(specint_t) :: si
 
             li = self%ng%li_from_vi(vi)
+            ci = self%ng%ci_from_li(li)
 
-            call self%si(li)%interp_${name}$(lam, f, stat)
+            call self%st%fetch(ci, si, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call si%interp_${name}$(lam, f, stat)
 
             return
 
@@ -271,63 +249,63 @@ contains
 
    #:endfor
 
-   !****
+   ! !****
 
-   subroutine apply_passband(self, pb, pg, stat)
+   ! subroutine apply_passband(self, pb, pg, stat)
 
-      class(specgrid_t), intent(inout) :: self
-      type(passband_t), intent(in)     :: pb
-      type(photgrid_t), intent(out)    :: pg
-      integer, intent(out), optional   :: stat
+   !    class(specgrid_t), intent(inout) :: self
+   !    type(passband_t), intent(in)     :: pb
+   !    type(photgrid_t), intent(out)    :: pg
+   !    integer, intent(out), optional   :: stat
 
-      integer                      :: n_li
-      type(photint_t), allocatable :: pi(:)
+   !    integer                      :: n_li
+   !    type(photint_t), allocatable :: pi(:)
  
-      ! Apply the passband, to yield a photint_t
+   !    ! Apply the passband, to yield a photint_t
 
-      ! Evaluate the photint_t data
+   !    ! Evaluate the photint_t data
 
-      n_li = PRODUCT(self%shape)
+   !    n_li = PRODUCT(self%shape)
 
-      allocate(pi(n_li))
+   !    allocate(pi(n_li))
 
-      call self%ng%map(apply_passband_proc_, stat)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      endif
+   !    call self%ng%map(apply_passband_proc_, stat)
+   !    if (PRESENT(stat)) then
+   !       if (stat /= STAT_OK) return
+   !    endif
 
-      ! Create the photgrid_t
+   !    ! Create the photgrid_t
 
-      pg = photgrid_t(pi, self%ng)
+   !    pg = photgrid_t(pi, self%ng)
 
-      ! Finish
+   !    ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
+   !    if (PRESENT(stat)) stat = STAT_OK
 
-      return
+   !    return
 
-   contains
+   ! contains
 
-      subroutine apply_passband_proc_(vi, stat)
+   !    subroutine apply_passband_proc_(vi, stat)
 
-         integer, intent(in)            :: vi(:)
-         integer, intent(out), optional :: stat
+   !       integer, intent(in)            :: vi(:)
+   !       integer, intent(out), optional :: stat
 
-         integer  :: li
+   !       integer  :: li
 
-         ! Construct the photint_t
+   !       ! Construct the photint_t
          
-         li = self%ng%li_from_vi(vi)
+   !       li = self%ng%li_from_vi(vi)
 
-         call self%si(li)%apply_passband(pb, pi(li), stat)
+   !       call self%st%apply_passband(li, pb, pi(li), stat)
 
-         ! Finish
+   !       ! Finish
 
-         return
+   !       return
 
-      end subroutine apply_passband_proc_
+   !    end subroutine apply_passband_proc_
 
-   end subroutine apply_passband
+   ! end subroutine apply_passband
 
    !****
 
@@ -337,12 +315,11 @@ contains
       type(specgrid_t), intent(out)  :: sg
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)              :: type
-      integer, allocatable             :: shape(:)
-      type(hdf5io_t)                   :: hi_ng
-      type(ngrid_t)                    :: ng
-      integer                          :: n_si
-      type(dyn_specint_t), allocatable :: si(:)
+      character(TYPE_LEN)             :: type
+      type(hdf5io_t)                  :: hi_st
+      class(spectable_t), allocatable :: st
+      type(hdf5io_t)                  :: hi_ng
+      type(ngrid_t)                   :: ng
 
       ! Read the specgrid_t
 
@@ -356,19 +333,21 @@ contains
          endif
       endif
 
-      call hi%alloc_read_attr('shape', shape)
-      
+      hi_st = hdf5io_t(hi, 'st')
+      call read(hi_st, st, stat)
+      call hi_st%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
       hi_ng = hdf5io_t(hi, 'ng')
-      call read(hi_ng, ng)
+      call read(hi_ng, ng, stat)
       call hi_ng%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
-      n_si = PRODUCT(shape)
-
-      allocate(si(n_si))
-
-      call ng%map(read_specint_)
-
-      sg = specgrid_t(si, ng)
+      sg = specgrid_t(st, ng)
 
       ! Finish
 
@@ -376,39 +355,17 @@ contains
 
       return
 
-   contains
-
-      subroutine read_specint_(vi, stat)
-
-         integer, intent(in)            :: vi(:)
-         integer, intent(out), optional :: stat
-
-         integer        :: li
-         type(hdf5io_t) :: hi_si
-
-         ! Read the specint_t for the node
-
-         li = ng%li_from_vi(vi)
- 
-         hi_si = hdf5io_t(hi, si_name_(li))
-         call read(hi_si, si(li))
-         call hi_si%final()
-
-         ! Finish
-
-         return
-
-      end subroutine read_specint_
-            
    end subroutine read_
 
    !****
 
-   subroutine write_(hi, sg)
+   subroutine write_(hi, sg, stat)
 
       type(hdf5io_t), intent(inout)   :: hi
       type(specgrid_t), intent(inout) :: sg
+      integer, intent(out), optional  :: stat
 
+      type(hdf5io_t) :: hi_st
       type(hdf5io_t) :: hi_ng
 
       ! Write the specgrid_t
@@ -418,59 +375,26 @@ contains
       call hi%write_attr('shape', sg%shape)
       call hi%write_attr('rank', sg%rank)
 
-      hi_ng = hdf5io_t(hi, 'ng')
-      call write(hi_ng, sg%ng)
-      call hi_ng%final()
+      hi_st = hdf5io_t(hi, 'st')
+      call write(hi_st, sg%st, stat)
+      call hi_st%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
-      call sg%ng%map(write_specint_)
+      hi_ng = hdf5io_t(hi, 'ng')
+      call write(hi_ng, sg%ng, stat)
+      call hi_ng%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
-   contains
-
-      subroutine write_specint_(vi, stat)
-
-         integer, intent(in)            :: vi(:)
-         integer, intent(out), optional :: stat
-
-         integer        :: li
-         type(hdf5io_t) :: hi_si
-
-         ! Write the specint_t for the node
-
-         li = sg%ng%li_from_vi(vi)
- 
-         hi_si = hdf5io_t(hi, si_name_(li))
-
-         select type (si => sg%si)
-         type is (specint_t)
-            call write(hi_si, si(li))
-         type is (dyn_specint_t)
-            call write(hi_si, si(li))
-         end select
-            
-         call hi_si%final()
-
-         ! Finish
-
-         return
-
-      end subroutine write_specint_
-
    end subroutine write_
-
-   !****
-
-   function si_name_(li) result (name)
-
-      integer, intent(in) :: li
-      character(256)      :: name
-
-      write(name, 100) li
-100   format('si(',I0,')')
-
-   end function si_name_
 
 end module specgrid_m
