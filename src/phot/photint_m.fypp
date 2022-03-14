@@ -21,9 +21,7 @@ module photint_m
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
-   use order_m
+   use forum_m
 
    use limb_m
    use math_m
@@ -237,10 +235,11 @@ contains
 
    !****
 
-   subroutine write_ (hi, pi)
+   subroutine write_ (hi, pi, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(photint_t), intent(in)   :: pi
+      type(hdf5io_t), intent(inout)  :: hi
+      type(photint_t), intent(in)    :: pi
+      integer, intent(out), optional :: stat
 
       type(hdf5io_t) :: hi_li
 
@@ -253,10 +252,15 @@ contains
       call hi%write_dset('c', pi%c)
 
       hi_li = hdf5io_t(hi, 'li')
-      call write(hi_li, pi%li)
+      call write(hi_li, pi%li, stat)
       call hi_li%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 

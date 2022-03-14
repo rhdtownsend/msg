@@ -1,0 +1,249 @@
+! Module  : hdf5_phottable_m
+! Purpose : define hdf5_phottable_t type, for representing a HDF5-file
+!           backed table of photometric intensities
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module hdf5_phottable_m
+
+   ! Uses
+
+   use forum_m
+
+   use photint_m
+   use phottable_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(phottable_t) :: hdf5_phottable_t
+      private
+      type(photint_t), allocatable :: pi(:)
+      character(:), allocatable    :: file_names(:)
+      character(:), allocatable    :: group_names(:)
+      logical, allocatable         :: loaded(:)
+      integer                      :: n
+      logical                      :: sticky
+   contains
+      private
+      procedure, public :: inquire
+      procedure, public :: fetch
+      procedure         :: flush_
+      procedure         :: load_
+   end type hdf5_phottable_t
+
+   ! Interfaces
+
+   interface hdf5_phottable_t
+      module procedure hdf5_phottable_t_file_
+      module procedure hdf5_phottable_t_files_
+   end interface hdf5_phottable_t
+
+   ! Access specifiers
+
+   private
+
+   public :: hdf5_phottable_t
+
+contains
+
+   function hdf5_phottable_t_file_(file_name, group_names, sticky) result(pt)
+
+      character(*), intent(in)      :: file_name
+      character(*), intent(in)      :: group_names(:)
+      logical, intent(in), optional :: sticky
+      type(hdf5_phottable_t)        :: pt
+
+      integer                   :: n
+      character(:), allocatable :: file_names(:)
+
+      ! Construct the phottable_t from the file name and list of group names
+
+      n = SIZE(group_names)
+
+      allocate(character(LEN(file_name))::file_names(n))
+
+      file_names = file_name
+
+      pt = hdf5_phottable_t(file_names, group_names, sticky)
+
+      ! Finish
+
+      return
+
+   end function hdf5_phottable_t_file_
+
+   !****
+
+   function hdf5_phottable_t_files_(file_names, group_names, sticky) result(pt)
+
+      character(*), intent(in)      :: file_names(:)
+      character(*), intent(in)      :: group_names(:)
+      logical, intent(in), optional :: sticky
+      type(hdf5_phottable_t)        :: pt
+
+      logical :: sticky_
+      integer :: n
+
+      @:CHECK_BOUNDS(SIZE(file_names), SIZE(group_names))
+
+      if (PRESENT(sticky)) then
+         sticky_ = sticky
+      else
+         sticky_ = .TRUE.
+      endif
+
+      ! Construct the phottable_t from the lists of file/group names
+
+      n = SIZE(file_names)
+
+      allocate(pt%pi(n))
+
+      pt%file_names = file_names
+      pt%group_names = group_names
+
+      allocate(pt%loaded(n))
+      pt%loaded = .FALSE.
+
+      pt%n = n
+
+      pt%sticky = sticky_
+
+      ! Finish
+
+      return
+
+   end function hdf5_phottable_t_files_
+
+   !****
+
+   subroutine inquire(self, n)
+
+      class(hdf5_phottable_t), intent(in) :: self
+      integer, intent(out), optional      :: n
+
+      ! Inquire metadata
+
+      if (PRESENT(n)) n = self%n
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine fetch(self, i, pi, stat)
+
+      class(hdf5_phottable_t), intent(inout) :: self
+      integer, intent(in)                    :: i
+      type(photint_t), intent(out)           :: pi
+      integer, intent(out), optional         :: stat
+
+      ! If necessary, load
+
+      if (.NOT. self%loaded(i)) then
+
+         call self%load_(i, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+         
+      endif
+
+      ! Fetch the photint_t
+         
+      pi = self%pi(i)
+
+      ! If necesarry, flush
+
+      if (.NOT. self%sticky) call self%flush_(i)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine fetch
+
+   !****
+
+   subroutine flush_(self, i)
+
+      class(hdf5_phottable_t), intent(inout) :: self
+      integer, intent(in)                    :: i
+
+      ! Flush a photint_t from the table
+
+      call flush_pi_(self%pi(i))
+
+      self%loaded(i) = .FALSE.
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine flush_pi_(pi)
+
+         type(photint_t), intent(out) :: pi
+
+      end subroutine flush_pi_
+
+   end subroutine flush_
+      
+   !****
+
+   subroutine load_(self, i, stat)
+      
+      class(hdf5_phottable_t), intent(inout) :: self
+      integer, intent(in)                    :: i
+      integer, intent(out), optional         :: stat
+
+      type(hdf5io_t) :: hi
+      type(hdf5io_t) :: hi_pi
+
+      ! Load the photint_t into the table
+
+      hi = hdf5io_t(self%file_names(i), OPEN_FILE_RO)
+      hi_pi = hdf5io_t(hi, self%group_names(i))
+
+      call read(hi_pi, self%pi(i))
+
+      call hi_pi%final()
+      call hi%final()
+
+      self%loaded(i) = .TRUE.
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine load_
+
+end module hdf5_phottable_m

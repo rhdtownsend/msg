@@ -178,20 +178,26 @@ contains
       if (type /= 'passband_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
+            return
          else
             @:ABORT('invalid type')
-         endif
-      endif
+         end if
+      end if
 
       call hi%read_attr('F_0', F_0)
 
       hi_ci = hdf5io_t(hi, 'ci')
-      call read(hi_ci, ci)
+      call read(hi_ci, ci, stat)
       call hi_ci%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       pb = passband_t_cubint_(ci, F_0)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -199,10 +205,11 @@ contains
 
    !****
 
-   subroutine write_(hi, pb)
+   subroutine write_(hi, pb, stat)
 
-      type(hdf5io_t), intent(inout) :: hi
-      type(passband_t), intent(in)  :: pb
+      type(hdf5io_t), intent(inout)  :: hi
+      type(passband_t), intent(in)   :: pb
+      integer, intent(out), optional :: stat
 
       type(hdf5io_t) :: hi_ci
 
@@ -213,10 +220,15 @@ contains
       call hi%write_attr('F_0', pb%F_0)
 
       hi_ci = hdf5io_t(hi, 'ci')
-      call write(hi_ci, pb%ci)
+      call write(hi_ci, pb%ci, stat)
       call hi_ci%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
