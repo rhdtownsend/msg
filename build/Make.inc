@@ -45,7 +45,7 @@ else
   FFLAGS := ${FFLAGS} -O2 -march=native
 endif
 
-F9XFLAGS := ${F9XFLAGS} $(addprefix -I,${MODPATH}) ${FFLAGS} -std=f2008
+F9XFLAGS := ${F9XFLAGS} $(addprefix -I,${MODPATH}) ${FFLAGS} -std=f2018
 F77FLAGS := ${F77FLAGS} ${FFLAGS} -ffixed-form
 
 ifeq (${OMP},yes)

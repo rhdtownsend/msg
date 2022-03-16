@@ -3,11 +3,3 @@ __pycache__
 
 # Emacs backup files
 *~
-
-# Build subdirectory
-build
-!build/Makefile
-!build/Make.inc
-!build/check_sdk_version
-
-
