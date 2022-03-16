@@ -21,7 +21,7 @@
 
 typedef void *SpecGrid;
 
-void load_SpecGrid(const char *specgrid_filename, SpecGrid *specgrid, int *stat);
+void load_SpecGrid(const char *specgrid_filename, SpecGrid *specgrid, int *stat, int *cache_limit);
 void unload_SpecGrid(SpecGrid specgrid);
 
 void inquire_SpecGrid(SpecGrid specgrid, double *lam_min, double *lam_max, int shape[], int *rank, double axis_min[], double axis_max[]);

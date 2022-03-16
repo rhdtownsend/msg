@@ -41,16 +41,20 @@ module hdf5_spectable_m
       type(specint_t), allocatable :: si(:)
       character(:), allocatable    :: file_names(:)
       character(:), allocatable    :: group_names(:)
-      logical, allocatable         :: loaded(:)
+      integer, allocatable         :: ltimes(:)
       real(RD)                     :: lam_min
       real(RD)                     :: lam_max
       integer                      :: n
-      logical                      :: sticky
+      integer                      :: cache_count
+      integer                      :: cache_limit
    contains
       private
       procedure, public :: inquire
       procedure, public :: fetch
-      procedure         :: flush_
+      #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
+         procedure, public :: interp_${name}$
+      #:endfor
+      procedure         :: cache_
       procedure         :: load_
    end type hdf5_spectable_t
 
@@ -69,13 +73,13 @@ module hdf5_spectable_m
 
 contains
 
-   function hdf5_spectable_t_file_(file_name, group_names, lam_min, lam_max, sticky) result(st)
+   function hdf5_spectable_t_file_(file_name, group_names, lam_min, lam_max, cache_limit) result(st)
 
       character(*), intent(in)      :: file_name
       character(*), intent(in)      :: group_names(:)
       real(RD), intent(in)          :: lam_min 
       real(RD), intent(in)          :: lam_max
-      logical, intent(in), optional :: sticky
+      integer, intent(in), optional :: cache_limit
       type(hdf5_spectable_t)        :: st
 
       integer                   :: n
@@ -89,7 +93,7 @@ contains
 
       file_names = file_name
 
-      st = hdf5_spectable_t(file_names, group_names, lam_min, lam_max, sticky)
+      st = hdf5_spectable_t(file_names, group_names, lam_min, lam_max, cache_limit)
 
       ! Finish
 
@@ -99,24 +103,24 @@ contains
 
    !****
 
-   function hdf5_spectable_t_files_(file_names, group_names, lam_min, lam_max, sticky) result(st)
+   function hdf5_spectable_t_files_(file_names, group_names, lam_min, lam_max, cache_limit) result(st)
 
       character(*), intent(in)      :: file_names(:)
       character(*), intent(in)      :: group_names(:)
       real(RD), intent(in)          :: lam_min 
       real(RD), intent(in)          :: lam_max
-      logical, intent(in), optional :: sticky
+      integer, intent(in), optional :: cache_limit
       type(hdf5_spectable_t)        :: st
 
-      logical :: sticky_
+      integer :: cache_limit_
       integer :: n
 
       @:CHECK_BOUNDS(SIZE(group_names), SIZE(file_names))
 
-      if (PRESENT(sticky)) then
-         sticky_ = sticky
+      if (PRESENT(cache_limit)) then
+         cache_limit_ = cache_limit
       else
-         sticky_ = .TRUE.
+         cache_limit_ = SIZE(file_names)
       endif
 
       ! Construct the spectable_t from the lists of file/group names
@@ -128,15 +132,17 @@ contains
       st%file_names = file_names
       st%group_names = group_names
 
-      allocate(st%loaded(n))
-      st%loaded = .FALSE.
+      allocate(st%ltimes(n))
+      st%ltimes = 0
 
       st%lam_min = lam_min
       st%lam_max = lam_max
 
       st%n = n
 
-      st%sticky = sticky_
+      st%cache_count = 0
+      st%cache_limit = cache_limit_
+      
 
       ! Finish
 
@@ -175,28 +181,24 @@ contains
       type(specint_t), intent(out)           :: si
       integer, intent(out), optional         :: stat
 
-      ! If necessary, load
+      ! Fetch the i'th specint_t
 
-      if (.NOT. self%loaded(i)) then
+      if (self%cache_limit > 0) then
 
-         call self%load_(i, stat)
+         call self%cache_(i, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
-         endif
+         end if
          
-      endif
+         si = self%si(i)
 
-      ! Fetch the specint_t
-         
-      si = self%si(i)
+      else
 
-      ! If necesarry, flush
+         call self%load_(i, si, stat)
 
-      if (.NOT. self%sticky) call self%flush_(i)
+      end if
 
       ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -204,53 +206,188 @@ contains
 
    !****
 
-   subroutine flush_(self, i)
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
+
+      subroutine interp_${name}$(self, i, ${arg_var}$, lam, res, stat)
+
+         class(hdf5_spectable_t), intent(inout) :: self
+         integer, intent(in)                    :: i
+         ${arg_type}$, intent(in)               :: ${arg_var}$
+         real(RD), intent(in)                   :: lam(:)
+         real(RD), intent(out)                  :: res(:)
+         integer, intent(out), optional         :: stat
+
+         type(specint_t) :: si
+
+         ! Do the interpolation
+
+         if (self%cache_limit > 0) then
+
+            call self%cache_(i, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call self%si(i)%interp_${name}$(${arg_var}$, lam, res, stat)
+
+         else
+
+            call self%load_(i, si, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call si%interp_${name}$(${arg_var}$, lam, res, stat)
+
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   #:for name in ('flux', )
+
+      subroutine interp_${name}$(self, i, lam, res, stat)
+
+         class(hdf5_spectable_t), intent(inout) :: self
+         integer, intent(in)                    :: i
+         real(RD), intent(in)                   :: lam(:)
+         real(RD), intent(out)                  :: res(:)
+         integer, intent(out), optional         :: stat
+
+         type(specint_t) :: si
+
+         ! Do the interpolation
+
+         if (self%cache_limit > 0) then
+
+            call self%cache_(i, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call self%si(i)%interp_${name}$(lam, res, stat)
+
+         else
+
+            call self%load_(i, si, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call si%interp_${name}$(lam, res, stat)
+
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine cache_(self, i, stat)
 
       class(hdf5_spectable_t), intent(inout) :: self
       integer, intent(in)                    :: i
+      integer, intent(out), optional         :: stat
 
-      ! Flush a specint_t from the table
+      integer :: j
 
-      call flush_si_(self%si(i))
+      ! Update the cache to ensure the i'th entry is present
 
-      self%loaded(i) = .FALSE.
+      if (self%ltimes(i) > 0) then
+
+         ! Entry is already in the cache; update the lifetime counters
+
+         where (self%ltimes > self%ltimes(i))
+            self%ltimes = self%ltimes - 1
+         end where
+
+      else
+
+         ! Entry is not in the cache; load it
+
+         if (self%cache_count == self%cache_limit) then
+
+            ! Evict the oldest entry to make room
+
+            j = MINLOC(self%ltimes, DIM=1, mask=self%ltimes > 0)
+
+            call flush_(self%si(j))
+
+            where (self%ltimes > 0)
+               self%ltimes = self%ltimes - 1
+            end where
+
+         else
+
+            self%cache_count = self%cache_count + 1
+
+         end if
+
+         call self%load_(i, self%si(i), stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end if
+
+      self%ltimes(i) = self%cache_count
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
    contains
 
-      subroutine flush_si_(si)
+      subroutine flush_(si)
 
          type(specint_t), intent(out) :: si
 
-      end subroutine flush_si_
+      end subroutine flush_
 
-   end subroutine flush_
+   end subroutine cache_
       
    !****
 
-   subroutine load_(self, i, stat)
+   subroutine load_(self, i, si, stat)
       
       class(hdf5_spectable_t), intent(inout) :: self
       integer, intent(in)                    :: i
+      type(specint_t), intent(out)           :: si
       integer, intent(out), optional         :: stat
 
       type(hdf5io_t) :: hi
       type(hdf5io_t) :: hi_si
 
-      ! Load the specint_t into the table
+      ! Load the i'th specint_t from file
 
       hi = hdf5io_t(self%file_names(i), OPEN_FILE_RO)
       hi_si = hdf5io_t(hi, self%group_names(i))
 
-      call read(hi_si, self%si(i))
+      print *,'Loading file/group:', TRIM(self%file_names(i)), ' / ', TRIM(self%group_names(i))
+
+      call read(hi_si, si, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
 
       call hi_si%final()
       call hi%final()
-
-      self%loaded(i) = .TRUE.
 
       ! Finish
 

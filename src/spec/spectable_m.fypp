@@ -30,6 +30,9 @@ module spectable_m
    contains
       procedure(inquire_), deferred :: inquire
       procedure(fetch_), deferred   :: fetch
+      #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
+         procedure(interp_${name}$_), deferred :: interp_${name}$
+      #:endfor
    end type spectable_t
 
    ! Interfaces
@@ -54,15 +57,47 @@ module spectable_m
          integer, intent(out), optional    :: stat
       end subroutine fetch_
 
+      #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                        ('E_moment', 'k', 'integer'), &
+                                        ('D_moment', 'l', 'integer'))
+
+         subroutine interp_${name}$_(self, i, ${arg_var}$, lam, res, stat)
+            use forum_m
+            import spectable_t
+            class(spectable_t), intent(inout) :: self
+            integer, intent(in)               :: i
+            ${arg_type}$, intent(in)          :: ${arg_var}$
+            real(RD), intent(in)              :: lam(:)
+            real(RD), intent(out)             :: res(:)
+            integer, intent(out), optional    :: stat
+         end subroutine interp_${name}$_
+
+      #:endfor
+
+      #:for name in (('flux'),)
+
+         subroutine interp_${name}$_(self, i, lam, res, stat)
+            use forum_m
+            import spectable_t
+            class(spectable_t), intent(inout) :: self
+            integer, intent(in)               :: i
+            real(RD), intent(in)              :: lam(:)
+            real(RD), intent(out)             :: res(:)
+            integer, intent(out), optional    :: stat
+         end subroutine interp_${name}$_
+
+      #:endfor
+
    end interface
       
    interface read
 
-      module subroutine read_(hi, st, stat)
-         use hdf5io_m
+      module subroutine read_(hi, st, stat, cache_limit)
+         use forum_m
          type(hdf5io_t), intent(inout)                :: hi
          class(spectable_t), allocatable, intent(out) :: st
          integer, intent(out), optional               :: stat
+         integer, intent(in), optional                :: cache_limit
       end subroutine read_
 
    end interface read
@@ -70,7 +105,7 @@ module spectable_m
    interface write
 
       module subroutine write_(hi, st, stat)
-         use hdf5io_m
+         use forum_m
          type(hdf5io_t), intent(inout)     :: hi
          class(spectable_t), intent(inout) :: st
          integer, intent(out), optional    :: stat

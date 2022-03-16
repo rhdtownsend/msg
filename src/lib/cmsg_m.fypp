@@ -44,6 +44,7 @@ module cmsg_m
       public :: interp_D_moment_${name}$
       public :: interp_flux_${name}$
    #:endfor
+   public :: load_photgrid_from_specgrid
 
    public :: STAT_OK
    public :: STAT_OUT_OF_BOUNDS_AXIS_LO
@@ -56,83 +57,95 @@ module cmsg_m
    public :: STAT_INVALID_ARGUMENT
    public :: STAT_INVALID_TYPE
    public :: STAT_FILE_NOT_FOUND
-   public :: load_photgrid_from_specgrid
 
    ! Procedures
 
 contains
 
-   #:for cname, type in (('SpecGrid', 'specgrid_t'), ('PhotGrid', 'photgrid_t'))
+   subroutine load_specgrid(specgrid_file_name, specgrid, stat, cache_limit) bind(C, name='load_SpecGrid')
 
-      #:set name = cname.lower()
+      character(C_CHAR)        :: specgrid_file_name(*)
+      type(C_PTR)              :: specgrid
+      integer(C_INT), optional :: stat
+      integer(C_INT), optional :: cache_limit
 
-      subroutine load_${name}$(${name}$_filename, ${name}$, stat) bind(C, name='load_${cname}$')
+      type(hdf5io_t)            :: hi
+      type(specgrid_t), pointer :: specgrid_ptr
 
-         character(C_CHAR) :: ${name}$_filename(*)
-         type(C_PTR)       :: ${name}$
-         integer(C_INT)    :: stat
-
-         type(hdf5io_t)          :: hi
-         type(${type}$), pointer :: gr
-
-         ! Load the ${name}$ from file
-
-         call open_file_(${name}$_filename, hi, stat)
+      ! Load the specgrid from file
+      
+      call open_file_(specgrid_file_name, hi, stat)
+      if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
+      endif
 
-         allocate(gr)
+      allocate(specgrid_ptr)
 
-         call read(hi, gr, stat)
-         if (STAT /= STAT_OK) then
-            deallocate(gr)
-            return
-         endif
-
-         call hi%final()
-
-         ! Set up the C pointer
-
-         ${name}$ = C_LOC(gr)
-
-         ! Finish
-
+      call read(hi, specgrid_ptr, stat, cache_limit)
+      if (STAT /= STAT_OK) then
+         deallocate(specgrid_ptr)
          return
+      endif
 
-      end subroutine load_${name}$
+      call hi%final()
 
-      !****
+      ! Set up the C pointer
 
-      subroutine unload_${name}$(${name}$) bind(C, name='unload_${cname}$')
+      specgrid = C_LOC(specgrid_ptr)
 
-         type(C_PTR), value :: ${name}$
+      ! Finish
 
-         type(${type}$), pointer :: gr
+      return
 
-         ! Set up the Fortran pointer
+   end subroutine load_specgrid
 
-         call C_F_POINTER(${name}$, gr)
+   !****
 
-         ! Deallocate the grid
+   subroutine load_photgrid(photgrid_file_name, photgrid, stat) bind(C, name='load_PhotGrid')
 
-         if (ASSOCIATED(gr)) deallocate(gr)
+      character(C_CHAR)        :: photgrid_file_name(*)
+      type(C_PTR)              :: photgrid
+      integer(C_INT), optional :: stat
 
-         ! Finish
+      type(hdf5io_t)            :: hi
+      type(photgrid_t), pointer :: photgrid_ptr
 
+      ! Load the photgrid from file
+      
+      call open_file_(photgrid_file_name, hi, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+
+      allocate(photgrid_ptr)
+
+      call read(hi, photgrid_ptr, stat)
+      if (STAT /= STAT_OK) then
+         deallocate(photgrid_ptr)
          return
+      endif
 
-      end subroutine unload_${name}$
+      call hi%final()
 
-   #:endfor
+      ! Set up the C pointer
+
+      photgrid = C_LOC(photgrid_ptr)
+
+      ! Finish
+
+      return
+
+   end subroutine load_photgrid
 
    !****
 
    subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, &
                                           photgrid, stat) bind(C, name='load_PhotGrid_from_SpecGrid')
 
-      character(C_CHAR) :: specgrid_filename(*)
-      character(C_CHAR) :: passband_filename(*)
-      type(C_PTR)       :: photgrid
-      integer(C_INT)    :: stat
+      character(C_CHAR)        :: specgrid_filename(*)
+      character(C_CHAR)        :: passband_filename(*)
+      type(C_PTR)              :: photgrid
+      integer(C_INT), optional :: stat
 
       type(hdf5io_t)            :: hi
       type(passband_t)          :: pb
@@ -170,6 +183,50 @@ contains
       return
       
    end subroutine load_photgrid_from_specgrid
+
+   !****
+
+   subroutine unload_specgrid(specgrid) bind(C, name='unload_SpecGrid')
+
+      type(C_PTR), value :: specgrid
+
+      type(specgrid_t), pointer :: specgrid_ptr
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid, specgrid_ptr)
+
+      ! Deallocate the grid
+
+      if (ASSOCIATED(specgrid_ptr)) deallocate(specgrid_ptr)
+
+      ! Finish
+
+      return
+
+   end subroutine unload_specgrid
+
+   !****
+
+   subroutine unload_photgrid(photgrid) bind(C, name='unload_PhotGrid')
+
+      type(C_PTR), value :: photgrid
+
+      type(photgrid_t), pointer :: photgrid_ptr
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(photgrid, photgrid_ptr)
+
+      ! Deallocate the grid
+
+      if (ASSOCIATED(photgrid_ptr)) deallocate(photgrid_ptr)
+
+      ! Finish
+
+      return
+
+   end subroutine unload_photgrid
 
    !****
 

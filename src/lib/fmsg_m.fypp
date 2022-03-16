@@ -54,38 +54,63 @@ module fmsg_m
 
 contains
 
-   #:for name, type in (('specgrid', 'specgrid_t'), ('photgrid', 'photgrid_t'))
+   subroutine load_specgrid(specgrid_filename, specgrid, stat, cache_limit)
 
-      subroutine load_${name}$(${name}$_filename, ${name}$, stat)
+      character(*), intent(in)       :: specgrid_filename
+      type(specgrid_t), intent(out)  :: specgrid
+      integer, intent(out), optional :: stat
+      integer, intent(in), optional  :: cache_limit
 
-         character(*), intent(in)       :: ${name}$_filename
-         type(${type}$), intent(out)    :: ${name}$
-         integer, intent(out), optional :: stat
+      type(hdf5io_t) :: hi
 
-         type(hdf5io_t) :: hi
+      ! Load the specgrid from file
 
-         ! Load the ${type}$ from file
+      call open_file_(specgrid_filename, hi, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
 
-         call open_file_(${name}$_filename, hi, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
+      call read(hi, specgrid, stat, cache_limit)
 
-         call read(hi, ${name}$, stat)
+      call hi%final()
 
-         call hi%final()
+      ! Finish
 
-         ! Finish
+      return
 
-         return
+   end subroutine load_specgrid
 
-      end subroutine load_${name}$
+   !****
 
-   #:endfor
+   subroutine load_photgrid(photgrid_filename, photgrid, stat)
+
+      character(*), intent(in)       :: photgrid_filename
+      type(photgrid_t), intent(out)  :: photgrid
+      integer, intent(out), optional :: stat
+
+      type(hdf5io_t) :: hi
+
+      ! Load the photgrid from file
+
+      call open_file_(photgrid_filename, hi, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+
+      call read(hi, photgrid, stat)
+
+      call hi%final()
+
+      ! Finish
+
+      return
+
+   end subroutine load_photgrid
 
    !****
       
-   subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, photgrid, stat)
+      subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, &
+                                             photgrid, stat)
 
       character(*), intent(in)       :: specgrid_filename
       character(*), intent(in)       :: passband_filename

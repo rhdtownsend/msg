@@ -32,6 +32,9 @@ module phottable_m
    contains
       procedure(inquire_), deferred :: inquire
       procedure(fetch_), deferred   :: fetch
+      #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
+         procedure(interp_${name}$_), deferred :: interp_${name}$
+      #:endfor
    end type phottable_t
 
    ! Interfaces
@@ -52,6 +55,35 @@ module phottable_m
          type(photint_t), intent(out)      :: pi
          integer, intent(out), optional    :: stat
       end subroutine fetch_
+
+      #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                        ('E_moment', 'k', 'integer'), &
+                                        ('D_moment', 'l', 'integer'))
+
+         subroutine interp_${name}$_(self, i, ${arg_var}$, res, stat)
+            use forum_m
+            import phottable_t
+            class(phottable_t), intent(inout) :: self
+            integer, intent(in)               :: i
+            ${arg_type}$, intent(in)          :: ${arg_var}$
+            real(RD), intent(out)             :: res
+            integer, intent(out), optional    :: stat
+         end subroutine interp_${name}$_
+
+      #:endfor
+
+      #:for name in (('flux'),)
+
+         subroutine interp_${name}$_(self, i, res, stat)
+            use forum_m
+            import phottable_t
+            class(phottable_t), intent(inout) :: self
+            integer, intent(in)               :: i
+            real(RD), intent(out)             :: res
+            integer, intent(out), optional    :: stat
+         end subroutine interp_${name}$_
+
+      #:endfor
 
    end interface
 

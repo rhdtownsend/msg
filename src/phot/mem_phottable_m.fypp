@@ -44,6 +44,9 @@ module mem_phottable_m
       private
       procedure, public :: inquire
       procedure, public :: fetch
+      #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
+         procedure, public :: interp_${name}$
+      #:endfor
    end type mem_phottable_t
 
    ! Interfaces
@@ -103,16 +106,63 @@ contains
       type(photint_t), intent(out)          :: pi
       integer, intent(out), optional        :: stat
 
-      ! Fetch the photint_t
-         
+      ! Fetch the i'th photint_t
+
       pi = self%pi(i)
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
 
    end subroutine fetch
+
+   !****
+
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
+
+      subroutine interp_${name}$(self, i, ${arg_var}$, res, stat)
+
+         class(mem_phottable_t), intent(inout) :: self
+         integer, intent(in)                   :: i
+         ${arg_type}$, intent(in)              :: ${arg_var}$
+         real(RD), intent(out)                 :: res
+         integer, intent(out), optional        :: stat
+
+         ! Do the interpolation
+
+         call self%pi(i)%interp_${name}$(${arg_var}$, res, stat)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   #:for name in ('flux', )
+
+      subroutine interp_${name}$(self, i, res, stat)
+
+         class(mem_phottable_t), intent(inout) :: self
+         integer, intent(in)                   :: i
+         real(RD), intent(out)                 :: res
+         integer, intent(out), optional        :: stat
+
+         ! Do the interpolation
+
+         call self%pi(i)%interp_${name}$(res, stat)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
 
 end module mem_phottable_m

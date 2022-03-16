@@ -25,7 +25,7 @@ module hdf5_phottable_m
    use forum_m
 
    use photint_m
-   use phottable_m
+   use mem_phottable_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -36,21 +36,9 @@ module hdf5_phottable_m
 
    ! Derived-type definitions
 
-   type, extends(phottable_t) :: hdf5_phottable_t
-      private
-      type(photint_t), allocatable :: pi(:)
-      character(:), allocatable    :: file_names(:)
-      character(:), allocatable    :: group_names(:)
-      logical, allocatable         :: loaded(:)
-      integer                      :: n
-      logical                      :: sticky
-   contains
-      private
-      procedure, public :: inquire
-      procedure, public :: fetch
-      procedure         :: flush_
-      procedure         :: load_
+   type, extends(mem_phottable_t) :: hdf5_phottable_t
    end type hdf5_phottable_t
+   
 
    ! Interfaces
 
@@ -67,12 +55,11 @@ module hdf5_phottable_m
 
 contains
 
-   function hdf5_phottable_t_file_(file_name, group_names, sticky) result(pt)
+   function hdf5_phottable_t_file_(file_name, group_names) result(pt)
 
-      character(*), intent(in)      :: file_name
-      character(*), intent(in)      :: group_names(:)
-      logical, intent(in), optional :: sticky
-      type(hdf5_phottable_t)        :: pt
+      character(*), intent(in) :: file_name
+      character(*), intent(in) :: group_names(:)
+      type(hdf5_phottable_t)   :: pt
 
       integer                   :: n
       character(:), allocatable :: file_names(:)
@@ -85,7 +72,7 @@ contains
 
       file_names = file_name
 
-      pt = hdf5_phottable_t(file_names, group_names, sticky)
+      pt = hdf5_phottable_t(file_names, group_names)
 
       ! Finish
 
@@ -95,155 +82,44 @@ contains
 
    !****
 
-   function hdf5_phottable_t_files_(file_names, group_names, sticky) result(pt)
+   function hdf5_phottable_t_files_(file_names, group_names) result(pt)
 
-      character(*), intent(in)      :: file_names(:)
-      character(*), intent(in)      :: group_names(:)
-      logical, intent(in), optional :: sticky
-      type(hdf5_phottable_t)        :: pt
+      character(*), intent(in) :: file_names(:)
+      character(*), intent(in) :: group_names(:)
+      type(hdf5_phottable_t)   :: pt
 
-      logical :: sticky_
-      integer :: n
+      integer                      :: n
+      type(photint_t), allocatable :: pi(:)
+      integer                      :: i
+      type(hdf5io_t)               :: hi
+      type(hdf5io_t)               :: hi_pi
 
       @:CHECK_BOUNDS(SIZE(file_names), SIZE(group_names))
-
-      if (PRESENT(sticky)) then
-         sticky_ = sticky
-      else
-         sticky_ = .TRUE.
-      endif
 
       ! Construct the phottable_t from the lists of file/group names
 
       n = SIZE(file_names)
 
-      allocate(pt%pi(n))
+      allocate(pi(n))
 
-      pt%file_names = file_names
-      pt%group_names = group_names
+      do i = 1, n
 
-      allocate(pt%loaded(n))
-      pt%loaded = .FALSE.
+         hi = hdf5io_t(file_names(i), OPEN_FILE_RO)
+         hi_pi = hdf5io_t(hi, group_names(i))
 
-      pt%n = n
+         call read(hi_pi, pi(i))
 
-      pt%sticky = sticky_
+         call hi_pi%final()
+         call hi%final()
+
+      end do
+
+      pt%mem_phottable_t = mem_phottable_t(pi)
 
       ! Finish
 
       return
 
    end function hdf5_phottable_t_files_
-
-   !****
-
-   subroutine inquire(self, n)
-
-      class(hdf5_phottable_t), intent(in) :: self
-      integer, intent(out), optional      :: n
-
-      ! Inquire metadata
-
-      if (PRESENT(n)) n = self%n
-
-      ! Finish
-
-      return
-
-   end subroutine inquire
-
-   !****
-
-   subroutine fetch(self, i, pi, stat)
-
-      class(hdf5_phottable_t), intent(inout) :: self
-      integer, intent(in)                    :: i
-      type(photint_t), intent(out)           :: pi
-      integer, intent(out), optional         :: stat
-
-      ! If necessary, load
-
-      if (.NOT. self%loaded(i)) then
-
-         call self%load_(i, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
-         
-      endif
-
-      ! Fetch the photint_t
-         
-      pi = self%pi(i)
-
-      ! If necesarry, flush
-
-      if (.NOT. self%sticky) call self%flush_(i)
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine fetch
-
-   !****
-
-   subroutine flush_(self, i)
-
-      class(hdf5_phottable_t), intent(inout) :: self
-      integer, intent(in)                    :: i
-
-      ! Flush a photint_t from the table
-
-      call flush_pi_(self%pi(i))
-
-      self%loaded(i) = .FALSE.
-
-      ! Finish
-
-      return
-
-   contains
-
-      subroutine flush_pi_(pi)
-
-         type(photint_t), intent(out) :: pi
-
-      end subroutine flush_pi_
-
-   end subroutine flush_
-      
-   !****
-
-   subroutine load_(self, i, stat)
-      
-      class(hdf5_phottable_t), intent(inout) :: self
-      integer, intent(in)                    :: i
-      integer, intent(out), optional         :: stat
-
-      type(hdf5io_t) :: hi
-      type(hdf5io_t) :: hi_pi
-
-      ! Load the photint_t into the table
-
-      hi = hdf5io_t(self%file_names(i), OPEN_FILE_RO)
-      hi_pi = hdf5io_t(hi, self%group_names(i))
-
-      call read(hi_pi, self%pi(i))
-
-      call hi_pi%final()
-      call hi%final()
-
-      self%loaded(i) = .TRUE.
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine load_
 
 end module hdf5_phottable_m

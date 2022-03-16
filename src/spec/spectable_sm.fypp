@@ -35,11 +35,12 @@ submodule (spectable_m) spectable_sm
 
 contains
 
-   subroutine read_(hi, st, stat)
+   subroutine read_(hi, st, stat, cache_limit)
 
       type(hdf5io_t), intent(inout)                :: hi
       class(spectable_t), allocatable, intent(out) :: st
       integer, intent(out), optional               :: stat
+      integer, intent(in), optional                :: cache_limit
 
       character(TYPE_LEN)       :: type
       integer                   :: n
@@ -71,7 +72,8 @@ contains
 
       subgroup_names = [(si_subgroup_name_(i), i=1,n)]
 
-      st = hdf5_spectable_t(file_name, group_name//'/'//subgroup_names, lam_min, lam_max)
+      st = hdf5_spectable_t(file_name, group_name//'/'//subgroup_names, &
+                            lam_min, lam_max, cache_limit)
 
       ! Finish
 
@@ -93,8 +95,8 @@ contains
       real(RD)        :: lam_min
       real(RD)        :: lam_max
       integer         :: i
-      type(specint_t) :: si
       type(hdf5io_t)  :: hi_si
+      type(specint_t) :: si
 
       ! Write the spectable_t
 
@@ -109,10 +111,14 @@ contains
 
       do i = 1, n
 
+         ! Fetch the specint_t
+
          call st%fetch(i, si, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
+
+         ! Write it
 
          hi_si = hdf5io_t(hi, si_subgroup_name_(i))
          call write(hi_si, si, stat)

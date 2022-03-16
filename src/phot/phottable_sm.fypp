@@ -86,8 +86,8 @@ contains
 
       integer         :: n
       integer         :: i
-      type(photint_t) :: pi
       type(hdf5io_t)  :: hi_pi
+      type(photint_t) :: pi
 
       ! Write the phottable_t
 
@@ -99,10 +99,14 @@ contains
       
       do i = 1, n
 
+         ! Fetch the photint_t
+
          call pt%fetch(i, pi, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
+
+         ! Write it
 
          hi_pi = hdf5io_t(hi, pi_subgroup_name_(i))
          call write(hi_pi, pi, stat)

@@ -253,17 +253,17 @@ contains
 
    !****
 
-   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                          ('E_moment', 'E', 'k', 'integer'), &
-                                          ('D_moment', 'D', 'l', 'integer'))
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, ${arg_var}$, lam, ${var}$, stat)
+      subroutine interp_${name}$(self, ${arg_var}$, lam, res, stat)
 
-         class(specint_t), intent(inout) :: self
-         ${arg_type}$, intent(in)        :: ${arg_var}$
-         real(RD), intent(in)            :: lam(:)
-         real(RD), intent(out)           :: ${var}$(:)
-         integer, intent(out), optional  :: stat
+         class(specint_t), intent(in)   :: self
+         ${arg_type}$, intent(in)       :: ${arg_var}$
+         real(RD), intent(in)           :: lam(:)
+         real(RD), intent(out)          :: res(:)
+         integer, intent(out), optional :: stat
 
          real(RD) :: b(self%n_b)
 
@@ -276,7 +276,7 @@ contains
 
          ! Do the interpolation
 
-         call self%interp_f_(b, lam, ${var}$, stat)
+         call self%interp_f_(b, lam, res, stat)
 
          ! Finish
 
@@ -290,12 +290,12 @@ contains
 
    #:for name, var in (('flux', 'F'),)
 
-      subroutine interp_${name}$(self, lam, ${var}$, stat)
+      subroutine interp_${name}$(self, lam, res, stat)
 
-         class(specint_t), intent(inout) :: self
-         real(RD), intent(in)            :: lam(:)
-         real(RD), intent(out)           :: ${var}$(:)
-         integer, intent(out), optional  :: stat
+         class(specint_t), intent(in)   :: self
+         real(RD), intent(in)           :: lam(:)
+         real(RD), intent(out)          :: res(:)
+         integer, intent(out), optional :: stat
 
          real(RD) :: b(self%n_b)
 
@@ -308,7 +308,7 @@ contains
 
          ! Do the interpolation
 
-         call self%interp_f_(b, lam, ${var}$, stat)
+         call self%interp_f_(b, lam, res, stat)
 
          ! Finish
 
@@ -322,11 +322,11 @@ contains
       
    subroutine interp_f_(self, b, lam, f, stat)
 
-      class(specint_t), intent(inout) :: self
-      real(RD), intent(in)            :: b(:)
-      real(RD), intent(in)            :: lam(:)
-      real(RD), intent(out)           :: f(:)
-      integer, intent(out), optional  :: stat
+      class(specint_t), intent(in)   :: self
+      real(RD), intent(in)           :: b(:)
+      real(RD), intent(in)           :: lam(:)
+      real(RD), intent(out)          :: f(:)
+      integer, intent(out), optional :: stat
 
       integer  :: n_lam
       integer  :: i

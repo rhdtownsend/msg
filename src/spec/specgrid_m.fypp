@@ -147,100 +147,45 @@ contains
 
    !****
 
-   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                          ('E_moment', 'E', 'k', 'integer'), &
-                                          ('D_moment', 'D', 'l', 'integer'))
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, vx, ${arg_var}$, lam, ${var}$, stat, vderiv)
+      subroutine interp_${name}$(self, vx, ${arg_var}$, lam, res, stat, vderiv)
 
          class(specgrid_t), intent(inout) :: self
          real(RD), intent(in)             :: vx(:)
          ${arg_type}$, intent(in)         :: ${arg_var}$
          real(RD), intent(in)             :: lam(:)
-         real(RD), intent(out)            :: ${var}$(:)
-         integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: vderiv(:)
-
-         ! Interpolate the data
-
-         call self%ng%interp(proc_, vx, ${var}$, stat, vderiv)
-
-         ! Finish
-
-      contains
-
-         subroutine proc_(vi, f, stat)
-
-            integer, intent(in)            :: vi(:)
-            real(RD), intent(out)          :: f(:)
-            integer, intent(out), optional :: stat
-
-            integer         :: li
-            integer         :: ci
-            type(specint_t) :: si
-
-            li = self%ng%li_from_vi(vi)
-            ci = self%ng%ci_from_li(li)
-
-            call self%st%fetch(ci, si, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
-
-            call si%interp_${name}$(${arg_var}$, lam, f, stat)
-
-            return
-
-         end subroutine proc_
-
-      end subroutine interp_${name}$
-
-   #:endfor
-
-   !****
-
-   #:for name, var in (('flux', 'F'),)
-
-      subroutine interp_${name}$(self, vx, lam, ${var}$, stat, vderiv)
-
-         class(specgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: vx(:)
-         real(RD), intent(in)             :: lam(:)
-         real(RD), intent(out)            :: ${var}$(:)
+         real(RD), intent(out)            :: res(:)
          integer, intent(out), optional   :: stat
          logical, intent(in), optional    :: vderiv(:)
 
          ! Interpolate the ${name}$
 
-         call self%ng%interp(proc_, vx, ${var}$, stat, vderiv)
+         call self%ng%interp(data_proc_, vx, res, stat, vderiv)
 
          ! Finish
 
       contains
 
-         subroutine proc_(vi, f, stat)
+         subroutine data_proc_(vi, f, stat)
 
             integer, intent(in)            :: vi(:)
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer         :: li
-            integer         :: ci
-            type(specint_t) :: si
+            integer :: li
+            integer :: ci
 
             li = self%ng%li_from_vi(vi)
             ci = self%ng%ci_from_li(li)
 
-            call self%st%fetch(ci, si, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
-
-            call si%interp_${name}$(lam, f, stat)
+            call self%st%interp_${name}$(ci, ${arg_var}$, lam, f, stat)
 
             return
 
-         end subroutine proc_
+         end subroutine data_proc_
 
       end subroutine interp_${name}$
 
@@ -248,11 +193,55 @@ contains
 
    !****
 
-   subroutine read_(hi, sg, stat)
+   #:for name in ('flux',)
+
+      subroutine interp_${name}$(self, vx, lam, res, stat, vderiv)
+
+         class(specgrid_t), intent(inout) :: self
+         real(RD), intent(in)             :: vx(:)
+         real(RD), intent(in)             :: lam(:)
+         real(RD), intent(out)            :: res(:)
+         integer, intent(out), optional   :: stat
+         logical, intent(in), optional    :: vderiv(:)
+
+         ! Interpolate the ${name}$
+
+         call self%ng%interp(data_proc_, vx, res, stat, vderiv)
+
+         ! Finish
+
+      contains
+
+         subroutine data_proc_(vi, f, stat)
+
+            integer, intent(in)            :: vi(:)
+            real(RD), intent(out)          :: f(:)
+            integer, intent(out), optional :: stat
+
+            integer :: li
+            integer :: ci
+
+            li = self%ng%li_from_vi(vi)
+            ci = self%ng%ci_from_li(li)
+
+            call self%st%interp_${name}$(ci, lam, f, stat)
+
+            return
+
+         end subroutine data_proc_
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine read_(hi, sg, stat, cache_limit)
 
       type(hdf5io_t), intent(inout)  :: hi
       type(specgrid_t), intent(out)  :: sg
       integer, intent(out), optional :: stat
+      integer, intent(in), optional  :: cache_limit
 
       character(TYPE_LEN)             :: type
       type(hdf5io_t)                  :: hi_st
@@ -272,16 +261,16 @@ contains
          endif
       endif
 
-      hi_st = hdf5io_t(hi, 'st')
-      call read(hi_st, st, stat)
-      call hi_st%final()
+      hi_ng = hdf5io_t(hi, 'ng')
+      call read(hi_ng, ng, stat)
+      call hi_ng%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      hi_ng = hdf5io_t(hi, 'ng')
-      call read(hi_ng, ng, stat)
-      call hi_ng%final()
+      hi_st = hdf5io_t(hi, 'st')
+      call read(hi_st, st, stat, cache_limit)
+      call hi_st%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

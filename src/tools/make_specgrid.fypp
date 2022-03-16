@@ -342,7 +342,7 @@ contains
 
       ! Create the spectable_t
 
-      st = hdf5_spectable_t(file_names, group_names, MAXVAL(nd%lam_min), MINVAL(nd%lam_max), sticky=.FALSE.)
+      st = hdf5_spectable_t(file_names, group_names, MAXVAL(nd%lam_min), MINVAL(nd%lam_max), cache_limit=0)
 
       ! Create the specgrid_t
 

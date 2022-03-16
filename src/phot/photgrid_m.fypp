@@ -321,7 +321,7 @@ contains
       endif
 
       hi_st = hdf5io_t(hi, 'st')
-      call read(hi_st, st, stat)
+      call read(hi_st, st, stat, cache_limit=0)
       call hi_st%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return

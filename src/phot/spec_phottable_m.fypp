@@ -50,6 +50,9 @@ module spec_phottable_m
       private
       procedure, public :: inquire
       procedure, public :: fetch
+      #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
+         procedure, public :: interp_${name}$
+      #:endfor
       procedure         :: eval_
    end type spec_phottable_t
 
@@ -122,9 +125,11 @@ contains
       type(photint_t), intent(out)           :: pi
       integer, intent(out), optional         :: stat
 
-      ! If necessary, eval
+      ! Fetch the i'th photint_t
 
       if (.NOT. self%evaled(i)) then
+
+         ! Evaluate the photint_t
 
          call self%eval_(i, stat)
          if (PRESENT(stat)) then
@@ -133,18 +138,85 @@ contains
          
       endif
 
-      ! Fetch the photint_t
-         
       pi = self%pi(i)
 
       ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
    end subroutine fetch
 
+   !****
+
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
+
+      subroutine interp_${name}$(self, i, ${arg_var}$, res, stat)
+
+         class(spec_phottable_t), intent(inout) :: self
+         integer, intent(in)                    :: i
+         ${arg_type}$, intent(in)               :: ${arg_var}$
+         real(RD), intent(out)                  :: res
+         integer, intent(out), optional         :: stat
+
+         ! Do the interpolation
+
+         if (.NOT. self%evaled(i)) then
+
+            ! Evaluate the photint_t
+
+            call self%eval_(i, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+         end if
+         
+         call self%pi(i)%interp_${name}$(${arg_var}$, res, stat)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   #:for name in ('flux', )
+
+      subroutine interp_${name}$(self, i, res, stat)
+
+         class(spec_phottable_t), intent(inout) :: self
+         integer, intent(in)                    :: i
+         real(RD), intent(out)                  :: res
+         integer, intent(out), optional         :: stat
+
+         ! Do the interpolation
+
+         if (.NOT. self%evaled(i)) then
+
+            ! Evaluate the photint_t
+
+            call self%eval_(i, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+         end if
+         
+         call self%pi(i)%interp_${name}$(res, stat)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+      
    !****
 
    subroutine eval_(self, i, stat)
@@ -166,9 +238,9 @@ contains
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
-
+      
       self%evaled(i) = .TRUE.
-
+         
       ! Finish
 
       if (PRESENT(stat)) stat = STAT_OK

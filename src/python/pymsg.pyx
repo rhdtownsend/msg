@@ -29,7 +29,8 @@ cdef extern from "cmsg.h":
 
     # SpecGrid interface
 
-    void load_SpecGrid(const char *specgrid_filename, void **specgrid, int *stat)
+    void load_SpecGrid(const char *specgrid_filename, void **specgrid, int *stat,
+                       int *cache_limit)
     void unload_SpecGrid(void *specgrid)
     void inquire_SpecGrid(void *specgrid, double *lam_min, double *lam_max,
                           int shape[], int *rank, double axis_min[],
@@ -109,7 +110,7 @@ cdef class SpecGrid:
     
     cdef int[:] _shape
     
-    def __init__(self, str filename):
+    def __init__(self, str filename, int cache_limit=-1):
         """SpecGrid constructor.
 
         Args:
@@ -123,7 +124,10 @@ cdef class SpecGrid:
         cdef double[:] axis_min_vals
         cdef double[:] axis_max_vals
 
-        load_SpecGrid(filename.encode('ascii'), &self.specgrid, &stat)
+        if cache_limit >= 0:
+            load_SpecGrid(filename.encode('ascii'), &self.specgrid, &stat, &cache_limit)
+        else:
+            load_SpecGrid(filename.encode('ascii'), &self.specgrid, &stat, NULL)
 
         if stat != STAT_OK:
             handle_error(stat)
