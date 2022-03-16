@@ -38,25 +38,25 @@ module ngrid_m
 
    type ngrid_t
       private
-      type(axis_t), allocatable :: ax(:)
+      type(axis_t), allocatable :: axes(:)
       logical, allocatable      :: mask(:)
       integer, allocatable      :: shape(:)
-      integer, allocatable      :: li_ci(:)
-      integer, allocatable      :: ci_li(:)
+      integer, allocatable      :: lin_con(:)
+      integer, allocatable      :: con_lin(:)
       integer                   :: rank
-      integer                   :: n_ci
-      integer                   :: n_li
-      integer                   :: n_si
+      integer                   :: n_con
+      integer                   :: n_lin
+      integer                   :: n_stn
    contains
       private
       procedure, public :: inquire
       procedure, public :: locate
       procedure, public :: map
-      procedure, public :: ci_from_li
-      procedure, public :: li_from_ci
-      procedure, public :: li_from_vi
-      procedure, public :: vi_from_li
-      procedure         :: vi_from_si_
+      procedure, public :: con_from_lin
+      procedure, public :: lin_from_con
+      procedure, public :: lin_from_vec
+      procedure, public :: vec_from_lin
+      procedure         :: vec_from_stn_
       procedure         :: interp_0_
       procedure         :: interp_1_
       generic, public   :: interp => interp_0_, interp_1_
@@ -89,41 +89,41 @@ module ngrid_m
 
 contains
 
-   function ngrid_t_ (ax, mask) result (ng)
+   function ngrid_t_ (axes, mask) result(ngrid)
 
-      type(axis_t), intent(in) :: ax(:)
+      type(axis_t), intent(in) :: axes(:)
       logical, intent(in)      :: mask(:)
-      type(ngrid_t)            :: ng
+      type(ngrid_t)            :: ngrid
 
       integer :: rank
       integer :: j
-      integer :: shape(SIZE(ax))
-      integer :: ci
-      integer :: li
+      integer :: shape(SIZE(axes))
+      integer :: i_con
+      integer :: i_lin
 
-      ! Construct the ngrid_t
+      ! Construct ngrid from the supplied data
 
-      rank = SIZE(ax)
+      rank = SIZE(axes)
 
       do j = 1, rank
-         call ax(j)%inquire(n=shape(j))
+         call axes(j)%inquire(n=shape(j))
       end do
 
       @:CHECK_BOUNDS(SIZE(mask), PRODUCT(shape))
 
-      ng%mask = mask
-      ng%ax = ax
+      ngrid%mask = mask
+      ngrid%axes = axes
 
-      ng%shape = shape
-      ng%rank = rank
+      ngrid%shape = shape
+      ngrid%rank = rank
 
-      ng%n_ci = COUNT(mask)
-      ng%n_li = SIZE(mask)
+      ngrid%n_con = COUNT(mask)
+      ngrid%n_lin = SIZE(mask)
 
-      ng%ci_li = UNPACK([(ci, ci=1,ng%n_ci)], mask, 0)
-      ng%li_ci = PACK([(li, li=1,ng%n_li)], ng%ci_li /= 0)
+      ngrid%lin_con = UNPACK([(i_con, i_con=1,ngrid%n_con)], mask, 0)
+      ngrid%con_lin = PACK([(i_lin, i_lin=1,ngrid%n_lin)], ngrid%lin_con /= 0)
 
-      ng%n_si = 4**rank
+      ngrid%n_stn = 4**rank
 
       ! Finish
 
@@ -133,11 +133,11 @@ contains
 
    !****
 
-   subroutine inquire(self, n_ci, n_li, shape, rank, axis_min, axis_max, axis_labels)
+   subroutine inquire(self, n_con, n_lin, shape, rank, axis_min, axis_max, axis_labels)
 
       class(ngrid_t), intent(in)          :: self
-      integer, intent(out), optional      :: n_ci
-      integer, intent(out), optional      :: n_li
+      integer, intent(out), optional      :: n_con
+      integer, intent(out), optional      :: n_lin
       integer, intent(out), optional      :: shape(:)
       integer, intent(out), optional      :: rank
       real(RD), intent(out), optional     :: axis_min(:)
@@ -164,27 +164,27 @@ contains
 
       ! Inquire metadata
 
-      if (PRESENT(n_ci)) n_ci = self%n_ci
-      if (PRESENT(n_li)) n_li = self%n_li
+      if (PRESENT(n_con)) n_con = self%n_con
+      if (PRESENT(n_lin)) n_lin = self%n_lin
 
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
 
       if (PRESENT(axis_min)) then
          do j = 1, self%rank
-            call self%ax(j)%inquire(min=axis_min(j))
+            call self%axes(j)%inquire(min=axis_min(j))
          end do
       end if
 
       if (PRESENT(axis_max)) then
          do j = 1, self%rank
-            call self%ax(j)%inquire(max=axis_max(j))
+            call self%axes(j)%inquire(max=axis_max(j))
          end do
       end if
 
       if (PRESENT(axis_labels)) then
          do j = 1, self%rank
-            call self%ax(j)%inquire(label=axis_labels(j))
+            call self%axes(j)%inquire(label=axis_labels(j))
          end do
       end if
 
@@ -196,41 +196,41 @@ contains
 
    !****
 
-   subroutine locate(self, vx, vi, stat)
+   subroutine locate(self, vx, i_vec, stat)
 
       class(ngrid_t), intent(in)     :: self
       real(RD), intent(in)           :: vx(:)
-      integer, intent(out)           :: vi(:)
+      integer, intent(out)           :: i_vec(:)
       integer, intent(out), optional :: stat
 
       integer              :: j
       character(LABEL_LEN) :: label
 
       @:CHECK_BOUNDS(SIZE(vx), self%rank)
-      @:CHECK_BOUNDS(SIZE(vi), self%rank)
+      @:CHECK_BOUNDS(SIZE(i_vec), self%rank)
 
       ! Locate vx in the grid
 
       do j = 1, self%rank
 
-         call self%ax(j)%locate(vx(j), vi(j))
+         call self%axes(j)%locate(vx(j), i_vec(j))
 
-         if (vi(j) < 1) then
+         if (i_vec(j) < 1) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_AXIS_LO
                return
             else
-               call self%ax(j)%inquire(label=label)
+               call self%axes(j)%inquire(label=label)
                @:ABORT('out-of-bounds (lo) on '//label//' axis')
             endif
          endif
 
-         if (vi(j) > self%shape(j)) then
+         if (i_vec(j) > self%shape(j)) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_AXIS_HI
                return
             else
-               call self%ax(j)%inquire(label=label)
+               call self%axes(j)%inquire(label=label)
                @:ABORT('out-of-bounds (hi) on '//label//' axis')
             endif
          endif
@@ -251,26 +251,26 @@ contains
 
       class(ngrid_t), intent(in) :: self
       interface
-         subroutine map_proc(vi, stat)
+         subroutine map_proc(i_vec, stat)
             use forum_m
-            integer, intent(in)            :: vi(:)
+            integer, intent(in)            :: i_vec(:)
             integer, intent(out), optional :: stat
          end subroutine map_proc
       end interface
       integer, intent(out), optional :: stat
 
-      integer :: li
-      integer :: vi(self%rank)
+      integer :: i_lin
+      integer :: i_vec(self%rank)
 
       ! Apply the map_proc function to each unmasked node in the grid
 
-      map_loop : do li = 1, self%n_li
+      map_loop : do i_lin = 1, self%n_lin
 
-         if (self%mask(li)) then
+         if (self%mask(i_lin)) then
 
-            vi = self%vi_from_li(li)
+            i_vec = self%vec_from_lin(i_lin)
 
-            call map_proc(vi, stat)
+            call map_proc(i_vec, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
@@ -287,76 +287,76 @@ contains
 
    !****
 
-   function ci_from_li(self, li) result(ci)
+   function con_from_lin(self, i_lin) result(i_con)
 
       class(ngrid_t), intent(in) :: self
-      integer, intent(in)        :: li
-      integer                    :: ci
+      integer, intent(in)        :: i_lin
+      integer                    :: i_con
 
       ! Calculate a contiguous index from a linear index
 
-      ci = self%ci_li(li)
+      i_con = self%con_lin(i_lin)
 
       ! Finish
 
       return
 
-   end function ci_from_li
+   end function con_from_lin
 
    !****
 
-   function li_from_ci(self, ci) result(li)
+   function lin_from_con(self, i_con) result(i_lin)
 
       class(ngrid_t), intent(in) :: self
-      integer, intent(in)        :: ci
-      integer                    :: li
+      integer, intent(in)        :: i_con
+      integer                    :: i_lin
 
       ! Calculate a linear index from a contiguous index
 
-      li = self%li_ci(ci)
+      i_lin = self%lin_con(i_con)
 
       ! Finish
 
       return
 
-   end function li_from_ci
+   end function lin_from_con
 
    !****
 
-   function li_from_vi(self, vi) result(li)
+   function lin_from_vec(self, i_vec) result(i_lin)
 
       class(ngrid_t), intent(in) :: self
-      integer, intent(in)        :: vi(:)
-      integer                    :: li
+      integer, intent(in)        :: i_vec(:)
+      integer                    :: i_lin
 
       integer :: p
       integer :: j
 
-      @:CHECK_BOUNDS(SIZE(vi), self%rank)
+      @:CHECK_BOUNDS(SIZE(i_vec), self%rank)
 
       ! Calculate a linear index from a vector index
 
       p = 1
-      li = vi(1)
+      i_lin = i_vec(1)
 
       do j = 2, self%rank
          p = p*self%shape(j-1)
-         li = li + (vi(j)-1)*p
+         i_lin = i_lin + (i_vec(j)-1)*p
       end do
 
       ! Finish
 
       return
 
-   end function li_from_vi
+   end function lin_from_vec
 
    !****
 
-   function vi_from_li(self, li) result(vi)
+   function vec_from_lin(self, i_lin) result(i_vec)
 
       class(ngrid_t), intent(in) :: self
-      integer, intent(in)        :: li
-      integer                    :: vi(self%rank)
+      integer, intent(in)        :: i_lin
+      integer                    :: i_vec(self%rank)
 
       integer :: p
       integer :: r
@@ -364,94 +364,94 @@ contains
 
       ! Calculate a vector index from a linear index
 
-      p = self%n_li
-      r = li - 1
+      p = self%n_lin
+      r = i_lin - 1
 
       do j = self%rank, 1, -1
          p = p/self%shape(j)
-         vi(j) = r/p + 1
-         r = r - (vi(j)-1)*p
+         i_vec(j) = r/p + 1
+         r = r - (i_vec(j)-1)*p
       end do
 
-      @:ASSERT_DEBUG(li == self%li_from_vi(vi), 'indexing error')
+      @:ASSERT_DEBUG(i_lin == self%lin_from_vec(i_vec), 'indexing error')
 
       ! Finish
 
       return
 
-   end function vi_from_li
+   end function vec_from_lin
 
    !****
 
-   function vi_from_si_(self, vi_cl, si) result(vi)
+   function vec_from_stn_(self, i_cell, i_stn) result(i_vec)
 
       class(ngrid_t), intent(in) :: self
-      integer, intent(in)        :: vi_cl(:)
-      integer, intent(in)        :: si
-      integer                    :: vi(self%rank)
+      integer, intent(in)        :: i_cell(:)
+      integer, intent(in)        :: i_stn
+      integer                    :: i_vec(self%rank)
 
       integer :: p
       integer :: r
       integer :: j
 
-      @:CHECK_BOUNDS(SIZE(vi_cl), self%rank)
+      @:CHECK_BOUNDS(SIZE(i_vec_cl), self%rank)
 
-      ! Calculate a vector index from a stencil index
+      ! Calculate a vector index from cell and stencil indices
 
-      p = self%n_si
-      r = si - 1
+      p = self%n_stn
+      r = i_stn - 1
 
       do j = self%rank, 1, -1
          p = p/4
-         vi(j) = r/p + 1
-         r = r - (vi(j)-1)*p
+         i_vec(j) = r/p + 1
+         r = r - (i_vec(j)-1)*p
       end do
 
-      vi = vi + vi_cl - 2
+      i_vec = i_vec + i_cell - 2
 
-      @:ASSERT_DEBUG(ALL(vi >= vi_cl-1 .AND. vi <= vi_cl+2), 'indexing error')
+      @:ASSERT_DEBUG(ALL(i_vec >= i_cell-1 .AND. i_vec <= i_cell+2), 'indexing error')
 
       ! Finish
 
       return
 
-   end function vi_from_si_
+   end function vec_from_stn_
 
    !****
 
-   subroutine interp_0_(self, data_proc, vx, f_int, stat, vderiv)
+   subroutine interp_0_(self, data_proc, x_vec, f_int, stat, vderiv)
 
       class(ngrid_t), intent(in) :: self
       interface
-         subroutine data_proc(vi, data, stat)
+         subroutine data_proc(i_vec, data, stat)
             use forum_m
-            integer, intent(in)            :: vi(:)
+            integer, intent(in)            :: i_vec(:)
             real(RD), intent(out)          :: data
             integer, intent(out), optional :: stat
          end subroutine data_proc
       end interface
-      real(RD), intent(in)           :: vx(:)
+      real(RD), intent(in)           :: x_vec(:)
       real(RD), intent(out)          :: f_int
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: vderiv(:)
 
-      integer  :: vi_cl(self%rank)
-      logical  :: mask(self%n_si)
+      integer  :: i_cell(self%rank)
+      logical  :: mask(self%n_stn)
       real(RD) :: vdelta(3,self%rank)
       real(RD) :: vu(self%rank)
-      real(RD) :: K(self%n_si,self%n_si)
-      integer  :: si
-      integer  :: vi(self%rank)
-      real(RD) :: F(self%n_si)
-      real(RD) :: C(self%n_si)
+      real(RD) :: K(self%n_stn,self%n_stn)
+      integer  :: i_stn
+      integer  :: i_vec(self%rank)
+      real(RD) :: F(self%n_stn)
+      real(RD) :: C(self%n_stn)
 
-      @:CHECK_BOUNDS(SIZE(vx), self%rank)
+      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
       ! Interpolate a scalar value
 
       ! Set up the interpolation
 
-      call self%setup_interp_(vx, vi_cl, mask, vdelta, vu, stat)
+      call self%setup_interp_(x_vec, i_cell, mask, vdelta, vu, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
@@ -463,23 +463,23 @@ contains
          if (stat /= STAT_OK) return
       end if
 
-      ! Evaluate data at the nodes
+      ! Evaluate data at the stencil nodes
 
-      do si = 1, self%n_si
+      do i_stn = 1, self%n_stn
 
-         if (ANY(K(:,si) /= 0._RD)) then
+         if (ANY(K(:,i_stn) /= 0._RD)) then
 
-            vi = self%vi_from_si_(vi_cl, si)
+            i_vec = self%vec_from_stn_(i_cell, i_stn)
 
-            call data_proc(vi, F(si), stat)
+            call data_proc(i_vec, F(i_stn), stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
 
          else
 
-            F(si) = 0._RD
-
+            F(i_stn) = 0._RD
+            
          endif
 
       end do
@@ -502,41 +502,41 @@ contains
 
    !****
 
-   subroutine interp_1_(self, data_proc, vx, f_int, stat, vderiv)
+   subroutine interp_1_(self, data_proc, x_vec, f_int, stat, vderiv)
 
       class(ngrid_t), intent(in) :: self
       interface
-         subroutine data_proc(vi, data, stat)
+         subroutine data_proc(i_vec, data, stat)
             use forum_m
-            integer, intent(in)            :: vi(:)
+            integer, intent(in)            :: i_vec(:)
             real(RD), intent(out)          :: data(:)
             integer, intent(out), optional :: stat
          end subroutine data_proc
       end interface
-      real(RD), intent(in)           :: vx(:)
+      real(RD), intent(in)           :: x_vec(:)
       real(RD), intent(out)          :: f_int(:)
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: vderiv(:)
 
-      integer               :: vi_cl(self%rank)
-      logical               :: mask(self%n_si)
+      integer               :: i_cell(self%rank)
+      logical               :: mask(self%n_stn)
       real(RD)              :: vdelta(3,self%rank)
       real(RD)              :: vu(self%rank)
-      real(RD)              :: K(self%n_si,self%n_si)
+      real(RD)              :: K(self%n_stn,self%n_stn)
       integer               :: n_m
-      integer               :: si
-      integer               :: vi(self%rank)
+      integer               :: i_stn
+      integer               :: i_vec(self%rank)
       real(RD), allocatable :: F(:,:)
-      real(RD)              :: C(self%n_si)
+      real(RD)              :: C(self%n_stn)
       integer               :: m
 
-      @:CHECK_BOUNDS(SIZE(vx), self%rank)
+      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
       ! Interpolate an array value
 
       ! Set up the interpolation
 
-      call self%setup_interp_(vx, vi_cl, mask, vdelta, vu, stat)
+      call self%setup_interp_(x_vec, i_cell, mask, vdelta, vu, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
@@ -548,26 +548,26 @@ contains
          if (stat /= STAT_OK) return
       end if
 
-      ! Evaluate data at the nodes
+      ! Evaluate data at the stencil nodes
 
       n_m = SIZE(f_int)
 
-      allocate(F(self%n_si,n_m))
+      allocate(F(self%n_stn,n_m))
 
-      do si = 1, self%n_si
+      do i_stn = 1, self%n_stn
 
-         if (ANY(K(:,si) /= 0._RD)) then
+         if (ANY(K(:,i_stn) /= 0._RD)) then
 
-            vi = self%vi_from_si_(vi_cl, si)
+            i_vec = self%vec_from_stn_(i_cell, i_stn)
 
-            call data_proc(vi, F(si,:), stat)
+            call data_proc(i_vec, F(i_stn,:), stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
 
          else
 
-            F(si,:) = 0._RD
+            F(i_stn,:) = 0._RD
 
          endif
 
@@ -598,27 +598,27 @@ contains
 
    !****
    
-   subroutine setup_interp_(self, vx, vi_cl, mask, vdelta, vu, stat)
+   subroutine setup_interp_(self, x_vec, i_cell, mask, vdelta, vu, stat)
 
       class(ngrid_t), intent(in)     :: self
-      real(RD), intent(in)           :: vx(:)
-      integer, intent(out)           :: vi_cl(:)
+      real(RD), intent(in)           :: x_vec(:)
+      integer, intent(out)           :: i_cell(:)
       logical, intent(out)           :: mask(:)
       real(RD), intent(out)          :: vdelta(:,:)
       real(RD), intent(out)          :: vu(:)
       integer, intent(out), optional :: stat
 
       integer  :: j
-      integer  :: si
-      integer  :: vi(self%rank)
-      integer  :: li
+      integer  :: i_stn
+      integer  :: i_vec(self%rank)
+      integer  :: i_lin
       integer  :: l
       integer  :: i
       real(RD) :: x(4)
 
-      @:CHECK_BOUNDS(SIZE(vx), self%rank)
-      @:CHECK_BOUNDS(SIZE(vi_cl), self%rank)
-      @:CHECK_BOUNDS(SIZE(mask), self%n_si)
+      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
+      @:CHECK_BOUNDS(SIZE(i_cell), self%rank)
+      @:CHECK_BOUNDS(SIZE(mask), self%n_stn)
 
       @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
       @:CHECK_BOUNDS(SIZE(vdelta, 2), self%rank)
@@ -627,24 +627,24 @@ contains
 
       ! Locate the interpolation cell
 
-      call self%locate(vx, vi_cl, stat)
+      call self%locate(x_vec, i_cell, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      vi_cl = MIN(vi_cl, self%shape-1)
+      i_cell = MIN(i_cell, self%shape-1)
 
       ! Set up the mask
 
-      do si = 1, self%n_si
+      do i_stn = 1, self%n_stn
 
-         vi = self%vi_from_si_(vi_cl, si)
+         i_vec = self%vec_from_stn_(i_cell, i_stn)
 
-         mask(si) = .NOT. ANY(vi < 1 .OR. vi > self%shape)
+         mask(i_stn) = .NOT. ANY(i_vec < 1 .OR. i_vec > self%shape)
 
-         if (mask(si)) then
-            li = self%li_from_vi(vi)
-            mask(si) = mask(si) .AND. self%mask(li)
+         if (mask(i_stn)) then
+            i_lin = self%lin_from_vec(i_vec)
+            mask(i_stn) = mask(i_stn) .AND. self%mask(i_lin)
          end if
 
       end do
@@ -655,21 +655,21 @@ contains
 
          do l = 1, 4
 
-            i = vi_cl(j) + l - 2
+            i = i_cell(j) + l - 2
 
             if (i < 1) then
                x(l) = -HUGE(0._RD)
             elseif (i > self%shape(j)) then
                x(l) = HUGE(0._RD)
             else
-               call self%ax(j)%get(i, x(l))
+               call self%axes(j)%fetch(i, x(l))
             endif
 
          end do
 
          vdelta(:,j) = x(2:4) - x(1:3)
 
-         vu(j) = (vx(j) - x(2))/vdelta(2,j)
+         vu(j) = (x_vec(j) - x(2))/vdelta(2,j)
 
       end do
 
@@ -683,22 +683,22 @@ contains
 
    !****
 
-   subroutine read_(hi, ng, stat)
+   subroutine read_(hdf5io, ngrid, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(ngrid_t), intent(out)     :: ng
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(ngrid_t), intent(out)     :: ngrid
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)       :: type
       integer                   :: rank
       logical, allocatable      :: mask(:)
-      type(axis_t), allocatable :: ax(:)
+      type(axis_t), allocatable :: axes(:)
       integer                   :: j
-      type(hdf5io_t)            :: hi_ax
+      type(hdf5io_t)            :: hdf5io_axis
 
       ! Read the ngrid_t
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'ngrid_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -708,22 +708,22 @@ contains
          endif
       endif
 
-      call hi%read_attr('rank', rank)
+      call hdf5io%read_attr('rank', rank)
 
-      allocate(ax(rank))
+      allocate(axes(rank))
 
-      ax_loop : do j = 1, rank
-         hi_ax = hdf5io_t(hi, ax_name_(j))
-         call read(hi_ax, ax(j), stat)
-         call hi_ax%final()
+      axis_loop : do j = 1, rank
+         hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(j))
+         call read(hdf5io_axis, axes(j), stat)
+         call hdf5io_axis%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          endif
-      end do ax_loop
+      end do axis_loop
 
-      call hi%alloc_read_dset('mask', mask)
+      call hdf5io%alloc_read_dset('mask', mask)
 
-      ng = ngrid_t(ax, mask)
+      ngrid = ngrid_t(axes, mask)
 
       ! Finish
 
@@ -735,32 +735,32 @@ contains
 
    !****
 
-   subroutine write_(hi, ng, stat)
+   subroutine write_(hdf5io, ngrid, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(ngrid_t), intent(in)      :: ng
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(ngrid_t), intent(in)      :: ngrid
       integer, intent(out), optional :: stat
 
       integer        :: j
-      type(hdf5io_t) :: hi_ax
+      type(hdf5io_t) :: hdf5io_axis
 
-      ! Write the ngrid_t
+      ! Write ngrid
       
-      call hi%write_attr('TYPE', 'ngrid_t')
+      call hdf5io%write_attr('TYPE', 'ngrid_t')
 
-      call hi%write_attr('shape', ng%shape)
-      call hi%write_attr('rank', ng%rank)
+      call hdf5io%write_attr('shape', ngrid%shape)
+      call hdf5io%write_attr('rank', ngrid%rank)
 
-      do j = 1, ng%rank
-         hi_ax = hdf5io_t(hi, ax_name_(j))
-         call write(hi_ax, ng%ax(j), stat)
-         call hi_ax%final()
+      do j = 1, ngrid%rank
+         hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(j))
+         call write(hdf5io_axis, ngrid%axes(j), stat)
+         call hdf5io_axis%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          endif
       end do
 
-      call hi%write_dset('mask', ng%mask)
+      call hdf5io%write_dset('mask', ngrid%mask)
 
       ! Finish
 
@@ -772,14 +772,14 @@ contains
 
    !****
 
-   function ax_name_(j) result (name)
+   function axis_group_name_(j) result (name)
 
       integer, intent(in) :: j
       character(256)      :: name
 
       write(name, 100) j
-100   format('ax(',I0,')')
+100   format('axes(',I0,')')
 
-   end function ax_name_
+   end function axis_group_name_
 
 end module ngrid_m

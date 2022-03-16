@@ -42,8 +42,8 @@ module tab_range_m
    contains
       private
       procedure, public :: inquire
-      procedure, public :: get
-      procedure, public :: get_all
+      procedure, public :: fetch
+      procedure, public :: fetch_all
       procedure, public :: locate
    end type tab_range_t
 
@@ -72,22 +72,22 @@ module tab_range_m
 
 contains
 
-   function tab_range_t_(x) result (ra)
+   function tab_range_t_(x) result (range)
 
       real(RD), intent(in) :: x(:)
-      type(tab_range_t)    :: ra
+      type(tab_range_t)    :: range
 
       integer :: n
 
-      ! Construct the tab_range_t from the supplied data
+      ! Construct range from the supplied data
 
       n = SIZE(x)
 
       @:ASSERT(n >= 1,'insufficient data')
       @:ASSERT_DEBUG(ALL(x(2:) > x(:n-1)),'non-monotonic data')
 
-      ra%x = x
-      ra%n = n
+      range%x = x
+      range%n = n
 
       ! Finish
 
@@ -97,16 +97,16 @@ contains
 
    !****
     
-   function tab_range_t_subset_(ra_in, i_a, i_b) result (ra)
+   function tab_range_t_subset_(range_in, i_a, i_b) result (range)
 
-      type(tab_range_t), intent(in) :: ra_in
+      type(tab_range_t), intent(in) :: range_in
       integer, intent(in)           :: i_a
       integer, intent(in)           :: i_b
-      type(tab_range_t)             :: ra
+      type(tab_range_t)             :: range
 
-      ! Construct the tab_range_t by subsetting ra_in
+      ! Construct range by subsetting range_in
 
-      ra = tab_range_t(ra_in%x(i_a:i_b))
+      range = tab_range_t(range_in%x(i_a:i_b))
 
       ! Finish
 
@@ -139,14 +139,14 @@ contains
 
    !****
 
-   subroutine get(self, i, x, stat)
+   subroutine fetch(self, i, x, stat)
 
       class(tab_range_t), intent(in) :: self
       integer, intent(in)            :: i
       real(RD), intent(out)          :: x
       integer, intent(out), optional :: stat
 
-      ! Get the i'th value
+      ! Fetch the i'th value
 
       if (i < 1) then
          if (PRESENT(stat)) then
@@ -174,11 +174,11 @@ contains
 
       return
 
-   end subroutine get
+   end subroutine fetch
 
    !****
 
-   subroutine get_all(self, x)
+   subroutine fetch_all(self, x)
 
       class(tab_range_t), intent(in) :: self
       real(RD), intent(out)          :: x(:)
@@ -193,7 +193,7 @@ contains
 
       return
 
-   end subroutine get_all
+   end subroutine fetch_all
 
    !****
 
@@ -204,7 +204,7 @@ contains
       integer, intent(inout)         :: i
       logical, intent(in), optional  :: right
 
-      ! Locate where in the range x falls
+      ! Locate where in range x falls
 
       call locate_(self%x, x, i, right=right)
 
@@ -216,18 +216,18 @@ contains
 
    !****
 
-   subroutine read_(hi, ra, stat)
+   subroutine read_(hdf5io, range, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(tab_range_t), intent(out) :: ra
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(tab_range_t), intent(out) :: range
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
       real(RD), allocatable :: x(:)
 
-      ! Read the tab_range_t
+      ! Read range
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'tab_range_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -237,9 +237,9 @@ contains
          endif
       endif
 
-      call hi%alloc_read_dset('x', x)
+      call hdf5io%alloc_read_dset('x', x)
   
-      ra = tab_range_t(x)
+      range = tab_range_t(x)
 
       ! Finish
 
@@ -251,17 +251,17 @@ contains
 
    !****
 
-   subroutine write_(hi, ra, stat)
+   subroutine write_(hdf5io, range, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      class(tab_range_t), intent(in) :: ra
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      class(tab_range_t), intent(in) :: range
       integer, intent(out), optional :: stat
 
-      ! Write the tab_range_t
+      ! Write range
 
-      call hi%write_attr('TYPE', 'tab_range_t')
+      call hdf5io%write_attr('TYPE', 'tab_range_t')
       
-      call hi%write_dset('x', ra%x)
+      call hdf5io%write_dset('x', range%x)
 
       ! Finish
 

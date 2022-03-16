@@ -42,8 +42,8 @@ module specint_m
       private
       real(RD), allocatable       :: c(:,:)
       real(RD), allocatable       :: lam(:)
-      class(range_t), allocatable :: ra
-      type(limb_t)                :: li
+      class(range_t), allocatable :: range
+      type(limb_t)                :: limb
       integer                     :: n_b
       integer                     :: n_lam
       logical                     :: low_acc
@@ -86,13 +86,13 @@ module specint_m
 
 contains
 
-   function specint_t_(c, ra, li, low_acc) result (si)
+   function specint_t_(c, range, limb, low_acc) result(specint)
 
       real(RD), intent(in)          :: c(:,:)
-      class(range_t), intent(in)    :: ra
-      type(limb_t), intent(in)      :: li
+      class(range_t), intent(in)    :: range
+      type(limb_t), intent(in)      :: limb
       logical, intent(in), optional :: low_acc
-      type(specint_t)               :: si
+      type(specint_t)               :: specint
 
       logical :: low_acc_
       integer :: n_b
@@ -104,26 +104,26 @@ contains
          low_acc_ = .FALSE.
       endif
 
-      ! Construct the specint_t from the supplied data
+      ! Construct specint from the supplied data
 
-      call li%inquire(n=n_b)
-      call ra%inquire(n=n_lam)
+      call limb%inquire(n=n_b)
+      call range%inquire(n=n_lam)
 
       @:CHECK_BOUNDS(n_b, SIZE(c, 1))
       @:CHECK_BOUNDS(n_lam, SIZE(c, 2)+1)
 
-      si%c = c
+      specint%c = c
 
-      allocate(si%lam(n_lam))
-      call ra%get_all(si%lam)
+      allocate(specint%lam(n_lam))
+      call range%fetch_all(specint%lam)
 
-      si%ra = ra
-      si%li = li
+      specint%range = range
+      specint%limb = limb
 
-      si%n_b = n_b
-      si%n_lam = n_lam
+      specint%n_b = n_b
+      specint%n_lam = n_lam
 
-      si%low_acc = low_acc_
+      specint%low_acc = low_acc_
       
       ! Finish
 
@@ -133,23 +133,23 @@ contains
 
    !****
 
-   function specint_t_fit_(I, mu, ra, li, low_acc) result (si)
+   function specint_t_fit_(I, mu, range, limb, low_acc) result(specint)
 
       real(RD), intent(in)          :: I(:,:)
       real(RD), intent(in)          :: mu(:)
-      class(range_t), intent(in)    :: ra
-      type(limb_t), intent(in)      :: li
+      class(range_t), intent(in)    :: range
+      type(limb_t), intent(in)      :: limb
       logical, intent(in), optional :: low_acc
-      type(specint_t)               :: si
+      type(specint_t)               :: specint
 
       real(RD), allocatable :: c(:,:)
 
-      ! Construct the specint_t by fitting the supplied I(mu,lambda)
+      ! Construct specint by fitting the supplied I(mu,lambda)
       ! intensity data
 
-      call li%fit_intensity(I, mu, c)
+      call limb%fit_intensity(I, mu, c)
 
-      si = specint_t(c, ra, li, low_acc)
+      specint = specint_t(c, range, limb, low_acc)
 
       ! Finish
 
@@ -159,38 +159,38 @@ contains
 
    !****
 
-   function specint_t_interp_(si_in, ra) result (si)
+   function specint_t_interp_(specint_in, range) result(specint)
 
-      type(specint_t), intent(inout) :: si_in
-      class(range_t), intent(in)     :: ra
-      type(specint_t)                :: si
+      type(specint_t), intent(inout) :: specint_in
+      class(range_t), intent(in)     :: range
+      type(specint_t)                :: specint
 
       integer               :: n_lam
       real(RD), allocatable :: lam(:)
       real(RD), allocatable :: c(:,:)
       integer               :: p
-      real(RD)              :: b(si_in%n_b)
+      real(RD)              :: b(specint_in%n_b)
 
-      ! Construct the specint_t by interpolating the supplied
-      ! specint_t onto the la abscissa
+      ! Construct specint by interpolating specint_in onto the range
+      ! abscissa
 
-      call ra%inquire(n=n_lam)
+      call range%inquire(n=n_lam)
 
       allocate(lam(n_lam))
-      allocate(c(si_in%n_b,n_lam-1))
+      allocate(c(specint_in%n_b,n_lam-1))
 
-      call ra%get_all(lam)
+      call range%fetch_all(lam)
 
-      do p = 1, si_in%n_b
+      do p = 1, specint_in%n_b
 
          b = 0._RD
          b(p) = 1._RD
 
-         call si_in%interp_f_(b, lam, c(p,:))
+         call specint_in%interp_f_(b, lam, c(p,:))
 
       end do
 
-      si = specint_t(c, ra, si_in%li, si_in%low_acc)
+      specint = specint_t(c, range, specint_in%limb, specint_in%low_acc)
 
       ! Finish
 
@@ -200,28 +200,28 @@ contains
 
    !****
 
-   function specint_t_subset_(si_in, lam_min, lam_max) result (si)
+   function specint_t_subset_(specint_in, lam_min, lam_max) result(specint)
 
-      type(specint_t), intent(in)   :: si_in
-      real(RD), intent(in)          :: lam_min
-      real(RD), intent(in)          :: lam_max
-      type(specint_t)               :: si
+      type(specint_t), intent(in) :: specint_in
+      real(RD), intent(in)        :: lam_min
+      real(RD), intent(in)        :: lam_max
+      type(specint_t)             :: specint
 
       integer                     :: i_a
       integer                     :: i_b
-      class(range_t), allocatable :: ra
+      class(range_t), allocatable :: range
 
-      ! Construct the specint_t by subsetting the supplied specint_t
+      ! Construct specint by subsetting specint_in
 
-      call si_in%ra%locate(lam_min, i_a, right=.TRUE.)
-      call si_in%ra%locate(lam_min, i_b, right=.FALSE.)
+      call specint_in%range%locate(lam_min, i_a, right=.TRUE.)
+      call specint_in%range%locate(lam_min, i_b, right=.FALSE.)
 
       i_a = MAX(i_a, 1)
-      i_b = MIN(i_b, si_in%n_lam)
+      i_b = MIN(i_b, specint_in%n_lam)
 
-      ra = range_t(si_in%ra, i_a, i_b)
+      range = range_t(specint_in%range, i_a, i_b)
 
-      si = specint_t(si_in%c(:,i_a:i_b-1), ra, si_in%li, si_in%low_acc)
+      specint = specint_t(specint_in%c(:,i_a:i_b-1), range, specint_in%limb, specint_in%low_acc)
 
       ! Finish
 
@@ -269,7 +269,7 @@ contains
 
          ! Set up the basis functions
 
-         call self%li%eval_${name}$_basis(${arg_var}$, b, stat)
+         call self%limb%eval_${name}$_basis(${arg_var}$, b, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          endif
@@ -301,7 +301,7 @@ contains
 
          ! Set up the basis functions
 
-         call self%li%eval_${name}$_basis(b, stat)
+         call self%limb%eval_${name}$_basis(b, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          endif
@@ -452,7 +452,7 @@ contains
 
       ! Construct the photint
 
-      pi = photint_t(c, self%li)
+      pi = photint_t(c, self%limb)
 
       ! Finish
 
@@ -464,17 +464,17 @@ contains
 
    !****
 
-   subroutine read_(hi, si, stat)
+   subroutine read_(hdf5io, si, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
+      type(hdf5io_t), intent(inout)  :: hdf5io
       type(specint_t), intent(out)   :: si
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)         :: type
       real(RD), allocatable       :: c(:,:)
-      type(hdf5io_t)              :: hi_ra
+      type(hdf5io_t)              :: hdf5io_range
       class(range_t), allocatable :: ra
-      type(hdf5io_t)              :: hi_li
+      type(hdf5io_t)              :: hdf5io_limb
       type(limb_t)                :: li
       logical                     :: low_acc
 
@@ -482,7 +482,7 @@ contains
 
       ! Read the specint_t
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'specint_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -492,19 +492,19 @@ contains
          endif
       endif
 
-      call hi%read_attr('low_acc', low_acc)
+      call hdf5io%read_attr('low_acc', low_acc)
 
-      call hi%alloc_read_dset('c', c)
+      call hdf5io%alloc_read_dset('c', c)
 
-      call hi%inquire(file_name=file_name)
+      call hdf5io%inquire(file_name=file_name)
 
-      hi_ra = hdf5io_t(hi, 'ra')
-      call read(hi_ra, ra)
-      call hi_ra%final()
+      hdf5io_range = hdf5io_t(hdf5io, 'ra')
+      call read(hdf5io_range, ra)
+      call hdf5io_range%final()
 
-      hi_li = hdf5io_t(hi, 'li')
-      call read(hi_li, li)
-      call hi_li%final()
+      hdf5io_limb = hdf5io_t(hdf5io, 'li')
+      call read(hdf5io_limb, li)
+      call hdf5io_limb%final()
 
       si = specint_t(c, ra, li, low_acc)
 
@@ -518,44 +518,44 @@ contains
 
    !****
 
-   subroutine write_(hi, si, stat)
+   subroutine write_(hdf5io, specint, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(specint_t), intent(in)    :: si
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(specint_t), intent(in)    :: specint
       integer, intent(out), optional :: stat
 
       real(RD)       :: lam_min
       real(RD)       :: lam_max
-      type(hdf5io_t) :: hi_ra
-      type(hdf5io_t) :: hi_li
+      type(hdf5io_t) :: hdf5io_range
+      type(hdf5io_t) :: hdf5io_limb
 
       ! Write the specint_t
 
-      call hi%write_attr('TYPE', 'specint_t')
+      call hdf5io%write_attr('TYPE', 'specint_t')
 
-      call si%inquire(lam_min=lam_min, lam_max=lam_max)
+      call specint%inquire(lam_min=lam_min, lam_max=lam_max)
 
-      call hi%write_attr('lam_min', lam_min)
-      call hi%write_attr('lam_max', lam_max)
+      call hdf5io%write_attr('lam_min', lam_min)
+      call hdf5io%write_attr('lam_max', lam_max)
 
-      call hi%write_attr('low_acc', si%low_acc)
+      call hdf5io%write_attr('low_acc', specint%low_acc)
 
-      hi_ra = hdf5io_t(hi, 'ra')
-      call write(hi_ra, si%ra, stat)
-      call hi_ra%final()
+      hdf5io_range = hdf5io_t(hdf5io, 'range')
+      call write(hdf5io_range, specint%range, stat)
+      call hdf5io_range%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      if (si%low_acc) then
-         call hi%write_dset('c', REAL(si%c, RS))
+      if (specint%low_acc) then
+         call hdf5io%write_dset('c', REAL(specint%c, RS))
       else
-         call hi%write_dset('c', si%c)
+         call hdf5io%write_dset('c', specint%c)
       endif
 
-      hi_li = hdf5io_t(hi, 'li')
-      call write(hi_li, si%li, stat)
-      call hi_li%final()
+      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
+      call write(hdf5io_limb, specint%limb, stat)
+      call hdf5io_limb%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

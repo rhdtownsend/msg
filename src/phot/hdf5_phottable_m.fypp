@@ -55,11 +55,11 @@ module hdf5_phottable_m
 
 contains
 
-   function hdf5_phottable_t_file_(file_name, group_names) result(pt)
+   function hdf5_phottable_t_file_(file_name, group_names) result(phottable)
 
       character(*), intent(in) :: file_name
       character(*), intent(in) :: group_names(:)
-      type(hdf5_phottable_t)   :: pt
+      type(hdf5_phottable_t)   :: phottable
 
       integer                   :: n
       character(:), allocatable :: file_names(:)
@@ -72,7 +72,7 @@ contains
 
       file_names = file_name
 
-      pt = hdf5_phottable_t(file_names, group_names)
+      phottable = hdf5_phottable_t(file_names, group_names)
 
       ! Finish
 
@@ -82,17 +82,17 @@ contains
 
    !****
 
-   function hdf5_phottable_t_files_(file_names, group_names) result(pt)
+   function hdf5_phottable_t_files_(file_names, group_names) result(phottable)
 
       character(*), intent(in) :: file_names(:)
       character(*), intent(in) :: group_names(:)
-      type(hdf5_phottable_t)   :: pt
+      type(hdf5_phottable_t)   :: phottable
 
       integer                      :: n
-      type(photint_t), allocatable :: pi(:)
+      type(photint_t), allocatable :: photints(:)
       integer                      :: i
-      type(hdf5io_t)               :: hi
-      type(hdf5io_t)               :: hi_pi
+      type(hdf5io_t)               :: hdf5io
+      type(hdf5io_t)               :: hdf5io_photint
 
       @:CHECK_BOUNDS(SIZE(file_names), SIZE(group_names))
 
@@ -100,21 +100,21 @@ contains
 
       n = SIZE(file_names)
 
-      allocate(pi(n))
+      allocate(photints(n))
 
       do i = 1, n
 
-         hi = hdf5io_t(file_names(i), OPEN_FILE_RO)
-         hi_pi = hdf5io_t(hi, group_names(i))
+         hdf5io = hdf5io_t(file_names(i), OPEN_FILE_RO)
 
-         call read(hi_pi, pi(i))
+         hdf5io_photint = hdf5io_t(hdf5io, group_names(i))
+         call read(hdf5io_photint, photints(i))
+         call hdf5io_photint%final()
 
-         call hi_pi%final()
-         call hi%final()
+         call hdf5io%final()
 
       end do
 
-      pt%mem_phottable_t = mem_phottable_t(pi)
+      phottable%mem_phottable_t = mem_phottable_t(photints)
 
       ! Finish
 

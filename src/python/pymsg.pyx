@@ -115,6 +115,10 @@ cdef class SpecGrid:
 
         Args:
             filename (string): Filename of grid to load.
+	    cache_limit (int): Limit on number of spectra to cache in memory. If
+	       not specified, no limits are placed on the cache growth. Conversely,
+	       if set to zero, caching is disabled (with a likely performance impact).
+	       omit to allow for unlimited caching.
         Raises:
             FileNotFound: If the the file cannot be found.
             TypeError: If the file contains an incorrect datatype.

@@ -1,5 +1,6 @@
 ! Module  : limb_m
-! Purpose : define limb_t type, representing limb-darkening laws
+! Purpose : define limb_t type, providing basis functions and fitting
+!           for limb-darkening laws
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -46,8 +47,8 @@ module limb_m
 
    type limb_t
       private
+      integer :: law_id = -1
       integer :: n
-      integer :: law = -1
    contains
       private
       procedure, public :: inquire
@@ -86,28 +87,28 @@ module limb_m
 
 contains
 
-   function limb_t_(str) result (li)
+   function limb_t_(law_str) result (limb)
 
-      character(*), intent(in) :: str
-      type(limb_t)             :: li
+      character(*), intent(in) :: law_str
+      type(limb_t)             :: limb
 
-      ! Construct the limb_t from the supplied data
+      ! Construct limb from the supplied data
 
-      li%law = str_to_law_(str)
+      limb%law_id = str_to_id_(law_str)
 
-      select case (li%law)
+      select case (limb%law_id)
       case (CONST_LAW)
-         li%n = 1
+         limb%n = 1
       case (LINEAR_LAW)
-         li%n = 2
+         limb%n = 2
       case (SQRT_LAW)
-         li%n = 3
+         limb%n = 3
       case (QUAD_LAW)
-         li%n = 3
+         limb%n = 3
       case (CLARET_LAW)
-         li%n = 5
+         limb%n = 5
       case default
-         @:ABORT('invalid law')
+         @:ABORT('invalid law_id')
       end select
 
       ! Finish
@@ -118,63 +119,63 @@ contains
 
    !****
 
-   function law_to_str_(law) result(str)
+   function id_to_str_(law_id) result(law_str)
 
-      integer, intent(in) :: law
-      character(STR_LEN)  :: str
+      integer, intent(in) :: law_id
+      character(STR_LEN)  :: law_str
 
-      ! Convert the law index into a string
+      ! Convert the law id into a string
 
-      select case (law)
+      select case (law_id)
       case (CONST_LAW)
-         str = 'CONST'
+         law_str = 'CONST'
       case (LINEAR_LAW)
-         str = 'LINEAR'
+         law_str = 'LINEAR'
       case (SQRT_LAW)
-         str = 'SQRT'
+         law_str = 'SQRT'
       case (QUAD_LAW)
-         str = 'QUAD'
+         law_str = 'QUAD'
       case (CLARET_LAW)
-         str = 'CLARET'
+         law_str = 'CLARET'
       case default
-         @:ABORT('invalid law')
+         @:ABORT('invalid law_id')
       end select
 
       ! Finish
 
       return
 
-   end function law_to_str_
+   end function id_to_str_
 
    !****
 
-   function str_to_law_(str) result(law)
+   function str_to_id_(law_str) result(law_id)
 
-      character(*), intent(in) :: str
-      integer                  :: law
+      character(*), intent(in) :: law_str
+      integer                  :: law_id
 
-      ! Convert the string into a law index
+      ! Convert the string into a law id
 
-      select case (str)
+      select case (law_str)
       case ('CONST')
-         law = CONST_LAW
+         law_id = CONST_LAW
       case ('LINEAR')
-         law = LINEAR_LAW
+         law_id = LINEAR_LAW
       case ('SQRT')
-         law = SQRT_LAW
+         law_id = SQRT_LAW
       case ('QUAD')
-         law = QUAD_LAW
+         law_id = QUAD_LAW
       case ('CLARET')
-         law = CLARET_LAW
+         law_id = CLARET_LAW
       case default
-         @:ABORT('invalid string')
+         @:ABORT('invalid law_str')
       end select
 
       ! Finish
 
       return
 
-   end function str_to_law_
+   end function str_to_id_
 
    !****
 
@@ -224,7 +225,7 @@ contains
          endif
       endif
 
-      select case (self%law)
+      select case (self%law_id)
       case (CONST_LAW)
          b = [      &
               1._RD &
@@ -288,7 +289,7 @@ contains
          endif
       endif
 
-      select case (self%law)
+      select case (self%law_id)
       case (CONST_LAW)
          b = [                &
               E_ks_(k, 0._RD) &
@@ -371,7 +372,7 @@ contains
          endif
       endif
 
-      select case (self%law)
+      select case (self%law_id)
       case (CONST_LAW)
          b = [                &
               D_ls_(l, 1._RD) &
@@ -453,7 +454,7 @@ contains
 
       ! Evaluate the flux basis functions
 
-      select case (self%law)
+      select case (self%law_id)
       case (CONST_LAW)
          b = TWOPI*[      &
               1._RD/2._RD &
@@ -604,18 +605,18 @@ contains
 
    !****
       
-   subroutine read_(hi, li, stat)
+   subroutine read_(hdf5io, limb, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(limb_t), intent(out)      :: li
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(limb_t), intent(out)      :: limb
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN) :: type
-      character(STR_LEN)  :: str
+      character(STR_LEN)  :: law_str
 
-      ! Read the limb_t
+      ! Read limb
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'limb_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -625,9 +626,9 @@ contains
          end if
       end if
 
-      call hi%read_attr('law', str)
+      call hdf5io%read_attr('law', law_str)
   
-      li = limb_t(str)
+      limb = limb_t(law_str)
 
       ! Finish
 
@@ -639,17 +640,17 @@ contains
 
    !****
 
-   subroutine write_ (hi, li, stat)
+   subroutine write_ (hdf5io, limb, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(limb_t), intent(in)       :: li
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(limb_t), intent(in)       :: limb
       integer, intent(out), optional :: stat
 
-      ! Write the limb_t
+      ! Write limb
 
-      call hi%write_attr('TYPE', 'limb_t')
+      call hdf5io%write_attr('TYPE', 'limb_t')
       
-      call hi%write_attr('law', law_to_str_(li%law))
+      call hdf5io%write_attr('law', id_to_str_(limb%law_id))
 
       ! Finish
 

@@ -1,5 +1,5 @@
 ! Module  : spectable_sm
-! Purpose : factory & I/O routines for spectable_m
+! Purpose : I/O routines for spectable_m
 !
 ! Copyright 2022 Rich Townsend & The MSG Team
 !
@@ -35,10 +35,10 @@ submodule (spectable_m) spectable_sm
 
 contains
 
-   subroutine read_(hi, st, stat, cache_limit)
+   subroutine read_(hdf5io, spectable, stat, cache_limit)
 
-      type(hdf5io_t), intent(inout)                :: hi
-      class(spectable_t), allocatable, intent(out) :: st
+      type(hdf5io_t), intent(inout)                :: hdf5io
+      class(spectable_t), allocatable, intent(out) :: spectable
       integer, intent(out), optional               :: stat
       integer, intent(in), optional                :: cache_limit
 
@@ -48,12 +48,12 @@ contains
       real(RD)                  :: lam_max
       character(:), allocatable :: file_name
       character(:), allocatable :: group_name
-      character(:), allocatable :: subgroup_names(:)
+      character(:), allocatable :: group_names(:)
       integer                   :: i
 
       ! Read the spectable_t
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'spectable_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -63,17 +63,17 @@ contains
          endif
       endif
 
-      call hi%read_attr('n', n)
+      call hdf5io%read_attr('n', n)
 
-      call hi%read_attr('lam_min', lam_min)
-      call hi%read_attr('lam_max', lam_max)
+      call hdf5io%read_attr('lam_min', lam_min)
+      call hdf5io%read_attr('lam_max', lam_max)
 
-      call hi%inquire(file_name=file_name, group_name=group_name)
+      call hdf5io%inquire(file_name=file_name, group_name=group_name)
 
-      subgroup_names = [(si_subgroup_name_(i), i=1,n)]
+      group_names = [(specint_group_name_(i), i=1,n)]
 
-      st = hdf5_spectable_t(file_name, group_name//'/'//subgroup_names, &
-                            lam_min, lam_max, cache_limit)
+      spectable = hdf5_spectable_t(file_name, group_name//'/'//group_names, &
+                                   lam_min, lam_max, cache_limit)
 
       ! Finish
 
@@ -85,44 +85,44 @@ contains
 
    !****
 
-   subroutine write_(hi, st, stat)
+   subroutine write_(hdf5io, spectable, stat)
 
-      type(hdf5io_t), intent(inout)     :: hi
-      class(spectable_t), intent(inout) :: st
+      type(hdf5io_t), intent(inout)     :: hdf5io
+      class(spectable_t), intent(inout) :: spectable
       integer, intent(out), optional    :: stat
 
       integer         :: n
       real(RD)        :: lam_min
       real(RD)        :: lam_max
       integer         :: i
-      type(hdf5io_t)  :: hi_si
-      type(specint_t) :: si
+      type(hdf5io_t)  :: hdf5io_specint
+      type(specint_t) :: specint
 
       ! Write the spectable_t
 
-      call hi%write_attr('TYPE', 'spectable_t')
+      call hdf5io%write_attr('TYPE', 'spectable_t')
 
-      call st%inquire(n=n, lam_min=lam_min, lam_max=lam_max)
+      call spectable%inquire(n=n, lam_min=lam_min, lam_max=lam_max)
 
-      call hi%write_attr('n', n)
+      call hdf5io%write_attr('n', n)
       
-      call hi%write_attr('lam_min', lam_min)
-      call hi%write_attr('lam_max', lam_max)
+      call hdf5io%write_attr('lam_min', lam_min)
+      call hdf5io%write_attr('lam_max', lam_max)
 
       do i = 1, n
 
-         ! Fetch the specint_t
+         ! Fetch specint
 
-         call st%fetch(i, si, stat)
+         call spectable%fetch(i, specint, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
 
          ! Write it
 
-         hi_si = hdf5io_t(hi, si_subgroup_name_(i))
-         call write(hi_si, si, stat)
-         call hi_si%final()
+         hdf5io_specint = hdf5io_t(hdf5io, specint_group_name_(i))
+         call write(hdf5io_specint, specint, stat)
+         call hdf5io_specint%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
@@ -137,14 +137,14 @@ contains
 
    !****
 
-   function si_subgroup_name_(i) result(name)
+   function specint_group_name_(i) result(name)
 
       integer, intent(in) :: i
       character(256)      :: name
 
       write(name, 100) i
-100   format('si(',I0,')')
+100   format('specint(',I0,')')
       
-   end function si_subgroup_name_
+   end function specint_group_name_
 
 end submodule spectable_sm

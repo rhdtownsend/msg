@@ -86,12 +86,12 @@ module cubint_m
 
 contains
 
-   function cubint_t_(x, f, df_dx) result (ci)
+   function cubint_t_(x, f, df_dx) result(cubint)
 
       real(RD), intent(in) :: x(:)
       real(RD), intent(in) :: f(:)
       real(RD), intent(in) :: df_dx(:)
-      type(cubint_t)       :: ci
+      type(cubint_t)       :: cubint
 
       integer  :: i
       real(RD) :: int_f
@@ -102,30 +102,30 @@ contains
 
       @:ASSERT(ALL(x(2:) > x(:SIZE(x)-1)), 'non-monotonic abscissa')
 
-      ! Construct the cubint_t
+      ! Construct cubint
 
-      ci%x = x
-      ci%f = f
+      cubint%x = x
+      cubint%f = f
 
-      ci%df_dx = df_dx
+      cubint%df_dx = df_dx
 
-      ci%n = SIZE(x)
+      cubint%n = SIZE(x)
 
       ! Evaluate the g function used during integral evaluation
 
-      allocate(ci%g(ci%n-1))
+      allocate(cubint%g(cubint%n-1))
 
       int_f = 0._RD
 
       h = x(2) - x(1)
 
-      ci%g(1) = int_f +                       &
+      cubint%g(1) = int_f +                   &
               f    (1)*phi_(1._RD, -1)*h -    &
               f    (2)*phi_(0._RD, -1)*h -    &
               df_dx(1)*psi_(1._RD, -1)*h**2 - &
               df_dx(2)*psi_(0._RD, -1)*h**2
 
-      x_loop : do i = 2, ci%n-1
+      x_loop : do i = 2, cubint%n-1
 
          int_f = int_f -                                            &
               f    (i-1)*(phi_(0._RD, -1) - phi_(1._RD, -1))*h +    &
@@ -135,7 +135,7 @@ contains
 
          h = x(i+1) - x(i)
 
-         ci%g(i) = int_f +                       &  
+         cubint%g(i) = int_f +                   &  
               f    (i  )*phi_(1._RD, -1)*h -     &
               f    (i+1)*phi_(0._RD, -1)*h -     &
               df_dx(i  )*psi_(1._RD, -1)*h**2 -  &
@@ -151,19 +151,19 @@ contains
 
    !****
 
-   function cubint_t_derivs_(x, f, deriv_type, df_dx_a, df_dx_b) result (ci)
+   function cubint_t_derivs_(x, f, deriv_type, df_dx_a, df_dx_b) result (cubint)
 
       real(RD), intent(in)           :: x(:)
       real(RD), intent(in)           :: f(:)
       character(*), intent(in)       :: deriv_type
       real(RD), optional, intent(in) :: df_dx_a
       real(RD), optional, intent(in) :: df_dx_b
-      type(cubint_t)                 :: ci
+      type(cubint_t)                 :: cubint
 
       real(RD) :: df_dx(SIZE(x))
 
-      ! Construct the cubint_t, with derivatives calculated according
-      ! to deriv_type
+      ! Construct cubint with derivatives calculated according to
+      ! deriv_type
 
       select case (deriv_type)
       case ('SPLINE')
@@ -176,7 +176,7 @@ contains
          @:ABORT('invalid deriv_type')
       end select
 
-      ci = cubint_t(x, f, df_dx)
+      cubint = cubint_t(x, f, df_dx)
 
       ! Finish
 
@@ -620,10 +620,10 @@ contains
 
    !****
 
-   subroutine read_(hi, ci, stat)
+   subroutine read_(hdf5io, cubint, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(cubint_t), intent(out)    :: ci
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(cubint_t), intent(out)    :: cubint
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
@@ -631,9 +631,9 @@ contains
       real(RD), allocatable :: f(:)
       real(RD), allocatable :: df_dx(:)
 
-      ! Read the cubint_t
+      ! Read cubint
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'cubint_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -643,11 +643,11 @@ contains
          end if
       end if
 
-      call hi%alloc_read_dset('x', x)
-      call hi%alloc_read_dset('f', f)
-      call hi%alloc_read_dset('df_dx', df_dx)
+      call hdf5io%alloc_read_dset('x', x)
+      call hdf5io%alloc_read_dset('f', f)
+      call hdf5io%alloc_read_dset('df_dx', df_dx)
 
-      ci = cubint_t(x, f, df_dx)
+      cubint = cubint_t(x, f, df_dx)
 
       ! Finish
 
@@ -659,21 +659,21 @@ contains
 
    !****
 
-   subroutine write_(hi, ci, stat)
+   subroutine write_(hdf5io, cubint, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(cubint_t), intent(in)     :: ci
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(cubint_t), intent(in)     :: cubint
       integer, intent(out), optional :: stat
 
-      ! Write the cubint_t
+      ! Write cubintkthe cubint_t
 
-      call hi%write_attr('TYPE', 'cubint_t')
+      call hdf5io%write_attr('TYPE', 'cubint_t')
 
-      call hi%write_attr('n', ci%n)
+      call hdf5io%write_attr('n', cubint%n)
 
-      call hi%write_dset('x', ci%x)
-      call hi%write_dset('f', ci%f)
-      call hi%write_dset('df_dx', ci%df_dx)
+      call hdf5io%write_dset('x', cubint%x)
+      call hdf5io%write_dset('f', cubint%f)
+      call hdf5io%write_dset('df_dx', cubint%df_dx)
 
       ! Finish
 

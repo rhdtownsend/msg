@@ -39,8 +39,8 @@ module specgrid_m
 
    type :: specgrid_t
       private
-      class(spectable_t), allocatable :: st
-      type(ngrid_t)                   :: ng
+      class(spectable_t), allocatable :: spectable
+      type(ngrid_t)                   :: ngrid
       integer, allocatable            :: shape(:)
       integer                         :: rank
    contains
@@ -49,7 +49,6 @@ module specgrid_m
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
-!      procedure, public :: apply_passband
    end type specgrid_t
 
    ! Interfaces
@@ -78,34 +77,34 @@ module specgrid_m
 
 contains
 
-   function specgrid_t_(st, ng) result (sg)
+   function specgrid_t_(spectable, ngrid) result (specgrid)
 
-      class(spectable_t), intent(in) :: st
-      type(ngrid_t), intent(in)      :: ng
-      type(specgrid_t)               :: sg
+      class(spectable_t), intent(in) :: spectable
+      type(ngrid_t), intent(in)      :: ngrid
+      type(specgrid_t)               :: specgrid
 
       integer              :: n
-      integer              :: n_ci
+      integer              :: n_con
       integer              :: rank
       integer, allocatable :: shape(:)
 
-      ! Construct the specgrid_t
+      ! Construct specgrid from the supplied data
 
-      call st%inquire(n=n)
+      call spectable%inquire(n=n)
 
-      call ng%inquire(n_ci=n_ci, rank=rank)
+      call ngrid%inquire(n_con=n_con, rank=rank)
 
-      @:CHECK_BOUNDS(n, n_ci)
+      @:CHECK_BOUNDS(n, n_con)
 
       allocate(shape(rank))
 
-      call ng%inquire(shape=shape)
+      call ngrid%inquire(shape=shape)
 
-      sg%st = st
-      sg%ng = ng
+      specgrid%spectable = spectable
+      specgrid%ngrid = ngrid
 
-      sg%shape = shape
-      sg%rank = rank
+      specgrid%shape = shape
+      specgrid%rank = rank
 
       ! Finish
 
@@ -135,9 +134,9 @@ contains
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
 
-      call self%st%inquire(lam_min=lam_min, lam_max=lam_max)
+      call self%spectable%inquire(lam_min=lam_min, lam_max=lam_max)
 
-      call self%ng%inquire(axis_min=axis_min, axis_max=axis_max, axis_labels=axis_labels)
+      call self%ngrid%inquire(axis_min=axis_min, axis_max=axis_max, axis_labels=axis_labels)
 
       ! Finish
 
@@ -151,37 +150,37 @@ contains
                                      ('E_moment', 'k', 'integer'), &
                                      ('D_moment', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, vx, ${arg_var}$, lam, res, stat, vderiv)
+      subroutine interp_${name}$(self, x_vec, ${arg_var}$, lam, res, stat, deriv_vec)
 
          class(specgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: vx(:)
+         real(RD), intent(in)             :: x_vec(:)
          ${arg_type}$, intent(in)         :: ${arg_var}$
          real(RD), intent(in)             :: lam(:)
          real(RD), intent(out)            :: res(:)
          integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: vderiv(:)
+         logical, intent(in), optional    :: deriv_vec(:)
 
-         ! Interpolate the ${name}$
+         ! Interpolate ${name}$
 
-         call self%ng%interp(data_proc_, vx, res, stat, vderiv)
+         call self%ngrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
 
       contains
 
-         subroutine data_proc_(vi, f, stat)
+         subroutine data_proc_(i_vec, f, stat)
 
-            integer, intent(in)            :: vi(:)
+            integer, intent(in)            :: i_vec(:)
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer :: li
-            integer :: ci
+            integer :: i_lin
+            integer :: i_con
 
-            li = self%ng%li_from_vi(vi)
-            ci = self%ng%ci_from_li(li)
+            i_lin = self%ngrid%lin_from_vec(i_vec)
+            i_con = self%ngrid%con_from_lin(i_lin)
 
-            call self%st%interp_${name}$(ci, ${arg_var}$, lam, f, stat)
+            call self%spectable%interp_${name}$(i_con, ${arg_var}$, lam, f, stat)
 
             return
 
@@ -195,36 +194,36 @@ contains
 
    #:for name in ('flux',)
 
-      subroutine interp_${name}$(self, vx, lam, res, stat, vderiv)
+      subroutine interp_${name}$(self, x_vec, lam, res, stat, deriv_vec)
 
          class(specgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: vx(:)
+         real(RD), intent(in)             :: x_vec(:)
          real(RD), intent(in)             :: lam(:)
          real(RD), intent(out)            :: res(:)
          integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: vderiv(:)
+         logical, intent(in), optional    :: deriv_vec(:)
 
-         ! Interpolate the ${name}$
+         ! Interpolate ${name}$
 
-         call self%ng%interp(data_proc_, vx, res, stat, vderiv)
+         call self%ngrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
 
       contains
 
-         subroutine data_proc_(vi, f, stat)
+         subroutine data_proc_(i_vec, f, stat)
 
-            integer, intent(in)            :: vi(:)
+            integer, intent(in)            :: i_vec(:)
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer :: li
-            integer :: ci
+            integer :: i_lin
+            integer :: i_con
 
-            li = self%ng%li_from_vi(vi)
-            ci = self%ng%ci_from_li(li)
+            i_lin = self%ngrid%lin_from_vec(i_vec)
+            i_con = self%ngrid%con_from_lin(i_lin)
 
-            call self%st%interp_${name}$(ci, lam, f, stat)
+            call self%spectable%interp_${name}$(i_con, lam, f, stat)
 
             return
 
@@ -236,22 +235,22 @@ contains
 
    !****
 
-   subroutine read_(hi, sg, stat, cache_limit)
+   subroutine read_(hdf5io, specgrid, stat, cache_limit)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(specgrid_t), intent(out)  :: sg
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(specgrid_t), intent(out)  :: specgrid
       integer, intent(out), optional :: stat
       integer, intent(in), optional  :: cache_limit
 
       character(TYPE_LEN)             :: type
-      type(hdf5io_t)                  :: hi_st
-      class(spectable_t), allocatable :: st
-      type(hdf5io_t)                  :: hi_ng
-      type(ngrid_t)                   :: ng
+      type(hdf5io_t)                  :: hdf5io_spectable
+      class(spectable_t), allocatable :: spectable
+      type(hdf5io_t)                  :: hdf5io_ngrid
+      type(ngrid_t)                   :: ngrid
 
-      ! Read the specgrid_t
+      ! Read specgrid
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'specgrid_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -261,21 +260,21 @@ contains
          endif
       endif
 
-      hi_ng = hdf5io_t(hi, 'ng')
-      call read(hi_ng, ng, stat)
-      call hi_ng%final()
+      hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
+      call read(hdf5io_ngrid, ngrid, stat)
+      call hdf5io_ngrid%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      hi_st = hdf5io_t(hi, 'st')
-      call read(hi_st, st, stat, cache_limit)
-      call hi_st%final()
+      hdf5io_spectable = hdf5io_t(hdf5io, 'spectable')
+      call read(hdf5io_spectable, spectable, stat, cache_limit)
+      call hdf5io_spectable%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      sg = specgrid_t(st, ng)
+      specgrid = specgrid_t(spectable, ngrid)
 
       ! Finish
 
@@ -287,32 +286,32 @@ contains
 
    !****
 
-   subroutine write_(hi, sg, stat)
+   subroutine write_(hdf5io, specgrid, stat)
 
-      type(hdf5io_t), intent(inout)   :: hi
-      type(specgrid_t), intent(inout) :: sg
+      type(hdf5io_t), intent(inout)   :: hdf5io
+      type(specgrid_t), intent(inout) :: specgrid
       integer, intent(out), optional  :: stat
 
-      type(hdf5io_t) :: hi_st
-      type(hdf5io_t) :: hi_ng
+      type(hdf5io_t) :: hdf5io_spectable
+      type(hdf5io_t) :: hdf5io_ngrid
 
-      ! Write the specgrid_t
+      ! Write specgrid
 
-      call hi%write_attr('TYPE', 'specgrid_t')
+      call hdf5io%write_attr('TYPE', 'specgrid_t')
 
-      call hi%write_attr('shape', sg%shape)
-      call hi%write_attr('rank', sg%rank)
+      call hdf5io%write_attr('shape', specgrid%shape)
+      call hdf5io%write_attr('rank', specgrid%rank)
 
-      hi_st = hdf5io_t(hi, 'st')
-      call write(hi_st, sg%st, stat)
-      call hi_st%final()
+      hdf5io_spectable = hdf5io_t(hdf5io, 'spectable')
+      call write(hdf5io_spectable, specgrid%spectable, stat)
+      call hdf5io_spectable%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      hi_ng = hdf5io_t(hi, 'ng')
-      call write(hi_ng, sg%ng, stat)
-      call hi_ng%final()
+      hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
+      call write(hdf5io_ngrid, specgrid%ngrid, stat)
+      call hdf5io_ngrid%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

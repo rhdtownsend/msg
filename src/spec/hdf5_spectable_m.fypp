@@ -38,7 +38,7 @@ module hdf5_spectable_m
 
    type, extends(spectable_t) :: hdf5_spectable_t
       private
-      type(specint_t), allocatable :: si(:)
+      type(specint_t), allocatable :: specints(:)
       character(:), allocatable    :: file_names(:)
       character(:), allocatable    :: group_names(:)
       integer, allocatable         :: ltimes(:)
@@ -73,19 +73,19 @@ module hdf5_spectable_m
 
 contains
 
-   function hdf5_spectable_t_file_(file_name, group_names, lam_min, lam_max, cache_limit) result(st)
+   function hdf5_spectable_t_file_(file_name, group_names, lam_min, lam_max, cache_limit) result(spectable)
 
       character(*), intent(in)      :: file_name
       character(*), intent(in)      :: group_names(:)
       real(RD), intent(in)          :: lam_min 
       real(RD), intent(in)          :: lam_max
       integer, intent(in), optional :: cache_limit
-      type(hdf5_spectable_t)        :: st
+      type(hdf5_spectable_t)        :: spectable
 
       integer                   :: n
       character(:), allocatable :: file_names(:)
 
-      ! Construct the spectable_t from the file name and list of group names
+      ! Construct spectable from the file name and list of group names
 
       n = SIZE(group_names)
 
@@ -93,7 +93,7 @@ contains
 
       file_names = file_name
 
-      st = hdf5_spectable_t(file_names, group_names, lam_min, lam_max, cache_limit)
+      spectable = hdf5_spectable_t(file_names, group_names, lam_min, lam_max, cache_limit)
 
       ! Finish
 
@@ -103,14 +103,14 @@ contains
 
    !****
 
-   function hdf5_spectable_t_files_(file_names, group_names, lam_min, lam_max, cache_limit) result(st)
+   function hdf5_spectable_t_files_(file_names, group_names, lam_min, lam_max, cache_limit) result(spectable)
 
       character(*), intent(in)      :: file_names(:)
       character(*), intent(in)      :: group_names(:)
       real(RD), intent(in)          :: lam_min 
       real(RD), intent(in)          :: lam_max
       integer, intent(in), optional :: cache_limit
-      type(hdf5_spectable_t)        :: st
+      type(hdf5_spectable_t)        :: spectable
 
       integer :: cache_limit_
       integer :: n
@@ -127,21 +127,21 @@ contains
 
       n = SIZE(file_names)
 
-      allocate(st%si(n))
+      allocate(spectable%specints(n))
 
-      st%file_names = file_names
-      st%group_names = group_names
+      spectable%file_names = file_names
+      spectable%group_names = group_names
 
-      allocate(st%ltimes(n))
-      st%ltimes = 0
+      allocate(spectable%ltimes(n))
+      spectable%ltimes = 0
 
-      st%lam_min = lam_min
-      st%lam_max = lam_max
+      spectable%lam_min = lam_min
+      spectable%lam_max = lam_max
 
-      st%n = n
+      spectable%n = n
 
-      st%cache_count = 0
-      st%cache_limit = cache_limit_
+      spectable%cache_count = 0
+      spectable%cache_limit = cache_limit_
       
 
       ! Finish
@@ -174,14 +174,14 @@ contains
 
    !****
 
-   subroutine fetch(self, i, si, stat)
+   subroutine fetch(self, i, specint, stat)
 
       class(hdf5_spectable_t), intent(inout) :: self
       integer, intent(in)                    :: i
-      type(specint_t), intent(out)           :: si
+      type(specint_t), intent(out)           :: specint
       integer, intent(out), optional         :: stat
 
-      ! Fetch the i'th specint_t
+      ! Fetch the i'th specint
 
       if (self%cache_limit > 0) then
 
@@ -190,11 +190,11 @@ contains
             if (stat /= STAT_OK) return
          end if
          
-         si = self%si(i)
+         specint = self%specints(i)
 
       else
 
-         call self%load_(i, si, stat)
+         call self%load_(i, specint, stat)
 
       end if
 
@@ -219,9 +219,9 @@ contains
          real(RD), intent(out)                  :: res(:)
          integer, intent(out), optional         :: stat
 
-         type(specint_t) :: si
+         type(specint_t) :: specint
 
-         ! Do the interpolation
+         ! Interpolate ${name}$
 
          if (self%cache_limit > 0) then
 
@@ -230,16 +230,16 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            call self%si(i)%interp_${name}$(${arg_var}$, lam, res, stat)
+            call self%specints(i)%interp_${name}$(${arg_var}$, lam, res, stat)
 
          else
 
-            call self%load_(i, si, stat)
+            call self%load_(i, specint, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
 
-            call si%interp_${name}$(${arg_var}$, lam, res, stat)
+            call specint%interp_${name}$(${arg_var}$, lam, res, stat)
 
          end if
 
@@ -263,9 +263,9 @@ contains
          real(RD), intent(out)                  :: res(:)
          integer, intent(out), optional         :: stat
 
-         type(specint_t) :: si
+         type(specint_t) :: specint
 
-         ! Do the interpolation
+         ! Interpolate ${name}$
 
          if (self%cache_limit > 0) then
 
@@ -274,16 +274,16 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            call self%si(i)%interp_${name}$(lam, res, stat)
+            call self%specints(i)%interp_${name}$(lam, res, stat)
 
          else
 
-            call self%load_(i, si, stat)
+            call self%load_(i, specint, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
 
-            call si%interp_${name}$(lam, res, stat)
+            call specint%interp_${name}$(lam, res, stat)
 
          end if
 
@@ -325,7 +325,7 @@ contains
 
             j = MINLOC(self%ltimes, DIM=1, mask=self%ltimes > 0)
 
-            call flush_(self%si(j))
+            call flush_(self%specints(j))
 
             where (self%ltimes > 0)
                self%ltimes = self%ltimes - 1
@@ -337,7 +337,7 @@ contains
 
          end if
 
-         call self%load_(i, self%si(i), stat)
+         call self%load_(i, self%specints(i), stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
@@ -354,9 +354,9 @@ contains
 
    contains
 
-      subroutine flush_(si)
+      subroutine flush_(specint)
 
-         type(specint_t), intent(out) :: si
+         type(specint_t), intent(out) :: specint
 
       end subroutine flush_
 
@@ -364,30 +364,30 @@ contains
       
    !****
 
-   subroutine load_(self, i, si, stat)
+   subroutine load_(self, i, specint, stat)
       
       class(hdf5_spectable_t), intent(inout) :: self
       integer, intent(in)                    :: i
-      type(specint_t), intent(out)           :: si
+      type(specint_t), intent(out)           :: specint
       integer, intent(out), optional         :: stat
 
-      type(hdf5io_t) :: hi
-      type(hdf5io_t) :: hi_si
+      type(hdf5io_t) :: hdf5io
+      type(hdf5io_t) :: hdf5io_specint
 
       ! Load the i'th specint_t from file
 
-      hi = hdf5io_t(self%file_names(i), OPEN_FILE_RO)
-      hi_si = hdf5io_t(hi, self%group_names(i))
+      hdf5io = hdf5io_t(self%file_names(i), OPEN_FILE_RO)
+      hdf5io_specint = hdf5io_t(hdf5io, self%group_names(i))
 
       print *,'Loading file/group:', TRIM(self%file_names(i)), ' / ', TRIM(self%group_names(i))
 
-      call read(hi_si, si, stat)
+      call read(hdf5io_specint, specint, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
 
-      call hi_si%final()
-      call hi%final()
+      call hdf5io_specint%final()
+      call hdf5io%final()
 
       ! Finish
 

@@ -54,25 +54,25 @@ module fmsg_m
 
 contains
 
-   subroutine load_specgrid(specgrid_filename, specgrid, stat, cache_limit)
+   subroutine load_specgrid(specgrid_file_name, specgrid, stat, cache_limit)
 
-      character(*), intent(in)       :: specgrid_filename
+      character(*), intent(in)       :: specgrid_file_name
       type(specgrid_t), intent(out)  :: specgrid
       integer, intent(out), optional :: stat
       integer, intent(in), optional  :: cache_limit
 
-      type(hdf5io_t) :: hi
+      type(hdf5io_t) :: hdf5io
 
       ! Load the specgrid from file
 
-      call open_file_(specgrid_filename, hi, stat)
+      call open_file_(specgrid_file_name, hdf5io, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
 
-      call read(hi, specgrid, stat, cache_limit)
+      call read(hdf5io, specgrid, stat, cache_limit)
 
-      call hi%final()
+      call hdf5io%final()
 
       ! Finish
 
@@ -82,24 +82,24 @@ contains
 
    !****
 
-   subroutine load_photgrid(photgrid_filename, photgrid, stat)
+   subroutine load_photgrid(photgrid_file_name, photgrid, stat)
 
-      character(*), intent(in)       :: photgrid_filename
+      character(*), intent(in)       :: photgrid_file_name
       type(photgrid_t), intent(out)  :: photgrid
       integer, intent(out), optional :: stat
 
-      type(hdf5io_t) :: hi
+      type(hdf5io_t) :: hdf5io
 
       ! Load the photgrid from file
 
-      call open_file_(photgrid_filename, hi, stat)
+      call open_file_(photgrid_file_name, hdf5io, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
 
-      call read(hi, photgrid, stat)
+      call read(hdf5io, photgrid, stat)
 
-      call hi%final()
+      call hdf5io%final()
 
       ! Finish
 
@@ -109,42 +109,42 @@ contains
 
    !****
       
-      subroutine load_photgrid_from_specgrid(specgrid_filename, passband_filename, &
+      subroutine load_photgrid_from_specgrid(specgrid_file_name, passband_file_name, &
                                              photgrid, stat)
 
-      character(*), intent(in)       :: specgrid_filename
-      character(*), intent(in)       :: passband_filename
+      character(*), intent(in)       :: specgrid_file_name
+      character(*), intent(in)       :: passband_file_name
       type(photgrid_t), intent(out)  :: photgrid
       integer, intent(out), optional :: stat
 
-      type(passband_t) :: pb
-      type(hdf5io_t)   :: hi
+      type(passband_t) :: passband
+      type(hdf5io_t)   :: hdf5io
 
       ! Load the photgrid_t from specgrid_t and passband_t files
 
-      call open_file_(passband_filename, hi, stat)
+      call open_file_(passband_file_name, hdf5io, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
       
-      call read(hi, pb, stat)
+      call read(hdf5io, passband, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
       
-      call hi%final()
+      call hdf5io%final()
 
-      call open_file_(specgrid_filename, hi, stat)
+      call open_file_(specgrid_file_name, hdf5io, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
 
-      call read(hi, pb, photgrid, stat)
+      call read(hdf5io, passband, photgrid, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
 
-      call hi%final()
+      call hdf5io%final()
 
       ! Finish
 
@@ -154,17 +154,17 @@ contains
          
    !****
 
-   subroutine open_file_(filename, hi, stat)
+   subroutine open_file_(file_name, hdf5io, stat)
 
-      character(*), intent(in)       :: filename
-      type(hdf5io_t), intent(out)    :: hi
+      character(*), intent(in)       :: file_name
+      type(hdf5io_t), intent(out)    :: hdf5io
       integer, intent(out), optional :: stat
 
       ! Open the file
 
-      if (is_hdf5(filename)) then
+      if (is_hdf5(file_name)) then
 
-         hi = hdf5io_t(filename, OPEN_FILE_RO)
+         hdf5io = hdf5io_t(file_name, OPEN_FILE_RO)
 
          if (PRESENT(stat)) stat = STAT_OK
 

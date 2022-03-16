@@ -43,8 +43,8 @@ module lin_range_m
    contains
       private
       procedure, public :: inquire
-      procedure, public :: get
-      procedure, public :: get_all
+      procedure, public :: fetch
+      procedure, public :: fetch_all
       procedure, public :: locate
    end type lin_range_t
 
@@ -73,21 +73,21 @@ module lin_range_m
 
 contains
 
-   function lin_range_t_(x_0, dx, n) result (ra)
+   function lin_range_t_(x_0, dx, n) result(range)
 
       real(RD), intent(in) :: x_0
       real(RD), intent(in) :: dx
       integer, intent(in)  :: n
-      type(lin_range_t)    :: ra
+      type(lin_range_t)    :: range
 
-      ! Construct the lin_range_t from the supplied data
+      ! Construct range from the supplied data
 
       @:ASSERT(n >= 1,'insufficient data')
 
-      ra%x_0 = x_0
-      ra%dx = dx
+      range%x_0 = x_0
+      range%dx = dx
 
-      ra%n = n
+      range%n = n
 
       ! Finish
 
@@ -97,16 +97,16 @@ contains
 
    !****
 
-   function lin_range_t_subset_(ra_in, i_a, i_b) result(ra)
+   function lin_range_t_subset_(range_in, i_a, i_b) result(range)
 
-     type(lin_range_t), intent(in) :: ra_in
+     type(lin_range_t), intent(in) :: range_in
      integer, intent(in)           :: i_a
      integer, intent(in)           :: i_b
-     type(lin_range_t)             :: ra
+     type(lin_range_t)             :: range
 
-     ! Construct the lin_range_t by subsetting ra_in
+     ! Construct range by subsetting range_in
 
-     ra = lin_range_t(ra_in%x_0+ra_in%dx*(i_a-1), ra_in%dx, i_b-i_a+1)
+     range = lin_range_t(range_in%x_0+range_in%dx*(i_a-1), range_in%dx, i_b-i_a+1)
 
      ! Finish
 
@@ -138,14 +138,14 @@ contains
 
    !****
 
-   subroutine get(self, i, x, stat)
+   subroutine fetch(self, i, x, stat)
 
       class(lin_range_t), intent(in) :: self
       integer, intent(in)            :: i
       real(RD), intent(out)          :: x
       integer, intent(out), optional :: stat
 
-      ! Get the i'th value
+      ! Fetch the i'th value
 
       if (i < 1) then
          if (PRESENT(stat)) then
@@ -173,11 +173,11 @@ contains
 
       return
 
-   end subroutine get
+   end subroutine fetch
 
    !****
 
-   subroutine get_all(self, x)
+   subroutine fetch_all(self, x)
 
       class(lin_range_t), intent(in) :: self
       real(RD), intent(out)          :: x(:)
@@ -186,7 +186,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(x), self%n)
 
-      ! Get all values
+      ! Fetch all values
 
       do i = 1, self%n
          x(i) = self%x_0 + self%dx*(i-1)
@@ -196,7 +196,7 @@ contains
 
       return
 
-   end subroutine get_all
+   end subroutine fetch_all
 
    !****
 
@@ -207,7 +207,7 @@ contains
       integer, intent(inout)         :: i
       logical, intent(in), optional  :: right
 
-      ! Locate where in the range x falls
+      ! Locate where in range x falls
 
       call locate_(self%x_0, self%dx, x, i, right=right)
 
@@ -221,10 +221,10 @@ contains
 
    !****
 
-   subroutine read_(hi, ra, stat, skip_type)
+   subroutine read_(hdf5io, range, stat, skip_type)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(lin_range_t), intent(out) :: ra
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(lin_range_t), intent(out) :: range
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: skip_type
 
@@ -240,10 +240,10 @@ contains
          skip_type_ = .FALSE.
       endif
 
-      ! Read the lin_range_t
+      ! Read range
 
       if (.NOT. skip_type_) then
-         call hi%read_attr('TYPE', type)
+         call hdf5io%read_attr('TYPE', type)
          if (type /= 'lin_range_t') then
             if (PRESENT(stat)) then
                stat = STAT_INVALID_TYPE
@@ -254,11 +254,11 @@ contains
          end if
       end if
 
-      call hi%read_dset('x_0', x_0)
-      call hi%read_dset('dx', dx)
-      call hi%read_dset('n', n)
+      call hdf5io%read_dset('x_0', x_0)
+      call hdf5io%read_dset('dx', dx)
+      call hdf5io%read_dset('n', n)
   
-      ra = lin_range_t(x_0, dx, n)
+      range = lin_range_t(x_0, dx, n)
 
       ! Finish
 
@@ -270,10 +270,10 @@ contains
 
    !****
 
-   subroutine write_(hi, ra, stat, skip_type)
+   subroutine write_(hdf5io, range, stat, skip_type)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      class(lin_range_t), intent(in) :: ra
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      class(lin_range_t), intent(in) :: range
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: skip_type
 
@@ -285,15 +285,15 @@ contains
          skip_type_ = .FALSE.
       endif
 
-      ! Write the lin_range_t
+      ! Write range
 
       if (.NOT. skip_type_) then
-         call hi%write_attr('TYPE', 'lin_range_t')
+         call hdf5io%write_attr('TYPE', 'lin_range_t')
       end if
       
-      call hi%write_dset('x_0', ra%x_0)
-      call hi%write_dset('dx', ra%dx)
-      call hi%write_dset('n', ra%n)
+      call hdf5io%write_dset('x_0', range%x_0)
+      call hdf5io%write_dset('dx', range%dx)
+      call hdf5io%write_dset('n', range%n)
      
       ! Finish
 

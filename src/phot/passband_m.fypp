@@ -36,7 +36,7 @@ module passband_m
 
    type passband_t
       private
-      type(cubint_t) :: ci
+      type(cubint_t) :: cubint
       real(RD)       :: F_0
       real(RD)       :: Delta
       real(RD)       :: lam_min
@@ -73,18 +73,18 @@ module passband_m
 
 contains
 
-   function passband_t_(S, lam, F_0) result(pb)
+   function passband_t_(S, lam, F_0) result(passband)
 
       real(RD), intent(in) :: S(:)
       real(RD), intent(in) :: lam(:)
       real(RD), intent(in) :: F_0
-      type(passband_t)     :: pb
+      type(passband_t)     :: passband
 
       @:CHECK_BOUNDS(SIZE(lam), SIZE(S))
 
-      ! Construct the passband_t from the supplied data
+      ! Construct passband from the supplied data
 
-      pb = passband_t_cubint_(cubint_t(lam, S, 'SPLINE'), F_0)
+      passband = passband_t_cubint_(cubint_t(lam, S, 'SPLINE'), F_0)
 
       ! Finish
 
@@ -94,20 +94,21 @@ contains
 
    !****
 
-   function passband_t_cubint_(ci, F_0) result(pb)
+   function passband_t_cubint_(cubint, F_0) result(passband)
 
-      type(cubint_t), intent(in) :: ci
+      type(cubint_t), intent(in) :: cubint
       real(RD), intent(in)       :: F_0
-      type(passband_t)           :: pb
-
+      type(passband_t)           :: passband
+      
       ! Construct the passband_t from the cubint_t
 
-      pb%ci = ci
+      passband%cubint = cubint
 
-      call ci%inquire(x_min=pb%lam_min, x_max=pb%lam_max)
+      call cubint%inquire(x_min=passband%lam_min, x_max=passband%lam_max)
 
-      pb%F_0 = F_0
-      pb%Delta = ci%integ(pb%lam_max) - ci%integ(pb%lam_min)
+      passband%F_0 = F_0
+      passband%Delta = cubint%integ(passband%lam_max) - &
+                       cubint%integ(passband%lam_min)
 
       ! Finish
 
@@ -151,7 +152,7 @@ contains
       lam_a_ = MIN(MAX(lam_a, self%lam_min), self%lam_max)
       lam_b_ = MIN(MAX(lam_b, self%lam_min), self%lam_max)
 
-      P = (self%ci%integ(lam_b_) - self%ci%integ(lam_a_))/(self%F_0*self%Delta)
+      P = (self%cubint%integ(lam_b_) - self%cubint%integ(lam_a_))/(self%F_0*self%Delta)
 
       ! Finish
 
@@ -161,20 +162,20 @@ contains
 
    !****
 
-   subroutine read_(hi, pb, stat)
+   subroutine read_(hdf5io, passband, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(passband_t), intent(out)  :: pb
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(passband_t), intent(out)  :: passband
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN) :: type
       real(RD)            :: F_0
-      type(hdf5io_t)      :: hi_ci
-      type(cubint_t)      :: ci
+      type(hdf5io_t)      :: hdf5io_cubint
+      type(cubint_t)      :: cubint
 
       ! Read the passband_t
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'passband_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -184,16 +185,16 @@ contains
          end if
       end if
 
-      call hi%read_attr('F_0', F_0)
+      call hdf5io%read_attr('F_0', F_0)
 
-      hi_ci = hdf5io_t(hi, 'ci')
-      call read(hi_ci, ci, stat)
-      call hi_ci%final()
+      hdf5io_cubint = hdf5io_t(hdf5io, 'cubint')
+      call read(hdf5io_cubint, cubint, stat)
+      call hdf5io_cubint%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      pb = passband_t_cubint_(ci, F_0)
+      passband = passband_t_cubint_(cubint, F_0)
 
       ! Finish
 
@@ -205,23 +206,23 @@ contains
 
    !****
 
-   subroutine write_(hi, pb, stat)
+   subroutine write_(hdf5io, passband, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(passband_t), intent(in)   :: pb
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(passband_t), intent(in)   :: passband
       integer, intent(out), optional :: stat
 
-      type(hdf5io_t) :: hi_ci
+      type(hdf5io_t) :: hdf5io_cubint
 
       ! Write the passband_t
 
-      call hi%write_attr('TYPE', 'passband_t')
+      call hdf5io%write_attr('TYPE', 'passband_t')
 
-      call hi%write_attr('F_0', pb%F_0)
+      call hdf5io%write_attr('F_0', passband%F_0)
 
-      hi_ci = hdf5io_t(hi, 'ci')
-      call write(hi_ci, pb%ci, stat)
-      call hi_ci%final()
+      hdf5io_cubint = hdf5io_t(hdf5io, 'cubint')
+      call write(hdf5io_cubint, passband%cubint, stat)
+      call hdf5io_cubint%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

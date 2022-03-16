@@ -40,12 +40,12 @@ module axis_m
 
    type axis_t
       private
-      class(range_t), allocatable :: ra
+      class(range_t), allocatable :: range
       character(LABEL_LEN)        :: label
    contains
       private
       procedure, public :: inquire
-      procedure, public :: get
+      procedure, public :: fetch
       procedure, public :: locate
    end type axis_t
 
@@ -76,15 +76,15 @@ module axis_m
 
 contains
 
-   function axis_t_(ra, label) result (ax)
+   function axis_t_(range, label) result (ax)
 
-      class(range_t), intent(in) :: ra
+      class(range_t), intent(in) :: range
       character(*), intent(in)   :: label
       type(axis_t)               :: ax
 
-      ! Construct the axis_t from the supplied data
+      ! Construct axis from the supplied data
 
-      ax%ra = ra
+      ax%range = range
 
       ax%label = label
 
@@ -108,7 +108,7 @@ contains
 
       if (PRESENT(label)) label = self%label
 
-      call self%ra%inquire(n=n, min=min, max=max)
+      call self%range%inquire(n=n, min=min, max=max)
 
       ! Finish
 
@@ -118,22 +118,22 @@ contains
 
    !****
 
-   subroutine get(self, i, x, stat)
+   subroutine fetch(self, i, x, stat)
 
       class(axis_t), intent(in)      :: self
       integer, intent(in)            :: i
       real(RD), intent(out)          :: x
       integer, intent(out), optional :: stat
 
-      ! Get an x value
+      ! Fetch an x value
 
-      call self%ra%get(i, x, stat)
+      call self%range%fetch(i, x, stat)
 
       ! Finish
 
       return
 
-   end subroutine get
+   end subroutine fetch
 
    !****
 
@@ -143,9 +143,9 @@ contains
       real(RD), intent(in)           :: x
       integer, intent(inout)         :: i
 
-      ! Locate where along the axis x falls
+      ! Locate where along axis x falls
 
-      call self%ra%locate(x, i)
+      call self%range%locate(x, i)
 
       ! Finish
 
@@ -155,20 +155,20 @@ contains
 
    !****
 
-   subroutine read_(hi, ax, stat)
+   subroutine read_(hdf5io, axis, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(axis_t), intent(out)      :: ax
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(axis_t), intent(out)      :: axis
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)         :: type
       character(LABEL_LEN)        :: label
-      type(hdf5io_t)              :: hi_ra
-      class(range_t), allocatable :: ra
+      type(hdf5io_t)              :: hdf5io_range
+      class(range_t), allocatable :: range
 
-      ! Read the axis_t
+      ! Read axis
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'axis_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -178,16 +178,16 @@ contains
          endif
       endif
 
-      call hi%read_attr('label', label)
+      call hdf5io%read_attr('label', label)
 
-      hi_ra = hdf5io_t(hi, 'ra')
-      call read(hi_ra, ra, stat)
-      call hi_ra%final()
+      hdf5io_range = hdf5io_t(hdf5io, 'range')
+      call read(hdf5io_range, range, stat)
+      call hdf5io_range%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      ax = axis_t(ra, label)
+      axis = axis_t(range, label)
 
       ! Finish
 
@@ -199,23 +199,23 @@ contains
 
    !****
 
-   subroutine write_(hi, ax, stat)
+   subroutine write_(hdf5io, axis, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(axis_t), intent(in)       :: ax
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(axis_t), intent(in)       :: axis
       integer, intent(out), optional :: stat
 
-      type(hdf5io_t) :: hi_ra
+      type(hdf5io_t) :: hdf5io_range
       
-      ! Writethe axis_t
+      ! Write axis
 
-      call hi%write_attr('TYPE', 'axis_t')
+      call hdf5io%write_attr('TYPE', 'axis_t')
 
-      call hi%write_attr('label', ax%label)
+      call hdf5io%write_attr('label', axis%label)
 
-      hi_ra = hdf5io_t(hi, 'ra')
-      call write(hi_ra, ax%ra, stat)
-      call hi_ra%final()
+      hdf5io_range = hdf5io_t(hdf5io, 'range')
+      call write(hdf5io_range, axis%range, stat)
+      call hdf5io_range%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

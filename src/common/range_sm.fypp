@@ -36,22 +36,22 @@ submodule (range_m) range_sm
 
 contains
 
-   function range_t_subset_(ra_in, i_a, i_b) result(ra)
+   function range_t_subset_(range_in, i_a, i_b) result(range)
 
-      class(range_t), intent(in)  :: ra_in
+      class(range_t), intent(in)  :: range_in
       integer, intent(in)         :: i_a
       integer, intent(in)         :: i_b
-      class(range_t), allocatable :: ra
+      class(range_t), allocatable :: range
 
-      ! Construct the range_t by subsetting ra_in
+      ! Construct range by subsetting range_in
 
-      select type(ra_in)
+      select type(range_in)
       type is(lin_range_t)
-         ra = lin_range_t(ra_in, i_a, i_b)
+         range = lin_range_t(range_in, i_a, i_b)
       type is (log_range_t)
-         ra = log_range_t(ra_in, i_a, i_b)
+         range = log_range_t(range_in, i_a, i_b)
       type is(tab_range_t)
-         ra = tab_range_t(ra_in, i_a, i_b)
+         range = tab_range_t(range_in, i_a, i_b)
       class default
          @:ABORT('invalid type')
       end select
@@ -64,36 +64,36 @@ contains
          
    !****
    
-   subroutine read_(hi, ra, stat)
+   subroutine read_(hdf5io, range, stat)
 
-      type(hdf5io_t), intent(inout)            :: hi
-      class(range_t), allocatable, intent(out) :: ra
+      type(hdf5io_t), intent(inout)            :: hdf5io
+      class(range_t), allocatable, intent(out) :: range
       integer, intent(out), optional           :: stat
 
       character(TYPE_LEN) :: type
 
-      ! Read the range_t
+      ! Read range
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
 
       select case(type)
       case('lin_range_t')
-         allocate(lin_range_t::ra)
+         allocate(lin_range_t::range)
       case('log_range_t')
-         allocate(log_range_t::ra)
+         allocate(log_range_t::range)
       case('tab_range_t')
-         allocate(tab_range_t::ra)
+         allocate(tab_range_t::range)
       case default
          @:ABORT('invalid type')
       end select
 
-      select type(ra)
+      select type(range)
       type is (lin_range_t)
-         call read_lin(hi, ra, stat)
+         call read_lin(hdf5io, range, stat)
       type is (log_range_t)
-         call read_log(hi, ra, stat)
+         call read_log(hdf5io, range, stat)
       type is (tab_range_t)
-         call read_tab(hi, ra, stat)
+         call read_tab(hdf5io, range, stat)
       class default
          @:ABORT('invalid type')
       end select
@@ -106,21 +106,21 @@ contains
 
    !****
 
-   subroutine write_(hi, ra, stat)
+   subroutine write_(hdf5io, range, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      class(range_t), intent(in)     :: ra
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      class(range_t), intent(in)     :: range
       integer, intent(out), optional :: stat
 
-      ! Write the range_t
+      ! Write range
 
-      select type(ra)
+      select type(range)
       type is (lin_range_t)
-         call write_lin(hi, ra, stat)
+         call write_lin(hdf5io, range, stat)
       type is (log_range_t)
-         call write_log(hi, ra, stat)
+         call write_log(hdf5io, range, stat)
       type is (tab_range_t)
-         call write_tab(hi, ra, stat)
+         call write_tab(hdf5io, range, stat)
       class default
          @:ABORT('invalid type')
       end select

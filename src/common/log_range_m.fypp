@@ -39,8 +39,8 @@ module log_range_m
    contains
       private
       procedure, public :: inquire
-      procedure, public :: get
-      procedure, public :: get_all
+      procedure, public :: fetch
+      procedure, public :: fetch_all
       procedure, public :: locate
    end type log_range_t
 
@@ -69,16 +69,16 @@ module log_range_m
 
 contains
 
-   function log_range_t_(logx_0, dlogx, n) result (ra)
+   function log_range_t_(logx_0, dlogx, n) result(range)
 
      real(RD), intent(in) :: logx_0
      real(RD), intent(in) :: dlogx
      integer, intent(in)  :: n
-     type(log_range_t)    :: ra
+     type(log_range_t)    :: range
 
-     ! Construct the log_range_t from the supplied data
+     ! Construct range from the supplied data
 
-     ra%lin_range_t = lin_range_t(logx_0, dlogx, n)
+     range%lin_range_t = lin_range_t(logx_0, dlogx, n)
 
      ! Finish
 
@@ -88,16 +88,16 @@ contains
 
    !****
 
-   function log_range_t_subset_(ra_in, i_a, i_b) result(ra)
+   function log_range_t_subset_(range_in, i_a, i_b) result(range)
 
-     type(log_range_t), intent(in) :: ra_in
+     type(log_range_t), intent(in) :: range_in
      integer, intent(in)           :: i_a
      integer, intent(in)           :: i_b
-     type(log_range_t)             :: ra
+     type(log_range_t)             :: range
 
-     ! Construct the log_range_t by subsetting ra_in
+     ! Construct range by subsetting range_in
 
-     ra%lin_range_t = lin_range_t(ra_in%lin_range_t, i_a, i_b)
+     range%lin_range_t = lin_range_t(range_in%lin_range_t, i_a, i_b)
 
      ! Finish
 
@@ -129,16 +129,16 @@ contains
 
    !****
 
-   subroutine get(self, i, x, stat)
+   subroutine fetch(self, i, x, stat)
 
       class(log_range_t), intent(in) :: self
       integer, intent(in)            :: i
       real(RD), intent(out)          :: x
       integer, intent(out), optional :: stat
 
-      ! Get the i'th value
+      ! Fetch the i'th value
 
-      call self%lin_range_t%get(i, x, stat)
+      call self%lin_range_t%fetch(i, x, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
@@ -151,18 +151,18 @@ contains
 
       return
 
-   end subroutine get
+   end subroutine fetch
 
    !****
 
-   subroutine get_all(self, x)
+   subroutine fetch_all(self, x)
 
       class(log_range_t), intent(in) :: self
       real(RD), intent(out)          :: x(:)
 
-      ! Get all values
+      ! Fetch all values
 
-      call self%lin_range_t%get_all(x)
+      call self%lin_range_t%fetch_all(x)
 
       x = EXP(x)
 
@@ -170,7 +170,7 @@ contains
 
       return
 
-   end subroutine get_all
+   end subroutine fetch_all
 
    !****
 
@@ -181,7 +181,7 @@ contains
       integer, intent(inout)         :: i
       logical, intent(in), optional  :: right
 
-      ! Locate where in the range x falls
+      ! Locate where in range x falls
 
       call self%lin_range_t%locate(LOG(x), i, right=right)
 
@@ -193,10 +193,10 @@ contains
 
    !****
 
-   subroutine read_(hi, ra, stat, skip_type)
+   subroutine read_(hdf5io, range, stat, skip_type)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(log_range_t), intent(out) :: ra
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(log_range_t), intent(out) :: range
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: skip_type
 
@@ -209,10 +209,10 @@ contains
          skip_type_ = .FALSE.
       endif
 
-      ! Read the log_range_t
+      ! Read range
 
       if (.NOT. skip_type_) then
-         call hi%read_attr('TYPE', type)
+         call hdf5io%read_attr('TYPE', type)
          if (type /= 'log_range_t') then
             if (PRESENT(stat)) then
                stat = STAT_INVALID_TYPE
@@ -222,7 +222,7 @@ contains
          end if
       end if
 
-      call read_lin(hi, ra%lin_range_t, stat=stat, skip_type=.TRUE.)
+      call read_lin(hdf5io, range%lin_range_t, stat=stat, skip_type=.TRUE.)
 
       ! Finish
 
@@ -232,10 +232,10 @@ contains
 
    !****
 
-   subroutine write_(hi, ra, stat, skip_type)
+   subroutine write_(hdf5io, range, stat, skip_type)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      class(log_range_t), intent(in) :: ra
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      class(log_range_t), intent(in) :: range
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: skip_type
 
@@ -247,13 +247,13 @@ contains
          skip_type_ = .FALSE.
       endif
 
-      ! Write the log_range_t
+      ! Write range
 
       if (.NOT. skip_type_) then
-         call hi%write_attr('TYPE', 'log_range_t')
+         call hdf5io%write_attr('TYPE', 'log_range_t')
       endif
 
-      call write_lin(hi, ra%lin_range_t, stat=stat, skip_type=.TRUE.)
+      call write_lin(hdf5io, range%lin_range_t, stat=stat, skip_type=.TRUE.)
 
       ! Finish
 

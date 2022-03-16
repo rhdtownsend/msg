@@ -41,9 +41,9 @@ module spec_phottable_m
 
    type, extends(phottable_t) :: spec_phottable_t
       private
-      type(photint_t), allocatable    :: pi(:)
-      class(spectable_t), allocatable :: st
-      type(passband_t)                :: pb
+      type(photint_t), allocatable    :: photints(:)
+      class(spectable_t), allocatable :: spectable
+      type(passband_t)                :: passband
       logical, allocatable            :: evaled(:)
       integer                         :: n
    contains
@@ -70,28 +70,28 @@ module spec_phottable_m
 
 contains
 
-   function spec_phottable_t_(st, pb) result(pt)
+   function spec_phottable_t_(spectable, passband) result(phottable)
 
-      class(spectable_t), intent(in) :: st
-      type(passband_t), intent(in)   :: pb
-      type(spec_phottable_t)         :: pt
+      class(spectable_t), intent(in) :: spectable
+      type(passband_t), intent(in)   :: passband
+      type(spec_phottable_t)         :: phottable
 
       integer :: n
 
       ! Construct the phottable_t from the spectable_t and the
       ! passband_t
 
-      call st%inquire(n=n)
+      call spectable%inquire(n=n)
 
-      allocate(pt%pi(n))
+      allocate(phottable%photints(n))
 
-      pt%st = st
-      pt%pb = pb
+      phottable%spectable = spectable
+      phottable%passband = passband
 
-      allocate(pt%evaled(n))
-      pt%evaled = .FALSE.
+      allocate(phottable%evaled(n))
+      phottable%evaled = .FALSE.
 
-      pt%n = n
+      phottable%n = n
 
       ! Finish
 
@@ -118,14 +118,14 @@ contains
 
    !****
 
-   subroutine fetch(self, i, pi, stat)
+   subroutine fetch(self, i, photint, stat)
 
       class(spec_phottable_t), intent(inout) :: self
       integer, intent(in)                    :: i
-      type(photint_t), intent(out)           :: pi
+      type(photint_t), intent(out)           :: photint
       integer, intent(out), optional         :: stat
 
-      ! Fetch the i'th photint_t
+      ! Fetch the i'th photint
 
       if (.NOT. self%evaled(i)) then
 
@@ -138,7 +138,7 @@ contains
          
       endif
 
-      pi = self%pi(i)
+      photint = self%photints(i)
 
       ! Finish
 
@@ -173,7 +173,7 @@ contains
 
          end if
          
-         call self%pi(i)%interp_${name}$(${arg_var}$, res, stat)
+         call self%photints(i)%interp_${name}$(${arg_var}$, res, stat)
 
          ! Finish
 
@@ -207,7 +207,7 @@ contains
 
          end if
          
-         call self%pi(i)%interp_${name}$(res, stat)
+         call self%photints(i)%interp_${name}$(res, stat)
 
          ! Finish
 
@@ -229,12 +229,12 @@ contains
 
       ! Evaluate the photint_t
 
-      call self%st%fetch(i, si, stat)
+      call self%spectable%fetch(i, si, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      call si%apply_passband(self%pb, self%pi(i), stat)
+      call si%apply_passband(self%passband, self%photints(i), stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

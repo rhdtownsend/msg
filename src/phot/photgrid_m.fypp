@@ -42,8 +42,8 @@ module photgrid_m
 
    type :: photgrid_t
       private
-      class(phottable_t), allocatable :: pt
-      type(ngrid_t)                   :: ng
+      class(phottable_t), allocatable :: phottable
+      type(ngrid_t)                   :: ngrid
       integer, allocatable            :: shape(:)
       integer                         :: rank
    contains
@@ -81,31 +81,31 @@ module photgrid_m
    
 contains
 
-   function photgrid_t_(pt, ng) result (pg)
+   function photgrid_t_(phottable, ngrid) result (pg)
 
-      class(phottable_t), intent(in) :: pt
-      type(ngrid_t), intent(in)      :: ng
+      class(phottable_t), intent(in) :: phottable
+      type(ngrid_t), intent(in)      :: ngrid
       type(photgrid_t)               :: pg
 
       integer              :: n
-      integer              :: n_ci
+      integer              :: n_con
       integer              :: rank
       integer, allocatable :: shape(:)
 
-      ! Construct the photgrid_t
+      ! Construct photgrid from the supplied data
 
-      call pt%inquire(n=n)
+      call phottable%inquire(n=n)
 
-      call ng%inquire(n_ci=n_ci, rank=rank)
+      call ngrid%inquire(n_con=n_con, rank=rank)
 
-      @:CHECK_BOUNDS(n, n_ci)
+      @:CHECK_BOUNDS(n, n_con)
 
       allocate(shape(rank))
 
-      call ng%inquire(shape=shape)
+      call ngrid%inquire(shape=shape)
 
-      pg%pt = pt
-      pg%ng = ng
+      pg%phottable = phottable
+      pg%ngrid = ngrid
 
       pg%shape = shape
       pg%rank = rank
@@ -136,7 +136,7 @@ contains
       if (PRESENT(shape)) shape = self%shape
       if (PRESENT(rank)) rank = self%rank
 
-      call self%ng%inquire(axis_min=axis_min, axis_max=axis_max, axis_labels=axis_labels)
+      call self%ngrid%inquire(axis_min=axis_min, axis_max=axis_max, axis_labels=axis_labels)
 
       ! Finish
 
@@ -150,42 +150,36 @@ contains
                                           ('E_moment', 'E', 'k', 'integer'), &
                                           ('D_moment', 'D', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, vx, ${arg_var}$, ${var}$, stat, vderiv)
+      subroutine interp_${name}$(self, x_vec, ${arg_var}$, ${var}$, stat, deriv_vec)
 
          class(photgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: vx(:)
+         real(RD), intent(in)             :: x_vec(:)
          ${arg_type}$, intent(in)         :: ${arg_var}$
          real(RD), intent(out)            :: ${var}$
          integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: vderiv(:)
+         logical, intent(in), optional    :: deriv_vec(:)
 
-         ! Interpolate the ${name}$
+         ! Interpolate ${name}$
 
-         call self%ng%interp(proc_, vx, ${var}$, stat, vderiv)
+         call self%ngrid%interp(proc_, x_vec, ${var}$, stat, deriv_vec)
 
          ! Finish
 
       contains
 
-         subroutine proc_(vi, f, stat)
+         subroutine proc_(i_vec, f, stat)
 
-            integer, intent(in)            :: vi(:)
+            integer, intent(in)            :: i_vec(:)
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer         :: li
-            integer         :: ci
-            type(photint_t) :: pi
+            integer :: i_lin
+            integer :: i_con
             
-            li = self%ng%li_from_vi(vi)
-            ci = self%ng%ci_from_li(li)
+            i_lin = self%ngrid%lin_from_vec(i_vec)
+            i_con = self%ngrid%con_from_lin(i_lin)
 
-            call self%pt%fetch(ci, pi, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
-
-            call pi%interp_${name}$(${arg_var}$, f, stat)
+            call self%phottable%interp_${name}$(i_con, ${arg_var}$, f, stat)
 
             return
 
@@ -199,41 +193,35 @@ contains
 
    #:for name, var in (('flux', 'F'), )
 
-      subroutine interp_${name}$(self, vx, ${var}$, stat, vderiv)
+      subroutine interp_${name}$(self, x_vec, ${var}$, stat, deriv_vec)
 
          class(photgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: vx(:)
+         real(RD), intent(in)             :: x_vec(:)
          real(RD), intent(out)            :: ${var}$
          integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: vderiv(:)
+         logical, intent(in), optional    :: deriv_vec(:)
 
          ! Interpolate the ${name}$
 
-         call self%ng%interp(proc_, vx, ${var}$, stat, vderiv)
+         call self%ngrid%interp(proc_, x_vec, ${var}$, stat, deriv_vec)
 
          ! Finish
 
       contains
 
-         subroutine proc_(vi, f, stat)
+         subroutine proc_(i_vec, f, stat)
 
-            integer, intent(in)            :: vi(:)
+            integer, intent(in)            :: i_vec(:)
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer         :: li
-            integer         :: ci
-            type(photint_t) :: pi
+            integer :: i_lin
+            integer :: i_con
 
-            li = self%ng%li_from_vi(vi)
-            ci = self%ng%ci_from_li(li)
+            i_lin = self%ngrid%lin_from_vec(i_vec)
+            i_con = self%ngrid%con_from_lin(i_lin)
 
-            call self%pt%fetch(ci, pi, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
-
-            call pi%interp_${name}$(f, stat)
+            call self%phottable%interp_${name}$(i_con, f, stat)
 
             return
 
@@ -244,22 +232,21 @@ contains
    #:endfor
 
    !****
+   subroutine read_(hdf5io, photgrid, stat)
 
-   subroutine read_(hi, pg, stat)
-
-      type(hdf5io_t), intent(inout)  :: hi
-      type(photgrid_t), intent(out)  :: pg
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(photgrid_t), intent(out)  :: photgrid
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)             :: type
-      type(hdf5io_t)                  :: hi_pt
-      class(phottable_t), allocatable :: pt
-      type(hdf5io_t)                  :: hi_ng
-      type(ngrid_t)                   :: ng
+      type(hdf5io_t)                  :: hdf5io_phottable
+      class(phottable_t), allocatable :: phottable
+      type(hdf5io_t)                  :: hdf5io_ngrid
+      type(ngrid_t)                   :: ngrid
 
       ! Read the photgrid_t
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'photgrid_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -269,21 +256,21 @@ contains
          endif
       endif
 
-      hi_pt = hdf5io_t(hi, 'pt')
-      call read(hi_pt, pt, stat)
-      call hi_pt%final()
+      hdf5io_phottable = hdf5io_t(hdf5io, 'phottable')
+      call read(hdf5io_phottable, phottable, stat)
+      call hdf5io_phottable%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      hi_ng = hdf5io_t(hi, 'ng')
-      call read(hi_ng, ng, stat)
-      call hi_ng%final()
+      hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
+      call read(hdf5io_ngrid, ngrid, stat)
+      call hdf5io_ngrid%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      pg = photgrid_t(pt, ng)
+      photgrid = photgrid_t(phottable, ngrid)
 
       ! Finish
 
@@ -295,22 +282,22 @@ contains
 
    !****
 
-   subroutine read_specgrid_(hi, pb, pg, stat)
+   subroutine read_specgrid_(hdf5io, passband, photgrid, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(passband_t), intent(in)   :: pb
-      type(photgrid_t), intent(out)  :: pg
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(passband_t), intent(in)   :: passband
+      type(photgrid_t), intent(out)  :: photgrid
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)             :: type
-      type(hdf5io_t)                  :: hi_st
-      class(spectable_t), allocatable :: st
-      type(hdf5io_t)                  :: hi_ng
-      type(ngrid_t)                   :: ng
+      type(hdf5io_t)                  :: hdf5io_spectable
+      class(spectable_t), allocatable :: spectable
+      type(hdf5io_t)                  :: hdf5io_ngrid
+      type(ngrid_t)                   :: ngrid
 
       ! Read the photgrid_t from the specgrid_t
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'specgrid_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -320,21 +307,21 @@ contains
          endif
       endif
 
-      hi_st = hdf5io_t(hi, 'st')
-      call read(hi_st, st, stat, cache_limit=0)
-      call hi_st%final()
+      hdf5io_spectable = hdf5io_t(hdf5io, 'spectable')
+      call read(hdf5io_spectable, spectable, stat, cache_limit=0)
+      call hdf5io_spectable%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      hi_ng = hdf5io_t(hi, 'ng')
-      call read(hi_ng, ng, stat)
-      call hi_ng%final()
+      hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
+      call read(hdf5io_ngrid, ngrid, stat)
+      call hdf5io_ngrid%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      pg = photgrid_t(spec_phottable_t(st, pb), ng)
+      photgrid = photgrid_t(spec_phottable_t(spectable, passband), ngrid)
 
       ! Finish
 
@@ -346,32 +333,32 @@ contains
 
    !****
 
-   subroutine write_(hi, pg, stat)
+   subroutine write_(hdf5io, photgrid, stat)
 
-      type(hdf5io_t), intent(inout)   :: hi
-      type(photgrid_t), intent(inout) :: pg
+      type(hdf5io_t), intent(inout)   :: hdf5io
+      type(photgrid_t), intent(inout) :: photgrid
       integer, intent(out), optional  :: stat
 
-      type(hdf5io_t) :: hi_pt
-      type(hdf5io_t) :: hi_ng
+      type(hdf5io_t) :: hdf5io_phottable
+      type(hdf5io_t) :: hdf5io_ngrid
 
       ! Write the photgrid_t
 
-      call hi%write_attr('TYPE', 'photgrid_t')
+      call hdf5io%write_attr('TYPE', 'photgrid_t')
 
-      call hi%write_attr('shape', pg%shape)
-      call hi%write_attr('rank', pg%rank)
+      call hdf5io%write_attr('shape', photgrid%shape)
+      call hdf5io%write_attr('rank', photgrid%rank)
 
-      hi_pt = hdf5io_t(hi, 'pt')
-      call write(hi_pt, pg%pt, stat)
-      call hi_pt%final()
+      hdf5io_phottable = hdf5io_t(hdf5io, 'phottable')
+      call write(hdf5io_phottable, photgrid%phottable, stat)
+      call hdf5io_phottable%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
       
-      hi_ng = hdf5io_t(hi, 'ng')
-      call write(hi_ng, pg%ng, stat)
-      call hi_ng%final()
+      hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
+      call write(hdf5io_ngrid, photgrid%ngrid, stat)
+      call hdf5io_ngrid%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

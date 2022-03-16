@@ -38,7 +38,7 @@ module mem_phottable_m
 
    type, extends(phottable_t) :: mem_phottable_t
       private
-      type(photint_t), allocatable :: pi(:)
+      type(photint_t), allocatable :: photints(:)
       integer                      :: n
    contains
       private
@@ -63,16 +63,16 @@ module mem_phottable_m
 
 contains
 
-   function mem_phottable_t_(pi) result(pt)
+   function mem_phottable_t_(photints) result(phottable)
 
-      type(photint_t), intent(in) :: pi(:)
-      type(mem_phottable_t)       :: pt
+      type(photint_t), intent(in) :: photints(:)
+      type(mem_phottable_t)       :: phottable
 
-      ! Construct the phottable_t from the photint_t's
+      ! Construct phottable from the photints array
 
-      pt%pi = pi
+      phottable%photints = photints
 
-      pt%n = SIZE(pi)
+      phottable%n = SIZE(photints)
 
       ! Finish
 
@@ -85,7 +85,7 @@ contains
    subroutine inquire(self, n)
 
       class(mem_phottable_t), intent(in) :: self
-      integer, intent(out), optional      :: n
+      integer, intent(out), optional     :: n
 
       ! Inquire metadata
 
@@ -99,16 +99,16 @@ contains
 
    !****
 
-   subroutine fetch(self, i, pi, stat)
+   subroutine fetch(self, i, photint, stat)
 
       class(mem_phottable_t), intent(inout) :: self
       integer, intent(in)                   :: i
-      type(photint_t), intent(out)          :: pi
+      type(photint_t), intent(out)          :: photint
       integer, intent(out), optional        :: stat
 
-      ! Fetch the i'th photint_t
+      ! Fetch the i'th photint
 
-      pi = self%pi(i)
+      photint = self%photints(i)
 
       ! Finish
 
@@ -130,9 +130,9 @@ contains
          real(RD), intent(out)                 :: res
          integer, intent(out), optional        :: stat
 
-         ! Do the interpolation
+         ! Interpolate ${name}$
 
-         call self%pi(i)%interp_${name}$(${arg_var}$, res, stat)
+         call self%photints(i)%interp_${name}$(${arg_var}$, res, stat)
 
          ! Finish
 
@@ -153,9 +153,9 @@ contains
          real(RD), intent(out)                 :: res
          integer, intent(out), optional        :: stat
 
-         ! Do the interpolation
+         ! Interpolate ${name}$
 
-         call self%pi(i)%interp_${name}$(res, stat)
+         call self%photints(i)%interp_${name}$(res, stat)
 
          ! Finish
 
