@@ -40,25 +40,25 @@ program make_bb_photgrid
    integer                   :: n_logg
    integer                   :: n_mu
    real(RD)                  :: u
-   character(:), allocatable :: limb_law
-   character(:), allocatable :: photgrid_filename
+   character(:), allocatable :: law_str
+   character(:), allocatable :: photgrid_file_name
 
-   type(axis_t)                 :: ax(2)
-   integer                      :: n_node
+   type(axis_t)                 :: axes(2)
+   integer                      :: n_nodes
    logical, allocatable         :: mask(:)
-   type(ngrid_t)                :: ng
-   type(limb_t)                 :: li
+   type(ngrid_t)                :: ngrid
+   type(limb_t)                 :: limb
    integer                      :: i
    real(RD), allocatable        :: mu(:)
    real(RD), allocatable        :: f_mu(:)
-   type(photint_t), allocatable :: pi(:)
-   type(mem_phottable_t)        :: pt
-   type(photgrid_t)             :: pg
-   type(hdf5io_t)               :: hi
+   type(photint_t), allocatable :: photints(:)
+   type(mem_phottable_t)        :: phottable
+   type(photgrid_t)             :: photgrid
+   type(hdf5io_t)               :: hdf5io
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 10, 'Syntax: make_bb_photgrid Teff_min Teff_max n_Teff logg_min logg_max n_logg n_mu u limb_law photgrid_filename')
+   @:ASSERT(n_arg() == 10, 'Syntax: make_bb_photgrid Teff_min Teff_max n_Teff logg_min logg_max n_logg n_mu u law_str photgrid_file_name')
 
    call get_arg(1, Teff_min)
    call get_arg(2, Teff_max)
@@ -70,62 +70,62 @@ program make_bb_photgrid
 
    call get_arg(7, n_mu)
    call get_arg(8, u)
-   call get_arg(9, limb_law)
+   call get_arg(9, law_str)
 
-   call get_arg(10, photgrid_filename)
+   call get_arg(10, photgrid_file_name)
 
    ! Create the axes
 
-   ax(1) = make_axis(LOG10(Teff_min), LOG10(Teff_max), n_Teff, 'logT')
-   ax(2) = make_axis(logg_min, logg_max, n_logg, 'logg')
+   axes(1) = make_axis(LOG10(Teff_min), LOG10(Teff_max), n_Teff, 'logT')
+   axes(2) = make_axis(logg_min, logg_max, n_logg, 'logg')
 
-   ! Create the ngrid_t
+   ! Create ngrid
 
-   n_node = n_Teff*n_logg
+   n_nodes = n_Teff*n_logg
 
-   allocate(mask(n_node))
+   allocate(mask(n_nodes))
    mask = .TRUE.
 
-   ng = ngrid_t(ax, mask)
+   ngrid = ngrid_t(axes, mask)
 
    ! Set up limb-darkening stuff
 
-   li = limb_t(limb_law)
+   limb = limb_t(law_str)
 
    mu = [(REAL(i-1, RD)/(n_mu-1),i=1,n_mu)]
    f_mu = (1._RD - u*(1._RD - mu))
 
-   ! Create the photint_t array
+   ! Create photints
 
-   allocate(pi(n_node))
+   allocate(photints(n_nodes))
 
-   call ng%map(make_photint)
+   call ngrid%map(make_photint)
 
-   ! Create the phottable_t
+   ! Create phottable
 
-   pt = mem_phottable_t(pi)
+   phottable = mem_phottable_t(photints)
 
-   ! Create the photgrid_t
+   ! Create photgrid
 
-   pg = photgrid_t(pt, ng)
+   photgrid = photgrid_t(phottable, ngrid)
 
    ! Write it
 
-   hi = hdf5io_t(photgrid_filename, CREATE_FILE)
-   call write(hi, pg)
-   call hi%final()
+   hdf5io = hdf5io_t(photgrid_file_name, CREATE_FILE)
+   call write(hdf5io, photgrid)
+   call hdf5io%final()
 
    ! Finish
 
 contains
 
-   function make_axis (x_min, x_max, n, label) result (ax)
+   function make_axis (x_min, x_max, n, label) result(axis)
 
       real(RD), intent(in)     :: x_min
       real(RD), intent(in)     :: x_max
       integer, intent(in)      :: n
       character(*), intent(in) :: label
-      type(axis_t)             :: ax
+      type(axis_t)             :: axis
 
       integer  :: i
       real(RD) :: x(n)
@@ -136,7 +136,7 @@ contains
 
       ! Create the axis
 
-      ax = axis_t(tab_range_t(x), label)
+      axis = axis_t(tab_range_t(x), label)
 
       ! Finish
 
@@ -146,30 +146,30 @@ contains
 
    !****
 
-   subroutine make_photint (vi, stat)
+   subroutine make_photint (i_vec, stat)
 
-      integer, intent(in)            :: vi(:)
+      integer, intent(in)            :: i_vec(:)
       integer, intent(out), optional :: stat
 
-      integer  :: li_
+      integer  :: i_lin
       real(RD) :: logT
       real(RD) :: Teff
       real(RD) :: I(n_mu)
 
       ! Convert vector indices into linear indices
 
-      li_ = ng%li_from_vi(vi)
+      i_lin = ngrid%lin_from_vec(i_vec)
 
       ! Create intensity data
 
-      call ax(1)%get(vi(1), logT)
+      call axes(1)%fetch(i_vec(1), logT)
       Teff = 10**logT
 
       I = SIGMA_STEFAN*Teff**4/(TWOPI*(1._RD/2._RD - u/6._RD)) * f_mu
 
       ! Construct the photint_t
 
-      pi(li_) = photint_t(I, mu, li)
+      photints(i_lin) = photint_t(I, mu, limb)
 
       ! Finish
 

@@ -394,11 +394,11 @@ contains
 
    !****
 
-   subroutine apply_passband(self, pb, pi, stat)
+   subroutine apply_passband(self, passband, photint, stat)
 
       class(specint_t), intent(in)   :: self
-      type(passband_t), intent(in)   :: pb
-      type(photint_t), intent(out)   :: pi
+      type(passband_t), intent(in)   :: passband
+      type(photint_t), intent(out)   :: photint
       integer, intent(out), optional :: stat
 
       real(RD) :: lam_min
@@ -409,12 +409,12 @@ contains
       integer  :: i
       real(RD) :: P
 
-      ! Apply the passband, to yield a photint_t
+      ! Apply the passband to yield photint
 
       ! First check that the spectrum is defined across the passband support
 
       call self%inquire(lam_min=lam_min, lam_max=lam_max)
-      call pb%inquire(lam_min=lam_min_pb, lam_max=lam_max_pb)
+      call passband%inquire(lam_min=lam_min_pb, lam_max=lam_max_pb)
 
       if (lam_min_pb < lam_min) then
          if (PRESENT(stat)) then
@@ -442,7 +442,7 @@ contains
 
          ! Evaluate the passthrough
 
-         P = pb%passthru(self%lam(i), self%lam(i+1))
+         P = passband%passthru(self%lam(i), self%lam(i+1))
 
          ! Add the contribution to c
 
@@ -452,7 +452,7 @@ contains
 
       ! Construct the photint
 
-      pi = photint_t(c, self%limb)
+      photint = photint_t(c, self%limb)
 
       ! Finish
 
@@ -464,18 +464,18 @@ contains
 
    !****
 
-   subroutine read_(hdf5io, si, stat)
+   subroutine read_(hdf5io, specint, stat)
 
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(specint_t), intent(out)   :: si
+      type(specint_t), intent(out)   :: specint
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)         :: type
       real(RD), allocatable       :: c(:,:)
       type(hdf5io_t)              :: hdf5io_range
-      class(range_t), allocatable :: ra
+      class(range_t), allocatable :: range
       type(hdf5io_t)              :: hdf5io_limb
-      type(limb_t)                :: li
+      type(limb_t)                :: limb
       logical                     :: low_acc
 
       character(:), allocatable :: file_name
@@ -498,15 +498,15 @@ contains
 
       call hdf5io%inquire(file_name=file_name)
 
-      hdf5io_range = hdf5io_t(hdf5io, 'ra')
-      call read(hdf5io_range, ra)
+      hdf5io_range = hdf5io_t(hdf5io, 'range')
+      call read(hdf5io_range, range)
       call hdf5io_range%final()
 
-      hdf5io_limb = hdf5io_t(hdf5io, 'li')
-      call read(hdf5io_limb, li)
+      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
+      call read(hdf5io_limb, limb)
       call hdf5io_limb%final()
 
-      si = specint_t(c, ra, li, low_acc)
+      specint = specint_t(c, range, limb, low_acc)
 
       ! Finish
 

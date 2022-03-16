@@ -37,7 +37,7 @@ module photint_m
 
    type photint_t
       private
-      type(limb_t)          :: li
+      type(limb_t)          :: limb
       real(RD), allocatable :: c(:)
       integer               :: n_b
    contains
@@ -74,24 +74,24 @@ module photint_m
 
 contains
 
-   function photint_t_(c, li) result (pi)
+   function photint_t_(c, limb) result(photint)
 
       real(RD), intent(in)     :: c(:)
-      type(limb_t), intent(in) :: li
-      type(photint_t)          :: pi
+      type(limb_t), intent(in) :: limb
+      type(photint_t)          :: photint
 
       integer :: n_b
 
       ! Construct the photint_t from the supplied data
 
-      call li%inquire(n=n_b)
+      call limb%inquire(n=n_b)
 
       @:CHECK_BOUNDS(SIZE(c), n_b)
 
-      pi%li = li
-      pi%c = c
+      photint%limb = limb
+      photint%c = c
 
-      pi%n_b = n_b
+      photint%n_b = n_b
       
       ! Finish
 
@@ -101,21 +101,21 @@ contains
 
    !****
 
-   function photint_t_fit_(I, mu, li) result (pi)
+   function photint_t_fit_(I, mu, limb) result(photint)
 
       real(RD), intent(in)     :: I(:)
       real(RD), intent(in)     :: mu(:)
-      type(limb_t), intent(in) :: li
-      type(photint_t)          :: pi
+      type(limb_t), intent(in) :: limb
+      type(photint_t)          :: photint
 
       real(RD), allocatable :: c(:)
 
       ! Construct the photint_t by fitting the supplied I(mu)
       ! intensity data
 
-      call li%fit_intensity(I, mu, c)
+      call limb%fit_intensity(I, mu, c)
 
-      pi = photint_t(c, li)
+      photint = photint_t(c, limb)
 
       ! Finish
 
@@ -125,29 +125,29 @@ contains
 
    !****
 
-   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                          ('E_moment', 'E', 'k', 'integer'), &
-                                          ('D_moment', 'D', 'l', 'integer'))
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, ${arg_var}$, ${var}$, stat)
+      subroutine interp_${name}$(self, ${arg_var}$, res, stat)
 
          class(photint_t), intent(inout) :: self
          ${arg_type}$, intent(in)        :: ${arg_var}$
-         real(RD), intent(out)           :: ${var}$
+         real(RD), intent(out)           :: res
          integer, intent(out), optional  :: stat
 
          real(RD) :: b(self%n_b)
 
          ! Set up the basis functions
 
-         call self%li%eval_${name}$_basis(${arg_var}$, b, stat)
+         call self%limb%eval_${name}$_basis(${arg_var}$, b, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          endif
 
          ! Interpolate ${name}$
 
-         ${var}$ = DOT_PRODUCT(b, self%c)
+         res = DOT_PRODUCT(b, self%c)
 
          if (PRESENT(stat)) stat = STAT_OK
 
@@ -161,26 +161,26 @@ contains
       
    !****
 
-   #:for name, var in (('flux', 'F'), )
+   #:for name in ('flux',)
 
-      subroutine interp_${name}$(self, ${var}$, stat)
+      subroutine interp_${name}$(self, res, stat)
 
          class(photint_t), intent(inout) :: self
-         real(RD), intent(out)           :: ${var}$
+         real(RD), intent(out)           :: res
          integer, intent(out), optional  :: stat
 
          real(RD) :: b(self%n_b)
 
          ! Set up the basis functions
 
-         call self%li%eval_${name}$_basis(b, stat)
+         call self%limb%eval_${name}$_basis(b, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          endif
 
          ! Interpolate ${name}$
 
-         ${var}$ = DOT_PRODUCT(b, self%c)
+         res = DOT_PRODUCT(b, self%c)
 
          if (PRESENT(stat)) stat = STAT_OK
 
@@ -194,20 +194,20 @@ contains
 
    !****
 
-   subroutine read_(hi, pi, stat)
+   subroutine read_(hdf5io, photint, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(photint_t), intent(out)   :: pi
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(photint_t), intent(out)   :: photint
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
       real(RD), allocatable :: c(:)
-      type(hdf5io_t)        :: hi_li
-      type(limb_t)          :: li
+      type(hdf5io_t)        :: hdf5io_limb
+      type(limb_t)          :: limb
 
       ! Read the photint_t
 
-      call hi%read_attr('TYPE', type)
+      call hdf5io%read_attr('TYPE', type)
       if (type /= 'photint_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
@@ -217,13 +217,13 @@ contains
          endif
       endif
 
-      call hi%alloc_read_dset('c', c)
+      call hdf5io%alloc_read_dset('c', c)
 
-      hi_li = hdf5io_t(hi, 'li')
-      call read(hi_li, li)
-      call hi_li%final()
+      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
+      call read(hdf5io_limb, limb)
+      call hdf5io_limb%final()
 
-      pi = photint_t(c, li)
+      photint = photint_t(c, limb)
 
       ! Finish
 
@@ -235,25 +235,25 @@ contains
 
    !****
 
-   subroutine write_ (hi, pi, stat)
+   subroutine write_ (hdf5io, photint, stat)
 
-      type(hdf5io_t), intent(inout)  :: hi
-      type(photint_t), intent(in)    :: pi
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(photint_t), intent(in)    :: photint
       integer, intent(out), optional :: stat
 
-      type(hdf5io_t) :: hi_li
+      type(hdf5io_t) :: hdf5io_limb
 
       ! Write the photint_t
 
-      call hi%write_attr('TYPE', 'photint_t')
+      call hdf5io%write_attr('TYPE', 'photint_t')
 
-      call hi%write_attr('n_b', pi%n_b)
+      call hdf5io%write_attr('n_b', photint%n_b)
 
-      call hi%write_dset('c', pi%c)
+      call hdf5io%write_dset('c', photint%c)
 
-      hi_li = hdf5io_t(hi, 'li')
-      call write(hi_li, pi%li, stat)
-      call hi_li%final()
+      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
+      call write(hdf5io_limb, photint%limb, stat)
+      call hdf5io_limb%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

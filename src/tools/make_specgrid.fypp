@@ -38,12 +38,12 @@ program make_specgrid
 
    type node_t
       character(NAME_LEN)   :: file_name
-      real(RD), allocatable :: vx(:)
-      integer, allocatable  :: vi(:)
+      real(RD), allocatable :: x_vec(:)
+      integer, allocatable  :: i_vec(:)
       real(RD)              :: lam_min
       real(RD)              :: lam_max
-      integer               :: li
-      integer               :: ci
+      integer               :: i_lin
+      integer               :: i_con
    end type node_t
 
    ! Variables
@@ -52,8 +52,8 @@ program make_specgrid
    character(:), allocatable :: specgrid_file_name
    logical                   :: allow_dupes
 
-   type(specgrid_t) :: sg
-   type(hdf5io_t)   :: hi
+   type(specgrid_t) :: specgrid
+   type(hdf5io_t)   :: hdf5io
    
    ! Read command-line arguments
 
@@ -70,35 +70,35 @@ program make_specgrid
 
    ! Create the grid
 
-   call create_grid(manifest_file_name, allow_dupes, sg)
+   call create_grid(manifest_file_name, allow_dupes, specgrid)
 
    ! Write the grid
 
-   hi = hdf5io_t(specgrid_file_name, CREATE_FILE)
-   call write(hi, sg)
-   call hi%final()
+   hdf5io = hdf5io_t(specgrid_file_name, CREATE_FILE)
+   call write(hdf5io, specgrid)
+   call hdf5io%final()
 
    ! Finish
 
 contains
 
-   subroutine create_grid(manifest_file_name, allow_dupes, sg)
+   subroutine create_grid(manifest_file_name, allow_dupes, specgrid)
 
       character(*), intent(in)      :: manifest_file_name
       logical, intent(in)           :: allow_dupes
-      type(specgrid_t), intent(out) :: sg
+      type(specgrid_t), intent(out) :: specgrid
 
-      type(node_t), allocatable :: nd(:)
-      type(axis_t), allocatable :: ax(:)
+      type(node_t), allocatable :: nodes(:)
+      type(axis_t), allocatable :: axes(:)
       logical, allocatable      :: mask(:)
 
       ! Create the grid
 
-      call read_nodes_axes(manifest_file_name, nd, ax)
+      call read_nodes_axes(manifest_file_name, nodes, axes)
 
-      call build_mask(nd, ax, mask)
+      call build_mask(nodes, axes, mask)
 
-      call build_grid(nd, ax, mask, allow_dupes, sg)
+      call build_grid(nodes, axes, mask, allow_dupes, specgrid)
 
       ! Finish
 
@@ -108,33 +108,33 @@ contains
 
    !****
 
-   subroutine read_nodes_axes(manifest_file_name, nd, ax)
+   subroutine read_nodes_axes(manifest_file_name, nodes, axes)
 
       character(*), intent(in)               :: manifest_file_name
-      type(node_t), allocatable, intent(out) :: nd(:)
-      type(axis_t), allocatable, intent(out) :: ax(:)
+      type(node_t), allocatable, intent(out) :: nodes(:)
+      type(axis_t), allocatable, intent(out) :: axes(:)
 
       integer                   :: unit
-      integer                   :: n_nd
+      integer                   :: n_nodes
       integer                   :: i
-      type(hdf5io_t)            :: hi
-      type(hdf5io_t)            :: hi_la
+      type(hdf5io_t)            :: hdf5io
+      type(hdf5io_t)            :: hdf5io_labels
       character(:), allocatable :: labels(:)
       character(:), allocatable :: labels_chk(:)
       integer                   :: rank
       integer                   :: j
       real(RD), allocatable     :: x(:)
-      type(tab_range_t)         :: ra
+      type(tab_range_t)         :: range
 
       ! Open the manifest file & count nodes (lines)
 
       open(NEWUNIT=unit, STATUS='OLD', FILE=manifest_file_name)
 
-      n_nd = 0
+      n_nodes = 0
 
       count_loop: do
          read(unit, *, END=100)
-         n_nd = n_nd + 1
+         n_nodes = n_nodes + 1
       end do count_loop
       
 100   continue
@@ -143,24 +143,24 @@ contains
 
       rewind(unit)
 
-      allocate(nd(n_nd))
+      allocate(nodes(n_nodes))
 
-      node_loop : do i = 1, n_nd
+      node_loop : do i = 1, n_nodes
 
-         read(unit, 110) nd(i)%file_name
+         read(unit, 110) nodes(i)%file_name
 110      format(A)
 
          ! Open the HDF5 file
 
-         hi = hdf5io_t(nd(i)%file_name, OPEN_FILE_RO)
+         hdf5io = hdf5io_t(nodes(i)%file_name, OPEN_FILE_RO)
 
          ! Read axis labels/values
 
-         hi_la = hdf5io_t(hi, 'labels')
+         hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
          if (i == 1) then
 
-            labels = hi_la%dset_names()
+            labels = hdf5io_labels%dset_names()
 
             associate (s => sort_indices(labels))
               labels = labels(s)
@@ -170,7 +170,7 @@ contains
 
          else
 
-            labels_chk = hi_la%dset_names()
+            labels_chk = hdf5io_labels%dset_names()
 
             associate (s => sort_indices(labels_chk))
               labels_chk = labels_chk(s)
@@ -181,22 +181,22 @@ contains
 
          endif
 
-         allocate(nd(i)%vx(rank))
+         allocate(nodes(i)%x_vec(rank))
 
          do j = 1, rank
-            call hi_la%read_dset(labels(j), nd(i)%vx(j))
+            call hdf5io_labels%read_dset(labels(j), nodes(i)%x_vec(j))
          end do
 
-         call hi_la%final()
+         call hdf5io_labels%final()
 
          ! Read wavelength range
 
-         call hi%read_attr('lam_min', nd(i)%lam_min)
-         call hi%read_attr('lam_max', nd(i)%lam_max)
+         call hdf5io%read_attr('lam_min', nodes(i)%lam_min)
+         call hdf5io%read_attr('lam_max', nodes(i)%lam_max)
 
          ! Close the file
          
-         call hi%final()
+         call hdf5io%final()
 
       end do node_loop
 
@@ -204,20 +204,20 @@ contains
 
       ! Set up the axes
 
-      allocate(x(n_nd))
-      allocate(ax(rank))
+      allocate(x(n_nodes))
+      allocate(axes(rank))
 
       do j = 1, rank
 
-         do i = 1, n_nd
-            x(i) = nd(i)%vx(j)
+         do i = 1, n_nodes
+            x(i) = nodes(i)%x_vec(j)
          end do
          
          associate (u => unique_indices(x))
-           ra = tab_range_t(x(u))
+           range = tab_range_t(x(u))
          end associate
 
-         ax(j) = axis_t(ra, labels(j))
+         axes(j) = axis_t(range, labels(j))
 
       end do
 
@@ -229,47 +229,47 @@ contains
 
    !****
 
-   subroutine build_mask(nd, ax, mask)
+   subroutine build_mask(nodes, axes, mask)
 
-      type(node_t), intent(in)          :: nd(:)
-      type(axis_t), intent(in)          :: ax(:)
+      type(node_t), intent(in)          :: nodes(:)
+      type(axis_t), intent(in)          :: axes(:)
       logical, allocatable, intent(out) :: mask(:)
 
       integer              :: rank
       integer, allocatable :: shape(:)
       integer              :: j
-      integer              :: n_li
-      type(ngrid_t)        :: ng
+      integer              :: n_lin
+      type(ngrid_t)        :: ngrid
       integer              :: i
-      integer              :: vi(SIZE(ax))
-      integer              :: li
+      integer              :: i_vec(SIZE(axes))
+      integer              :: i_lin
 
       ! Initialize the mask
 
-      rank = SIZE(ax)
+      rank = SIZE(axes)
       allocate(shape(rank))
      
       do j = 1, rank
-         call ax(j)%inquire(n=shape(j))
+         call axes(j)%inquire(n=shape(j))
       end do
 
-      n_li = PRODUCT(shape)
+      n_lin = PRODUCT(shape)
 
-      allocate(mask(n_li))
+      allocate(mask(n_lin))
       mask = .FALSE.
 
-      ! Create a dummy ngrid_t to provide indexing      
+      ! Create a dummy ngrid to provide indexing      
 
-      ng = ngrid_t(ax, mask)
+      ngrid = ngrid_t(axes, mask)
 
       ! Update the mask
 
-      do i = 1, SIZE(nd)
+      do i = 1, SIZE(nodes)
 
-         call ng%locate(nd(i)%vx, vi)
-         li = ng%li_from_vi(vi)
+         call ngrid%locate(nodes(i)%x_vec, i_vec)
+         i_lin = ngrid%lin_from_vec(i_vec)
 
-         mask(li) = .TRUE.
+         mask(i_lin) = .TRUE.
 
       end do
 
@@ -281,72 +281,78 @@ contains
 
    !****
 
-   subroutine build_grid(nd, ax, mask, allow_dupes, sg)
+   subroutine build_grid(nodes, axes, mask, allow_dupes, specgrid)
 
-      type(node_t), intent(in)      :: nd(:)
-      type(axis_t), intent(in)      :: ax(:)
+      type(node_t), intent(in)      :: nodes(:)
+      type(axis_t), intent(in)      :: axes(:)
       logical, intent(in)           :: mask(:)
       logical, intent(in)           :: allow_dupes
-      type(specgrid_t), intent(out) :: sg
+      type(specgrid_t), intent(out) :: specgrid
  
       integer                          :: rank
       integer, allocatable             :: shape(:)
       integer                          :: j
-      type(ngrid_t)                    :: ng
-      integer                          :: n_ci
+      type(ngrid_t)                    :: ngrid
+      integer                          :: n_con
       character(NAME_LEN), allocatable :: file_names(:)
       character(NAME_LEN), allocatable :: group_names(:)
       integer                          :: i
-      integer                          :: vi(SIZE(ax))
-      integer                          :: li
-      integer                          :: ci
-      type(hdf5_spectable_t)           :: st
+      integer                          :: i_vec(SIZE(axes))
+      integer                          :: i_lin
+      integer                          :: i_con
+      type(hdf5_spectable_t)           :: spectable
       
-      ! Create the ngrid_t with degenerate (length-1) dimensions
-      ! stripped out
+      ! Create ngrid with degenerate (length-1) dimensions stripped
+      ! out
 
-      rank = SIZE(ax)
+      rank = SIZE(axes)
       allocate(shape(rank))
      
       do j = 1, rank
-         call ax(j)%inquire(n=shape(j))
+         call axes(j)%inquire(n=shape(j))
       end do
 
-      ng = ngrid_t(PACK(ax, shape > 1), mask)
+      ngrid = ngrid_t(PACK(axes, shape > 1), mask)
+
+!      print *,'shape:',shape
 
       ! Set up the file/group name lists (with duplicate nodes removed)
 
-      n_ci = COUNT(mask)
+      n_con = COUNT(mask)
 
-      allocate(file_names(n_ci))
+      allocate(file_names(n_con))
       file_names = ''
 
-      do i = 1, SIZE(nd)
+      do i = 1, SIZE(nodes)
 
-         call ng%locate(PACK(nd(i)%vx, shape > 1), vi)
-         li = ng%li_from_vi(vi)
-         ci = ng%ci_from_li(li)
+         call ngrid%locate(PACK(nodes(i)%x_vec, shape > 1), i_vec)
+         i_lin = ngrid%lin_from_vec(i_vec)
+         i_con = ngrid%con_from_lin(i_lin)
 
-         if (file_names(ci) /= '' .AND. .NOT. allow_dupes) then
-            write(ERROR_UNIT, 100) TRIM(nd(i)%file_name), TRIM(file_names(ci)), nd(i)%vx
+!         print *,'i_vec:', i_vec
+!         print *,'i_lin, i_con, n_con:', i_lin, i_con, n_con
+
+         if (file_names(i_con) /= '' .AND. .NOT. allow_dupes) then
+            write(ERROR_UNIT, 100) TRIM(nodes(i)%file_name), TRIM(file_names(i_con)), nodes(i)%x_vec
 100         format('file ', A, ' replaces existing file ', A,'; axes =', 999(1X,E11.4))
             @:ABORT('set the allow_dupes flag to proceed')
          end if
 
-         file_names(ci) = nd(i)%file_name
+         file_names(i_con) = nodes(i)%file_name
 
       end do
 
-      allocate(group_names(n_ci))
+      allocate(group_names(n_con))
       group_names = '/'
 
-      ! Create the spectable_t
+      ! Create spectable
 
-      st = hdf5_spectable_t(file_names, group_names, MAXVAL(nd%lam_min), MINVAL(nd%lam_max), cache_limit=0)
+      spectable = hdf5_spectable_t(file_names, group_names, &
+                                   MAXVAL(nodes%lam_min), MINVAL(nodes%lam_max), cache_limit=0)
 
-      ! Create the specgrid_t
+      ! Create specgrid
 
-      sg = specgrid_t(st, ng)
+      specgrid = specgrid_t(spectable, ngrid)
 
       ! Finish
 

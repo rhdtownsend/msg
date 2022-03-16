@@ -51,7 +51,7 @@ program ferre_to_specint
       
    ! Variables
 
-   character(:), allocatable :: ferre_filename
+   character(:), allocatable :: ferre_file_name
    character(:), allocatable :: ferre_filetype
    character(:), allocatable :: specint_prefix
 
@@ -61,19 +61,19 @@ program ferre_to_specint
    real(RD), allocatable :: H_lambda(:)
    integer               :: l
    integer               :: j
-   character(CHAR_LEN)   :: specint_filename
+   character(CHAR_LEN)   :: specint_file_name
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: ferre_to_specint ferre_filename ferre_filetype specint_prefix')
+   @:ASSERT(n_arg() == 3, 'Syntax: ferre_to_specint ferre_file_name ferre_filetype specint_prefix')
 
-   call get_arg(1, ferre_filename)
+   call get_arg(1, ferre_file_name)
    call get_arg(2, ferre_filetype)
    call get_arg(3, specint_prefix)
 
    ! Open the FERRE file
 
-   open(NEWUNIT=unit, FILE=ferre_filename, STATUS='OLD')
+   open(NEWUNIT=unit, FILE=ferre_file_name, STATUS='OLD')
 
    ! Read the header
 
@@ -94,12 +94,12 @@ program ferre_to_specint
 
       ! Process the data
 
-      write(specint_filename, 100) specint_prefix, l, '.h5'
+      write(specint_file_name, 100) specint_prefix, l, '.h5'
 100   format(A,I8.8,A)
 
       select case (ferre_filetype)
       case ('CAP18')
-         call process_data_cap18(fh, H_lambda, vi, specint_filename)
+         call process_data_cap18(fh, H_lambda, vi, specint_file_name)
       case default
          @:ABORT('invalid ferre_filetype')
       end select
@@ -216,22 +216,22 @@ contains
 
    !****
 
-   subroutine process_data_cap18(fh, H_lambda, vi, specint_filename)
+   subroutine process_data_cap18(fh, H_lambda, vi, specint_file_name)
 
       type(ferre_hdr_t), intent(in) :: fh
       real(RD), intent(in)          :: H_lambda(:)
       integer, intent(in)           :: vi(:)
-      character(*), intent(in)      :: specint_filename
+      character(*), intent(in)      :: specint_file_name
 
       character(LABEL_LEN), allocatable :: labels(:)
       real(RD), allocatable             :: values(:)
       integer                           :: j
-      type(log_range_t)                 :: ra
+      type(log_range_t)                 :: range
       real(RD), allocatable             :: I(:,:)
-      type(limb_t)                      :: li
-      type(specint_t)                   :: si
-      type(hdf5io_t)                    :: hi
-      type(hdf5io_t)                    :: hi_la
+      type(limb_t)                      :: limb
+      type(specint_t)                   :: specint
+      type(hdf5io_t)                    :: hdf5io
+      type(hdf5io_t)                    :: hdf5io_labels
 
       ! Perform some checks
 
@@ -266,7 +266,7 @@ contains
 
       ! Set up the wavelength axis
 
-      ra = log_range_t(fh%wave(1)-0.5*fh%wave(2), fh%wave(2), fh%npix+1)
+      range = log_range_t(fh%wave(1)-0.5*fh%wave(2), fh%wave(2), fh%npix+1)
 
       ! Set up the intensity data
 
@@ -276,25 +276,25 @@ contains
 
       ! Create the specint_t
 
-      li = limb_t('CONST')
+      limb = limb_t('CONST')
 
-      si = specint_t(I, [1._RD], ra, li, low_acc=.TRUE.)
+      specint = specint_t(I, [1._RD], range, limb, low_acc=.TRUE.)
 
       ! Write it
 
-      hi = hdf5io_t(specint_filename, CREATE_FILE)
+      hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
 
-      call write(hi, si)
+      call write(hdf5io, specint)
 
-      hi_la = hdf5io_t(hi, 'labels')
+      hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
       do j = 1, fh%n_of_dim
-         call hi_la%write_dset(labels(j), values(j))
+         call hdf5io_labels%write_dset(labels(j), values(j))
       end do
 
-      call hi_la%final()
+      call hdf5io_labels%final()
       
-      call hi%final()
+      call hdf5io%final()
 
       ! Finish
 

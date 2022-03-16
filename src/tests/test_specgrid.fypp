@@ -10,7 +10,7 @@ program test_specgrid
    integer               :: k
    real(RD), allocatable :: lam(:)
    real(RD), allocatable :: F(:)
-   type(specgrid_t)      :: sg
+   type(specgrid_t)      :: specgrid
    integer               :: j
    integer               :: stat
    character(LABEL_LEN)  :: axis_labels(3)
@@ -19,11 +19,11 @@ program test_specgrid
 
    allocate(F(n-1))
 
-   call load_specgrid('sg.h5', sg)
+   call load_specgrid('sg.h5', specgrid)
 
-   call sg%inquire(axis_labels=axis_labels)
+   call specgrid%inquire(axis_labels=axis_labels)
 
-   call sg%interp_intensity([0._RD, 4.0_RD, 3.5_RD], 1.0_RD, lam, F, stat)
+   call specgrid%interp_intensity([0._RD, 4.0_RD, 3.5_RD], 1.0_RD, lam, F, stat)
    if (stat /= STAT_OK) then
       print *,'Failed in interp_intensity with stat:',stat
       stop

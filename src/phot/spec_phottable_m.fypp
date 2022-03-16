@@ -225,16 +225,16 @@ contains
       integer, intent(in)                    :: i
       integer, intent(out), optional         :: stat
 
-      type(specint_t) :: si
+      type(specint_t) :: specint
 
       ! Evaluate the photint_t
 
-      call self%spectable%fetch(i, si, stat)
+      call self%spectable%fetch(i, specint, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      call si%apply_passband(self%passband, self%photints(i), stat)
+      call specint%apply_passband(self%passband, self%photints(i), stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

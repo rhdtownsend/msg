@@ -33,8 +33,8 @@ program specint_to_specint
 
    ! Variables
 
-   character(:), allocatable :: specint_filename_in
-   character(:), allocatable :: specint_filename
+   character(:), allocatable :: specint_file_name_in
+   character(:), allocatable :: specint_file_name
    real(RD)                  :: lam_min
    real(RD)                  :: lam_max
    real(RD)                  :: dlam
@@ -47,24 +47,24 @@ program specint_to_specint
    logical                   :: just_set
 
    integer                           :: status
-   type(hdf5io_t)                    :: hi
-   type(specint_t)                   :: si_in
-   type(hdf5io_t)                    :: hi_la
+   type(hdf5io_t)                    :: hdf5io
+   type(specint_t)                   :: specint_in
+   type(hdf5io_t)                    :: hdf5io_labels
    character(LABEL_LEN), allocatable :: labels(:)
    integer                           :: n_labels
    real(RD), allocatable             :: values(:)
    integer                           :: j
    real(RD)                          :: lam_min_in
    real(RD)                          :: lam_max_in
-   class(range_t), allocatable       :: ra
-   type(specint_t)                   :: si
+   class(range_t), allocatable       :: range
+   type(specint_t)                   :: specint
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() >= 2, 'Syntax: specint_to_specint specint_filename_in specint_filename [lam_min=...] [lam_max=...] [R=...|dlam=...] [just=...]')
+   @:ASSERT(n_arg() >= 2, 'Syntax: specint_to_specint specint_file_name_in specint_file_name [lam_min=...] [lam_max=...] [R=...|dlam=...] [just=...]')
 
-   call get_arg(1, specint_filename_in)
-   call get_arg(2, specint_filename)
+   call get_arg(1, specint_file_name_in)
+   call get_arg(2, specint_file_name)
 
    call get_arg('lam_min', lam_min, status, first=3)
    lam_min_set = status == 0
@@ -83,26 +83,26 @@ program specint_to_specint
 
    ! Read data from the specint file
 
-   hi = hdf5io_t(specint_filename_in, OPEN_FILE_RO)
-   call read(hi, si_in)
+   hdf5io = hdf5io_t(specint_file_name_in, OPEN_FILE_RO)
+   call read(hdf5io, specint_in)
 
-   hi_la = hdf5io_t(hi, 'labels')
+   hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
-   labels = hi_la%dset_names()
+   labels = hdf5io_labels%dset_names()
    n_labels = SIZE(labels)
 
    allocate(values(n_labels))
 
-   do j = 1, SIZE(labels)
-      call hi_la%read_dset(labels(j), values(j))
+   do j = 1, n_labels
+      call hdf5io_labels%read_dset(labels(j), values(j))
    end do
 
-   call hi_la%final()
-   call hi%final()
+   call hdf5io_labels%final()
+   call hdf5io%final()
 
    ! Check/set wavelength bounds
 
-   call si_in%inquire(lam_min=lam_min_in, lam_max=lam_max_in)
+   call specint_in%inquire(lam_min=lam_min_in, lam_max=lam_max_in)
 
    if (lam_min_set) then
       @:ASSERT(lam_min >= lam_min_in, 'lam_min must be >= lam_min_in')
@@ -110,7 +110,7 @@ program specint_to_specint
       lam_min = lam_min_in
    endif
 
-   call si_in%inquire(lam_min=lam_min, lam_max=lam_max)
+   call specint_in%inquire(lam_min=lam_min, lam_max=lam_max)
 
    if (lam_min_set) then
       @:ASSERT(lam_min >= lam_min_in, 'lam_min must be >= lam_min_in')
@@ -131,48 +131,48 @@ program specint_to_specint
       ! Set up the new wavelength axis
 
       if (R_set) then
-         ra = log_range(lam_min, lam_max, R, just)
+         range = log_range(lam_min, lam_max, R, just)
       else
-         ra = lin_range(lam_min, lam_max, R, just)
+         range = lin_range(lam_min, lam_max, R, just)
       endif
 
       ! Create the spectrum by interpolation onto the new wavelength
       ! axis
 
-      si = specint_t(si_in, ra)
+      specint = specint_t(specint_in, range)
 
    else
 
       ! Create the spectrum by subsetting
 
-      si = specint_t(si_in, lam_min, lam_max)
+      specint = specint_t(specint_in, lam_min, lam_max)
 
    endif
 
    ! Write data to the specint file
 
-   hi = hdf5io_t(specint_filename, CREATE_FILE)
-   call write(hi, si)
+   hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
+   call write(hdf5io, specint)
 
-   hi_la = hdf5io_t(hi, 'labels')
+   hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
    do j = 1, n_labels
-      call hi_la%write_dset(labels(j), values(j))
+      call hdf5io_labels%write_dset(labels(j), values(j))
    end do
 
-   call hi%final()
+   call hdf5io%final()
 
    ! Finish
 
 contains
 
-   function lin_range(lam_min, lam_max, dlam, just) result(ra)
+   function lin_range(lam_min, lam_max, dlam, just) result(range)
 
       real(RD), intent(in)     :: lam_min
       real(RD), intent(in)     :: lam_max
       real(RD), intent(in)     :: dlam
       character(*), intent(in) :: just
-      type(lin_range_t)        :: ra
+      type(lin_range_t)        :: range
 
       integer  :: n
       real(RD) :: x_0
@@ -196,9 +196,9 @@ contains
 
       x_0 = MAX(x_0, lam_min)
 
-      ! Set up the range
+      ! Set up range
 
-      ra = lin_range_t(x_0, dlam, n)
+      range = lin_range_t(x_0, dlam, n)
 
       ! Finish
 
@@ -208,13 +208,13 @@ contains
 
    !****
    
-   function log_range(lam_min, lam_max, R, just) result(ra)
+   function log_range(lam_min, lam_max, R, just) result(range)
 
       real(RD), intent(in)     :: lam_min
       real(RD), intent(in)     :: lam_max
       real(RD), intent(in)     :: R
       character(*), intent(in) :: just
-      type(log_range_t)        :: ra
+      type(log_range_t)        :: range
 
       real(RD) :: dx
       integer  :: n
@@ -241,9 +241,9 @@ contains
 
       x_0 = MAX(x_0, LOG(lam_min))
 
-      ! Set up the range
+      ! Set up range
 
-      ra = log_range_t(x_0, dx, n)
+      range = log_range_t(x_0, dx, n)
 
       ! Finish
 

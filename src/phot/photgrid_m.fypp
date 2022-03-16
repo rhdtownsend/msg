@@ -81,11 +81,11 @@ module photgrid_m
    
 contains
 
-   function photgrid_t_(phottable, ngrid) result (pg)
+   function photgrid_t_(phottable, ngrid) result(photgrid)
 
       class(phottable_t), intent(in) :: phottable
       type(ngrid_t), intent(in)      :: ngrid
-      type(photgrid_t)               :: pg
+      type(photgrid_t)               :: photgrid
 
       integer              :: n
       integer              :: n_con
@@ -104,11 +104,11 @@ contains
 
       call ngrid%inquire(shape=shape)
 
-      pg%phottable = phottable
-      pg%ngrid = ngrid
+      photgrid%phottable = phottable
+      photgrid%ngrid = ngrid
 
-      pg%shape = shape
-      pg%rank = rank
+      photgrid%shape = shape
+      photgrid%rank = rank
 
       ! Finish
 

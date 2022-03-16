@@ -120,8 +120,8 @@ contains
       ngrid%n_con = COUNT(mask)
       ngrid%n_lin = SIZE(mask)
 
-      ngrid%lin_con = UNPACK([(i_con, i_con=1,ngrid%n_con)], mask, 0)
-      ngrid%con_lin = PACK([(i_lin, i_lin=1,ngrid%n_lin)], ngrid%lin_con /= 0)
+      ngrid%con_lin = UNPACK([(i_con, i_con=1,ngrid%n_con)], mask, 0)
+      ngrid%lin_con = PACK([(i_lin, i_lin=1,ngrid%n_lin)], ngrid%con_lin /= 0)
 
       ngrid%n_stn = 4**rank
 
@@ -394,7 +394,7 @@ contains
       integer :: r
       integer :: j
 
-      @:CHECK_BOUNDS(SIZE(i_vec_cl), self%rank)
+      @:CHECK_BOUNDS(SIZE(i_cell), self%rank)
 
       ! Calculate a vector index from cell and stencil indices
 
