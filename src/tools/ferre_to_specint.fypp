@@ -55,7 +55,6 @@ program ferre_to_specint
    character(:), allocatable :: ferre_filetype
    character(:), allocatable :: specint_prefix
 
-   integer               :: status
    integer               :: unit
    type(ferre_hdr_t)     :: fh
    integer, allocatable  :: vi(:)
@@ -227,7 +226,6 @@ contains
       character(LABEL_LEN), allocatable :: labels(:)
       real(RD), allocatable             :: values(:)
       integer                           :: j
-      integer                           :: k
       type(log_range_t)                 :: ra
       real(RD), allocatable             :: I(:,:)
       type(limb_t)                      :: li
