@@ -379,8 +379,6 @@ contains
       hdf5io = hdf5io_t(self%file_names(i), OPEN_FILE_RO)
       hdf5io_specint = hdf5io_t(hdf5io, self%group_names(i))
 
-      print *,'Loading file/group:', TRIM(self%file_names(i)), ' / ', TRIM(self%group_names(i))
-
       call read(hdf5io_specint, specint, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
