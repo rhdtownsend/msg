@@ -1,5 +1,6 @@
 # Python cache
 __pycache__
+.ipynb_checkpoints
 
 # Emacs backup files
 *~
