@@ -24,7 +24,7 @@ module log_range_m
 
    use forum_m
 
-   use lin_range_m, only: lin_range_t, read_lin => read, write_lin => write
+   use range_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -35,73 +35,55 @@ module log_range_m
 
    ! Derived-type definitions
 
-   type, extends(lin_range_t) :: log_range_t
+   type, extends(range_t) :: log_range_t
+      private
+      real(RD) :: logx_0
+      real(RD) :: dlogx
+      integer  :: n
    contains
       private
       procedure, public :: inquire
       procedure, public :: expand
-   end type log_range_t
+      procedure, public :: subset
+      procedure, public :: read
+      procedure, public :: write 
+  end type log_range_t
 
    ! Interfaces
 
    interface log_range_t
       module procedure log_range_t_
-      module procedure log_range_t_subset_
    end interface log_range_t
-
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
 
    ! Access specifiers
 
    private
 
    public :: log_range_t
-   public :: read
-   public :: write
 
 contains
 
    function log_range_t_(logx_0, dlogx, n) result(range)
 
-     real(RD), intent(in) :: logx_0
-     real(RD), intent(in) :: dlogx
-     integer, intent(in)  :: n
-     type(log_range_t)    :: range
+      real(RD), intent(in) :: logx_0
+      real(RD), intent(in) :: dlogx
+      integer, intent(in)  :: n
+      type(log_range_t)    :: range
+      
+      ! Construct range from the supplied data
 
-     ! Construct range from the supplied data
+      @:ASSERT(n >= 1,'insufficient data')
 
-     range%lin_range_t = lin_range_t(logx_0, dlogx, n)
+      range%logx_0 = logx_0
+      range%dlogx = dlogx
 
-     ! Finish
-
-     return
-
-   end function log_range_t_
-
-   !****
-
-   function log_range_t_subset_(range_in, i_a, i_b) result(range)
-
-      type(log_range_t), intent(in) :: range_in
-      integer, intent(in)           :: i_a
-      integer, intent(in)           :: i_b
-      type(log_range_t)             :: range
-
-      ! Construct range by subsetting range_in
-
-      range%lin_range_t = lin_range_t(range_in%lin_range_t, i_a, i_b)
+      range%n = n
 
       ! Finish
 
       return
 
-   end function log_range_t_subset_
+   end function log_range_t_
 
    !****
 
@@ -114,10 +96,10 @@ contains
 
       ! Inquire metadata
 
-      call self%lin_range_t%inquire(n=n, min=min, max=max)
+      if (PRESENT(n)) n = self%n
 
-      if (PRESENT(min)) min = EXP(min)
-      if (PRESENT(max)) max = EXP(max)
+      if (PRESENT(min)) min = EXP(self%logx_0)
+      if (PRESENT(max)) max = EXP(self%logx_0 + self%dlogx*(self%n-1))
 
       ! Finish
 
@@ -132,11 +114,19 @@ contains
       class(log_range_t), intent(in) :: self
       real(RD), intent(out)          :: x(:)
 
-      ! Expand range into the array
+      integer :: i
 
-      call self%lin_range_t%expand(x)
+      ! Expand the range into the array
 
-      x = EXP(x)
+      @:CHECK_BOUNDS(SIZE(x), self%n)
+
+      ! Expand the range into the array
+
+      do i = 1, self%n
+         x(i) = EXP(self%logx_0 + self%dlogx*(i-1))
+      end do
+
+      ! Finish
 
       ! Finish
 
@@ -146,72 +136,88 @@ contains
 
    !****
 
-   subroutine read_(hdf5io, range, stat, skip_type)
+   subroutine subset(self, i_a, i_b, range)
 
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      type(log_range_t), intent(out) :: range
-      integer, intent(out), optional :: stat
-      logical, intent(in), optional  :: skip_type
+      class(log_range_t), intent(in)           :: self
+      integer, intent(in)                      :: i_a
+      integer, intent(in)                      :: i_b
+      class(range_t), allocatable, intent(out) :: range
 
-      logical             :: skip_type_
-      character(TYPE_LEN) :: type
+      ! Subset the range
 
-      if (PRESENT(skip_type)) then
-         skip_type_ = skip_type
-      else
-         skip_type_ = .FALSE.
-      endif
+      @:ASSERT(i_a >= 1, 'invalid argument')
+      @:ASSERT(i_b <= self%n, 'invalid argument')
+      @:ASSERT(i_b >= i_a, 'invalid argument')
 
-      ! Read range
-
-      if (.NOT. skip_type_) then
-         call hdf5io%read_attr('TYPE', type)
-         if (type /= 'log_range_t') then
-            if (PRESENT(stat)) then
-               stat = STAT_INVALID_TYPE
-            else
-               @:ABORT('invalid type')
-            end if
-         end if
-      end if
-
-      call read_lin(hdf5io, range%lin_range_t, stat=stat, skip_type=.TRUE.)
+      range = log_range_t(self%logx_0+self%dlogx*(i_a-1), self%dlogx, i_b-i_a+1)
 
       ! Finish
 
       return
 
-   end subroutine read_
+   end subroutine subset
 
    !****
 
-   subroutine write_(hdf5io, range, stat, skip_type)
+   subroutine read(self, hdf5io, stat)
 
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      class(log_range_t), intent(in) :: range
-      integer, intent(out), optional :: stat
-      logical, intent(in), optional  :: skip_type
+      class(log_range_t), intent(out) :: self
+      type(hdf5io_t), intent(inout)   :: hdf5io
+      integer, intent(out), optional  :: stat
 
-      logical :: skip_type_
+      character(TYPE_LEN) :: type
+      real(RD)            :: logx_0
+      real(RD)            :: dlogx
+      integer             :: n
 
-      if (PRESENT(skip_type)) then
-         skip_type_ = skip_type
-      else
-         skip_type_ = .FALSE.
-      endif
+      ! Read the range
 
-      ! Write range
+      call hdf5io%read_attr('TYPE', type)
+      if (type /= 'log_range_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+         else
+            @:ABORT('invalid type')
+         end if
+      end if
 
-      if (.NOT. skip_type_) then
-         call hdf5io%write_attr('TYPE', 'log_range_t')
-      endif
+      call hdf5io%read_dset('logx_0', logx_0)
+      call hdf5io%read_dset('dlogx', dlogx)
+      call hdf5io%read_dset('n', n)
 
-      call write_lin(hdf5io, range%lin_range_t, stat=stat, skip_type=.TRUE.)
+      select type(self)
+      type is (log_range_t)
+         self = log_range_t(logx_0, dlogx, n)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
       return
 
-   end subroutine write_
+   end subroutine read
+
+   !****
+
+   subroutine write(self, hdf5io, stat)
+
+      class(log_range_t), intent(in) :: self
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      integer, intent(out), optional :: stat
+
+      ! Write range
+
+      call hdf5io%write_attr('TYPE', 'log_range_t')
+
+      call hdf5io%write_dset('logx_0', self%logx_0)
+      call hdf5io%write_dset('dlogx', self%dlogx)
+      call hdf5io%write_dset('n', self%n)
+     
+      ! Finish
+
+      return
+
+   end subroutine write
 
 end module log_range_m

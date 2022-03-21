@@ -1,5 +1,5 @@
 ! Submodule : range_sm
-! Purpose   : Factory & I/O routines for range_m
+! Purpose   : Factory routines for range_m
 !
 ! Copyright 2022 Rich Townsend & The MSG Team
 !
@@ -21,14 +21,13 @@ submodule (range_m) range_sm
 
    ! Uses
 
-   use kinds_m
-   use hdf5io_m
+   use forum_m
 
-   use agg_range_m, read_agg => read, write_agg => write
-   use elem_range_m, read_elem => read, write_elem => write
-   use lin_range_m, read_lin => read, write_lin => write
-   use log_range_m, read_log => read, write_log => write
-   use tab_range_m, read_tab => read, write_tab => write
+   use agg_range_m
+   use elem_range_m
+   use lin_range_m
+   use log_range_m
+   use tab_range_m
 
    use ISO_FORTRAN_ENV
 
@@ -38,49 +37,12 @@ submodule (range_m) range_sm
 
 contains
 
-   function range_t_subset_(range_in, i_a, i_b) result(range)
+   function range_t_type_(type) result(range)
 
-      class(range_t), intent(in)  :: range_in
-      integer, intent(in)         :: i_a
-      integer, intent(in)         :: i_b
+      character(*), intent(in)    :: type
       class(range_t), allocatable :: range
 
       ! Construct range by subsetting range_in
-
-      select type(range_in)
-      type is(agg_range_t)
-         range = agg_range_t(range_in, i_a, i_b)
-      type is(elem_range_t)
-         range = elem_range_t(range_in, i_a, i_b)
-      type is(lin_range_t)
-         range = lin_range_t(range_in, i_a, i_b)
-      type is (log_range_t)
-         range = log_range_t(range_in, i_a, i_b)
-      type is(tab_range_t)
-         range = tab_range_t(range_in, i_a, i_b)
-      class default
-         @:ABORT('invalid type')
-      end select
-
-      ! Finish
-
-      return
-
-   end function range_t_subset_
-         
-   !****
-   
-   subroutine read_(hdf5io, range, stat)
-
-      type(hdf5io_t), intent(inout)            :: hdf5io
-      class(range_t), allocatable, intent(out) :: range
-      integer, intent(out), optional           :: stat
-
-      character(TYPE_LEN) :: type
-
-      ! Read range
-
-      call hdf5io%read_attr('TYPE', type)
 
       select case(type)
       case('agg_range_t')
@@ -89,7 +51,7 @@ contains
          allocate(elem_range_t::range)
       case('lin_range_t')
          allocate(lin_range_t::range)
-      case('log_range_t')
+      case ('log_range_t')
          allocate(log_range_t::range)
       case('tab_range_t')
          allocate(tab_range_t::range)
@@ -97,56 +59,10 @@ contains
          @:ABORT('invalid type')
       end select
 
-      select type(range)
-      type is (agg_range_t)
-         call read_agg(hdf5io, range, stat)
-      type is (elem_range_t)
-         call read_elem(hdf5io, range, stat)
-      type is (lin_range_t)
-         call read_lin(hdf5io, range, stat)
-      type is (log_range_t)
-         call read_log(hdf5io, range, stat)
-      type is (tab_range_t)
-         call read_tab(hdf5io, range, stat)
-      class default
-         @:ABORT('invalid type')
-      end select
-
       ! Finish
 
       return
 
-   end subroutine read_
-
-   !****
-
-   subroutine write_(hdf5io, range, stat)
-
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      class(range_t), intent(in)     :: range
-      integer, intent(out), optional :: stat
-
-      ! Write range
-
-      select type(range)
-      type is (agg_range_t)
-         call write_agg(hdf5io, range, stat)
-      type is (elem_range_t)
-         call write_elem(hdf5io, range, stat)
-      type is (lin_range_t)
-         call write_lin(hdf5io, range, stat)
-      type is (log_range_t)
-         call write_log(hdf5io, range, stat)
-      type is (tab_range_t)
-         call write_tab(hdf5io, range, stat)
-      class default
-         @:ABORT('invalid type')
-      end select
-
-      ! Finish
-
-      return
-
-   end subroutine write_
-
+   end function range_t_type_
+         
 end submodule range_sm

@@ -24,7 +24,7 @@ module lin_range_m
 
    use forum_m
 
-   use range_m, only: range_t
+   use range_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -44,22 +44,16 @@ module lin_range_m
       private
       procedure, public :: inquire
       procedure, public :: expand
+      procedure, public :: subset
+      procedure, public :: read
+      procedure, public :: write
    end type lin_range_t
 
    ! Interfaces
 
    interface lin_range_t
       module procedure lin_range_t_
-      module procedure lin_range_t_subset_
    end interface lin_range_t
-
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
 
    ! Access specifiers
 
@@ -95,25 +89,6 @@ contains
 
    !****
 
-   function lin_range_t_subset_(range_in, i_a, i_b) result(range)
-
-      type(lin_range_t), intent(in) :: range_in
-      integer, intent(in)           :: i_a
-      integer, intent(in)           :: i_b
-      type(lin_range_t)             :: range
-
-      ! Construct range by subsetting range_in
-
-      range = lin_range_t(range_in%x_0+range_in%dx*(i_a-1), range_in%dx, i_b-i_a+1)
-
-      ! Finish
-
-      return
-
-   end function lin_range_t_subset_
-
-   !****
-
    subroutine inquire(self, n, min, max)
 
       class(lin_range_t), intent(in)  :: self
@@ -145,7 +120,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(x), self%n)
 
-      ! Expand range into the array
+      ! Expand the range into the array
 
       do i = 1, self%n
          x(i) = self%x_0 + self%dx*(i-1)
@@ -159,36 +134,49 @@ contains
 
    !****
 
-   subroutine read_(hdf5io, range, stat, skip_type)
+   subroutine subset(self, i_a, i_b, range)
 
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      type(lin_range_t), intent(out) :: range
-      integer, intent(out), optional :: stat
-      logical, intent(in), optional  :: skip_type
+      class(lin_range_t), intent(in)           :: self
+      integer, intent(in)                      :: i_a
+      integer, intent(in)                      :: i_b
+      class(range_t), allocatable, intent(out) :: range
+      
+      ! Subset the range
 
-      logical             :: skip_type_
+      @:ASSERT(i_a >= 1, 'invalid argument')
+      @:ASSERT(i_b <= self%n, 'invalid argument')
+      @:ASSERT(i_b >= i_a, 'invalid argument')
+
+      range = lin_range_t(self%x_0+self%dx*(i_a-1), self%dx, i_b-i_a+1)
+
+      ! Finish
+
+      return
+
+   end subroutine subset
+
+   !****
+
+   subroutine read(self, hdf5io, stat)
+
+      class(lin_range_t), intent(out) :: self
+      type(hdf5io_t), intent(inout)   :: hdf5io
+      integer, intent(out), optional  :: stat
+
       character(TYPE_LEN) :: type
       real(RD)            :: x_0
       real(RD)            :: dx
       integer             :: n
 
-      if (PRESENT(skip_type)) then
-         skip_type_ = skip_type
-      else
-         skip_type_ = .FALSE.
-      endif
+      ! Read the range
 
-      ! Read range
-
-      if (.NOT. skip_type_) then
-         call hdf5io%read_attr('TYPE', type)
-         if (type /= 'lin_range_t') then
-            if (PRESENT(stat)) then
-               stat = STAT_INVALID_TYPE
-               return
-            else
-               @:ABORT('invalid type')
-            end if
+      call hdf5io%read_attr('TYPE', type)
+      if (type /= 'lin_range_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
          end if
       end if
 
@@ -196,7 +184,12 @@ contains
       call hdf5io%read_dset('dx', dx)
       call hdf5io%read_dset('n', n)
   
-      range = lin_range_t(x_0, dx, n)
+      select type(self)
+      type is (lin_range_t)
+         self = lin_range_t(x_0, dx, n)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
@@ -204,34 +197,23 @@ contains
 
       return
 
-   end subroutine read_
+   end subroutine read
 
    !****
 
-   subroutine write_(hdf5io, range, stat, skip_type)
+   subroutine write(self, hdf5io, stat)
 
+      class(lin_range_t), intent(in) :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      class(lin_range_t), intent(in) :: range
       integer, intent(out), optional :: stat
-      logical, intent(in), optional  :: skip_type
 
-      logical :: skip_type_
+      ! Write the range
 
-      if (PRESENT(skip_type)) then
-         skip_type_ = skip_type
-      else
-         skip_type_ = .FALSE.
-      endif
-
-      ! Write range
-
-      if (.NOT. skip_type_) then
-         call hdf5io%write_attr('TYPE', 'lin_range_t')
-      end if
+      call hdf5io%write_attr('TYPE', 'lin_range_t')
       
-      call hdf5io%write_dset('x_0', range%x_0)
-      call hdf5io%write_dset('dx', range%dx)
-      call hdf5io%write_dset('n', range%n)
+      call hdf5io%write_dset('x_0', self%x_0)
+      call hdf5io%write_dset('dx', self%dx)
+      call hdf5io%write_dset('n', self%n)
      
       ! Finish
 
@@ -239,6 +221,6 @@ contains
 
       return
 
-   end subroutine write_
+   end subroutine write
 
 end module lin_range_m

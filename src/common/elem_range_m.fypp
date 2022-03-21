@@ -24,7 +24,7 @@ module elem_range_m
 
    use forum_m
 
-   use range_m, only: range_t, read_range => read, write_range => write
+   use range_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -42,30 +42,22 @@ module elem_range_m
       private
       procedure, public :: inquire
       procedure, public :: expand
+      procedure, public :: subset
+      procedure, public :: read
+      procedure, public :: write
    end type elem_range_t
 
    ! Interfaces
 
    interface elem_range_t
       module procedure elem_range_t_
-      module procedure elem_range_t_subset_
    end interface elem_range_t
-
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
 
    ! Access specifiers
 
    private
 
    public :: elem_range_t
-   public :: read
-   public :: write
 
 contains
 
@@ -86,22 +78,22 @@ contains
 
    !****
 
-   function elem_range_t_subset_(range_in, i_a, i_b) result(range)
+   subroutine subset(self, i_a, i_b, range)
 
-      type(elem_range_t), intent(in) :: range_in
-      integer, intent(in)            :: i_a
-      integer, intent(in)            :: i_b
-      type(elem_range_t)             :: range
+      class(elem_range_t), intent(in)          :: self
+      integer, intent(in)                      :: i_a
+      integer, intent(in)                      :: i_b
+      class(range_t), allocatable, intent(out) :: range
 
-      ! Construct range by subsetting range_in
+      ! Pass
 
-      range = elem_range_t(range_t(range_in%range, i_a, i_b))
+      call self%range%subset(i_a, i_b, range)
 
       ! Finish
 
       return
 
-   end function elem_range_t_subset_
+   end subroutine subset
 
    !****
 
@@ -141,79 +133,67 @@ contains
 
    !****
 
-   subroutine read_(hdf5io, range, stat, skip_type)
+   subroutine read(self, hdf5io, stat)
 
-      type(hdf5io_t), intent(inout)   :: hdf5io
-      type(elem_range_t), intent(out) :: range
-      integer, intent(out), optional  :: stat
-      logical, intent(in), optional   :: skip_type
+      class(elem_range_t), intent(out) :: self
+      type(hdf5io_t), intent(inout)    :: hdf5io
+      integer, intent(out), optional   :: stat
 
-      logical                     :: skip_type_
       character(TYPE_LEN)         :: type
       type(hdf5io_t)              :: hdf5io_range
-      class(range_t), allocatable :: range_in
+      character(TYPE_LEN)         :: type_range
+      class(range_t), allocatable :: range
 
-      if (PRESENT(skip_type)) then
-         skip_type_ = skip_type
-      else
-         skip_type_ = .FALSE.
-      endif
+      ! Read the range
 
-      ! Read range
-
-      if (.NOT. skip_type_) then
-         call hdf5io%read_attr('TYPE', type)
-         if (type /= 'elem_range_t') then
-            if (PRESENT(stat)) then
-               stat = STAT_INVALID_TYPE
-               return
-            else
-               @:ABORT('invalid type')
-            end if
+      call hdf5io%read_attr('TYPE', type)
+      if (type /= 'elem_range_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
          end if
       end if
 
       hdf5io_range = hdf5io_t(hdf5io, 'range')
-      call read_range(hdf5io_range, range_in, stat)
+      call hdf5io_range%read_attr('TYPE', type_range)
+      range = range_t(type_range)
+      call range%read(hdf5io_range, stat)
       call hdf5io_range%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      range = elem_range_t(range_in)
+      select type(self)
+      type is (elem_range_t)
+         self = elem_range_t(range)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
       return
 
-   end subroutine read_
+   end subroutine read
 
    !****
 
-   subroutine write_(hdf5io, range, stat, skip_type)
-
+   subroutine write(self, hdf5io, stat)
+ 
+      class(elem_range_t), intent(in) :: self
       type(hdf5io_t), intent(inout)   :: hdf5io
-      class(elem_range_t), intent(in) :: range
       integer, intent(out), optional  :: stat
-      logical, intent(in), optional   :: skip_type
 
-      logical        :: skip_type_
       type(hdf5io_t) :: hdf5io_range
 
-      if (PRESENT(skip_type)) then
-         skip_type_ = skip_type
-      else
-         skip_type_ = .FALSE.
-      endif
+      ! Write the range
 
-      ! Write range
-
-      if (.NOT. skip_type_) then
-         call hdf5io%write_attr('TYPE', 'elem_range_t')
-      end if
+      call hdf5io%write_attr('TYPE', 'elem_range_t')
 
       hdf5io_range = hdf5io_t(hdf5io, 'range')
-      call write_range(hdf5io_range, range%range, stat)
+      call self%range%write(hdf5io_range, stat)
       call hdf5io_range%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
@@ -223,6 +203,6 @@ contains
 
       return
 
-   end subroutine write_
+   end subroutine write
 
 end module elem_range_m

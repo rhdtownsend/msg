@@ -30,6 +30,9 @@ module range_m
    contains
       procedure(inquire_), deferred :: inquire
       procedure(expand_), deferred  :: expand
+      procedure(subset_), deferred  :: subset
+      procedure(read_), deferred    :: read
+      procedure(write_), deferred   :: write
    end type range_t
 
    ! Interfaces
@@ -52,47 +55,45 @@ module range_m
          real(RD), intent(out)       :: x(:)
       end subroutine expand_
 
+      subroutine subset_(self, i_a, i_b, range)
+         import range_t
+         class(range_t), intent(in)               :: self
+         integer, intent(in)                      :: i_a
+         integer, intent(in)                      :: i_b
+         class(range_t), allocatable, intent(out) :: range
+      end subroutine subset_
+
+      subroutine read_(self, hdf5io, stat)
+         use forum_m
+         import range_t
+         class(range_t), intent(out)    :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine read_
+
+      subroutine write_(self, hdf5io, stat)
+         use forum_m
+         import range_t
+         class(range_t), intent(in)     :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine write_
+
    end interface
 
    interface range_t
 
-      module function range_t_subset_(range_in, i_a, i_b) result(range)
-        class(range_t), intent(in)  :: range_in
-        integer, intent(in)         :: i_a
-        integer, intent(in)         :: i_b
-        class(range_t), allocatable :: range
-      end function range_t_subset_
+      module function range_t_type_(type) result(range)
+         character(*), intent(in)    :: type
+         class(range_t), allocatable :: range
+      end function range_t_type_
 
    end interface range_t
    
-   interface read
-
-      module subroutine read_(hdf5io, range, stat)
-         use hdf5io_m
-         type(hdf5io_t), intent(inout)            :: hdf5io
-         class(range_t), allocatable, intent(out) :: range
-         integer, intent(out), optional           :: stat
-      end subroutine read_
-
-   end interface read
-
-   interface write
-
-      module subroutine write_(hdf5io, range, stat)
-         use hdf5io_m
-         type(hdf5io_t), intent(inout)  :: hdf5io
-         class(range_t), intent(in)     :: range
-         integer, intent(out), optional :: stat
-      end subroutine write_
-
-   end interface write
-
    ! Access specifiers
 
    private
 
    public :: range_t
-   public :: read
-   public :: write
 
 end module range_m

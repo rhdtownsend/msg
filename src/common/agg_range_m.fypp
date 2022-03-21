@@ -22,9 +22,9 @@ module agg_range_m
 
    ! Uses
 
-   use forum_m, locate_ => locate
+   use forum_m
    
-   use range_m, only: range_t
+   use range_m
    use elem_range_m
    use stat_m
 
@@ -45,37 +45,29 @@ module agg_range_m
       private
       procedure, public :: inquire
       procedure, public :: expand
+      procedure, public :: subset
+      procedure, public :: read
+      procedure, public :: write
    end type agg_range_t
 
    ! Interfaces
 
    interface agg_range_t
       module procedure agg_range_t_
-      module procedure agg_range_t_subset_
    end interface agg_range_t
-
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
 
    ! Access specifiers
 
    private
 
    public :: agg_range_t
-   public :: read
-   public :: write
 
 contains
 
    function agg_range_t_(ranges) result(range)
 
       type(elem_range_t), intent(in) :: ranges(:)
-      type(agg_range_t)             :: range
+      type(agg_range_t)              :: range
 
       integer  :: n_ranges
       integer  :: n
@@ -121,65 +113,6 @@ contains
 
    !****
 
-   function agg_range_t_subset_(range_in, i_a, i_b) result(range)
-
-      type(agg_range_t), intent(in) :: range_in
-      integer, intent(in)           :: i_a
-      integer, intent(in)           :: i_b
-      type(agg_range_t)             :: range
-
-      integer                         :: j_a
-      integer                         :: j_b
-      integer                         :: n_ranges
-      type(elem_range_t), allocatable :: ranges(:)
-      integer                         :: j
-      integer                         :: k_a
-      integer                         :: k_b
-
-      ! Construct range by subsetting range_in
-
-      ! First determine where in ranges i_a and i_b are located
-
-      call locate_(range_in%i_bdy, i_a, j_a)
-      call locate_(range_in%i_bdy, i_b, j_b)
-
-      @:ASSERT(i_a >= 1,'out-of-bounds')
-      @:ASSERT(i_b <= range_in%n_ranges,'out-of-bounds')
-
-      ! Create the subset
-
-      n_ranges = j_b - j_a + 1
-
-      allocate(ranges(n_ranges))
-
-      ranges_loop : do j = j_a, j_b
-
-         if (j == j_a) then
-            k_a = i_a - range_in%i_bdy(j) + 1
-         else
-            k_a = 1
-         end if
-
-         if (j == j_b) then
-            k_b = i_b - range_in%i_bdy(j) + 1
-         else
-            k_b = range_in%i_bdy(j+1) - range_in%i_bdy(j)
-         end if
-
-         ranges(j-j_a+1) = elem_range_t(range_in%ranges(j), k_a, k_b)
-
-      end do ranges_loop
-
-      range = agg_range_t(ranges)
-
-      ! Finish
-
-      return
-
-   end function agg_range_t_subset_
-
-   !****
-
    subroutine inquire(self, n, min, max)
 
       class(agg_range_t), intent(in)  :: self
@@ -211,7 +144,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(x), self%i_bdy(self%n_ranges+1)-1)
 
-      ! Expand into the array
+      ! Expand the range into the array
 
       ranges_loop: do j = 1, self%n_ranges
          
@@ -229,37 +162,88 @@ contains
 
    !****
 
-   recursive subroutine read_(hdf5io, range, stat, skip_type)
+   subroutine subset(self, i_a, i_b, range)
 
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      type(agg_range_t), intent(out) :: range
-      integer, intent(out), optional :: stat
-      logical, intent(in), optional  :: skip_type
+      class(agg_range_t), intent(in)           :: self
+      integer, intent(in)                      :: i_a
+      integer, intent(in)                      :: i_b
+      class(range_t), allocatable, intent(out) :: range
 
-      logical                         :: skip_type_
+      integer                         :: j_a
+      integer                         :: j_b
+      integer                         :: n_ranges
+      type(elem_range_t), allocatable :: ranges(:)
+      integer                         :: j
+      integer                         :: k_a
+      integer                         :: k_b
+      class(range_t), allocatable     :: range_j
+
+      ! Subset the range
+
+      ! First determine where in ranges i_a and i_b are located
+
+      call locate(self%i_bdy, i_a, j_a)
+      call locate(self%i_bdy, i_b, j_b)
+
+      @:ASSERT(i_a >= 1,'out-of-bounds')
+      @:ASSERT(i_b <= self%n_ranges,'out-of-bounds')
+
+      ! Create the subset
+
+      n_ranges = j_b - j_a + 1
+
+      allocate(ranges(n_ranges))
+
+      ranges_loop : do j = j_a, j_b
+
+         if (j == j_a) then
+            k_a = i_a - self%i_bdy(j) + 1
+         else
+            k_a = 1
+         end if
+
+         if (j == j_b) then
+            k_b = i_b - self%i_bdy(j) + 1
+         else
+            k_b = self%i_bdy(j+1) - self%i_bdy(j)
+         end if
+
+         call self%ranges(j)%subset(k_a, k_b, range_j)
+         ranges(j-j_a+1) = elem_range_t(range_j)
+
+      end do ranges_loop
+
+      range = agg_range_t(ranges)
+
+      ! Finish
+
+      return
+
+   end subroutine subset
+
+   !****
+
+   subroutine read(self, hdf5io, stat)
+
+      class(agg_range_t), intent(out) :: self
+      type(hdf5io_t), intent(inout)   :: hdf5io
+      integer, intent(out), optional  :: stat
+
       character(TYPE_LEN)             :: type
       integer                         :: n_ranges
       type(elem_range_t), allocatable :: ranges(:)
       integer                         :: j
       type(hdf5io_t)                  :: hdf5io_range
 
-      if (PRESENT(skip_type)) then
-         skip_type_ = skip_type
-      else
-         skip_type_ = .FALSE.
-      endif
+      ! Read the range
 
-      ! Read range
-
-      if (.NOT. skip_type_) then
-         call hdf5io%read_attr('TYPE', type)
-         if (type /= 'agg_range_t') then
-            if (PRESENT(stat)) then
-               stat = STAT_INVALID_TYPE
-               return
-            else
-               @:ABORT('invalid type')
-            end if
+      call hdf5io%read_attr('TYPE', type)
+      if (type /= 'agg_range_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
          end if
       end if
 
@@ -270,7 +254,7 @@ contains
       ranges_loop : do j = 1, n_ranges
 
          hdf5io_range = hdf5io_t(hdf5io, ranges_group_name_(j))
-         call read(hdf5io_range, ranges(j), stat)
+         call ranges(j)%read(hdf5io_range, stat)
          call hdf5io_range%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
@@ -278,45 +262,40 @@ contains
 
       end do ranges_loop
 
-      range = agg_range_t(ranges)
+      select type(self)
+      type is (agg_range_t)
+         self = agg_range_t(ranges)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
       return
-
-   end subroutine read_
+      
+   end subroutine read
 
    !****
 
-   subroutine write_(hdf5io, range, stat, skip_type)
+   subroutine write(self, hdf5io, stat)
 
+      class(agg_range_t), intent(in) :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      class(agg_range_t), intent(in) :: range
       integer, intent(out), optional :: stat
-      logical, intent(in), optional  :: skip_type
 
-      logical        :: skip_type_
       integer        :: j
       type(hdf5io_t) :: hdf5io_range
 
-      if (PRESENT(skip_type)) then
-         skip_type_ = skip_type
-      else
-         skip_type_ = .FALSE.
-      endif
+      ! Write the range
 
-      ! Write range
+      call hdf5io%write_attr('TYPE', 'agg_range_t')
 
-      if (.NOT. skip_type_) then
-         call hdf5io%write_attr('TYPE', 'agg_range_t')
-      end if
+      call hdf5io%write_attr('n_ranges', self%n_ranges)
 
-      call hdf5io%write_attr('n_ranges', range%n_ranges)
-
-      ranges_loop : do j = 1, range%n_ranges
+      ranges_loop : do j = 1, self%n_ranges
 
          hdf5io_range = hdf5io_t(hdf5io, ranges_group_name_(j))
-         call write(hdf5io_range, range%ranges(j), stat)
+         call self%ranges(j)%write(hdf5io_range, stat)
          call hdf5io_range%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
@@ -328,7 +307,7 @@ contains
 
       return
 
-   end subroutine write_
+   end subroutine write
 
    !****
 

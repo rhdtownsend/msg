@@ -219,7 +219,7 @@ contains
       i_a = MAX(i_a, 1)
       i_b = MIN(i_b, specint_in%n_lam)
 
-      range = range_t(specint_in%range, i_a, i_b)
+      call specint_in%range%subset(i_a, i_b, range)
 
       specint = specint_t(specint_in%c(:,i_a:i_b-1), range, specint_in%limb, specint_in%low_acc)
 
@@ -473,6 +473,7 @@ contains
       character(TYPE_LEN)         :: type
       real(RD), allocatable       :: c(:,:)
       type(hdf5io_t)              :: hdf5io_range
+      character(TYPE_LEN)         :: type_range
       class(range_t), allocatable :: range
       type(hdf5io_t)              :: hdf5io_limb
       type(limb_t)                :: limb
@@ -499,12 +500,20 @@ contains
       call hdf5io%inquire(file_name=file_name)
 
       hdf5io_range = hdf5io_t(hdf5io, 'range')
-      call read(hdf5io_range, range)
+      call hdf5io_range%read_attr('TYPE', type_range)
+      range = range_t(type_range)
+      call range%read(hdf5io_range, stat)
       call hdf5io_range%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       hdf5io_limb = hdf5io_t(hdf5io, 'limb')
-      call read(hdf5io_limb, limb)
+      call read(hdf5io_limb, limb, stat)
       call hdf5io_limb%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       specint = specint_t(c, range, limb, low_acc)
 
@@ -540,18 +549,18 @@ contains
 
       call hdf5io%write_attr('low_acc', specint%low_acc)
 
-      hdf5io_range = hdf5io_t(hdf5io, 'range')
-      call write(hdf5io_range, specint%range, stat)
-      call hdf5io_range%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
       if (specint%low_acc) then
          call hdf5io%write_dset('c', REAL(specint%c, RS))
       else
          call hdf5io%write_dset('c', specint%c)
       endif
+
+      hdf5io_range = hdf5io_t(hdf5io, 'range')
+      call specint%range%write(hdf5io_range, stat)
+      call hdf5io_range%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       hdf5io_limb = hdf5io_t(hdf5io, 'limb')
       call write(hdf5io_limb, specint%limb, stat)
