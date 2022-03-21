@@ -1,0 +1,270 @@
+! Module   : goettingen_to_specint
+! Purpose  : create specint files from Goettingen spectra files
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program goettingen_to_specint
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: flux_file_name
+   character(:), allocatable :: wave_file_name
+   character(:), allocatable :: specint_file_name
+
+   real(RD), allocatable             :: lam(:)
+   real(RD), allocatable             :: F(:)
+   character(LABEL_LEN), allocatable :: head_labels(:)
+   real(RD), allocatable             :: head_values(:)
+   integer                           :: n_lam
+   real(RD), allocatable             :: I(:,:)
+   type(agg_range_t)                :: range
+   type(limb_t)                      :: limb
+   type(specint_t)                   :: specint
+   type(hdf5io_t)                    :: hdf5io
+   type(hdf5io_t)                    :: hdf5io_labels
+   integer                           :: j
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 3, 'Syntax: goettingen_to_specint flux_file_name wave_file_name specint_file_name')
+
+   call get_arg(1, flux_file_name)
+   call get_arg(2, wave_file_name)
+   call get_arg(3, specint_file_name)
+
+   ! Read data from the two input files
+
+   call read_fits_file(wave_file_name, lam)
+   call read_fits_file(flux_file_name, F, head_labels, head_values)
+
+   ! Set up the bin-averaged intensity
+
+   n_lam = SIZE(lam)
+
+   @:CHECK_BOUNDS(n_lam, SIZE(F))
+
+   allocate(I(1,n_lam-1))
+
+   I(1,:) = 0.5*(F(:n_lam-1) + F(2:))/PI
+
+   ! Set up the range
+
+   call lam_to_range(lam, range)
+
+   ! Create specint
+
+   limb = limb_t('CONST')
+
+   specint = specint_t(I, [1._RD], range, limb, low_acc=.TRUE.)
+
+   ! Write it
+
+   hdf5io = hdf5io_t(specint_file_name, CREATE_FILE, comp_level=9)
+
+   call write(hdf5io, specint)
+
+   hdf5io_labels = hdf5io_t(hdf5io, 'labels')
+
+   do j = 1, SIZE(head_labels)
+      call hdf5io_labels%write_dset(head_labels(j), head_values(j))
+   end do
+
+   call hdf5io_labels%final()
+      
+   call hdf5io%final()
+
+   ! Finish
+
+contains
+
+   subroutine read_fits_file(file_name, data, head_labels, head_values)
+
+      character(*), intent(in)                         :: file_name
+      real(RD), allocatable, intent(out)               :: data(:)
+      character(*), allocatable, intent(out), optional :: head_labels(:)
+      real(RD), allocatable, intent(out), optional     :: head_values(:)
+
+      interface
+         subroutine FTGIOU(unit, status)
+            integer, intent(out)   :: unit
+            integer, intent(inout) :: status
+         end subroutine FTGIOU
+         subroutine FTDKOPN(unit, filename, rwmode, blocksize, status)
+            integer, intent(in)      :: unit
+            character(*), intent(in) :: filename
+            integer, intent(in)      :: rwmode
+            integer, intent(out)     :: blocksize
+            integer, intent(inout)   :: status
+         end subroutine FTDKOPN
+         subroutine FTGKYD(unit, keyword, keyval, comment, status)
+            import RD
+            integer, intent(in)       :: unit
+            character(*), intent(in)  :: keyword
+            real(RD), intent(out)     :: keyval
+            character(*), intent(out) :: comment
+            integer, intent(inout)    :: status
+         end subroutine FTGKYD
+         subroutine FTGKYJ(unit, keyword, keyval, comment, status)
+            integer, intent(in)       :: unit
+            character(*), intent(in)  :: keyword
+            integer, intent(out)      :: keyval
+            character(*), intent(out) :: comment
+            integer, intent(inout)    :: status
+         end subroutine FTGKYJ
+         subroutine FTGTVD(unit, group, fpixel, nelements, nullval, values, anyf, status)
+            import RD
+            integer, intent(in)    :: unit
+            integer, intent(in)    :: group
+            integer, intent(in)    :: fpixel
+            integer, intent(in)    :: nelements
+            real(RD), intent(in)   :: nullval
+            real(RD), intent(out)  :: values(*)
+            logical, intent(out)   :: anyf
+            integer, intent(inout) :: status
+         end subroutine FTGTVD
+      end interface
+
+      integer       :: unit
+      integer       :: buffersize
+      integer       :: status
+      character(80) :: comment
+      integer       :: naxis
+      integer       :: naxis1
+      integer       :: n
+      logical       :: anyf
+      real(RD)      :: Teff
+      real(RD)      :: logg
+      real(RD)      :: M_H
+      real(RD)      :: alpha
+
+      ! Open the file
+
+      status = 0
+
+      call FTGIOU(unit, status)      
+      @:ASSERT(status == 0,'error allocaring unit number')
+
+      call FTDKOPN(unit, file_name, 0, buffersize, status)
+      @:ASSERT(status == 0,'error opening file')
+
+      ! Determine the data size
+
+      call FTGKYJ(unit, 'NAXIS', naxis, comment, status)
+      @:ASSERT(status == 0,'error reading NAXIS keyword')
+
+      @:ASSERT(naxis == 1,'Invalid number of axes')
+
+      call FTGKYJ(unit, 'NAXIS1', naxis1, comment, status)
+      @:ASSERT(status == 0,'error reading NAXIS1 keyword')
+
+      ! Read the data
+
+      n = naxis1
+
+      allocate(data(n))
+
+      call FTGPVD(unit, 0, 1, n, 0._RD, data, anyf, status)
+      @:ASSERT(status == 0,'error reading data')
+      @:ASSERT(.NOT. anyf,'undefined values encountered in data')
+
+      ! If necessary, extract labels
+
+      if (PRESENT(head_labels) .AND. PRESENT(head_values)) then
+
+         call FTGKYd(unit, 'PHXTEFF', Teff, comment, status)
+         @:ASSERT(status == 0,'error reading PHXTEFF keyword')
+      
+         call FTGKYd(unit, 'PHXLOGG', logg, comment, status)
+         @:ASSERT(status == 0,'error reading PHXLOGG keyword')
+      
+         call FTGKYd(unit, 'PHXM_H', M_H, comment, status)
+         @:ASSERT(status == 0,'error reading PHXLOGG keyword')
+      
+         call FTGKYd(unit, 'PHXALPHA', alpha, comment, status)
+         @:ASSERT(status == 0,'error reading ALPHA keyword')
+
+         head_labels = ['logT ', 'logg ', 'M_H  ', 'alpha']
+         head_values = [LOG10(Teff), logg, M_H, alpha]
+
+      end if
+
+      ! Close the file
+
+      call FTCLOS(unit, status)
+      @:ASSERT(status == 0,'error closing file')
+
+      call FTFIOU(unit, status)
+      @:ASSERT(status == 0,'error releasing unit number')
+
+
+      ! Finish
+
+      return
+
+   end subroutine read_fits_file
+
+   !****
+
+   subroutine lam_to_range(lam, range)
+
+      real(RD), intent(in)           :: lam(:)
+      type(agg_range_t), intent(out) :: range
+
+      real(RD) :: lam_chk(SIZE(lam))
+      
+      ! Set up range (this may need updating if the Goettingen grids
+      ! evolve)
+
+      range = agg_range_t([                                       &
+           elem_range_t(lin_range_t(500._RD, 0.1_RD, 25000)),     &
+           elem_range_t(lin_range_t(3000._RD, 0.006_RD, 333332)), &
+           elem_range_t(lin_range_t(5000._RD, 0.01_RD, 500000)),  &
+           elem_range_t(lin_range_t(10000._RD, 0.02_RD, 250000)), &
+           elem_range_t(lin_range_t(15000._RD, 0.03_RD, 166667)), &
+           elem_range_t(lin_range_t(20000._RD, 0.04_RD, 125000)), &
+           elem_range_t(lin_range_t(25000._RD, 0.125_RD, 40000)), &
+           elem_range_t(lin_range_t(30000._RD, 0.15_RD, 33334)),  &
+           elem_range_t(lin_range_t(35000._RD, 0.175_RD, 28572)), &
+           elem_range_t(lin_range_t(40000._RD, 0.2_RD, 25000)),   &
+           elem_range_t(lin_range_t(45000._RD, 0.225_RD, 22223)), &
+           elem_range_t(lin_range_t(50000._RD, 0.25_RD, 20000))])
+
+      ! Check that this matches lam to within toler
+
+      call range%expand(lam_chk)
+
+      @:ASSERT(MAXVAL(ABS(lam-lam_chk)) < 1E-11_RD, 'wavelength out of tolerance')
+
+      ! Finish
+
+      return
+
+   end subroutine lam_to_range
+
+end program goettingen_to_specint
+

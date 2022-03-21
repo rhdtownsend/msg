@@ -40,8 +40,9 @@ module axis_m
 
    type axis_t
       private
-      class(range_t), allocatable :: range
-      character(LABEL_LEN)        :: label
+      real(RD), allocatable :: x(:)
+      integer               :: n
+      character(LABEL_LEN)  :: label
    contains
       private
       procedure, public :: inquire
@@ -76,15 +77,23 @@ module axis_m
 
 contains
 
-   function axis_t_(range, label) result (ax)
+   function axis_t_(x, label) result (ax)
 
-      class(range_t), intent(in) :: range
-      character(*), intent(in)   :: label
-      type(axis_t)               :: ax
+      real(RD), intent(in)     :: x(:)
+      character(*), intent(in) :: label
+      type(axis_t)             :: ax
+
+      integer :: n
 
       ! Construct axis from the supplied data
 
-      ax%range = range
+      n = SIZE(x)
+
+      @:ASSERT(n > 1,'insufficient data')
+
+      ax%x = x
+
+      ax%n = n
 
       ax%label = label
 
@@ -105,10 +114,13 @@ contains
       character(*), intent(out), optional :: label
 
       ! Inquire metadata
+ 
+      if (PRESENT(n)) n = self%n
+
+      if (PRESENT(min)) min = self%x(1)
+      if (PRESENT(max)) max = self%x(self%n)
 
       if (PRESENT(label)) label = self%label
-
-      call self%range%inquire(n=n, min=min, max=max)
 
       ! Finish
 
@@ -127,7 +139,7 @@ contains
 
       ! Fetch an x value
 
-      call self%range%fetch(i, x, stat)
+      x = self%x(i)
 
       ! Finish
 
@@ -139,13 +151,13 @@ contains
 
    subroutine locate(self, x, i)
 
-      class(axis_t), intent(in)      :: self
-      real(RD), intent(in)           :: x
-      integer, intent(inout)         :: i
+      class(axis_t), intent(in) :: self
+      real(RD), intent(in)      :: x
+      integer, intent(inout)    :: i
 
       ! Locate where along axis x falls
 
-      call self%range%locate(x, i)
+      call locate_(self%x, x, i)
 
       ! Finish
 
@@ -161,10 +173,9 @@ contains
       type(axis_t), intent(out)      :: axis
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)         :: type
-      character(LABEL_LEN)        :: label
-      type(hdf5io_t)              :: hdf5io_range
-      class(range_t), allocatable :: range
+      character(TYPE_LEN)   :: type
+      character(LABEL_LEN)  :: label
+      real(RD), allocatable :: x(:)
 
       ! Read axis
 
@@ -180,14 +191,9 @@ contains
 
       call hdf5io%read_attr('label', label)
 
-      hdf5io_range = hdf5io_t(hdf5io, 'range')
-      call read(hdf5io_range, range, stat)
-      call hdf5io_range%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
+      call hdf5io%alloc_read_dset('x', x)
 
-      axis = axis_t(range, label)
+      axis = axis_t(x, label)
 
       ! Finish
 
@@ -205,20 +211,13 @@ contains
       type(axis_t), intent(in)       :: axis
       integer, intent(out), optional :: stat
 
-      type(hdf5io_t) :: hdf5io_range
-      
       ! Write axis
 
       call hdf5io%write_attr('TYPE', 'axis_t')
 
       call hdf5io%write_attr('label', axis%label)
 
-      hdf5io_range = hdf5io_t(hdf5io, 'range')
-      call write(hdf5io_range, axis%range, stat)
-      call hdf5io_range%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
+      call hdf5io%write_dset('x', axis%x)
 
       ! Finish
 

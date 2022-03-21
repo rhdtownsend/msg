@@ -115,7 +115,7 @@ contains
       specint%c = c
 
       allocate(specint%lam(n_lam))
-      call range%fetch_all(specint%lam)
+      call range%expand(specint%lam)
 
       specint%range = range
       specint%limb = limb
@@ -179,7 +179,7 @@ contains
       allocate(lam(n_lam))
       allocate(c(specint_in%n_b,n_lam-1))
 
-      call range%fetch_all(lam)
+      call range%expand(lam)
 
       do p = 1, specint_in%n_b
 
@@ -213,8 +213,8 @@ contains
 
       ! Construct specint by subsetting specint_in
 
-      call specint_in%range%locate(lam_min, i_a, right=.TRUE.)
-      call specint_in%range%locate(lam_min, i_b, right=.FALSE.)
+      call locate(specint_in%lam, lam_min, i_a, right=.TRUE.)
+      call locate(specint_in%lam, lam_max, i_b, right=.FALSE.)
 
       i_a = MAX(i_a, 1)
       i_b = MIN(i_b, specint_in%n_lam)

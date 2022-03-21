@@ -28,10 +28,8 @@ module range_m
 
    type, abstract :: range_t
    contains
-      procedure(inquire_), deferred   :: inquire
-      procedure(fetch_), deferred     :: fetch
-      procedure(fetch_all_), deferred :: fetch_all
-      procedure(locate_), deferred    :: locate
+      procedure(inquire_), deferred :: inquire
+      procedure(expand_), deferred  :: expand
    end type range_t
 
    ! Interfaces
@@ -47,30 +45,12 @@ module range_m
          real(RD), intent(out), optional :: max
       end subroutine inquire_
 
-      subroutine fetch_(self, i, x, stat)
-         use forum_m
-         import range_t
-         class(range_t), intent(in)     :: self
-         integer, intent(in)            :: i
-         real(RD), intent(out)          :: x
-         integer, intent(out), optional :: stat
-      end subroutine fetch_
-
-      subroutine fetch_all_(self, x)
+      subroutine expand_(self, x)
          use forum_m
          import range_t
          class(range_t), intent(in)  :: self
          real(RD), intent(out)       :: x(:)
-      end subroutine fetch_all_
-
-      subroutine locate_(self, x, i, right)
-         use forum_m
-         import range_t
-         class(range_t), intent(in)    :: self
-         real(RD), intent(in)          :: x
-         integer, intent(inout)        :: i
-         logical, intent(in), optional :: right
-      end subroutine locate_
+      end subroutine expand_
 
    end interface
 

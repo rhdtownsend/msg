@@ -1,0 +1,345 @@
+! Module  : agg_range_m
+! Purpose : define agg_range_t type, representing an aggregate of other
+!           ranges
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module agg_range_m
+
+   ! Uses
+
+   use forum_m, locate_ => locate
+   
+   use range_m, only: range_t
+   use elem_range_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(range_t) :: agg_range_t
+      private
+      type(elem_range_t), allocatable :: ranges(:)
+      integer, allocatable            :: i_bdy(:)
+      integer                         :: n_ranges
+   contains
+      private
+      procedure, public :: inquire
+      procedure, public :: expand
+   end type agg_range_t
+
+   ! Interfaces
+
+   interface agg_range_t
+      module procedure agg_range_t_
+      module procedure agg_range_t_subset_
+   end interface agg_range_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: agg_range_t
+   public :: read
+   public :: write
+
+contains
+
+   function agg_range_t_(ranges) result(range)
+
+      type(elem_range_t), intent(in) :: ranges(:)
+      type(agg_range_t)             :: range
+
+      integer  :: n_ranges
+      integer  :: n
+      real(RD) :: x_min
+      real(RD) :: x_max
+      real(RD) :: x_max_prev
+      integer  :: j
+
+      ! Construct range from the sequence of range elements
+
+      n_ranges = SIZE(ranges)
+
+      @:ASSERT(n_ranges >= 1,'insufficient data')
+
+      range%ranges = ranges
+
+      allocate(range%i_bdy(n_ranges+1))
+
+      range%i_bdy = 1
+      call ranges(1)%inquire(n=n, max=x_max)
+
+      do j = 2, n_ranges
+
+         range%i_bdy(j) = range%i_bdy(j-1) + n
+
+         x_max_prev = x_max
+         
+         call ranges(j)%inquire(n=n, min=x_min, max=x_max)
+
+         @:ASSERT(x_min > x_max_prev,'overlapping ranges')
+
+      end do
+
+      range%i_bdy(n_ranges+1) = range%i_bdy(n_ranges) + n
+
+      range%n_ranges = n_ranges
+
+      ! Finish
+
+      return
+
+   end function agg_range_t_
+
+   !****
+
+   function agg_range_t_subset_(range_in, i_a, i_b) result(range)
+
+      type(agg_range_t), intent(in) :: range_in
+      integer, intent(in)           :: i_a
+      integer, intent(in)           :: i_b
+      type(agg_range_t)             :: range
+
+      integer                         :: j_a
+      integer                         :: j_b
+      integer                         :: n_ranges
+      type(elem_range_t), allocatable :: ranges(:)
+      integer                         :: j
+      integer                         :: k_a
+      integer                         :: k_b
+
+      ! Construct range by subsetting range_in
+
+      ! First determine where in ranges i_a and i_b are located
+
+      call locate_(range_in%i_bdy, i_a, j_a)
+      call locate_(range_in%i_bdy, i_b, j_b)
+
+      @:ASSERT(i_a >= 1,'out-of-bounds')
+      @:ASSERT(i_b <= range_in%n_ranges,'out-of-bounds')
+
+      ! Create the subset
+
+      n_ranges = j_b - j_a + 1
+
+      allocate(ranges(n_ranges))
+
+      ranges_loop : do j = j_a, j_b
+
+         if (j == j_a) then
+            k_a = i_a - range_in%i_bdy(j) + 1
+         else
+            k_a = 1
+         end if
+
+         if (j == j_b) then
+            k_b = i_b - range_in%i_bdy(j) + 1
+         else
+            k_b = range_in%i_bdy(j+1) - range_in%i_bdy(j)
+         end if
+
+         ranges(j-j_a+1) = elem_range_t(range_in%ranges(j), k_a, k_b)
+
+      end do ranges_loop
+
+      range = agg_range_t(ranges)
+
+      ! Finish
+
+      return
+
+   end function agg_range_t_subset_
+
+   !****
+
+   subroutine inquire(self, n, min, max)
+
+      class(agg_range_t), intent(in)  :: self
+      integer, intent(out), optional  :: n
+      real(RD), intent(out), optional :: min
+      real(RD), intent(out), optional :: max
+
+      ! Inquire metadata
+
+      if (PRESENT(n)) n = self%i_bdy(self%n_ranges+1)-1
+
+      call self%ranges(1)%inquire(min=min)
+      call self%ranges(self%n_ranges)%inquire(max=max)
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine expand(self, x)
+
+      class(agg_range_t), intent(in) :: self
+      real(RD), intent(out)          :: x(:)
+
+      integer :: j
+
+      @:CHECK_BOUNDS(SIZE(x), self%i_bdy(self%n_ranges+1)-1)
+
+      ! Expand into the array
+
+      ranges_loop: do j = 1, self%n_ranges
+         
+         associate (i_a => self%i_bdy(j), &
+              i_b => self%i_bdy(j+1)-1)
+           call self%ranges(j)%expand(x(i_a:i_b))
+         end associate
+      end do ranges_loop
+
+      ! Finish
+
+      return
+
+   end subroutine expand
+
+   !****
+
+   recursive subroutine read_(hdf5io, range, stat, skip_type)
+
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      type(agg_range_t), intent(out) :: range
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: skip_type
+
+      logical                         :: skip_type_
+      character(TYPE_LEN)             :: type
+      integer                         :: n_ranges
+      type(elem_range_t), allocatable :: ranges(:)
+      integer                         :: j
+      type(hdf5io_t)                  :: hdf5io_range
+
+      if (PRESENT(skip_type)) then
+         skip_type_ = skip_type
+      else
+         skip_type_ = .FALSE.
+      endif
+
+      ! Read range
+
+      if (.NOT. skip_type_) then
+         call hdf5io%read_attr('TYPE', type)
+         if (type /= 'agg_range_t') then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_TYPE
+               return
+            else
+               @:ABORT('invalid type')
+            end if
+         end if
+      end if
+
+      call hdf5io%read_attr('n_ranges', n_ranges)
+
+      allocate(ranges(n_ranges))
+
+      ranges_loop : do j = 1, n_ranges
+
+         hdf5io_range = hdf5io_t(hdf5io, ranges_group_name_(j))
+         call read(hdf5io_range, ranges(j), stat)
+         call hdf5io_range%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do ranges_loop
+
+      range = agg_range_t(ranges)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hdf5io, range, stat, skip_type)
+
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      class(agg_range_t), intent(in) :: range
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: skip_type
+
+      logical        :: skip_type_
+      integer        :: j
+      type(hdf5io_t) :: hdf5io_range
+
+      if (PRESENT(skip_type)) then
+         skip_type_ = skip_type
+      else
+         skip_type_ = .FALSE.
+      endif
+
+      ! Write range
+
+      if (.NOT. skip_type_) then
+         call hdf5io%write_attr('TYPE', 'agg_range_t')
+      end if
+
+      call hdf5io%write_attr('n_ranges', range%n_ranges)
+
+      ranges_loop : do j = 1, range%n_ranges
+
+         hdf5io_range = hdf5io_t(hdf5io, ranges_group_name_(j))
+         call write(hdf5io_range, range%ranges(j), stat)
+         call hdf5io_range%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do ranges_loop
+
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+   !****
+
+   function ranges_group_name_(i) result(name)
+
+      integer, intent(in) :: i
+      character(256)      :: name
+
+      write(name, 100) i
+100   format('ranges(',I0,')')
+      
+   end function ranges_group_name_
+
+end module agg_range_m

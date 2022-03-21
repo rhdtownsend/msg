@@ -70,7 +70,7 @@ contains
 
       call hdf5io%inquire(file_name=file_name, group_name=group_name)
 
-      group_names = [(specint_group_name_(i), i=1,n)]
+      group_names = [(specints_group_name_(i), i=1,n)]
 
       spectable = hdf5_spectable_t(file_name, group_name//'/'//group_names, &
                                    lam_min, lam_max, cache_limit)
@@ -120,7 +120,7 @@ contains
 
          ! Write it
 
-         hdf5io_specint = hdf5io_t(hdf5io, specint_group_name_(i))
+         hdf5io_specint = hdf5io_t(hdf5io, specints_group_name_(i))
          call write(hdf5io_specint, specint, stat)
          call hdf5io_specint%final()
          if (PRESENT(stat)) then
@@ -137,14 +137,14 @@ contains
 
    !****
 
-   function specint_group_name_(i) result(name)
+   function specints_group_name_(i) result(name)
 
       integer, intent(in) :: i
       character(256)      :: name
 
       write(name, 100) i
-100   format('specint(',I0,')')
+100   format('specints(',I0,')')
       
-   end function specint_group_name_
+   end function specints_group_name_
 
 end submodule spectable_sm

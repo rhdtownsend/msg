@@ -93,13 +93,13 @@ program synspec_to_specint
    range = log_range_t(w_0, dw, n_lam)
 
    allocate(lam(n_lam))
-   call range%fetch_all(lam)
+   call range%expand(lam)
 
    ! Bin the data onto this axis
 
    allocate(I(n_mu,n_lam-1))
 
-   call bin_data(lam_in, I_in, range, I)
+   call bin_data(lam_in, I_in, lam, I)
 
    ! Create specint
 
@@ -249,19 +249,17 @@ contains
 
    !****
 
-   subroutine bin_data(lam_in, I_in, range, I)
+   subroutine bin_data(lam_in, I_in, lam, I)
 
-      real(RD), intent(in)       :: lam_in(:)
-      real(RD), intent(in)       :: I_in(:,:)
-      class(range_t), intent(in) :: range
-      real(RD), intent(out)      :: I(:,:)
+      real(RD), intent(in)  :: lam_in(:)
+      real(RD), intent(in)  :: I_in(:,:)
+      real(RD), intent(in)  :: lam(:)
+      real(RD), intent(out) :: I(:,:)
 
       integer  :: n_mu
       integer  :: n_lam
       integer  :: k
       integer  :: j
-      real(RD) :: lam_a
-      real(RD) :: lam_b
 
       @:CHECK_BOUNDS(SIZE(I_in, 2), SIZE(lam_in))
       @:CHECK_BOUNDS(SIZE(I, 2), SIZE(lam)-1)
@@ -269,16 +267,12 @@ contains
       ! Convert the piecewise-linear intensity data I_in(:,lam_in) to the binned data I(:,lam)
 
       n_mu = SIZE(I_in, 1)
-      call range%inquire(n=n_lam)
+      n_lam = SIZE(lam)
 
       mu_loop : do j = 1, n_mu
 
-         call range%fetch(1, lam_b)
-
          lam_loop : do k = 1, n_lam-1
-            lam_a = lam_b
-            call range%fetch(k+1, lam_b)
-            I(j,k) = integrate_lin(lam_in, I_in(j,:), lam_a, lam_b)/(lam_b - lam_a)
+            I(j,k) = integrate_lin(lam_in, I_in(j,:), lam(k), lam(k+1))/(lam(k+1) - lam(k))
          end do lam_loop
 
       end do mu_loop

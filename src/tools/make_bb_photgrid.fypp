@@ -136,7 +136,7 @@ contains
 
       ! Create the axis
 
-      axis = axis_t(tab_range_t(x), label)
+      axis = axis_t(x, label)
 
       ! Finish
 

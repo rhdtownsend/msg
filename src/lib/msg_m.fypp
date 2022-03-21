@@ -32,6 +32,8 @@ module msg_m
    use spec_phottable_m
    use mem_phottable_m
    use range_m
+   use agg_range_m, only: agg_range_t
+   use elem_range_m, only: elem_range_t
    use lin_range_m, only: lin_range_t
    use log_range_m, only: log_range_t
    use tab_range_m, only: tab_range_t

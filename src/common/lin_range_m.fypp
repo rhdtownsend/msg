@@ -22,7 +22,7 @@ module lin_range_m
 
    ! Uses
 
-   use forum_m, locate_ => locate
+   use forum_m
 
    use range_m, only: range_t
    use stat_m
@@ -43,9 +43,7 @@ module lin_range_m
    contains
       private
       procedure, public :: inquire
-      procedure, public :: fetch
-      procedure, public :: fetch_all
-      procedure, public :: locate
+      procedure, public :: expand
    end type lin_range_t
 
    ! Interfaces
@@ -99,18 +97,18 @@ contains
 
    function lin_range_t_subset_(range_in, i_a, i_b) result(range)
 
-     type(lin_range_t), intent(in) :: range_in
-     integer, intent(in)           :: i_a
-     integer, intent(in)           :: i_b
-     type(lin_range_t)             :: range
+      type(lin_range_t), intent(in) :: range_in
+      integer, intent(in)           :: i_a
+      integer, intent(in)           :: i_b
+      type(lin_range_t)             :: range
 
-     ! Construct range by subsetting range_in
+      ! Construct range by subsetting range_in
 
-     range = lin_range_t(range_in%x_0+range_in%dx*(i_a-1), range_in%dx, i_b-i_a+1)
+      range = lin_range_t(range_in%x_0+range_in%dx*(i_a-1), range_in%dx, i_b-i_a+1)
 
-     ! Finish
+      ! Finish
 
-     return
+      return
 
    end function lin_range_t_subset_
 
@@ -138,46 +136,7 @@ contains
 
    !****
 
-   subroutine fetch(self, i, x, stat)
-
-      class(lin_range_t), intent(in) :: self
-      integer, intent(in)            :: i
-      real(RD), intent(out)          :: x
-      integer, intent(out), optional :: stat
-
-      ! Fetch the i'th value
-
-      if (i < 1) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_RANGE_LO
-            return
-         else
-            @:ABORT('out-of-bounds (lo) in range')
-         endif
-      endif
-
-      if (i > self%n) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_RANGE_HI
-            return
-         else
-            @:ABORT('out-of-bounds (hi) in range')
-         endif
-      endif
-
-      x = self%x_0 + self%dx*(i-1)
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine fetch
-
-   !****
-
-   subroutine fetch_all(self, x)
+   subroutine expand(self, x)
 
       class(lin_range_t), intent(in) :: self
       real(RD), intent(out)          :: x(:)
@@ -186,7 +145,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(x), self%n)
 
-      ! Fetch all values
+      ! Expand range into the array
 
       do i = 1, self%n
          x(i) = self%x_0 + self%dx*(i-1)
@@ -196,28 +155,7 @@ contains
 
       return
 
-   end subroutine fetch_all
-
-   !****
-
-   subroutine locate(self, x, i, right)
-
-      class(lin_range_t), intent(in) :: self
-      real(RD), intent(in)           :: x
-      integer, intent(inout)         :: i
-      logical, intent(in), optional  :: right
-
-      ! Locate where in range x falls
-
-      call locate_(self%x_0, self%dx, x, i, right=right)
-
-      i = MIN(MAX(i, 0), self%n+1)
-
-      ! Finish
-
-      return
-
-   end subroutine locate
+   end subroutine expand
 
    !****
 

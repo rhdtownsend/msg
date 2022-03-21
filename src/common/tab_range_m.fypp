@@ -22,7 +22,7 @@ module tab_range_m
 
    ! Uses
 
-   use forum_m, locate_ => locate
+   use forum_m
 
    use range_m, only: range_t
    use stat_m
@@ -42,9 +42,7 @@ module tab_range_m
    contains
       private
       procedure, public :: inquire
-      procedure, public :: fetch
-      procedure, public :: fetch_all
-      procedure, public :: locate
+      procedure, public :: expand
    end type tab_range_t
 
    ! Interfaces
@@ -114,7 +112,6 @@ contains
 
    end function tab_range_t_subset_
 
-
    !****
 
    subroutine inquire(self, n, min, max)
@@ -139,53 +136,14 @@ contains
 
    !****
 
-   subroutine fetch(self, i, x, stat)
-
-      class(tab_range_t), intent(in) :: self
-      integer, intent(in)            :: i
-      real(RD), intent(out)          :: x
-      integer, intent(out), optional :: stat
-
-      ! Fetch the i'th value
-
-      if (i < 1) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_RANGE_LO
-            return
-         else
-            @:ABORT('out-of-bounds (lo) in range')
-         endif
-      endif
-
-      if (i > self%n) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_RANGE_HI
-            return
-         else
-            @:ABORT('out-of-bounds (hi) in range')
-         endif
-      endif
-
-      x = self%x(i)
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine fetch
-
-   !****
-
-   subroutine fetch_all(self, x)
+   subroutine expand(self, x)
 
       class(tab_range_t), intent(in) :: self
       real(RD), intent(out)          :: x(:)
 
       @:CHECK_BOUNDS(SIZE(x), self%n)
 
-      ! Expand the range
+      ! Expand range into the array
 
       x = self%x
 
@@ -193,26 +151,7 @@ contains
 
       return
 
-   end subroutine fetch_all
-
-   !****
-
-   subroutine locate(self, x, i, right)
-
-      class(tab_range_t), intent(in) :: self
-      real(RD), intent(in)           :: x
-      integer, intent(inout)         :: i
-      logical, intent(in), optional  :: right
-
-      ! Locate where in range x falls
-
-      call locate_(self%x, x, i, right=right)
-
-      ! Finish
-
-      return
-
-   end subroutine locate
+   end subroutine expand
 
    !****
 

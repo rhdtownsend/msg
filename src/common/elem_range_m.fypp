@@ -1,0 +1,228 @@
+! Module  : range_elem_m
+! Purpose : define elem_range_t type, which wraps a range_t to allow
+!           storage as an array element
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module elem_range_m
+
+   ! Uses
+
+   use forum_m
+
+   use range_m, only: range_t, read_range => read, write_range => write
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(range_t) :: elem_range_t
+      private
+      class(range_t), allocatable :: range
+   contains
+      private
+      procedure, public :: inquire
+      procedure, public :: expand
+   end type elem_range_t
+
+   ! Interfaces
+
+   interface elem_range_t
+      module procedure elem_range_t_
+      module procedure elem_range_t_subset_
+   end interface elem_range_t
+
+   interface read
+      module procedure read_
+   end interface read
+
+   interface write
+      module procedure write_
+   end interface write
+
+   ! Access specifiers
+
+   private
+
+   public :: elem_range_t
+   public :: read
+   public :: write
+
+contains
+
+   function elem_range_t_(range_in) result(range)
+
+      class(range_t), intent(in) :: range_in
+      type(elem_range_t)         :: range
+
+      ! Construct range from range_in
+
+      range%range = range_in
+
+      ! Finish
+
+      return
+
+   end function elem_range_t_
+
+   !****
+
+   function elem_range_t_subset_(range_in, i_a, i_b) result(range)
+
+      type(elem_range_t), intent(in) :: range_in
+      integer, intent(in)            :: i_a
+      integer, intent(in)            :: i_b
+      type(elem_range_t)             :: range
+
+      ! Construct range by subsetting range_in
+
+      range = elem_range_t(range_t(range_in%range, i_a, i_b))
+
+      ! Finish
+
+      return
+
+   end function elem_range_t_subset_
+
+   !****
+
+   subroutine inquire(self, n, min, max)
+
+      class(elem_range_t), intent(in)  :: self
+      integer, intent(out), optional   :: n
+      real(RD), intent(out), optional  :: min
+      real(RD), intent(out), optional  :: max
+
+      ! Pass
+
+      call self%range%inquire(n, min, max)
+
+      ! Finish
+
+      return
+
+   end subroutine inquire
+
+   !****
+
+   subroutine expand(self, x)
+
+      class(elem_range_t), intent(in) :: self
+      real(RD), intent(out)           :: x(:)
+
+      ! Pass
+
+      call self%range%expand(x)
+      
+      ! Finish
+
+      return
+
+   end subroutine expand
+
+   !****
+
+   subroutine read_(hdf5io, range, stat, skip_type)
+
+      type(hdf5io_t), intent(inout)   :: hdf5io
+      type(elem_range_t), intent(out) :: range
+      integer, intent(out), optional  :: stat
+      logical, intent(in), optional   :: skip_type
+
+      logical                     :: skip_type_
+      character(TYPE_LEN)         :: type
+      type(hdf5io_t)              :: hdf5io_range
+      class(range_t), allocatable :: range_in
+
+      if (PRESENT(skip_type)) then
+         skip_type_ = skip_type
+      else
+         skip_type_ = .FALSE.
+      endif
+
+      ! Read range
+
+      if (.NOT. skip_type_) then
+         call hdf5io%read_attr('TYPE', type)
+         if (type /= 'elem_range_t') then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_TYPE
+               return
+            else
+               @:ABORT('invalid type')
+            end if
+         end if
+      end if
+
+      hdf5io_range = hdf5io_t(hdf5io, 'range')
+      call read_range(hdf5io_range, range_in, stat)
+      call hdf5io_range%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      range = elem_range_t(range_in)
+
+      ! Finish
+
+      return
+
+   end subroutine read_
+
+   !****
+
+   subroutine write_(hdf5io, range, stat, skip_type)
+
+      type(hdf5io_t), intent(inout)   :: hdf5io
+      class(elem_range_t), intent(in) :: range
+      integer, intent(out), optional  :: stat
+      logical, intent(in), optional   :: skip_type
+
+      logical        :: skip_type_
+      type(hdf5io_t) :: hdf5io_range
+
+      if (PRESENT(skip_type)) then
+         skip_type_ = skip_type
+      else
+         skip_type_ = .FALSE.
+      endif
+
+      ! Write range
+
+      if (.NOT. skip_type_) then
+         call hdf5io%write_attr('TYPE', 'elem_range_t')
+      end if
+
+      hdf5io_range = hdf5io_t(hdf5io, 'range')
+      call write_range(hdf5io_range, range%range, stat)
+      call hdf5io_range%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+     
+      ! Finish
+
+      return
+
+   end subroutine write_
+
+end module elem_range_m

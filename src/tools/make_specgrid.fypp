@@ -214,10 +214,8 @@ contains
          end do
          
          associate (u => unique_indices(x))
-           range = tab_range_t(x(u))
+           axes(j) = axis_t(x(u), labels(j))
          end associate
-
-         axes(j) = axis_t(range, labels(j))
 
       end do
 

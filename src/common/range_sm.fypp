@@ -24,6 +24,8 @@ submodule (range_m) range_sm
    use kinds_m
    use hdf5io_m
 
+   use agg_range_m, read_agg => read, write_agg => write
+   use elem_range_m, read_elem => read, write_elem => write
    use lin_range_m, read_lin => read, write_lin => write
    use log_range_m, read_log => read, write_log => write
    use tab_range_m, read_tab => read, write_tab => write
@@ -46,6 +48,10 @@ contains
       ! Construct range by subsetting range_in
 
       select type(range_in)
+      type is(agg_range_t)
+         range = agg_range_t(range_in, i_a, i_b)
+      type is(elem_range_t)
+         range = elem_range_t(range_in, i_a, i_b)
       type is(lin_range_t)
          range = lin_range_t(range_in, i_a, i_b)
       type is (log_range_t)
@@ -77,6 +83,10 @@ contains
       call hdf5io%read_attr('TYPE', type)
 
       select case(type)
+      case('agg_range_t')
+         allocate(agg_range_t::range)
+      case('elem_range_t')
+         allocate(elem_range_t::range)
       case('lin_range_t')
          allocate(lin_range_t::range)
       case('log_range_t')
@@ -88,6 +98,10 @@ contains
       end select
 
       select type(range)
+      type is (agg_range_t)
+         call read_agg(hdf5io, range, stat)
+      type is (elem_range_t)
+         call read_elem(hdf5io, range, stat)
       type is (lin_range_t)
          call read_lin(hdf5io, range, stat)
       type is (log_range_t)
@@ -115,6 +129,10 @@ contains
       ! Write range
 
       select type(range)
+      type is (agg_range_t)
+         call write_agg(hdf5io, range, stat)
+      type is (elem_range_t)
+         call write_elem(hdf5io, range, stat)
       type is (lin_range_t)
          call write_lin(hdf5io, range, stat)
       type is (log_range_t)
