@@ -19,3 +19,9 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+/* Vertical-align text in tables */
+
+td {
+    vertical-align: top;
+}
