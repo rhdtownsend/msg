@@ -59,6 +59,8 @@ module limb_m
       procedure         :: fit_intensity_0_
       procedure         :: fit_intensity_1_
       generic, public   :: fit_intensity => fit_intensity_0_, fit_intensity_1_
+      procedure, public :: read
+      procedure, public :: write
    end type limb_t
 
    ! Interfaces
@@ -67,21 +69,11 @@ module limb_m
       module procedure limb_t_
    end interface limb_t
 
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
-
    ! Access specifiers
 
    private
 
    public :: limb_t
-   public :: read
-   public :: write
 
    ! Procedures
 
@@ -605,16 +597,16 @@ contains
 
    !****
       
-   subroutine read_(hdf5io, limb, stat)
+   subroutine read(self, hdf5io, stat)
 
+      class(limb_t), intent(out)     :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(limb_t), intent(out)      :: limb
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN) :: type
       character(STR_LEN)  :: law_str
 
-      ! Read limb
+      ! Read the limb_t
 
       call hdf5io%read_attr('TYPE', type)
       if (type /= 'limb_t') then
@@ -627,8 +619,13 @@ contains
       end if
 
       call hdf5io%read_attr('law', law_str)
-  
-      limb = limb_t(law_str)
+
+      select type(self)
+      type is(limb_t)
+         self = limb_t(law_str)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
@@ -636,21 +633,21 @@ contains
 
       return
 
-   end subroutine read_
+   end subroutine read
 
    !****
 
-   subroutine write_ (hdf5io, limb, stat)
+   subroutine write(self, hdf5io, stat)
 
+      class(limb_t), intent(in)      :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(limb_t), intent(in)       :: limb
       integer, intent(out), optional :: stat
 
-      ! Write limb
+      ! Write the limb_t
 
       call hdf5io%write_attr('TYPE', 'limb_t')
       
-      call hdf5io%write_attr('law', id_to_str_(limb%law_id))
+      call hdf5io%write_attr('law', id_to_str_(self%law_id))
 
       ! Finish
 
@@ -658,6 +655,6 @@ contains
 
       return
 
-   end subroutine write_
+   end subroutine write
 
 end module limb_m

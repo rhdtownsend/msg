@@ -1,5 +1,5 @@
-! Module  : hdf5_phottable_m
-! Purpose : define hdf5_phottable_t type, for representing a HDF5-file
+! Module  : mem_phottable_m
+! Purpose : define mem_phottable_t type, for representing an HDF5-file
 !           backed table of photometric intensities
 !
 ! Copyright 2022 Rich Townsend & The MSG Team
@@ -25,7 +25,7 @@ module hdf5_phottable_m
    use forum_m
 
    use photint_m
-   use mem_phottable_m
+   use phottable_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -36,15 +36,24 @@ module hdf5_phottable_m
 
    ! Derived-type definitions
 
-   type, extends(mem_phottable_t) :: hdf5_phottable_t
+   type, extends(phottable_t) :: hdf5_phottable_t
+      private
+      type(photint_t), allocatable :: photints(:)
+      integer                      :: n
+   contains
+      private
+      procedure, public :: inquire
+      #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
+         procedure, public :: interp_${name}$
+      #:endfor
+      procedure, public :: read
+      procedure, public :: write
    end type hdf5_phottable_t
-   
 
    ! Interfaces
 
    interface hdf5_phottable_t
-      module procedure hdf5_phottable_t_file_
-      module procedure hdf5_phottable_t_files_
+      module procedure hdf5_phottable_t_
    end interface hdf5_phottable_t
 
    ! Access specifiers
@@ -55,71 +64,175 @@ module hdf5_phottable_m
 
 contains
 
-   function hdf5_phottable_t_file_(file_name, group_names) result(phottable)
+   function hdf5_phottable_t_(photints) result(phottable)
 
-      character(*), intent(in) :: file_name
-      character(*), intent(in) :: group_names(:)
-      type(hdf5_phottable_t)   :: phottable
+      type(photint_t), intent(in) :: photints(:)
+      type(hdf5_phottable_t)      :: phottable
 
-      integer                   :: n
-      character(:), allocatable :: file_names(:)
+      ! Construct phottable from the photints array
 
-      ! Construct the phottable_t from the file name and list of group names
+      phottable%photints = photints
 
-      n = SIZE(group_names)
-
-      allocate(character(LEN(file_name))::file_names(n))
-
-      file_names = file_name
-
-      phottable = hdf5_phottable_t(file_names, group_names)
+      phottable%n = SIZE(photints)
 
       ! Finish
 
       return
 
-   end function hdf5_phottable_t_file_
+   end function hdf5_phottable_t_
 
    !****
 
-   function hdf5_phottable_t_files_(file_names, group_names) result(phottable)
+   subroutine inquire(self, n)
 
-      character(*), intent(in) :: file_names(:)
-      character(*), intent(in) :: group_names(:)
-      type(hdf5_phottable_t)   :: phottable
+      class(hdf5_phottable_t), intent(in) :: self
+      integer, intent(out), optional      :: n
 
-      integer                      :: n
-      type(photint_t), allocatable :: photints(:)
-      integer                      :: i
-      type(hdf5io_t)               :: hdf5io
-      type(hdf5io_t)               :: hdf5io_photint
+      ! Inquire metadata
 
-      @:CHECK_BOUNDS(SIZE(file_names), SIZE(group_names))
-
-      ! Construct the phottable_t from the lists of file/group names
-
-      n = SIZE(file_names)
-
-      allocate(photints(n))
-
-      do i = 1, n
-
-         hdf5io = hdf5io_t(file_names(i), OPEN_FILE_RO)
-
-         hdf5io_photint = hdf5io_t(hdf5io, group_names(i))
-         call read(hdf5io_photint, photints(i))
-         call hdf5io_photint%final()
-
-         call hdf5io%final()
-
-      end do
-
-      phottable%mem_phottable_t = mem_phottable_t(photints)
+      if (PRESENT(n)) n = self%n
 
       ! Finish
 
       return
 
-   end function hdf5_phottable_t_files_
+   end subroutine inquire
+
+   !****
+
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
+
+      subroutine interp_${name}$(self, i, ${arg_var}$, res, stat)
+
+         class(hdf5_phottable_t), intent(inout) :: self
+         integer, intent(in)                    :: i
+         ${arg_type}$, intent(in)               :: ${arg_var}$
+         real(RD), intent(out)                  :: res
+         integer, intent(out), optional         :: stat
+
+         ! Interpolate ${name}$
+
+         call self%photints(i)%interp_${name}$(${arg_var}$, res, stat)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !****
+
+   #:for name in ('flux', )
+
+      subroutine interp_${name}$(self, i, res, stat)
+
+         class(hdf5_phottable_t), intent(inout) :: self
+         integer, intent(in)                    :: i
+         real(RD), intent(out)                  :: res
+         integer, intent(out), optional         :: stat
+
+         ! Interpolate ${name}$
+
+         call self%photints(i)%interp_${name}$(res, stat)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_${name}$
+
+   #:endfor
+
+   !*****
+      
+   subroutine read(self, hdf5io, stat)
+
+      class(hdf5_phottable_t), intent(out) :: self
+      type(hdf5io_t), intent(inout)       :: hdf5io
+      integer, intent(out), optional      :: stat
+
+      character(TYPE_LEN)          :: type
+      integer                      :: n
+      type(photint_t), allocatable :: photints(:)
+      type(hdf5io_t)               :: hdf5io_photint
+      integer                      :: i
+
+      ! Read the phottable_t
+
+      call hdf5io%read_attr('TYPE', type)
+      if (type /= 'phottable_t') then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_TYPE
+            return
+         else
+            @:ABORT('invalid type')
+         endif
+      endif
+
+      call hdf5io%read_attr('n', n)
+
+      allocate(photints(n))
+
+      read_loop : do i = 1, n
+
+         hdf5io_photint = hdf5io_t(hdf5io, self%elem_group_name(i))
+         call photints(i)%read(hdf5io_photint, stat)
+         call hdf5io_photint%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do read_loop
+
+      select type(self)
+      type is(hdf5_phottable_t)
+         self = hdf5_phottable_t(photints)
+      class default
+         @:ABORT('invalid type')
+      end select
+        
+      ! Finish
+
+      return
+
+   end subroutine read
+
+   !****
+
+   subroutine write(self, hdf5io,  stat)
+
+      class(hdf5_phottable_t), intent(inout) :: self
+      type(hdf5io_t), intent(inout)         :: hdf5io
+      integer, intent(out), optional        :: stat
+
+      integer         :: i
+      type(hdf5io_t)  :: hdf5io_photint
+
+      ! Write the phottable_t
+
+      call hdf5io%write_attr('TYPE', 'phottable_t')
+
+      call hdf5io%write_attr('n', self%n)
+      
+      write_loop : do i = 1, self%n
+
+         hdf5io_photint = hdf5io_t(hdf5io, self%elem_group_name(i))
+         call self%photints(i)%write(hdf5io_photint, stat)
+         call hdf5io_photint%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do write_loop
+
+      ! Finish
+
+      return
+
+   end subroutine write
 
 end module hdf5_phottable_m

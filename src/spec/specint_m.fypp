@@ -54,7 +54,9 @@ module specint_m
          procedure, public :: interp_${name}$
       #:endfor
       procedure         :: interp_f_
-      procedure, public :: apply_passband
+      procedure, public :: filter
+      procedure, public :: read
+      procedure, public :: write
    end type specint_t
 
    ! Interfaces
@@ -66,21 +68,11 @@ module specint_m
       module procedure specint_t_subset_
    end interface specint_t
 
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
-
    ! Access specifiers
 
    private
 
    public :: specint_t
-   public :: read
-   public :: write
 
    ! Procedures
 
@@ -394,7 +386,7 @@ contains
 
    !****
 
-   subroutine apply_passband(self, passband, photint, stat)
+   subroutine filter(self, passband, photint, stat)
 
       class(specint_t), intent(in)   :: self
       type(passband_t), intent(in)   :: passband
@@ -409,7 +401,7 @@ contains
       integer  :: i
       real(RD) :: P
 
-      ! Apply the passband to yield photint
+      ! Filter the specint through the passband to yield photint
 
       ! First check that the spectrum is defined across the passband support
 
@@ -460,14 +452,14 @@ contains
 
       return
 
-   end subroutine apply_passband
+   end subroutine filter
 
    !****
 
-   subroutine read_(hdf5io, specint, stat)
+   subroutine read(self, hdf5io, stat)
 
+      class(specint_t), intent(out)  :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(specint_t), intent(out)   :: specint
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)         :: type
@@ -509,13 +501,18 @@ contains
       end if
 
       hdf5io_limb = hdf5io_t(hdf5io, 'limb')
-      call read(hdf5io_limb, limb, stat)
+      call limb%read(hdf5io_limb, stat)
       call hdf5io_limb%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      specint = specint_t(c, range, limb, low_acc)
+      select type(self)
+      type is(specint_t)
+         self = specint_t(c, range, limb, low_acc)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
@@ -523,14 +520,14 @@ contains
 
       return
 
-   end subroutine read_
+   end subroutine read
 
    !****
 
-   subroutine write_(hdf5io, specint, stat)
+   subroutine write(self, hdf5io, stat)
 
+      class(specint_t), intent(in)   :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(specint_t), intent(in)    :: specint
       integer, intent(out), optional :: stat
 
       real(RD)       :: lam_min
@@ -542,28 +539,28 @@ contains
 
       call hdf5io%write_attr('TYPE', 'specint_t')
 
-      call specint%inquire(lam_min=lam_min, lam_max=lam_max)
+      call self%inquire(lam_min=lam_min, lam_max=lam_max)
 
       call hdf5io%write_attr('lam_min', lam_min)
       call hdf5io%write_attr('lam_max', lam_max)
 
-      call hdf5io%write_attr('low_acc', specint%low_acc)
+      call hdf5io%write_attr('low_acc', self%low_acc)
 
-      if (specint%low_acc) then
-         call hdf5io%write_dset('c', REAL(specint%c, RS))
+      if (self%low_acc) then
+         call hdf5io%write_dset('c', REAL(self%c, RS))
       else
-         call hdf5io%write_dset('c', specint%c)
+         call hdf5io%write_dset('c', self%c)
       endif
 
       hdf5io_range = hdf5io_t(hdf5io, 'range')
-      call specint%range%write(hdf5io_range, stat)
+      call self%range%write(hdf5io_range, stat)
       call hdf5io_range%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
       hdf5io_limb = hdf5io_t(hdf5io, 'limb')
-      call write(hdf5io_limb, specint%limb, stat)
+      call self%limb%write(hdf5io_limb, stat)
       call hdf5io_limb%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
@@ -575,6 +572,6 @@ contains
 
       return
 
-   end subroutine write_
+   end subroutine write
 
 end module specint_m

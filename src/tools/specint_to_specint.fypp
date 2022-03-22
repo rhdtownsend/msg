@@ -84,7 +84,8 @@ program specint_to_specint
    ! Read data from the specint file
 
    hdf5io = hdf5io_t(specint_file_name_in, OPEN_FILE_RO)
-   call read(hdf5io, specint_in)
+
+   call specint_in%read(hdf5io)
 
    hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
@@ -152,7 +153,8 @@ program specint_to_specint
    ! Write data to the specint file
 
    hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
-   call write(hdf5io, specint)
+
+   call specint%write(hdf5io)
 
    hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 

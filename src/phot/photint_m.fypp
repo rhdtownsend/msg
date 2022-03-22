@@ -45,6 +45,8 @@ module photint_m
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
+      procedure, public :: read
+      procedure, public :: write
    end type photint_t
 
    ! Interfaces
@@ -54,21 +56,11 @@ module photint_m
       module procedure photint_t_fit_
    end interface photint_t
 
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
-
    ! Access specifiers
 
    private
 
    public :: photint_t
-   public :: read
-   public :: write
 
    ! Procedures
 
@@ -131,10 +123,10 @@ contains
 
       subroutine interp_${name}$(self, ${arg_var}$, res, stat)
 
-         class(photint_t), intent(inout) :: self
-         ${arg_type}$, intent(in)        :: ${arg_var}$
-         real(RD), intent(out)           :: res
-         integer, intent(out), optional  :: stat
+         class(photint_t), intent(in)   :: self
+         ${arg_type}$, intent(in)       :: ${arg_var}$
+         real(RD), intent(out)          :: res
+         integer, intent(out), optional :: stat
 
          real(RD) :: b(self%n_b)
 
@@ -165,9 +157,9 @@ contains
 
       subroutine interp_${name}$(self, res, stat)
 
-         class(photint_t), intent(inout) :: self
-         real(RD), intent(out)           :: res
-         integer, intent(out), optional  :: stat
+         class(photint_t), intent(in)   :: self
+         real(RD), intent(out)          :: res
+         integer, intent(out), optional :: stat
 
          real(RD) :: b(self%n_b)
 
@@ -194,10 +186,10 @@ contains
 
    !****
 
-   subroutine read_(hdf5io, photint, stat)
+   subroutine read(self, hdf5io, stat)
 
+      class(photint_t), intent(out)  :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(photint_t), intent(out)   :: photint
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
@@ -220,10 +212,18 @@ contains
       call hdf5io%alloc_read_dset('c', c)
 
       hdf5io_limb = hdf5io_t(hdf5io, 'limb')
-      call read(hdf5io_limb, limb)
+      call limb%read(hdf5io_limb, stat)
       call hdf5io_limb%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
-      photint = photint_t(c, limb)
+      select type(self)
+      type is(photint_t)
+         self = photint_t(c, limb)
+      class default
+         @:ABORT('incalid type')
+      end select
 
       ! Finish
 
@@ -231,14 +231,14 @@ contains
 
       return
 
-   end subroutine read_
+   end subroutine read
 
    !****
 
-   subroutine write_ (hdf5io, photint, stat)
+   subroutine write(self, hdf5io, stat)
 
+      class(photint_t), intent(in)   :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(photint_t), intent(in)    :: photint
       integer, intent(out), optional :: stat
 
       type(hdf5io_t) :: hdf5io_limb
@@ -247,12 +247,12 @@ contains
 
       call hdf5io%write_attr('TYPE', 'photint_t')
 
-      call hdf5io%write_attr('n_b', photint%n_b)
+      call hdf5io%write_attr('n_b', self%n_b)
 
-      call hdf5io%write_dset('c', photint%c)
+      call hdf5io%write_dset('c', self%c)
 
       hdf5io_limb = hdf5io_t(hdf5io, 'limb')
-      call write(hdf5io_limb, photint%limb, stat)
+      call self%limb%write(hdf5io_limb, stat)
       call hdf5io_limb%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
@@ -264,6 +264,6 @@ contains
 
       return
 
-   end subroutine write_
+   end subroutine write
 
 end module photint_m

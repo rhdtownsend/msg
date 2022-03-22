@@ -38,6 +38,7 @@ program specgrid_to_photgrid
 
    type(hdf5io_t)   :: hdf5io
    type(passband_t) :: passband
+   type(specgrid_t) :: specgrid
    type(photgrid_t) :: photgrid
 
    ! Read command-line arguments
@@ -48,22 +49,26 @@ program specgrid_to_photgrid
    call get_arg(2, passband_file_name)
    call get_arg(3, photgrid_file_name)
  
-   ! Read data from the passband file
+   ! Read the passband
 
    hdf5io = hdf5io_t(passband_file_name, OPEN_FILE_RO)
-   call read(hdf5io, passband)
+   call passband%read(hdf5io)
    call hdf5io%final()
 
-   ! Read the photgrid_t from the specgrid_t
+   ! Read the specgrid
 
    hdf5io = hdf5io_t(specgrid_file_name, OPEN_FILE_RO)
-   call read(hdf5io, passband, photgrid)
+   call specgrid%read(hdf5io)
    call hdf5io%final()
 
-   ! Write the photgrid_t
+   ! Create the photgrid
+
+   call specgrid%filter(passband, photgrid)
+
+   ! Write the photgrid
 
    hdf5io = hdf5io_t(photgrid_file_name, CREATE_FILE)
-   call write(hdf5io, photgrid)
+   call photgrid%write(hdf5io)
    call hdf5io%final()
 
    ! Finish

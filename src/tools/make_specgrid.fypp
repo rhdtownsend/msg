@@ -75,7 +75,7 @@ program make_specgrid
    ! Write the grid
 
    hdf5io = hdf5io_t(specgrid_file_name, CREATE_FILE)
-   call write(hdf5io, specgrid)
+   call specgrid%write(hdf5io)
    call hdf5io%final()
 
    ! Finish
@@ -346,7 +346,7 @@ contains
       ! Create spectable
 
       spectable = hdf5_spectable_t(file_names, group_names, &
-                                   MAXVAL(nodes%lam_min), MINVAL(nodes%lam_max), cache_limit=0)
+                                   MAXVAL(nodes%lam_min), MINVAL(nodes%lam_max))
 
       ! Create specgrid
 

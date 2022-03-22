@@ -30,7 +30,6 @@ module msg_m
    use phottable_m
    use hdf5_phottable_m
    use spec_phottable_m
-   use mem_phottable_m
    use range_m
    use agg_range_m, only: agg_range_t
    use elem_range_m, only: elem_range_t

@@ -61,6 +61,8 @@ module ngrid_m
       procedure         :: interp_1_
       generic, public   :: interp => interp_0_, interp_1_
       procedure         :: setup_interp_
+      procedure, public :: read
+      procedure, public :: write
    end type ngrid_t
 
    ! Interfaces
@@ -69,21 +71,11 @@ module ngrid_m
       module procedure ngrid_t_
    end interface ngrid_t
 
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
-
    ! Access specifiers
 
    private
 
    public :: ngrid_t
-   public :: read
-   public :: write
 
    ! Procedures
 
@@ -683,10 +675,10 @@ contains
 
    !****
 
-   subroutine read_(hdf5io, ngrid, stat)
+   subroutine read(self, hdf5io, stat)
 
+      class(ngrid_t), intent(out)    :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(ngrid_t), intent(out)     :: ngrid
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)       :: type
@@ -714,7 +706,7 @@ contains
 
       axis_loop : do j = 1, rank
          hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(j))
-         call read(hdf5io_axis, axes(j), stat)
+         call axes(j)%read(hdf5io_axis, stat)
          call hdf5io_axis%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
@@ -723,7 +715,12 @@ contains
 
       call hdf5io%alloc_read_dset('mask', mask)
 
-      ngrid = ngrid_t(axes, mask)
+      select type(self)
+      type is(ngrid_t)
+         self = ngrid_t(axes, mask)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
@@ -731,36 +728,36 @@ contains
 
       return
 
-   end subroutine read_
+   end subroutine read
 
    !****
 
-   subroutine write_(hdf5io, ngrid, stat)
+   subroutine write(self, hdf5io, stat)
 
+      class(ngrid_t), intent(in)     :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(ngrid_t), intent(in)      :: ngrid
       integer, intent(out), optional :: stat
 
       integer        :: j
       type(hdf5io_t) :: hdf5io_axis
 
-      ! Write ngrid
+      ! Write the ngrid
       
       call hdf5io%write_attr('TYPE', 'ngrid_t')
 
-      call hdf5io%write_attr('shape', ngrid%shape)
-      call hdf5io%write_attr('rank', ngrid%rank)
+      call hdf5io%write_attr('shape', self%shape)
+      call hdf5io%write_attr('rank', self%rank)
 
-      do j = 1, ngrid%rank
+      axis_loop: do j = 1, self%rank
          hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(j))
-         call write(hdf5io_axis, ngrid%axes(j), stat)
+         call self%axes(j)%write(hdf5io_axis, stat)
          call hdf5io_axis%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          endif
-      end do
+      end do axis_loop
 
-      call hdf5io%write_dset('mask', ngrid%mask)
+      call hdf5io%write_dset('mask', self%mask)
 
       ! Finish
 
@@ -768,7 +765,7 @@ contains
 
       return
 
-   end subroutine write_
+   end subroutine write
 
    !****
 

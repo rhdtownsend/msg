@@ -25,10 +25,9 @@ module photgrid_m
    use forum_m
 
    use ngrid_m
-   use passband_m
    use photint_m
    use phottable_m
-   use spec_phottable_m
+   use hdf5_phottable_m
    use spectable_m
    use stat_m
 
@@ -52,6 +51,8 @@ module photgrid_m
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
+      procedure, public :: read
+      procedure, public :: write
    end type photgrid_t
 
    ! Interfaces
@@ -60,22 +61,11 @@ module photgrid_m
       module procedure photgrid_t_
    end interface photgrid_t
 
-   interface read
-      module procedure read_
-      module procedure read_specgrid_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
-
    ! Access specifiers
 
    private
 
    public :: photgrid_t
-   public :: read
-   public :: write
 
    ! Procedures
    
@@ -232,17 +222,18 @@ contains
    #:endfor
 
    !****
-   subroutine read_(hdf5io, photgrid, stat)
+      
+   subroutine read(self, hdf5io, stat)
 
+      class(photgrid_t), intent(out) :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(photgrid_t), intent(out)  :: photgrid
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)             :: type
-      type(hdf5io_t)                  :: hdf5io_phottable
-      class(phottable_t), allocatable :: phottable
-      type(hdf5io_t)                  :: hdf5io_ngrid
-      type(ngrid_t)                   :: ngrid
+      character(TYPE_LEN)    :: type
+      type(hdf5io_t)         :: hdf5io_phottable
+      type(hdf5_phottable_t) :: phottable
+      type(hdf5io_t)         :: hdf5io_ngrid
+      type(ngrid_t)          :: ngrid
 
       ! Read the photgrid_t
 
@@ -257,87 +248,39 @@ contains
       endif
 
       hdf5io_phottable = hdf5io_t(hdf5io, 'phottable')
-      call read(hdf5io_phottable, phottable, stat)
+      call phottable%read(hdf5io_phottable, stat)
       call hdf5io_phottable%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
       hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
-      call read(hdf5io_ngrid, ngrid, stat)
+      call ngrid%read(hdf5io_ngrid, stat)
       call hdf5io_ngrid%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      photgrid = photgrid_t(phottable, ngrid)
+      select type(self)
+      type is(photgrid_t)
+         self = photgrid_t(phottable, ngrid)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
 
-   end subroutine read_
+   end subroutine read
 
    !****
 
-   subroutine read_specgrid_(hdf5io, passband, photgrid, stat)
+   subroutine write(self, hdf5io, stat)
 
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      type(passband_t), intent(in)   :: passband
-      type(photgrid_t), intent(out)  :: photgrid
-      integer, intent(out), optional :: stat
-
-      character(TYPE_LEN)             :: type
-      type(hdf5io_t)                  :: hdf5io_spectable
-      class(spectable_t), allocatable :: spectable
-      type(hdf5io_t)                  :: hdf5io_ngrid
-      type(ngrid_t)                   :: ngrid
-
-      ! Read the photgrid_t from the specgrid_t
-
-      call hdf5io%read_attr('TYPE', type)
-      if (type /= 'specgrid_t') then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_TYPE
-            return
-         else
-            @:ABORT('invalid type')
-         endif
-      endif
-
-      hdf5io_spectable = hdf5io_t(hdf5io, 'spectable')
-      call read(hdf5io_spectable, spectable, stat, cache_limit=0)
-      call hdf5io_spectable%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
-      call read(hdf5io_ngrid, ngrid, stat)
-      call hdf5io_ngrid%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      photgrid = photgrid_t(spec_phottable_t(spectable, passband), ngrid)
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine read_specgrid_
-
-   !****
-
-   subroutine write_(hdf5io, photgrid, stat)
-
-      type(hdf5io_t), intent(inout)   :: hdf5io
-      type(photgrid_t), intent(inout) :: photgrid
-      integer, intent(out), optional  :: stat
+      class(photgrid_t), intent(inout) :: self
+      type(hdf5io_t), intent(inout)    :: hdf5io
+      integer, intent(out), optional   :: stat
 
       type(hdf5io_t) :: hdf5io_phottable
       type(hdf5io_t) :: hdf5io_ngrid
@@ -346,18 +289,18 @@ contains
 
       call hdf5io%write_attr('TYPE', 'photgrid_t')
 
-      call hdf5io%write_attr('shape', photgrid%shape)
-      call hdf5io%write_attr('rank', photgrid%rank)
+      call hdf5io%write_attr('shape', self%shape)
+      call hdf5io%write_attr('rank', self%rank)
 
       hdf5io_phottable = hdf5io_t(hdf5io, 'phottable')
-      call write(hdf5io_phottable, photgrid%phottable, stat)
+      call self%phottable%write(hdf5io_phottable, stat)
       call hdf5io_phottable%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
       
       hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
-      call write(hdf5io_ngrid, photgrid%ngrid, stat)
+      call self%ngrid%write(hdf5io_ngrid, stat)
       call hdf5io_ngrid%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
@@ -365,10 +308,8 @@ contains
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
 
-   end subroutine write_
+   end subroutine write
 
 end module photgrid_m

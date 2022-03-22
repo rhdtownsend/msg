@@ -109,7 +109,7 @@ program synspec_to_specint
 
    hdf5io = hdf5io_t(specint_file_name, CREATE_FILE, comp_level=9)
 
-   call write(hdf5io, specint)
+   call specint%write(hdf5io)
 
    hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 

@@ -20,6 +20,12 @@
 
 module spectable_m
 
+   ! Uses
+
+   use forum_m
+
+   use stat_m
+
    ! No implicit typing
 
    implicit none
@@ -29,10 +35,12 @@ module spectable_m
    type, abstract :: spectable_t
    contains
       procedure(inquire_), deferred :: inquire
-      procedure(fetch_), deferred   :: fetch
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure(interp_${name}$_), deferred :: interp_${name}$
       #:endfor
+      procedure(filter_), deferred :: filter
+      procedure(write_), deferred  :: write
+      procedure, nopass, public    :: elem_group_name
    end type spectable_t
 
    ! Interfaces
@@ -47,15 +55,6 @@ module spectable_m
          real(RD), intent(out), optional :: lam_min
          real(RD), intent(out), optional :: lam_max
       end subroutine inquire_
-
-      subroutine fetch_(self, i, specint, stat)
-         use specint_m
-         import spectable_t
-         class(spectable_t), intent(inout) :: self
-         integer, intent(in)               :: i
-         type(specint_t), intent(out)      :: specint
-         integer, intent(out), optional    :: stat
-      end subroutine fetch_
 
       #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
                                         ('E_moment', 'k', 'integer'), &
@@ -88,37 +87,43 @@ module spectable_m
 
       #:endfor
 
-   end interface
-      
-   interface read
+      subroutine filter_(self, i, passband, photint, stat)
+         use passband_m
+         use photint_m
+         import spectable_t
+         class(spectable_t), intent(inout) :: self
+         integer, intent(in)               :: i
+         type(passband_t), intent(in)      :: passband
+         type(photint_t), intent(out)      :: photint
+         integer, intent(out), optional    :: stat
+      end subroutine filter_
 
-      module subroutine read_(hdf5io, spectable, stat, cache_limit)
+      subroutine write_(self, hdf5io, stat)
          use forum_m
-         type(hdf5io_t), intent(inout)                :: hdf5io
-         class(spectable_t), allocatable, intent(out) :: spectable
-         integer, intent(out), optional               :: stat
-         integer, intent(in), optional                :: cache_limit
-      end subroutine read_
-
-   end interface read
-
-   interface write
-
-      module subroutine write_(hdf5io, spectable, stat)
-         use forum_m
+         import spectable_t
+         class(spectable_t), intent(inout) :: self
          type(hdf5io_t), intent(inout)     :: hdf5io
-         class(spectable_t), intent(inout) :: spectable
          integer, intent(out), optional    :: stat
       end subroutine write_
 
-   end interface write
+   end interface
 
    ! Access specifiers
 
    private
 
    public :: spectable_t
-   public :: read
-   public :: write
+
+contains
+
+   function elem_group_name(i) result(name)
+
+      integer, intent(in) :: i
+      character(256)      :: name
+
+      write(name, 100) i
+100   format('specints(',I0,')')
+      
+   end function elem_group_name
 
 end module spectable_m

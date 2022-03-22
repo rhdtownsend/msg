@@ -57,6 +57,8 @@ module cubint_m
       procedure         :: integ_1_
       generic, public   :: integ => integ_0_, integ_1_
       procedure         :: interp_
+      procedure, public :: read
+      procedure, public :: write
    end type cubint_t
 
    ! Interfaces
@@ -66,21 +68,11 @@ module cubint_m
       module procedure cubint_t_derivs_
    end interface cubint_t
 
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
-
    ! Access specifiers
 
    private
 
    public :: cubint_t
-   public :: read
-   public :: write
 
    ! Procedures
 
@@ -626,10 +618,10 @@ contains
 
    !****
 
-   subroutine read_(hdf5io, cubint, stat)
+   subroutine read(self, hdf5io, stat)
 
+      class(cubint_t), intent(out)   :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(cubint_t), intent(out)    :: cubint
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
@@ -653,7 +645,12 @@ contains
       call hdf5io%alloc_read_dset('f', f)
       call hdf5io%alloc_read_dset('df_dx', df_dx)
 
-      cubint = cubint_t(x, f, df_dx)
+      select type(self)
+      type is(cubint_t)
+         self = cubint_t(x, f, df_dx)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
@@ -661,25 +658,25 @@ contains
 
       return
 
-   end subroutine read_
+   end subroutine read
 
    !****
 
-   subroutine write_(hdf5io, cubint, stat)
+   subroutine write(self, hdf5io, stat)
 
+      class(cubint_t), intent(in)    :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(cubint_t), intent(in)     :: cubint
       integer, intent(out), optional :: stat
 
       ! Write cubintkthe cubint_t
 
       call hdf5io%write_attr('TYPE', 'cubint_t')
 
-      call hdf5io%write_attr('n', cubint%n)
+      call hdf5io%write_attr('n', self%n)
 
-      call hdf5io%write_dset('x', cubint%x)
-      call hdf5io%write_dset('f', cubint%f)
-      call hdf5io%write_dset('df_dx', cubint%df_dx)
+      call hdf5io%write_dset('x', self%x)
+      call hdf5io%write_dset('f', self%f)
+      call hdf5io%write_dset('df_dx', self%df_dx)
 
       ! Finish
 
@@ -687,6 +684,6 @@ contains
 
       return
 
-   end subroutine write_
+   end subroutine write
 
 end module cubint_m

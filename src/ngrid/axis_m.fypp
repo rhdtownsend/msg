@@ -23,7 +23,6 @@ module axis_m
 
    use forum_m, locate_ => locate
 
-   use range_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -48,6 +47,8 @@ module axis_m
       procedure, public :: inquire
       procedure, public :: fetch
       procedure, public :: locate
+      procedure, public :: read
+      procedure, public :: write
    end type axis_t
 
    ! Interfaces
@@ -56,22 +57,12 @@ module axis_m
       module procedure axis_t_
    end interface axis_t
 
-   interface read
-      module procedure read_
-   end interface read
-
-   interface write
-      module procedure write_
-   end interface write
-
    ! Access specifiers
 
    private
 
    public :: LABEL_LEN
    public :: axis_t
-   public :: read
-   public :: write
 
    ! Procedures
 
@@ -167,17 +158,17 @@ contains
 
    !****
 
-   subroutine read_(hdf5io, axis, stat)
+   subroutine read(self, hdf5io, stat)
 
+      class(axis_t), intent(out)     :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(axis_t), intent(out)      :: axis
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN)   :: type
       character(LABEL_LEN)  :: label
       real(RD), allocatable :: x(:)
 
-      ! Read axis
+      ! Read the axis
 
       call hdf5io%read_attr('TYPE', type)
       if (type /= 'axis_t') then
@@ -193,7 +184,12 @@ contains
 
       call hdf5io%alloc_read_dset('x', x)
 
-      axis = axis_t(x, label)
+      select type(self)
+      type is(axis_t)
+         self = axis_t(x, label)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
@@ -201,23 +197,23 @@ contains
 
       return
 
-   end subroutine read_
+   end subroutine read
 
    !****
 
-   subroutine write_(hdf5io, axis, stat)
+   subroutine write(self, hdf5io, stat)
 
+      class(axis_t), intent(in)      :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
-      type(axis_t), intent(in)       :: axis
       integer, intent(out), optional :: stat
 
       ! Write axis
 
       call hdf5io%write_attr('TYPE', 'axis_t')
 
-      call hdf5io%write_attr('label', axis%label)
+      call hdf5io%write_attr('label', self%label)
 
-      call hdf5io%write_dset('x', axis%x)
+      call hdf5io%write_dset('x', self%x)
 
       ! Finish
 
@@ -225,6 +221,6 @@ contains
 
       return
 
-   end subroutine write_
+   end subroutine write
 
 end module axis_m

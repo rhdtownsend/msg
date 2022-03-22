@@ -32,29 +32,29 @@ program make_passband
 
    ! Variables
 
-   character(:), allocatable :: table_filename
+   character(:), allocatable :: table_file_name
    real(RD)                  :: F_0
-   character(:), allocatable :: passband_filename
+   character(:), allocatable :: passband_file_name
 
    integer               :: unit
    integer               :: n
    real(RD), allocatable :: lam(:)
    real(RD), allocatable :: S(:)
    integer               :: i
-   type(passband_t)      :: pb
-   type(hdf5io_t)        :: hi
+   type(passband_t)      :: passband
+   type(hdf5io_t)        :: hdf5io
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: table_filename F_0 passband_filename}')
+   @:ASSERT(n_arg() == 3, 'Syntax: table_file_name F_0 passband_file_name}')
 
-   call get_arg(1, table_filename)
+   call get_arg(1, table_file_name)
    call get_arg(2, F_0)
-   call get_arg(3, passband_filename)
+   call get_arg(3, passband_file_name)
 
    ! Read the table data
 
-   open(NEWUNIT=unit, STATUS='OLD', FILE=table_filename)
+   open(NEWUNIT=unit, STATUS='OLD', FILE=table_file_name)
 
    n = 0
 
@@ -76,15 +76,15 @@ program make_passband
 
    close(unit)
 
-   ! Create the passband_t
+   ! Create the passband
 
-   pb = passband_t(S, lam, F_0)
+   passband = passband_t(S, lam, F_0)
 
    ! Write the passband_t
 
-   hi = hdf5io_t(passband_filename, CREATE_FILE)
-   call write(hi, pb)
-   call hi%final()
+   hdf5io = hdf5io_t(passband_file_name, CREATE_FILE)
+   call passband%write(hdf5io)
+   call hdf5io%final()
 
    ! Finish
 

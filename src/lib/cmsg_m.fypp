@@ -80,16 +80,16 @@ contains
       endif
 
       allocate(specgrid)
-
-      call read(hdf5io, specgrid, stat, cache_limit)
+      call specgrid%read(hdf5io, stat)
+      call hdf5io%final()
       if (STAT /= STAT_OK) then
          deallocate(specgrid)
          return
       endif
+ 
+      call specgrid%conf_cache(limit=cache_limit)
 
-      call hdf5io%final()
-
-      ! Set up the C pointer
+     ! Set up the C pointer
 
       specgrid_ptr = C_LOC(specgrid)
 
@@ -118,14 +118,12 @@ contains
       endif
 
       allocate(photgrid)
-
-      call read(hdf5io, photgrid, stat)
+      call photgrid%read(hdf5io, stat)
+      call hdf5io%final()
       if (STAT /= STAT_OK) then
          deallocate(photgrid)
          return
       endif
-
-      call hdf5io%final()
 
       ! Set up the C pointer
 
@@ -149,30 +147,41 @@ contains
 
       type(hdf5io_t)            :: hdf5io
       type(passband_t)          :: passband
+      type(specgrid_t)          :: specgrid
       type(photgrid_t), pointer :: photgrid
 
       ! Load the photgrid from specgrid and passband files
 
       call open_file_(passband_file_name, hdf5io, stat)
-      if (stat /= STAT_OK) return
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
       
-      call read(hdf5io, passband, stat)
-      if (stat /= STAT_OK) return
-
+      call passband%read(hdf5io, stat)
       call hdf5io%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       call open_file_(specgrid_file_name, hdf5io, stat)
-      if (stat /= STAT_OK) return
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+      
+      call specgrid%read(hdf5io, stat)
+      call hdf5io%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+ 
+      call specgrid%conf_cache(limit=0)
 
       allocate(photgrid)
-
-      call read(hdf5io, passband, photgrid, stat)
-      if (stat /= STAT_OK) then
+      call specgrid%filter(passband, photgrid, stat)
+      if (PRESENT(stat)) then
          deallocate(photgrid)
-         return
-      endif
-
-      call hdf5io%final()
+         if (stat /= STAT_OK) return
+      end if
 
       ! Set up the C pointer
 

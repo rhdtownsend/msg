@@ -70,9 +70,13 @@ contains
          if (stat /= STAT_OK) return
       endif
 
-      call read(hdf5io, specgrid, stat, cache_limit)
-
+      call specgrid%read(hdf5io, stat)
       call hdf5io%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
+
+      call specgrid%conf_cache(limit=cache_limit)
 
       ! Finish
 
@@ -97,8 +101,7 @@ contains
          if (stat /= STAT_OK) return
       endif
 
-      call read(hdf5io, photgrid, stat)
-
+      call photgrid%read(hdf5io, stat)
       call hdf5io%final()
 
       ! Finish
@@ -117,8 +120,9 @@ contains
       type(photgrid_t), intent(out)  :: photgrid
       integer, intent(out), optional :: stat
 
-      type(passband_t) :: passband
       type(hdf5io_t)   :: hdf5io
+      type(passband_t) :: passband
+      type(specgrid_t) :: specgrid
 
       ! Load the photgrid_t from specgrid_t and passband_t files
 
@@ -126,25 +130,19 @@ contains
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
-      
-      call read(hdf5io, passband, stat)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      endif
-      
+
+      call passband%read(hdf5io, stat)
       call hdf5io%final()
-
-      call open_file_(specgrid_file_name, hdf5io, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
 
-      call read(hdf5io, passband, photgrid, stat)
+      call load_specgrid(specgrid_file_name, specgrid, stat, cache_limit=0)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
 
-      call hdf5io%final()
+      call specgrid%filter(passband, photgrid, stat)
 
       ! Finish
 

@@ -52,7 +52,7 @@ program make_bb_photgrid
    real(RD), allocatable        :: mu(:)
    real(RD), allocatable        :: f_mu(:)
    type(photint_t), allocatable :: photints(:)
-   type(mem_phottable_t)        :: phottable
+   type(hdf5_phottable_t)       :: phottable
    type(photgrid_t)             :: photgrid
    type(hdf5io_t)               :: hdf5io
 
@@ -103,7 +103,7 @@ program make_bb_photgrid
 
    ! Create phottable
 
-   phottable = mem_phottable_t(photints)
+   phottable = hdf5_phottable_t(photints)
 
    ! Create photgrid
 
@@ -112,7 +112,7 @@ program make_bb_photgrid
    ! Write it
 
    hdf5io = hdf5io_t(photgrid_file_name, CREATE_FILE)
-   call write(hdf5io, photgrid)
+   call photgrid%write(hdf5io)
    call hdf5io%final()
 
    ! Finish
