@@ -179,8 +179,10 @@ contains
       allocate(photgrid)
       call specgrid%filter(passband, photgrid, stat)
       if (PRESENT(stat)) then
-         deallocate(photgrid)
-         if (stat /= STAT_OK) return
+         if (stat /= STAT_OK) then
+            deallocate(photgrid)
+            return
+         end if
       end if
 
       ! Set up the C pointer
@@ -242,13 +244,13 @@ contains
    subroutine inquire_specgrid(specgrid_ptr, lam_min, lam_max, shape_ptr, rank, &
                                axis_min_ptr, axis_max_ptr) bind(C, name='inquire_SpecGrid')
 
-      type(C_PTR), value :: specgrid_ptr
-      real(C_DOUBLE)     :: lam_min
-      real(C_DOUBLE)     :: lam_max
-      type(C_PTR), value :: shape_ptr
-      integer(C_INT)     :: rank
-      type(C_PTR), value :: axis_min_ptr
-      type(C_PTR), value :: axis_max_ptr
+      type(C_PTR), value       :: specgrid_ptr
+      real(C_DOUBLE), optional :: lam_min
+      real(C_DOUBLE), optional :: lam_max
+      type(C_PTR), value       :: shape_ptr
+      integer(C_INT), optional :: rank
+      type(C_PTR), value       :: axis_min_ptr
+      type(C_PTR), value       :: axis_max_ptr
 
       type(specgrid_t), pointer :: specgrid
       integer                   :: rank_
@@ -293,11 +295,11 @@ contains
    subroutine inquire_photgrid(photgrid_ptr, shape_ptr, rank, &
                                axis_min_ptr, axis_max_ptr) bind(C, name='inquire_PhotGrid')
 
-      type(C_PTR), value :: photgrid_ptr
-      type(C_PTR), value :: shape_ptr
-      integer(C_INT)     :: rank
-      type(C_PTR), value :: axis_min_ptr
-      type(C_PTR), value :: axis_max_ptr
+      type(C_PTR), value       :: photgrid_ptr
+      type(C_PTR), value       :: shape_ptr
+      integer(C_INT), optional :: rank
+      type(C_PTR), value       :: axis_min_ptr
+      type(C_PTR), value       :: axis_max_ptr
       
       type(photgrid_t), pointer :: photgrid
       integer                   :: rank_
