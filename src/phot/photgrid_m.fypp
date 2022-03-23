@@ -136,24 +136,26 @@ contains
 
    !****
 
-   #:for name, var, arg_var, arg_type in (('intensity', 'I', 'mu', 'real(RD)'), &
-                                          ('E_moment', 'E', 'k', 'integer'), &
-                                          ('D_moment', 'D', 'l', 'integer'))
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, x_vec, ${arg_var}$, ${var}$, stat, deriv_vec)
+      subroutine interp_${name}$(self, x_vec, ${arg_var}$, res, stat, deriv_vec)
 
          class(photgrid_t), intent(inout) :: self
          real(RD), intent(in)             :: x_vec(:)
          ${arg_type}$, intent(in)         :: ${arg_var}$
-         real(RD), intent(out)            :: ${var}$
+         real(RD), intent(out)            :: res
          integer, intent(out), optional   :: stat
          logical, intent(in), optional    :: deriv_vec(:)
 
          ! Interpolate ${name}$
 
-         call self%ngrid%interp(proc_, x_vec, ${var}$, stat, deriv_vec)
+         call self%ngrid%interp(proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
+
+         return
 
       contains
 
@@ -181,19 +183,19 @@ contains
 
    !****
 
-   #:for name, var in (('flux', 'F'), )
+   #:for name in ('flux',)
 
-      subroutine interp_${name}$(self, x_vec, ${var}$, stat, deriv_vec)
+      subroutine interp_${name}$(self, x_vec, res, stat, deriv_vec)
 
          class(photgrid_t), intent(inout) :: self
          real(RD), intent(in)             :: x_vec(:)
-         real(RD), intent(out)            :: ${var}$
+         real(RD), intent(out)            :: res
          integer, intent(out), optional   :: stat
          logical, intent(in), optional    :: deriv_vec(:)
 
          ! Interpolate the ${name}$
 
-         call self%ngrid%interp(proc_, x_vec, ${var}$, stat, deriv_vec)
+         call self%ngrid%interp(proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
 
