@@ -1,0 +1,29 @@
+program test_spec_photgrid
+
+   use forum_m
+   use fmsg_m
+
+   implicit none
+
+   integer, parameter :: n = 800
+
+   real(RD), allocatable :: F
+   type(photgrid_t)      :: photgrid
+   integer               :: stat
+   character(LABEL_LEN)  :: axis_labels(2)
+
+   call load_photgrid_from_specgrid('sg.h5', 'pb.h5', photgrid)
+
+   call photgrid%inquire(axis_labels=axis_labels)
+
+   !call photgrid%interp_intensity([0._RD, 4.0_RD, 3.5_RD], 1.0_RD, F, stat)
+   call photgrid%interp_intensity([4.0_RD, 3.5_RD], 1.0_RD, F, stat)
+   if (stat /= STAT_OK) then
+      print *,'Failed in interp_intensity with stat:',stat
+      stop
+   end if
+
+   print *,F
+
+end program test_spec_photgrid
+   

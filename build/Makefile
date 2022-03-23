@@ -36,7 +36,7 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq (${TESTS},yes)
-  EXEC_TARGETS := ${EXEC_TARGETS} test_specgrid test_photgrid
+  EXEC_TARGETS := ${EXEC_TARGETS} test_specgrid test_photgrid test_spec_photgrid
 endif
 
 ifeq (${TOOLS},yes)
@@ -126,6 +126,10 @@ test_specgrid_DEPS = forum_m fmsg_m
 test_photgrid_OBJS = test_photgrid.o
 test_photgrid_LIBS = libforum libmsg libfmsg
 test_photgrid_DEPS = forum_m fmsg_m
+
+test_spec_photgrid_OBJS = test_spec_photgrid.o
+test_spec_photgrid_LIBS = libforum libmsg libfmsg
+test_spec_photgrid_DEPS = forum_m fmsg_m
 
 # Search subdirs
 
