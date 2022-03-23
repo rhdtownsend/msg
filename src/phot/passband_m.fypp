@@ -119,7 +119,7 @@ contains
       ! Inquire metadata
 
       if (PRESENT(lam_min)) lam_min = self%lam_min
-      if (PRESENT(lam_max)) lam_min = self%lam_max
+      if (PRESENT(lam_max)) lam_max = self%lam_max
 
       ! Finish
 
