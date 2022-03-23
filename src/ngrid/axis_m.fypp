@@ -80,7 +80,7 @@ contains
 
       n = SIZE(x)
 
-      @:ASSERT(n > 1,'insufficient data')
+      @:ASSERT(n > 0,'insufficient data')
 
       ax%x = x
 
