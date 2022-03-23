@@ -7,10 +7,10 @@ program test_spec_photgrid
 
    integer, parameter :: n = 800
 
-   real(RD), allocatable :: F
-   type(photgrid_t)      :: photgrid
-   integer               :: stat
-   character(LABEL_LEN)  :: axis_labels(2)
+   real(RD)             :: F
+   type(photgrid_t)     :: photgrid
+   integer              :: stat
+   character(LABEL_LEN) :: axis_labels(2)
 
    call load_photgrid_from_specgrid('sg.h5', 'pb.h5', photgrid)
 
