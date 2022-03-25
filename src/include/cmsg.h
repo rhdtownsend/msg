@@ -55,6 +55,8 @@ void interp_flux_PhotGrid(PhotGrid photgrid, double x_vec[], double *F, int *sta
 
 enum {
   STAT_OK,
+  STAT_OUT_OF_BOUNDS_RANGE_LO,
+  STAT_OUT_OF_BOUNDS_RANGE_HI,
   STAT_OUT_OF_BOUNDS_AXIS_LO,
   STAT_OUT_OF_BOUNDS_AXIS_HI,
   STAT_OUT_OF_BOUNDS_LAM_LO,

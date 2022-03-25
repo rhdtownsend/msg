@@ -71,6 +71,8 @@ cdef extern from "cmsg.h":
     
     cdef enum:
        STAT_OK,
+       STAT_OUT_OF_BOUNDS_RANGE_LO,
+       STAT_OUT_OF_BOUNDS_RANGE_HI,
        STAT_OUT_OF_BOUNDS_AXIS_LO,
        STAT_OUT_OF_BOUNDS_AXIS_HI,
        STAT_OUT_OF_BOUNDS_LAM_LO,
