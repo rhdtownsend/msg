@@ -266,7 +266,7 @@ contains
 
       ! Set up the wavelength axis
 
-      range = log_range_t(fh%wave(1)-0.5*fh%wave(2), fh%wave(2), fh%npix+1)
+      range = log_range_t((fh%wave(1)-0.5*fh%wave(2))/LOG10(EXP(1._RD)), fh%wave(2)/LOG10(EXP(1._RD)), fh%npix+1)
 
       ! Set up the intensity data
 
