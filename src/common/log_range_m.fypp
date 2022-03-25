@@ -208,8 +208,6 @@ contains
 
       ! Write range
 
-      print *,'writing log_range_t'
-
       call hdf5io%write_attr('TYPE', 'log_range_t')
 
       call hdf5io%write_dset('logx_0', self%logx_0)
