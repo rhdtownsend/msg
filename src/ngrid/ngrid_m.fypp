@@ -522,6 +522,9 @@ contains
       real(RD)              :: C(self%n_stn)
       integer               :: m
 
+      real(RD) :: x_1, x_2
+      integer  :: r
+
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
       ! Interpolate an array value
@@ -601,12 +604,16 @@ contains
       integer, intent(out), optional :: stat
 
       integer  :: j
-      integer  :: i_stn
+      real(RD) :: x(4)
+      logical  :: on_bdy(self%rank)
+      integer  :: i_adj
+      integer  :: i_cell_adj(self%rank)
+      integer  :: i_cnr
       integer  :: i_vec(self%rank)
       integer  :: i_lin
+      integer  :: i_stn
       integer  :: l
       integer  :: i
-      real(RD) :: x(4)
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
       @:CHECK_BOUNDS(SIZE(i_cell), self%rank)
@@ -617,7 +624,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(vu), self%rank)
 
-      ! Locate the interpolation cell
+      ! Locate the starting interpolation cell
 
       call self%locate(x_vec, i_cell, stat)
       if (PRESENT(stat)) then
@@ -626,7 +633,77 @@ contains
 
       i_cell = MIN(i_cell, self%shape-1)
 
-      ! Set up the mask
+      ! Determine whether the point lies on cell boundary(ies)
+
+      do j = 1, self%rank
+         call self%axes(j)%fetch(i_cell(j), x(j))
+      end do
+
+      on_bdy = x_vec == x
+
+      ! Iterate over the interpolation cell and all adjacent cells
+
+      adjacent_loop : do i_adj = 1, 2**self%rank
+
+         do j = 1, self%rank
+
+            ! Set up the cell index, weeding out cases that don't
+            ! contain the point or don't exist
+
+            if (BTEST(i_adj-1, j-1)) then
+
+               if (.NOT. on_bdy(j)) cycle adjacent_loop
+               if (i_cell(j) == 1) cycle adjacent_loop
+
+               i_cell_adj(j) = i_cell(j) - 1
+
+            else
+
+               i_cell_adj(j) = i_cell(j)
+
+            end if
+
+         end do
+
+         ! Check whether all corners are present
+
+         corner_loop : do i_cnr = 1, 2**self%rank
+
+            do j = 1, self%rank
+
+               if (BTEST(i_cnr-1, j-1)) then
+                  i_vec(j) = i_cell_adj(j) + 1
+               else
+                  i_vec(j) = i_cell_adj(j)
+               endif
+
+            end do
+
+            i_lin = self%lin_from_vec(i_vec)
+
+            if (.NOT. self%mask(i_lin)) cycle adjacent_loop
+
+         end do corner_loop
+
+         ! If so, set i_cell
+
+         i_cell = i_cell_adj
+         exit adjacent_loop
+
+      end do adjacent_loop
+
+      if (i_adj > 2**self%rank) then
+
+         if (PRESENT(stat)) then
+            stat = STAT_UNAVAILABLE_DATA
+            return
+         else
+            @:ABORT('unavailable data')
+         endif
+
+      endif
+
+      ! Set up the stencil mask
 
       do i_stn = 1, self%n_stn
 
