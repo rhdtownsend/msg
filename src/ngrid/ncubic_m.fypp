@@ -74,10 +74,12 @@ contains
       ! be evaluated as C = MATMUL(K, F), where F is the vector of
       ! function values on a 4**rank-point stencil
 
-      ! First, set up the per-dimension masks. These are designed to
-      ! fall entirely within the rank-d mask, while using as many points
-      ! as possible; the actual mask used is the outer product of the
-      ! per-dimension masks
+      ! First, set up the per-dimension masks. The outer product of
+      ! these masks determines the rank-dimensional mask we are going to
+      ! use in constructing K. Out of all of the possible combinations
+      ! of per-dimension masks, the one that produces a rank-dimensional
+      ! mask that lies within the passed-in mask, AND with the most
+      ! points, is chosen.
 
       n_match = 0
 
