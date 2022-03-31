@@ -54,6 +54,7 @@ module specint_m
          procedure, public :: interp_${name}$
       #:endfor
       procedure         :: interp_f_
+      procedure, public :: subset
       procedure, public :: filter
       procedure, public :: read
       procedure, public :: write
@@ -65,7 +66,6 @@ module specint_m
       module procedure specint_t_
       module procedure specint_t_fit_
       module procedure specint_t_interp_
-      module procedure specint_t_subset_
    end interface specint_t
 
    ! Access specifiers
@@ -189,37 +189,6 @@ contains
       return
 
    end function specint_t_interp_
-
-   !****
-
-   function specint_t_subset_(specint_in, lam_min, lam_max) result(specint)
-
-      type(specint_t), intent(in) :: specint_in
-      real(RD), intent(in)        :: lam_min
-      real(RD), intent(in)        :: lam_max
-      type(specint_t)             :: specint
-
-      integer                     :: i_a
-      integer                     :: i_b
-      class(range_t), allocatable :: range
-
-      ! Construct specint by subsetting specint_in
-
-      call locate(specint_in%lam, lam_min, i_a, right=.TRUE.)
-      call locate(specint_in%lam, lam_max, i_b, right=.FALSE.)
-
-      i_a = MAX(i_a, 1)
-      i_b = MIN(i_b, specint_in%n_lam)
-
-      call specint_in%range%subset(i_a, i_b, range)
-
-      specint = specint_t(specint_in%c(:,i_a:i_b-1), range, specint_in%limb, specint_in%low_acc)
-
-      ! Finish
-
-      return
-
-   end function specint_t_subset_
 
    !****
 
@@ -383,6 +352,64 @@ contains
       return
 
    end subroutine interp_f_
+
+   !****
+
+   subroutine subset(self, lam_min, lam_max, specint, stat)
+
+      class(specint_t), intent(in)   :: self
+      real(RD), intent(in)           :: lam_min
+      real(RD), intent(in)           :: lam_max
+      type(specint_t), intent(out)   :: specint
+      integer, intent(out), optional :: stat
+
+      integer                     :: i_a
+      integer                     :: i_b
+      class(range_t), allocatable :: range
+
+      ! Construct a new specint by subsetting self
+
+      if (lam_max < lam_min) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      call locate(self%lam, lam_min, i_a, right=.FALSE.)
+      call locate(self%lam, lam_max, i_b, right=.TRUE.)
+
+      if (i_a < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) lam')
+         end if
+      end if
+
+      if (i_a > self%n_lam) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) lam')
+         end if
+      end if
+
+      call self%range%subset(i_a, i_b, range)
+
+      specint = specint_t(self%c(:,i_a:i_b-1), range, self%limb, self%low_acc)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine subset
 
    !****
 
