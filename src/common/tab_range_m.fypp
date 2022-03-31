@@ -128,18 +128,42 @@ contains
 
    !****
     
-   subroutine subset(self, i_a, i_b, range)
+   subroutine subset(self, i_a, i_b, range, stat)
 
       class(tab_range_t), intent(in)           :: self
       integer, intent(in)                      :: i_a
       integer, intent(in)                      :: i_b
       class(range_t), allocatable, intent(out) :: range
+      integer, intent(out), optional           :: stat
 
       ! Subset the range
 
-      @:ASSERT(i_a >= 1, 'invalid argument')
-      @:ASSERT(i_b <= self%n, 'invalid argument')
-      @:ASSERT(i_b >= i_a, 'invalid argument')
+      if (i_a < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_RANGE_LO
+            return
+         else
+            @:ABORT('out of bounds (lo) range')
+         end if
+      end if
+
+      if (i_b > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_RANGE_HI
+            return
+         else
+            @:ABORT('out of bounds (hi) range')
+         end if
+      end if
+
+      if (i_b < i_a) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
 
       range = tab_range_t(self%x(i_a:i_b))
 

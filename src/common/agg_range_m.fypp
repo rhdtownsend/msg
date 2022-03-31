@@ -162,12 +162,13 @@ contains
 
    !****
 
-   subroutine subset(self, i_a, i_b, range)
+   subroutine subset(self, i_a, i_b, range, stat)
 
       class(agg_range_t), intent(in)           :: self
       integer, intent(in)                      :: i_a
       integer, intent(in)                      :: i_b
       class(range_t), allocatable, intent(out) :: range
+      integer, intent(out), optional           :: stat
 
       integer                         :: j_a
       integer                         :: j_b
@@ -180,13 +181,40 @@ contains
 
       ! Subset the range
 
+      if (i_a < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_RANGE_LO
+            return
+         else
+            @:ABORT('out of bounds (lo) range')
+         end if
+      end if
+
+      if (i_b > self%i_bdy(self%n_ranges+1)-1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_RANGE_HI
+            return
+         else
+            @:ABORT('out of bounds (hi) range')
+         end if
+      end if
+
+      if (i_b < i_a) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
       ! First determine where in ranges i_a and i_b are located
 
       call locate(self%i_bdy, i_a, j_a)
       call locate(self%i_bdy, i_b, j_b)
 
-      @:ASSERT(i_a >= 1,'out-of-bounds')
-      @:ASSERT(i_b <= self%n_ranges,'out-of-bounds')
+      @:ASSERT(j_a >= 1,'out-of-bounds')
+      @:ASSERT(j_b <= self%n_ranges,'out-of-bounds')
 
       ! Create the subset
 
