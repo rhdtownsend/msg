@@ -50,7 +50,7 @@ module specgrid_m
    contains
       private
       procedure, public :: inquire
-      procedure, public :: conf_cache
+      procedure, public :: config
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -144,18 +144,19 @@ contains
 
    !****
 
-   !****
-
-   subroutine conf_cache(self, limit)
+   subroutine config(self, cache_limit, cache_lam_min, cache_lam_max, stat)
       
       class(specgrid_t), intent(inout) :: self
-      integer, intent(in), optional    :: limit
+      integer, intent(in), optional    :: cache_limit
+      real(RD), intent(in), optional   :: cache_lam_min
+      real(RD), intent(in), optional   :: cache_lam_max
+      integer, intent(out), optional   :: stat
 
-      ! Configure spectable cache parameters
+      ! Configure parameters
 
       select type(spectable => self%spectable)
       type is(hdf5_spectable_t)
-         call spectable%conf_cache(limit)
+         call spectable%config(cache_limit=cache_limit, cache_lam_min=cache_lam_min, cache_lam_max=cache_lam_max, stat=stat)
       class default
          @:ABORT('invalid type')
       end select
@@ -164,7 +165,7 @@ contains
 
       return
 
-   end subroutine conf_cache
+   end subroutine config
 
    !****
 
@@ -276,12 +277,11 @@ contains
 
    !****
 
-   subroutine read(self, hdf5io, stat, cache_limit)
+   subroutine read(self, hdf5io, stat)
 
       class(specgrid_t), intent(out) :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
-      integer, intent(in), optional  :: cache_limit
 
       character(TYPE_LEN)    :: type
       type(hdf5io_t)         :: hdf5io_spectable
