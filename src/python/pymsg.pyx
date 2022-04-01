@@ -29,12 +29,13 @@ cdef extern from "cmsg.h":
 
     # SpecGrid interface
 
-    void load_SpecGrid(const char *specgrid_filename, void **specgrid, int *stat,
-                       int *cache_limit)
+    void load_SpecGrid(const char *specgrid_filename, void **specgrid, int *stat)
     void unload_SpecGrid(void *specgrid)
     void inquire_SpecGrid(void *specgrid, double *lam_min, double *lam_max,
                           int shape[], int *rank, double axis_min[],
                           double axis_max[])
+    void config_SpecGrid(void *specgrid, double *cache_lam_min,
+                         double *cache_lam_max, int *cache_limit, int *stat)
     void get_axis_label_SpecGrid(void *specgrid, int i, char *axis_label)
     void interp_intensity_SpecGrid(void *specgrid, double *vx, double mu,
                                    int n, double lam[], double I[],
@@ -111,8 +112,11 @@ cdef class SpecGrid:
     """dict: Atmospheric parameter axis maxima."""
     
     cdef int[:] _shape
+    cdef double _cache_lam_min
+    cdef double _cache_lam_max
+    cdef int _cache_limit
     
-    def __init__(self, str filename, int cache_limit=-1):
+    def __init__(self, str filename):
         """SpecGrid constructor.
 
         Args:
@@ -130,11 +134,7 @@ cdef class SpecGrid:
         cdef double[:] axis_min_vals
         cdef double[:] axis_max_vals
 
-        if cache_limit >= 0:
-            load_SpecGrid(filename.encode('ascii'), &self.specgrid, &stat, &cache_limit)
-        else:
-            load_SpecGrid(filename.encode('ascii'), &self.specgrid, &stat, NULL)
-
+        load_SpecGrid(filename.encode('ascii'), &self.specgrid, &stat)
         if stat != STAT_OK:
             handle_error(stat)
 
@@ -157,6 +157,10 @@ cdef class SpecGrid:
 
         self.axis_min = dict(zip(self.axis_labels, axis_min_vals))
         self.axis_max = dict(zip(self.axis_labels, axis_max_vals))
+
+        self.cache_lam_min = self.lam_min
+        self.cache_lam_max = self.lam_max
+        self.cache_limit = 0
 
         
     def __dealloc__(self):
@@ -183,6 +187,42 @@ cdef class SpecGrid:
         return dict(zip(self.axis_labels, self._shape))
 
     
+    @property
+    def cache_lam_min(self):
+        return self._cache_lam_min
+    @cache_lam_min.setter
+    def cache_lam_min(self, double cache_lam_min):
+        cdef int stat
+        config_SpecGrid(self.specgrid, &cache_lam_min, NULL, NULL, &stat)
+        if stat != STAT_OK:
+            handle_error(stat)
+        self._cache_lam_min = cache_lam_min
+
+        
+    @property
+    def cache_lam_max(self):
+        return self._cache_lam_max
+    @cache_lam_max.setter
+    def cache_lam_max(self, double cache_lam_max):
+        cdef int stat
+        config_SpecGrid(self.specgrid, NULL, &cache_lam_max, NULL, &stat)
+        if stat != STAT_OK:
+            handle_error(stat)
+        self._cache_lam_max = cache_lam_max
+
+
+    @property
+    def cache_limit(self):
+        return self._cache_limit
+    @cache_limit.setter
+    def cache_limit(self, int cache_limit):
+        cdef int stat
+        config_SpecGrid(self.specgrid, NULL, NULL, &cache_limit, &stat)
+        if stat != STAT_OK:
+            handle_error(stat)
+        self._cache_limit = cache_limit
+        
+
     def intensity(self, dict dx, double mu, double[:] lam,
                   dict deriv=None):
         r"""Evaluate the spectroscopic intensity.

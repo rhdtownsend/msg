@@ -21,10 +21,11 @@
 
 typedef void *SpecGrid;
 
-void load_SpecGrid(const char *specgrid_file_name, SpecGrid *specgrid, int *stat, int *cache_limit);
+void load_SpecGrid(const char *specgrid_file_name, SpecGrid *specgrid, int *stat);
 void unload_SpecGrid(SpecGrid specgrid);
 
 void inquire_SpecGrid(SpecGrid specgrid, double *lam_min, double *lam_max, int shape[], int *rank, double axis_min[], double axis_max[]);
+void config_SpecGrid(SpecGrid specgrid, double *cache_lam_min, double *cache_lam_max, int *cache_limit, int *stat);
 
 void get_axis_label_SpecGrid(SpecGrid specgrid, int i, char *axis_label);
 

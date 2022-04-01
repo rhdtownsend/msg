@@ -54,12 +54,11 @@ module fmsg_m
 
 contains
 
-   subroutine load_specgrid(specgrid_file_name, specgrid, stat, cache_limit)
+   subroutine load_specgrid(specgrid_file_name, specgrid, stat)
 
       character(*), intent(in)       :: specgrid_file_name
       type(specgrid_t), intent(out)  :: specgrid
       integer, intent(out), optional :: stat
-      integer, intent(in), optional  :: cache_limit
 
       type(hdf5io_t) :: hdf5io
 
@@ -75,8 +74,6 @@ contains
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
-
-      call specgrid%conf_cache(limit=cache_limit)
 
       ! Finish
 
@@ -137,10 +134,12 @@ contains
          if (stat /= STAT_OK) return
       endif
 
-      call load_specgrid(specgrid_file_name, specgrid, stat, cache_limit=0)
+      call load_specgrid(specgrid_file_name, specgrid, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
+
+      call specgrid%config(cache_limit=0)
 
       call specgrid%filter(passband, photgrid, stat)
 

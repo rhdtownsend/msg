@@ -44,6 +44,7 @@ module cmsg_m
       public :: interp_D_moment_${name}$
       public :: interp_flux_${name}$
    #:endfor
+   public :: config_specgrid   
    public :: load_photgrid_from_specgrid
 
    public :: STAT_OK
@@ -62,12 +63,11 @@ module cmsg_m
 
 contains
 
-   subroutine load_specgrid(specgrid_file_name, specgrid_ptr, stat, cache_limit) bind(C, name='load_SpecGrid')
+   subroutine load_specgrid(specgrid_file_name, specgrid_ptr, stat) bind(C, name='load_SpecGrid')
 
       character(C_CHAR)        :: specgrid_file_name(*)
       type(C_PTR)              :: specgrid_ptr
       integer(C_INT), optional :: stat
-      integer(C_INT), optional :: cache_limit
 
       type(hdf5io_t)            :: hdf5io
       type(specgrid_t), pointer :: specgrid
@@ -87,9 +87,7 @@ contains
          return
       endif
  
-      call specgrid%conf_cache(limit=cache_limit)
-
-     ! Set up the C pointer
+      ! Set up the C pointer
 
       specgrid_ptr = C_LOC(specgrid)
 
@@ -174,7 +172,7 @@ contains
          if (stat /= STAT_OK) return
       end if
  
-      call specgrid%conf_cache(limit=0)
+      call specgrid%config(cache_limit=0)
 
       allocate(photgrid)
       call specgrid%filter(passband, photgrid, stat)
@@ -290,6 +288,34 @@ contains
 
    end subroutine inquire_specgrid
 
+   !****
+
+   subroutine config_specgrid(specgrid_ptr, cache_lam_min, cache_lam_max, &
+                              cache_limit, stat) bind(C, name='config_SpecGrid')
+
+      type(C_PTR), value       :: specgrid_ptr
+      real(C_DOUBLE), optional :: cache_lam_min
+      real(C_DOUBLE), optional :: cache_lam_max
+      integer(C_INT), optional :: cache_limit
+      integer(C_INT), optional :: stat
+
+      type(specgrid_t), pointer :: specgrid
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Configure parameters
+
+      call specgrid%config(cache_lam_min=cache_lam_min, cache_lam_max=cache_lam_max, &
+                           cache_limit=cache_limit, stat=stat)
+
+      ! Finish
+
+      return
+
+   end subroutine config_specgrid
+   
    !****
 
    subroutine inquire_photgrid(photgrid_ptr, shape_ptr, rank, &
