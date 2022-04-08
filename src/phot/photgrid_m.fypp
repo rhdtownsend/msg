@@ -1,5 +1,5 @@
 ! Module  : photgrid_m
-! Purpose : define photgrid_t type, for representing photometric intensity
+! Purpose : Define photgrid_t type, for representing photometric intensity
 !           grids
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
@@ -24,11 +24,12 @@ module photgrid_m
    
    use forum_m
 
+   use axis_m
    use ngrid_m
+   use photcache_m
    use photint_m
-   use phottable_m
-   use hdf5_phottable_m
-   use spectable_m
+   use photsource_m
+   use hdf5_photsource_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -41,13 +42,16 @@ module photgrid_m
 
    type :: photgrid_t
       private
-      class(phottable_t), allocatable :: phottable
-      type(ngrid_t)                   :: ngrid
-      integer, allocatable            :: shape(:)
-      integer                         :: rank
+      class(photsource_t), allocatable :: photsource
+      type(photcache_t)                :: photcache
+      type(ngrid_t)                    :: ngrid
    contains
       private
-      procedure, public :: inquire
+      procedure, public :: get_rank
+      procedure, public :: get_axis
+      procedure, public :: get_cache_count
+      procedure, public :: get_cache_limit
+      procedure, public :: set_cache_limit
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -71,34 +75,26 @@ module photgrid_m
    
 contains
 
-   function photgrid_t_(phottable, ngrid) result(photgrid)
+   function photgrid_t_(photsource, ngrid) result (photgrid)
 
-      class(phottable_t), intent(in) :: phottable
-      type(ngrid_t), intent(in)      :: ngrid
-      type(photgrid_t)               :: photgrid
+      class(photsource_t), intent(in) :: photsource
+      type(ngrid_t), intent(in)       :: ngrid
+      type(photgrid_t)                :: photgrid
 
-      integer              :: n
-      integer              :: n_con
-      integer              :: rank
-      integer, allocatable :: shape(:)
+      integer :: n
+      integer :: n_con
 
       ! Construct photgrid from the supplied data
 
-      call phottable%inquire(n=n)
-
-      call ngrid%inquire(n_con=n_con, rank=rank)
+      call photsource%get_n(n)
+      call ngrid%get_n_con(n_con)
 
       @:CHECK_BOUNDS(n, n_con)
 
-      allocate(shape(rank))
+      photgrid%photsource = photsource
+      photgrid%photcache = photcache_t(n)
 
-      call ngrid%inquire(shape=shape)
-
-      photgrid%phottable = phottable
       photgrid%ngrid = ngrid
-
-      photgrid%shape = shape
-      photgrid%rank = rank
 
       ! Finish
 
@@ -108,32 +104,91 @@ contains
 
    !****
 
-   subroutine inquire(self, shape, rank, axis_min, axis_max, axis_labels)
+   subroutine get_rank(self, rank)
 
-      class(photgrid_t), intent(in)       :: self
-      integer, intent(out), optional      :: shape(:)
-      integer, intent(out), optional      :: rank
-      real(RD), intent(out), optional     :: axis_min(:)
-      real(RD), intent(out), optional     :: axis_max(:)
-      character(*), intent(out), optional :: axis_labels(:)
+      class(photgrid_t), intent(in) :: self
+      integer, intent(out)          :: rank
 
-      if (PRESENT(shape)) then
-         @:CHECK_BOUNDS(SIZE(shape), self%rank)
-      end if
+      ! Get the rank
 
-      ! Inquire metadata
-
-      if (PRESENT(shape)) shape = self%shape
-      if (PRESENT(rank)) rank = self%rank
-
-      call self%ngrid%inquire(axis_min=axis_min, axis_max=axis_max, axis_labels=axis_labels)
+      call self%ngrid%get_rank(rank)
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_rank
 
+   !****
+
+   subroutine get_axis(self, i, axis)
+
+      class(photgrid_t), intent(in) :: self
+      integer, intent(in)           :: i
+      type(axis_t), intent(out)     :: axis
+
+      ! Get the i'th axis
+
+      call self%ngrid%get_axis(i, axis)
+
+      ! Finish
+
+      return
+
+   end subroutine get_axis
+
+   !****
+
+   subroutine get_cache_count(self, cache_count)
+
+      class(photgrid_t), intent(in) :: self
+      integer, intent(out)          :: cache_count
+
+      ! Get the cache occupancy
+
+      call self%photcache%get_count(cache_count)
+
+      ! Finish
+
+      return
+
+   end subroutine get_cache_count
+
+   !****
+
+   subroutine get_cache_limit(self, cache_limit)
+
+      class(photgrid_t), intent(in) :: self
+      integer, intent(out)          :: cache_limit
+
+      ! Get the cache occupancy limit
+
+      call self%photcache%get_limit(cache_limit)
+
+      ! Finish
+
+      return
+
+   end subroutine get_cache_limit
+
+   !****
+
+   subroutine set_cache_limit(self, cache_limit, stat)
+
+      class(photgrid_t), intent(inout) :: self
+      integer, intent(in), optional    :: cache_limit
+      integer, intent(out), optional   :: stat
+
+      ! Set the cache occupancy limit
+
+      call self%photcache%set_limit(cache_limit, stat)
+
+      ! Finish
+
+      return
+
+   end subroutine set_cache_limit
+ 
    !****
 
    #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
@@ -142,16 +197,16 @@ contains
 
       subroutine interp_${name}$(self, x_vec, ${arg_var}$, res, stat, deriv_vec)
 
-         class(photgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: x_vec(:)
-         ${arg_type}$, intent(in)         :: ${arg_var}$
-         real(RD), intent(out)            :: res
-         integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: deriv_vec(:)
+         class(photgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:)
+         ${arg_type}$, intent(in)                 :: ${arg_var}$
+         real(RD), intent(out)                    :: res
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
 
          ! Interpolate ${name}$
 
-         call self%ngrid%interp(proc_, x_vec, res, stat, deriv_vec)
+         call self%ngrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
 
@@ -159,23 +214,41 @@ contains
 
       contains
 
-         subroutine proc_(i_vec, f, stat)
+         subroutine data_proc_(i_vec, f, stat)
 
             integer, intent(in)            :: i_vec(:)
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer :: i_lin
-            integer :: i_con
-            
+            integer                       :: i_lin
+            integer                       :: i_con
+            class(photint_t), allocatable :: photint
+
             i_lin = self%ngrid%lin_from_vec(i_vec)
             i_con = self%ngrid%con_from_lin(i_lin)
 
-            call self%phottable%interp_${name}$(i_con, ${arg_var}$, f, stat)
+            call self%photcache%fetch(i_con, fetch_proc_, photint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call photint%interp_${name}$(${arg_var}$, f, stat)
 
             return
 
-         end subroutine proc_
+         end subroutine data_proc_
+
+         subroutine fetch_proc_(i, photint, stat)
+
+            integer, intent(in)                        :: i
+            class(photint_t), allocatable, intent(out) :: photint
+            integer, intent(out), optional             :: stat
+
+            call self%photsource%fetch(i, photint, stat)
+
+            return
+
+         end subroutine fetch_proc_
 
       end subroutine interp_${name}$
 
@@ -187,57 +260,81 @@ contains
 
       subroutine interp_${name}$(self, x_vec, res, stat, deriv_vec)
 
-         class(photgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: x_vec(:)
-         real(RD), intent(out)            :: res
-         integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: deriv_vec(:)
+         class(photgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:)
+         real(RD), intent(out)                    :: res
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
 
          ! Interpolate the ${name}$
 
-         call self%ngrid%interp(proc_, x_vec, res, stat, deriv_vec)
+         call self%ngrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
 
       contains
 
-         subroutine proc_(i_vec, f, stat)
+         subroutine data_proc_(i_vec, f, stat)
 
             integer, intent(in)            :: i_vec(:)
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer :: i_lin
-            integer :: i_con
+            integer                       :: i_lin
+            integer                       :: i_con
+            class(photint_t), allocatable :: photint
 
             i_lin = self%ngrid%lin_from_vec(i_vec)
             i_con = self%ngrid%con_from_lin(i_lin)
 
-            call self%phottable%interp_${name}$(i_con, f, stat)
+            call self%photcache%fetch(i_con, fetch_proc_, photint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call photint%interp_${name}$(f, stat)
 
             return
 
-         end subroutine proc_
+         end subroutine data_proc_
+ 
+        subroutine fetch_proc_(i, photint, stat)
+
+            integer, intent(in)                         :: i
+            class(photint_t), allocatable, intent(out)  :: photint
+            integer, intent(out), optional              :: stat
+
+            call self%photsource%fetch(i, photint, stat)
+
+            return
+
+         end subroutine fetch_proc_
 
       end subroutine interp_${name}$
 
    #:endfor
 
    !****
-      
+
    subroutine read(self, hdf5io, stat)
 
       class(photgrid_t), intent(out) :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)    :: type
-      type(hdf5io_t)         :: hdf5io_phottable
-      type(hdf5_phottable_t) :: phottable
-      type(hdf5io_t)         :: hdf5io_ngrid
-      type(ngrid_t)          :: ngrid
+      character(TYPE_LEN)       :: type
+      type(hdf5io_t)            :: hdf5io_photsource
+      integer                   :: n
+      character(:), allocatable :: file_name
+      character(:), allocatable :: group_name
+      character(:), allocatable :: file_names(:)
+      character(:), allocatable :: group_names(:)
+      integer                   :: i
+      type(hdf5_photsource_t)   :: photsource
+      type(hdf5io_t)            :: hdf5io_ngrid
+      type(ngrid_t)             :: ngrid
 
-      ! Read the photgrid_t
+      ! Read the photgrid
 
       call hdf5io%read_attr('TYPE', type)
       if (type /= 'photgrid_t') then
@@ -249,12 +346,23 @@ contains
          endif
       endif
 
-      hdf5io_phottable = hdf5io_t(hdf5io, 'phottable')
-      call phottable%read(hdf5io_phottable, stat)
-      call hdf5io_phottable%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
+      hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
+      call hdf5io_photsource%read_attr('n', n)
+      call hdf5io_photsource%final()
+
+      call hdf5io%inquire(file_name=file_name, group_name=group_name)
+
+      allocate(character(LEN(file_name))::file_names(n))
+      allocate(character(LEN(group_name)+24)::group_names(n))
+
+      name_loop : do i = 1, n
+
+         file_names(i) = file_name
+         group_names(i) = group_name//'/photsource/'//photint_group_name_(i)
+
+      end do name_loop
+      
+      photsource = hdf5_photsource_t(file_names, group_names)
 
       hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
       call ngrid%read(hdf5io_ngrid, stat)
@@ -265,12 +373,14 @@ contains
 
       select type(self)
       type is(photgrid_t)
-         self = photgrid_t(phottable, ngrid)
+         self = photgrid_t(photsource, ngrid)
       class default
          @:ABORT('invalid type')
       end select
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -284,23 +394,44 @@ contains
       type(hdf5io_t), intent(inout)    :: hdf5io
       integer, intent(out), optional   :: stat
 
-      type(hdf5io_t) :: hdf5io_phottable
-      type(hdf5io_t) :: hdf5io_ngrid
+      integer                       :: n
+      type(hdf5io_t)                :: hdf5io_photsource
+      integer                       :: i
+      class(photint_t), allocatable :: photint
+      type(hdf5io_t)                :: hdf5io_photint
+      type(hdf5io_t)                :: hdf5io_ngrid
 
-      ! Write the photgrid_t
+      ! Write the photgrid
 
       call hdf5io%write_attr('TYPE', 'photgrid_t')
 
-      call hdf5io%write_attr('shape', self%shape)
-      call hdf5io%write_attr('rank', self%rank)
+      call self%ngrid%get_n_con(n)
 
-      hdf5io_phottable = hdf5io_t(hdf5io, 'phottable')
-      call self%phottable%write(hdf5io_phottable, stat)
-      call hdf5io_phottable%final()
+      hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
+
+      call hdf5io_photsource%write_attr('n', n)
+
+      write_loop: do i = 1, n
+
+         call self%photcache%fetch(i, fetch_proc_, photint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+         hdf5io_photint = hdf5io_t(hdf5io_photsource, photint_group_name_(i))
+         call photint%write(hdf5io_photint, stat)
+         call hdf5io_photint%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+      end do write_loop
+
+      call hdf5io_photsource%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
-      
+
       hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
       call self%ngrid%write(hdf5io_ngrid, stat)
       call hdf5io_ngrid%final()
@@ -310,8 +441,36 @@ contains
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
+   contains
+
+      subroutine fetch_proc_(i, photint, stat)
+
+         integer, intent(in)                        :: i
+         class(photint_t), allocatable, intent(out) :: photint
+         integer, intent(out), optional             :: stat
+
+         call self%photsource%fetch(i, photint, stat)
+
+         return
+
+      end subroutine fetch_proc_
+
    end subroutine write
+
+   !****
+
+   function photint_group_name_(i) result(name)
+
+      integer, intent(in) :: i
+      character(256)      :: name
+
+      write(name, 100) i
+100   format('photints[',I0,']')
+      
+   end function photint_group_name_
 
 end module photgrid_m

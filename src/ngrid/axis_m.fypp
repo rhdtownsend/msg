@@ -44,7 +44,10 @@ module axis_m
       character(LABEL_LEN)  :: label
    contains
       private
-      procedure, public :: inquire
+      procedure, public :: get_n
+      procedure, public :: get_x_min
+      procedure, public :: get_x_max
+      procedure, public :: get_label
       procedure, public :: fetch
       procedure, public :: locate
       procedure, public :: read
@@ -96,28 +99,71 @@ contains
 
    !****
 
-   subroutine inquire(self, n, min, max, label)
+   subroutine get_n(self, n)
 
-      class(axis_t), intent(in)           :: self
-      integer, intent(out), optional      :: n
-      real(RD), intent(out), optional     :: min
-      real(RD), intent(out), optional     :: max
-      character(*), intent(out), optional :: label
+      class(axis_t), intent(in) :: self
+      integer, intent(out)      :: n
 
-      ! Inquire metadata
- 
-      if (PRESENT(n)) n = self%n
+      ! Get the axis length
 
-      if (PRESENT(min)) min = self%x(1)
-      if (PRESENT(max)) max = self%x(self%n)
-
-      if (PRESENT(label)) label = self%label
+      n = self%n
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_n
+
+   !****
+
+   subroutine get_x_min(self, x_min)
+
+      class(axis_t), intent(in) :: self
+      real(RD), intent(out)     :: x_min
+
+      ! Get the axis minimum
+
+      x_min = self%x(1)
+
+      ! Finish
+
+      return
+
+   end subroutine get_x_min
+
+   !****
+
+   subroutine get_x_max(self, x_max)
+
+      class(axis_t), intent(in) :: self
+      real(RD), intent(out)     :: x_max
+
+      ! Get the axis maximum
+
+      x_max = self%x(self%n)
+
+      ! Finish
+
+      return
+
+   end subroutine get_x_max
+
+   !****
+
+   subroutine get_label(self, label)
+
+      class(axis_t), intent(in) :: self
+      character(*), intent(out) :: label
+
+      ! Get the axis label
+
+      label = self%label
+
+      ! Finish
+
+      return
+
+   end subroutine get_label
 
    !****
 

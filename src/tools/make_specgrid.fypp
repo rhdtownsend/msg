@@ -1,5 +1,5 @@
 ! Module   : make_specgrid
-! Purpose  : create specgrid files from specint files
+! Purpose  : Create specgrid files from specint files
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -248,7 +248,7 @@ contains
       allocate(shape(rank))
      
       do j = 1, rank
-         call axes(j)%inquire(n=shape(j))
+         call axes(j)%get_n(shape(j))
       end do
 
       n_lin = PRODUCT(shape)
@@ -298,7 +298,7 @@ contains
       integer                          :: i_vec(SIZE(axes))
       integer                          :: i_lin
       integer                          :: i_con
-      type(hdf5_spectable_t)           :: spectable
+      type(hdf5_specsource_t)          :: specsource
       
       ! Create ngrid with degenerate (length-1) dimensions stripped
       ! out
@@ -307,7 +307,7 @@ contains
       allocate(shape(rank))
      
       do j = 1, rank
-         call axes(j)%inquire(n=shape(j))
+         call axes(j)%get_n(shape(j))
       end do
 
       ngrid = ngrid_t(PACK(axes, shape > 1), mask)
@@ -343,14 +343,13 @@ contains
       allocate(group_names(n_con))
       group_names = '/'
 
-      ! Create spectable
+      ! Create specsource
 
-      spectable = hdf5_spectable_t(file_names, group_names, &
-                                   MAXVAL(nodes%lam_min), MINVAL(nodes%lam_max))
+      specsource = hdf5_specsource_t(file_names, group_names)
 
       ! Create specgrid
 
-      specgrid = specgrid_t(spectable, ngrid)
+      specgrid = specgrid_t(specsource, ngrid, MAXVAL(nodes%lam_min), MINVAL(nodes%lam_max))
 
       ! Finish
 

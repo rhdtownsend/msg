@@ -1,5 +1,5 @@
-! Module  : lin_range_m
-! Purpose : define lin_range_t type, representing a linearly distributed
+! Module  : tab_range_m
+! Purpose : define tab_range_t type, representing a tabulated
 !           range
 !
 ! Copyright 2022 Rich Townsend & The MSG Team
@@ -18,7 +18,7 @@
 
 #:include 'forum.inc'
 
-module lin_range_m
+module tab_range_m
 
    ! Uses
 
@@ -35,113 +35,138 @@ module lin_range_m
 
    ! Derived-type definitions
 
-   type, extends(range_t) :: lin_range_t
+   type, extends(range_t) :: tab_range_t
       private
-      real(RD) :: x_0
-      real(RD) :: dx
-      integer  :: n
+      real(RD), allocatable :: x(:)
+      integer               :: n
    contains
       private
-      procedure, public :: inquire
-      procedure, public :: expand
+      procedure, public :: get_n
+      procedure, public :: get_x_min
+      procedure, public :: get_x_max
+      procedure, public :: unpack
       procedure, public :: subset
       procedure, public :: read
       procedure, public :: write
-   end type lin_range_t
+   end type tab_range_t
 
    ! Interfaces
 
-   interface lin_range_t
-      module procedure lin_range_t_
-   end interface lin_range_t
+   interface tab_range_t
+      module procedure tab_range_t_
+   end interface tab_range_t
 
    ! Access specifiers
 
    private
 
-   public :: lin_range_t
-   public :: read
-   public :: write
+   public :: tab_range_t
 
 contains
 
-   function lin_range_t_(x_0, dx, n) result(range)
+   function tab_range_t_(x) result (range)
 
-      real(RD), intent(in) :: x_0
-      real(RD), intent(in) :: dx
-      integer, intent(in)  :: n
-      type(lin_range_t)    :: range
+      real(RD), intent(in) :: x(:)
+      type(tab_range_t)    :: range
+
+      integer :: n
 
       ! Construct range from the supplied data
 
+      n = SIZE(x)
+
       @:ASSERT(n >= 1,'insufficient data')
+      @:ASSERT_DEBUG(ALL(x(2:) > x(:n-1)),'non-monotonic data')
 
-      range%x_0 = x_0
-      range%dx = dx
-
+      range%x = x
       range%n = n
 
       ! Finish
 
       return
 
-   end function lin_range_t_
+   end function tab_range_t_
 
    !****
 
-   subroutine inquire(self, n, min, max)
+   subroutine get_n(self, n)
 
-      class(lin_range_t), intent(in)  :: self
-      integer, intent(out), optional  :: n
-      real(RD), intent(out), optional :: min
-      real(RD), intent(out), optional :: max
+      class(tab_range_t), intent(in) :: self
+      integer, intent(out)           :: n
 
-      ! Inquire metadata
+      ! Get the size
 
-      if (PRESENT(n)) n = self%n
-
-      if (PRESENT(min)) min = self%x_0
-      if (PRESENT(max)) max = self%x_0 + self%dx*(self%n-1)
+      n = self%n
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_n
 
    !****
 
-   subroutine expand(self, x)
+   subroutine get_x_min(self, x_min)
 
-      class(lin_range_t), intent(in) :: self
+      class(tab_range_t), intent(in) :: self
+      real(RD), intent(out)          :: x_min
+
+      ! Get the x-minimum
+
+      x_min = self%x(1)
+
+      ! Finish
+
+      return
+
+   end subroutine get_x_min
+
+   !****
+
+   subroutine get_x_max(self, x_max)
+
+      class(tab_range_t), intent(in) :: self
+      real(RD), intent(out)          :: x_max
+
+      ! Get the x-maximum
+
+      x_max = self%x(self%n)
+
+      ! Finish
+
+      return
+
+   end subroutine get_x_max
+
+   !****
+
+   subroutine unpack(self, x)
+
+      class(tab_range_t), intent(in) :: self
       real(RD), intent(out)          :: x(:)
-
-      integer :: i
 
       @:CHECK_BOUNDS(SIZE(x), self%n)
 
-      ! Expand the range into the array
+      ! Unpack the range into the array
 
-      do i = 1, self%n
-         x(i) = self%x_0 + self%dx*(i-1)
-      end do
+      x = self%x
 
       ! Finish
 
       return
 
-   end subroutine expand
+   end subroutine unpack
 
    !****
-
+    
    subroutine subset(self, i_a, i_b, range, stat)
 
-      class(lin_range_t), intent(in)           :: self
+      class(tab_range_t), intent(in)           :: self
       integer, intent(in)                      :: i_a
       integer, intent(in)                      :: i_b
       class(range_t), allocatable, intent(out) :: range
       integer, intent(out), optional           :: stat
-      
+
       ! Subset the range
 
       if (i_a < 1) then
@@ -171,7 +196,7 @@ contains
          end if
       end if
 
-      range = lin_range_t(self%x_0+self%dx*(i_a-1), self%dx, i_b-i_a+1)
+      range = tab_range_t(self%x(i_a:i_b))
 
       ! Finish
 
@@ -183,34 +208,30 @@ contains
 
    subroutine read(self, hdf5io, stat)
 
-      class(lin_range_t), intent(out) :: self
+      class(tab_range_t), intent(out) :: self
       type(hdf5io_t), intent(inout)   :: hdf5io
-      integer, intent(out), optional  :: stat
+      integer, intent(out), optional :: stat
 
-      character(TYPE_LEN) :: type
-      real(RD)            :: x_0
-      real(RD)            :: dx
-      integer             :: n
+      character(TYPE_LEN)   :: type
+      real(RD), allocatable :: x(:)
 
       ! Read the range
 
       call hdf5io%read_attr('TYPE', type)
-      if (type /= 'lin_range_t') then
+      if (type /= 'tab_range_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
             return
          else
             @:ABORT('invalid type')
-         end if
-      end if
+         endif
+      endif
 
-      call hdf5io%read_dset('x_0', x_0)
-      call hdf5io%read_dset('dx', dx)
-      call hdf5io%read_dset('n', n)
-  
+      call hdf5io%alloc_read_dset('x', x)
+
       select type(self)
-      type is (lin_range_t)
-         self = lin_range_t(x_0, dx, n)
+      type is (tab_range_t)
+         self = tab_range_t(x)
       class default
          @:ABORT('invalid type')
       end select
@@ -227,18 +248,16 @@ contains
 
    subroutine write(self, hdf5io, stat)
 
-      class(lin_range_t), intent(in) :: self
+      class(tab_range_t), intent(in) :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
-      ! Write the range
+      ! Write range
 
-      call hdf5io%write_attr('TYPE', 'lin_range_t')
+      call hdf5io%write_attr('TYPE', 'tab_range_t')
       
-      call hdf5io%write_dset('x_0', self%x_0)
-      call hdf5io%write_dset('dx', self%dx)
-      call hdf5io%write_dset('n', self%n)
-     
+      call hdf5io%write_dset('x', self%x)
+
       ! Finish
 
       if (PRESENT(stat)) stat = STAT_OK
@@ -247,4 +266,4 @@ contains
 
    end subroutine write
 
-end module lin_range_m
+end module tab_range_m

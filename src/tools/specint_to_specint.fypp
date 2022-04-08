@@ -1,5 +1,5 @@
 ! Module   : specint_to_photint
-! Purpose  : create a specint file by rebinning / subsetting an existing
+! Purpose  : Create a specint file by rebinning / subsetting an existing
 !            specint file
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
@@ -48,7 +48,8 @@ program specint_to_specint
 
    integer                           :: status
    type(hdf5io_t)                    :: hdf5io
-   type(specint_t)                   :: specint_in
+   class(specint_t), allocatable     :: specint_in
+   character(TYPE_LEN)               :: type
    type(hdf5io_t)                    :: hdf5io_labels
    character(LABEL_LEN), allocatable :: labels(:)
    integer                           :: n_labels
@@ -57,7 +58,7 @@ program specint_to_specint
    real(RD)                          :: lam_min_in
    real(RD)                          :: lam_max_in
    class(range_t), allocatable       :: range
-   type(specint_t)                   :: specint
+   class(specint_t), allocatable     :: specint
 
    ! Read command-line arguments
 
@@ -85,6 +86,9 @@ program specint_to_specint
 
    hdf5io = hdf5io_t(specint_file_name_in, OPEN_FILE_RO)
 
+   call hdf5io%read_attr('TYPE', type)
+   allocate(specint_in, MOLD=specint_t(type))
+
    call specint_in%read(hdf5io)
 
    hdf5io_labels = hdf5io_t(hdf5io, 'labels')
@@ -103,15 +107,14 @@ program specint_to_specint
 
    ! Check/set wavelength bounds
 
-   call specint_in%inquire(lam_min=lam_min_in, lam_max=lam_max_in)
+   call specint_in%get_lam_min(lam_min_in)
+   call specint_in%get_lam_max(lam_max_in)
 
    if (lam_min_set) then
       @:ASSERT(lam_min >= lam_min_in, 'lam_min must be >= lam_min_in')
    else
       lam_min = lam_min_in
    endif
-
-   call specint_in%inquire(lam_min=lam_min, lam_max=lam_max)
 
    if (lam_min_set) then
       @:ASSERT(lam_min >= lam_min_in, 'lam_min must be >= lam_min_in')
@@ -140,13 +143,13 @@ program specint_to_specint
       ! Create the spectrum by interpolation onto the new wavelength
       ! axis
 
-      specint = specint_t(specint_in, range)
+      call specint_in%rebin(range, specint)
 
    else
 
       ! Create the spectrum by subsetting
 
-      specint = specint_t(specint_in, lam_min, lam_max)
+      call specint_in%subset(lam_min, lam_max, specint)
 
    endif
 

@@ -1,0 +1,143 @@
+! Module  : hdf5_photsource_m
+! Purpose : Define hdf5_photsource_t type, for representing a
+!           source of photint_t's stored in HDF5 files/groups
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module hdf5_photsource_m
+
+   ! Uses
+
+   use forum_m
+
+   use photint_m
+   use photsource_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(photsource_t) :: hdf5_photsource_t
+      private
+      character(:), allocatable :: file_names(:)
+      character(:), allocatable :: group_names(:)
+      integer                   :: n
+   contains
+      private
+      procedure, public :: get_n
+      procedure, public :: fetch
+   end type hdf5_photsource_t
+
+   ! Interfaces
+
+   interface hdf5_photsource_t
+      module procedure hdf5_photsource_t_
+   end interface hdf5_photsource_t
+
+   ! Access photifiers
+
+   private
+
+   public :: hdf5_photsource_t
+
+contains
+
+   function hdf5_photsource_t_(file_names, group_names) result(photsource)
+
+      character(*), intent(in) :: file_names(:)
+      character(*), intent(in) :: group_names(:)
+      type(hdf5_photsource_t)  :: photsource
+
+      @:CHECK_BOUNDS(SIZE(group_names), SIZE(file_names))
+
+      ! Construct photsource with a list of file and group names
+
+      photsource%file_names = file_names
+      photsource%group_names = group_names
+
+      photsource%n = SIZE(file_names)
+
+      ! Finish
+
+      return
+
+   end function hdf5_photsource_t_
+
+   !****
+
+   subroutine get_n(self, n)
+
+      class(hdf5_photsource_t), intent(in) :: self
+      integer, intent(out)                 :: n
+
+      ! Get n
+
+      n = self%n
+
+      ! Finish
+
+      return
+
+   end subroutine get_n
+
+   !****
+
+   subroutine fetch(self, i, photint, stat)
+
+      class(hdf5_photsource_t), intent(in)       :: self
+      integer, intent(in)                        :: i
+      class(photint_t), allocatable, intent(out) :: photint
+      integer, intent(out), optional             :: stat
+
+      type(hdf5io_t)      :: hdf5io
+      type(hdf5io_t)      :: hdf5io_photint
+      character(TYPE_LEN) :: type
+
+      ! Fetch the photint from the file
+
+      if (i < 0 .OR. i > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      hdf5io = hdf5io_t(self%file_names(i), OPEN_FILE_RO)
+      hdf5io_photint = hdf5io_t(hdf5io, self%group_names(i))
+
+      call hdf5io_photint%read_attr('TYPE', type)
+      allocate(photint, MOLD=photint_t(type))
+
+      call photint%read(hdf5io_photint, stat)
+
+      call hdf5io_photint%final()
+      call hdf5io%final()
+
+      ! Finish
+
+      return
+
+   end subroutine fetch
+
+end module hdf5_photsource_m

@@ -1,0 +1,63 @@
+! Module  : photsource_m
+! Purpose : Define photsource_t abstract type, for representing a source
+!           of photint_t's (via the abstract factory pattern)
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module photsource_m
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, abstract :: photsource_t
+   contains
+      private
+      procedure(get_n), deferred, public :: get_n
+      procedure(fetch), deferred, public :: fetch
+   end type photsource_t
+
+   ! Interfaces
+
+   abstract interface
+
+      subroutine get_n(self, n)
+         import photsource_t
+         class(photsource_t), intent(in) :: self
+         integer, intent(out)            :: n
+      end subroutine get_n
+
+      subroutine fetch(self, i, photint, stat)
+         use photint_m
+         import photsource_t
+         class(photsource_t), intent(in)            :: self
+         integer, intent(in)                        :: i
+         class(photint_t), allocatable, intent(out) :: photint
+         integer, intent(out), optional             :: stat
+      end subroutine fetch
+
+   end interface
+      
+   ! Access photifiers
+
+   private
+
+   public :: photsource_t
+
+end module photsource_m

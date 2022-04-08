@@ -1,0 +1,387 @@
+! Module  : cmsg_spec_m
+! Purpose : C public interface for MSG modules (phot portion)
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module cmsg_phot_m
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use cmsg_utils_m
+
+   use ISO_FORTRAN_ENV
+   use ISO_C_BINDING
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: load_photgrid
+   public :: unload_photgrid
+   public :: get_photgrid_rank
+   public :: get_photgrid_cache_count
+   public :: get_photgrid_cache_limit
+   public :: get_photgrid_axis_x_min
+   public :: get_photgrid_axis_x_max
+   public :: get_photgrid_axis_label
+   public :: set_photgrid_cache_limit
+   public :: interp_photgrid_intensity
+   public :: interp_photgrid_E_moment
+   public :: interp_photgrid_D_moment
+   public :: interp_photgrid_flux
+
+   ! Procedures
+
+contains
+
+   subroutine load_photgrid(photgrid_file_name, photgrid_ptr, stat) bind(C)
+
+      character(C_CHAR)        :: photgrid_file_name(*)
+      type(C_PTR)              :: photgrid_ptr
+      integer(C_INT), optional :: stat
+
+      type(hdf5io_t)            :: hdf5io
+      type(photgrid_t), pointer :: photgrid
+
+      ! Open the file
+
+      call open_file(photgrid_file_name, hdf5io, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Load the photgrid
+      
+      allocate(photgrid)
+
+      call photgrid%read(hdf5io, stat)
+      call hdf5io%final()
+      if (STAT /= STAT_OK) then
+         deallocate(photgrid)
+         return
+      endif
+ 
+      ! Set up the C pointer
+
+      photgrid_ptr = C_LOC(photgrid)
+
+      ! Finish
+
+      return
+
+   end subroutine load_photgrid
+
+   !****
+
+   subroutine load_photgrid_from_specgrid(specgrid_file_name, passband_file_name, &
+                                          photgrid_ptr, stat) bind(C)
+
+      character(C_CHAR)        :: specgrid_file_name(*)
+      character(C_CHAR)        :: passband_file_name(*)
+      type(C_PTR)              :: photgrid_ptr
+      integer(C_INT), optional :: stat
+
+      type(hdf5io_t)            :: hdf5io
+      type(passband_t)          :: passband
+      type(specgrid_t)          :: specgrid
+      type(photgrid_t), pointer :: photgrid
+
+      ! Load the photgrid from specgrid and passband files
+
+      call open_file(passband_file_name, hdf5io, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+      
+      call passband%read(hdf5io, stat)
+      call hdf5io%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call open_file(specgrid_file_name, hdf5io, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+      
+      call specgrid%read(hdf5io, stat)
+      call hdf5io%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+ 
+      call specgrid%set_cache_limit(0)
+
+      allocate(photgrid)
+      call specgrid%filter(passband, photgrid, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) then
+            deallocate(photgrid)
+            return
+         end if
+      end if
+
+      ! Set up the C pointer
+
+      photgrid_ptr = C_LOC(photgrid)
+
+      ! Finish
+
+      return
+      
+   end subroutine load_photgrid_from_specgrid
+
+   !****
+
+   subroutine unload_photgrid(photgrid_ptr) bind(C)
+
+      type(C_PTR), value :: photgrid_ptr
+
+      type(photgrid_t), pointer :: photgrid
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(photgrid_ptr, photgrid)
+
+      ! Deallocate the grid
+
+      if (ASSOCIATED(photgrid)) deallocate(photgrid)
+
+      ! Finish
+
+      return
+
+   end subroutine unload_photgrid
+
+   !****
+
+   #:for name, type in (('rank', 'integer(C_INT)'),          &
+                        ('cache_count', 'integer(C_INT)'),   &
+                        ('cache_limit', 'integer(C_INT)'))
+                        
+      subroutine get_photgrid_${name}$(photgrid_ptr, ${name}$) bind(C)
+
+         type(C_PTR), value :: photgrid_ptr
+         ${type}$           :: ${name}$
+
+         type(photgrid_t), pointer :: photgrid
+
+         ! Set up the Fortran pointer
+
+         call C_F_POINTER(photgrid_ptr, photgrid)
+
+         ! Get ${name}$
+
+         call photgrid%get_${name}$(${name}$)
+
+         ! Finish
+
+         return
+
+      end subroutine get_photgrid_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine get_photgrid_axis_x_min(photgrid_ptr, i, axis_x_min) bind(C)
+         
+      type(C_PTR), value    :: photgrid_ptr
+      integer(C_INT), value :: i
+      real(C_DOUBLE)        :: axis_x_min
+
+      type(photgrid_t), pointer :: photgrid
+      type(axis_t)              :: axis
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(photgrid_ptr, photgrid)
+
+      ! Get the axis minimum
+
+      call photgrid%get_axis(i, axis)
+
+      call axis%get_x_min(axis_x_min)
+
+      ! Finish
+
+      return
+
+   end subroutine get_photgrid_axis_x_min
+
+   !****
+
+   subroutine get_photgrid_axis_x_max(photgrid_ptr, i, axis_x_max) bind(C)
+         
+      type(C_PTR), value    :: photgrid_ptr
+      integer(C_INT), value :: i
+      real(C_DOUBLE)        :: axis_x_max
+
+      type(photgrid_t), pointer :: photgrid
+      type(axis_t)              :: axis
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(photgrid_ptr, photgrid)
+
+      ! Get the axis minimum
+
+      call photgrid%get_axis(i, axis)
+
+      call axis%get_x_max(axis_x_max)
+
+      ! Finish
+
+      return
+
+   end subroutine get_photgrid_axis_x_max
+
+   !****
+
+   subroutine get_photgrid_axis_label(photgrid_ptr, i, axis_label) bind(C)
+         
+      type(C_PTR), value    :: photgrid_ptr
+      integer(C_INT), value :: i
+      character(C_CHAR)     :: axis_label(*)
+
+      type(photgrid_t), pointer :: photgrid
+      integer                   :: rank
+      type(axis_t)              :: axis
+      character(LABEL_LEN)      :: label
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(photgrid_ptr, photgrid)
+
+      ! Get the axis label
+
+      call photgrid%get_axis(i, axis)
+
+      call axis%get_label(label)
+
+      call f_c_string(label, axis_label)
+
+      ! Finish
+
+      return
+
+   end subroutine get_photgrid_axis_label
+
+   !****
+
+   subroutine set_photgrid_cache_limit(photgrid_ptr, cache_limit) bind(C)
+
+      type(C_PTR), value       :: photgrid_ptr
+      integer(C_INT), optional :: cache_limit
+
+      type(photgrid_t), pointer :: photgrid
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(photgrid_ptr, photgrid)
+
+      ! Set the cache limit
+
+      call photgrid%set_cache_limit(cache_limit)
+
+      ! Finish
+
+      return
+
+   end subroutine set_photgrid_cache_limit
+
+   !****
+
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(C_DOUBLE)'), &
+                                     ('E_moment', 'k', 'integer(C_INT)'), &
+                                     ('D_moment', 'l', 'integer(C_INT)'))
+
+      !****
+
+      subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, ${arg_var}$, res, &
+                                          stat, deriv_vec) bind(C)
+
+         type(C_PTR), value  :: photgrid_ptr
+         real(C_DOUBLE)      :: x_vec(*)
+         ${arg_type}$, value :: ${arg_var}$
+         real(C_DOUBLE)      :: res
+         integer(C_INT)      :: stat
+         logical(C_BOOL)     :: deriv_vec(*)
+
+         type(photgrid_t), pointer :: photgrid
+         integer                   :: rank
+
+         ! Set up the Fortran pointer
+
+         call C_F_POINTER(photgrid_ptr, photgrid)
+
+         ! Interpolate the ${name}$
+
+         call photgrid%get_rank(rank)
+
+         call photgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, res, stat, LOGICAL(deriv_vec(1:rank)))
+
+         ! Finish
+
+         return
+
+      end subroutine interp_photgrid_${name}$
+
+   #:endfor
+
+   !****
+      
+   #:for name, var in (('flux', 'F'),)
+
+      subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, res, &
+                                          stat, deriv_vec) bind(C)
+
+         type(C_PTR), value :: photgrid_ptr
+         real(C_DOUBLE)     :: x_vec(*)
+         real(C_DOUBLE)     :: res
+         integer(C_INT)     :: stat
+         logical(C_BOOL)    :: deriv_vec(*)
+
+         type(photgrid_t), pointer :: photgrid
+         integer                   :: rank
+
+         ! Set up the Fortran pointer
+
+         call C_F_POINTER(photgrid_ptr, photgrid)
+
+         ! Interpolate the ${name}$
+
+         call photgrid%get_rank(rank)
+
+         call photgrid%interp_${name}$(x_vec(1:rank), res, stat, LOGICAL(deriv_vec(1:rank)))
+
+         ! Finish
+
+         return
+
+      end subroutine interp_photgrid_${name}$
+
+   #:endfor
+
+end module cmsg_phot_m

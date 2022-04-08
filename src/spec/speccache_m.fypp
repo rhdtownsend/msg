@@ -1,0 +1,407 @@
+! Module  : speccache_m
+! Purpose : Define speccache_t type, for representing a cached
+!           table of specint_t's
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module speccache_m
+
+   ! Uses
+
+   use forum_m
+
+   use specint_m
+   use proxy_specint_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type :: speccache_t
+      private
+      type(specint_element_t), allocatable :: specint_elements(:)
+      integer, allocatable                 :: ltimes(:)
+      real(RD)                             :: lam_min_in
+      real(RD)                             :: lam_max_in
+      real(RD)                             :: lam_min
+      real(RD)                             :: lam_max
+      integer                              :: count
+      integer                              :: limit
+      integer                              :: n
+   contains
+      private
+      procedure, public :: get_lam_min
+      procedure, public :: get_lam_max
+      procedure, public :: get_count
+      procedure, public :: get_limit
+      procedure, public :: set_lam_min
+      procedure, public :: set_lam_max
+      procedure, public :: set_limit
+      procedure, public :: fetch
+      procedure         :: flush_cache_
+   end type speccache_t
+
+   type :: specint_element_t
+      class(specint_t), allocatable :: specint
+   end type specint_element_t
+
+   ! Interfaces
+
+   interface speccache_t
+      module procedure speccache_t_
+   end interface speccache_t
+
+   ! Access specifiers
+
+   private
+
+   public :: speccache_t
+
+contains
+
+   function speccache_t_(n, lam_min, lam_max) result(speccache)
+
+      integer, intent(in)  :: n
+      real(RD), intent(in) :: lam_min 
+      real(RD), intent(in) :: lam_max
+      type(speccache_t)    :: speccache
+
+      ! Construct speccache with n entries
+
+      allocate(speccache%specint_elements(n))
+
+      allocate(speccache%ltimes(n))
+      speccache%ltimes = 0
+
+      speccache%lam_min_in = lam_min
+      speccache%lam_max_in = lam_max
+
+      speccache%lam_min = lam_min
+      speccache%lam_max = lam_max
+
+      speccache%limit = n
+      speccache%count = 0
+
+      speccache%n = n
+
+      ! Finish
+
+      return
+
+   end function speccache_t_
+
+   !****
+
+   #:for name, type in (('lam_min', 'real(RD)'), &
+                        ('lam_max', 'real(RD)'), &
+                        ('count', 'integer'),    &
+                        ('limit', 'integer'))
+                        
+      subroutine get_${name}$(self, ${name}$)
+
+         class(speccache_t), intent(in) :: self
+         ${type}$, intent(out)          :: ${name}$
+
+         ! Get ${name}$
+
+         ${name}$ = self%${name}$
+
+         ! Finish
+
+         return
+
+      end subroutine get_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine set_lam_min(self, lam_min, stat)
+
+      class(speccache_t), intent(inout) :: self
+      real(RD), intent(in), optional    :: lam_min
+      integer, intent(out), optional    :: stat
+
+      ! Set lam_min
+
+      if (PRESENT(lam_min)) then
+
+         if (lam_min < self%lam_min_in) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_LAM_LO
+               return
+            else
+               @:ABORT('out-of-bounds (lo) lam')
+            end if
+         else if(lam_min > self%lam_max) then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_ARGUMENT
+               return
+            else
+               @:ABORT('invalid argument')
+            end if
+         end if
+
+         self%lam_min = lam_min
+
+      else
+
+         self%lam_min = self%lam_min_in
+
+      end if
+
+      ! If necessary, flush the cache
+
+      if (self%count > 0) then
+         call self%flush_cache_()
+      end if
+         
+      ! Finish
+
+      return
+
+   end subroutine set_lam_min
+
+   !****
+
+   subroutine set_lam_max(self, lam_max, stat)
+
+      class(speccache_t), intent(inout) :: self
+      real(RD), intent(in), optional    :: lam_max
+      integer, intent(out), optional    :: stat
+
+      ! Set lam_max
+
+      if (PRESENT(lam_max)) then
+
+         if (lam_max > self%lam_max_in) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_LAM_HI
+               return
+            else
+               @:ABORT('out-of-bounds (hi) lam')
+            end if
+         else if(lam_max < self%lam_min) then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_ARGUMENT
+               return
+            else
+               @:ABORT('invalid argument')
+            end if
+         end if
+
+         self%lam_max = lam_max
+
+      else
+
+         self%lam_max = self%lam_max_in
+
+      end if
+
+      ! If necessary, flush the cache
+
+      if (self%count > 0) then
+         call self%flush_cache_()
+      end if
+         
+      ! Finish
+
+      return
+
+   end subroutine set_lam_max
+      
+   !****
+
+   subroutine set_limit(self, limit, stat)
+
+      class(speccache_t), intent(inout) :: self
+      integer, intent(in), optional     :: limit
+      integer, intent(out), optional    :: stat
+
+      ! Set limit
+
+      if (PRESENT(limit)) then
+
+         if (limit > self%n .OR. limit < 0) then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_ARGUMENT
+               return
+            else
+               @:ABORT('invalid argument')
+            end if
+         end if
+
+         self%limit = limit
+
+      else
+
+         self%limit = self%n
+
+      end if
+
+      ! If necessary, flush the cache
+
+      if (self%count > 0) then
+         call self%flush_cache_()
+      end if
+         
+      ! Finish
+
+      return
+
+   end subroutine set_limit
+      
+   !****
+
+   subroutine fetch(self, i, fetch_proc, specint, stat)
+
+      class(speccache_t), target, intent(inout) :: self
+      integer, intent(in)                       :: i
+      interface
+         subroutine fetch_proc(i, specint, stat)
+            use specint_m
+            integer, intent(in)                        :: i
+            class(specint_t), allocatable, intent(out) :: specint
+            integer, intent(out), optional             :: stat
+         end subroutine fetch_proc
+      end interface
+      class(specint_t), allocatable, intent(out) :: specint
+      integer, intent(out), optional             :: stat
+
+      integer                       :: j
+      class(specint_t), allocatable :: specint_full
+         
+      ! Fetch the i'th specint
+
+      if (i < 0 .OR. i > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      if (self%limit > 0) then
+         
+         ! Fetch from the cache; first check if the entry is already
+         ! present
+
+         if (self%ltimes(i) > 0) then
+
+            ! Update lifetime counters
+
+            where (self%ltimes > self%ltimes(i))
+               self%ltimes = self%ltimes - 1
+            end where
+            
+            self%ltimes(i) = self%count
+
+         else
+
+            ! Fetch into the cache
+
+            if (self%count == self%limit) then
+
+               ! Evict the oldest entry to make room
+
+               j = MINLOC(self%ltimes, DIM=1, mask=self%ltimes > 0)
+
+               deallocate(self%specint_elements(j)%specint)
+
+               where (self%ltimes > 0)
+                  self%ltimes = self%ltimes - 1
+               end where
+               
+            else
+
+               self%count = self%count + 1
+
+            end if
+
+            self%ltimes(i) = self%count
+
+            call fetch_proc(i, specint_full, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call specint%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+            
+         end if
+
+         ! Wrap the entry in a proxy_specint_t (to avoid copying)
+
+         specint = proxy_specint_t(self%specint_elements(i)%specint)
+
+      else
+
+         ! Fetch using fetch_proc
+
+         call fetch_proc(i, specint_full, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         call specint_full%subset(self%lam_min, self%lam_max, specint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end if
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine fetch
+
+   !****
+
+   subroutine flush_cache_(self)
+
+      class(speccache_t), intent(inout) :: self
+
+      integer :: i
+
+      ! Flush the cache
+
+      flush_loop : do i = 1, self%n
+         deallocate(self%specint_elements(i)%specint)
+      end do flush_loop
+
+      self%ltimes = 0
+
+      self%count = 0
+
+      ! Finish
+
+      return
+
+   end subroutine flush_cache_
+
+end module speccache_m

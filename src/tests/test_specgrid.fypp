@@ -7,13 +7,15 @@ program test_specgrid
 
    integer, parameter :: n = 800
 
-   integer               :: k
-   real(RD), allocatable :: lam(:)
-   real(RD), allocatable :: F(:)
-   type(specgrid_t)      :: specgrid
-   integer               :: j
-   integer               :: stat
-   character(LABEL_LEN)  :: axis_labels(3)
+   integer                           :: k
+   real(RD), allocatable             :: lam(:)
+   real(RD), allocatable             :: F(:)
+   type(specgrid_t)                  :: specgrid
+   integer                           :: j
+   integer                           :: stat
+   integer                           :: rank
+   character(LABEL_LEN), allocatable :: axis_labels(:)
+   type(axis_t)                      :: axis
 
    lam = [(4000._RD + (k-1)*3000._RD/n,k=1,n+1)]
 
@@ -21,7 +23,14 @@ program test_specgrid
 
    call load_specgrid('sg.h5', specgrid)
 
-   call specgrid%inquire(axis_labels=axis_labels)
+   call specgrid%get_rank(rank)
+
+   allocate(axis_labels(rank))
+
+   do j = 1, rank
+      call specgrid%get_axis(j, axis)
+      call axis%get_label(axis_labels(j))
+   end do
 
    call specgrid%interp_intensity([0._RD, 4.0_RD, 3.5_RD], 1.0_RD, lam, F, stat)
    if (stat /= STAT_OK) then

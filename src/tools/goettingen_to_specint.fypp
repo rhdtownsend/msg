@@ -42,9 +42,9 @@ program goettingen_to_specint
    real(RD), allocatable             :: head_values(:)
    integer                           :: n_lam
    real(RD), allocatable             :: I(:,:)
-   type(agg_range_t)                :: range
+   type(comp_range_t)                :: range
    type(limb_t)                      :: limb
-   type(specint_t)                   :: specint
+   type(limb_specint_t)              :: specint
    type(hdf5io_t)                    :: hdf5io
    type(hdf5io_t)                    :: hdf5io_labels
    integer                           :: j
@@ -80,7 +80,7 @@ program goettingen_to_specint
 
    limb = limb_t('CONST')
 
-   specint = specint_t(I, [1._RD], range, limb, low_acc=.TRUE.)
+   specint = limb_specint_t(I, [1._RD], range, limb, precise=.FALSE.)
 
    ! Write it
 
@@ -233,30 +233,30 @@ contains
    subroutine lam_to_range(lam, range)
 
       real(RD), intent(in)           :: lam(:)
-      type(agg_range_t), intent(out) :: range
+      type(comp_range_t), intent(out) :: range
 
       real(RD) :: lam_chk(SIZE(lam))
       
       ! Set up range (this may need updating if the Goettingen grids
       ! evolve)
 
-      range = agg_range_t([                                       &
-           elem_range_t(lin_range_t(500._RD, 0.1_RD, 25000)),     &
-           elem_range_t(lin_range_t(3000._RD, 0.006_RD, 333332)), &
-           elem_range_t(lin_range_t(5000._RD, 0.01_RD, 500000)),  &
-           elem_range_t(lin_range_t(10000._RD, 0.02_RD, 250000)), &
-           elem_range_t(lin_range_t(15000._RD, 0.03_RD, 166667)), &
-           elem_range_t(lin_range_t(20000._RD, 0.04_RD, 125000)), &
-           elem_range_t(lin_range_t(25000._RD, 0.125_RD, 40000)), &
-           elem_range_t(lin_range_t(30000._RD, 0.15_RD, 33334)),  &
-           elem_range_t(lin_range_t(35000._RD, 0.175_RD, 28572)), &
-           elem_range_t(lin_range_t(40000._RD, 0.2_RD, 25000)),   &
-           elem_range_t(lin_range_t(45000._RD, 0.225_RD, 22223)), &
-           elem_range_t(lin_range_t(50000._RD, 0.25_RD, 20000))])
+      range = comp_range_t([                        &
+           lin_range_t(500._RD, 0.1_RD, 25000),     &
+           lin_range_t(3000._RD, 0.006_RD, 333332), &
+           lin_range_t(5000._RD, 0.01_RD, 500000),  &
+           lin_range_t(10000._RD, 0.02_RD, 250000), &
+           lin_range_t(15000._RD, 0.03_RD, 166667), &
+           lin_range_t(20000._RD, 0.04_RD, 125000), &
+           lin_range_t(25000._RD, 0.125_RD, 40000), &
+           lin_range_t(30000._RD, 0.15_RD, 33334),  &
+           lin_range_t(35000._RD, 0.175_RD, 28572), &
+           lin_range_t(40000._RD, 0.2_RD, 25000),   &
+           lin_range_t(45000._RD, 0.225_RD, 22223), &
+           lin_range_t(50000._RD, 0.25_RD, 20000)])
 
       ! Check that this matches lam to within toler
 
-      call range%expand(lam_chk)
+      call range%unpack(lam_chk)
 
       @:ASSERT(MAXVAL(ABS(lam-lam_chk)) < 1E-11_RD, 'wavelength out of tolerance')
 

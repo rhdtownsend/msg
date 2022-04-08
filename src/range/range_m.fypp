@@ -1,5 +1,5 @@
 ! Module  : range_m
-! Purpose : define range_t abstract type, represnting an ordered sequence
+! Purpose : Define range_t abstract type, represnting an ordered sequence
 !           of values spanning a range
 !
 ! Copyright 2022 Rich Townsend & The MSG Team
@@ -28,57 +28,63 @@ module range_m
 
    type, abstract :: range_t
    contains
-      procedure(inquire_), deferred :: inquire
-      procedure(expand_), deferred  :: expand
-      procedure(subset_), deferred  :: subset
-      procedure(read_), deferred    :: read
-      procedure(write_), deferred   :: write
+      procedure(get_n), deferred     :: get_n
+      procedure(get_x_min), deferred :: get_x_min
+      procedure(get_x_max), deferred :: get_x_max
+      procedure(unpack), deferred    :: unpack
+      procedure(subset), deferred    :: subset
+      procedure(read), deferred      :: read
+      procedure(write), deferred     :: write
    end type range_t
 
    ! Interfaces
 
    abstract interface
 
-      subroutine inquire_(self, n, min, max)
-         use forum_m
-         import range_t
-         class(range_t), intent(in)      :: self
-         integer, intent(out), optional  :: n
-         real(RD), intent(out), optional :: min
-         real(RD), intent(out), optional :: max
-      end subroutine inquire_
+      #:for name, type in (('n', 'integer'), &
+                           ('x_min', 'real(RD)'), &
+                           ('x_max', 'real(RD)'))
 
-      subroutine expand_(self, x)
+         subroutine get_${name}$(self, ${name}$)
+            use forum_m
+            import range_t
+            class(range_t), intent(in) :: self
+            ${type}$, intent(out)       :: ${name}$
+         end subroutine get_${name}$
+
+      #:endfor
+
+      subroutine unpack(self, x)
          use forum_m
          import range_t
          class(range_t), intent(in)  :: self
          real(RD), intent(out)       :: x(:)
-      end subroutine expand_
+      end subroutine unpack
 
-      subroutine subset_(self, i_a, i_b, range, stat)
+      subroutine subset(self, i_a, i_b, range, stat)
          import range_t
          class(range_t), intent(in)               :: self
          integer, intent(in)                      :: i_a
          integer, intent(in)                      :: i_b
          class(range_t), allocatable, intent(out) :: range
          integer, intent(out), optional           :: stat
-      end subroutine subset_
+      end subroutine subset
 
-      subroutine read_(self, hdf5io, stat)
+      subroutine read(self, hdf5io, stat)
          use forum_m
          import range_t
          class(range_t), intent(out)    :: self
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
-      end subroutine read_
+      end subroutine read
 
-      subroutine write_(self, hdf5io, stat)
+      subroutine write(self, hdf5io, stat)
          use forum_m
          import range_t
          class(range_t), intent(in)     :: self
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
-      end subroutine write_
+      end subroutine write
 
    end interface
 

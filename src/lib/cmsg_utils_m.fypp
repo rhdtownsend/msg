@@ -1,0 +1,77 @@
+! Module  : cmsg_utils_m
+! Purpose : Utility routines for cmsg_m
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module cmsg_utils_m
+
+   ! Uses
+
+   use forum_m
+
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+   use ISO_C_BINDING
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: open_file
+
+contains
+
+   subroutine open_file(c_file_name, hdf5io, stat)
+
+      character(C_CHAR)              :: c_file_name(*)
+      type(hdf5io_t), intent(out)    :: hdf5io
+      integer, intent(out), optional :: stat
+
+      character(:), allocatable :: file_name
+      
+      ! Open the file
+
+      call c_f_string(c_file_name, file_name)
+
+      if (is_hdf5(file_name)) then
+
+         hdf5io = hdf5io_t(file_name, OPEN_FILE_RO)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+      else
+
+         if (PRESENT(stat)) then
+            stat = STAT_FILE_NOT_FOUND
+         else
+            @:ABORT('file not found')
+         endif
+
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine open_file
+
+end module cmsg_utils_m

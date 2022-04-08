@@ -1,5 +1,6 @@
 ! Module  : photint_m
-! Purpose : define photint_t type, for representing photometric intensity
+! Purpose : Define photint_t abstract type, for representing photometric
+!           intensity
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -19,251 +20,96 @@
 
 module photint_m
 
-   ! Uses
-
-   use forum_m
-
-   use limb_m
-   use math_m
-   use stat_m
-
-   use ISO_FORTRAN_ENV
-
    ! No implicit typing
 
    implicit none
 
    ! Derived-type definitions
 
-   type photint_t
-      private
-      type(limb_t)          :: limb
-      real(RD), allocatable :: c(:)
-      integer               :: n_b
+   type, abstract :: photint_t
    contains
       private
+      procedure(get_precise), deferred, public :: get_precise
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
-         procedure, public :: interp_${name}$
+         procedure(interp_${name}$), deferred, public :: interp_${name}$
       #:endfor
-      procedure, public :: read
-      procedure, public :: write
+      procedure(read), deferred, public  :: read
+      procedure(write), deferred, public :: write
    end type photint_t
 
    ! Interfaces
 
-   interface photint_t
-      module procedure photint_t_
-      module procedure photint_t_fit_
-   end interface photint_t
+   abstract interface
 
+      #:for name, type in (('precise', 'logical'),)
+
+         subroutine get_${name}$(self, ${name}$)
+            use forum_m
+            import photint_t
+            class(photint_t), intent(in) :: self
+            ${type}$, intent(out)        :: ${name}$
+         end subroutine get_${name}$
+      
+      #:endfor
+
+      #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                        ('E_moment', 'k', 'integer'), &
+                                        ('D_moment', 'l', 'integer'))
+
+         subroutine interp_${name}$(self, ${arg_var}$, res, stat)
+            use forum_m
+            import photint_t
+            class(photint_t), intent(in)   :: self
+            ${arg_type}$, intent(in)       :: ${arg_var}$
+            real(RD), intent(out)          :: res
+            integer, intent(out), optional :: stat
+         end subroutine interp_${name}$
+
+      #:endfor
+      
+      #:for name, var in (('flux', 'F'),)
+
+         subroutine interp_${name}$(self, res, stat)
+            use forum_m
+            import photint_t
+            class(photint_t), intent(in)   :: self
+            real(RD), intent(out)          :: res
+            integer, intent(out), optional :: stat
+         end subroutine interp_${name}$
+
+      #:endfor
+
+      subroutine read(self, hdf5io, stat)
+         use forum_m
+         import photint_t
+         class(photint_t), intent(out)  :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine read
+         
+      subroutine write(self, hdf5io, stat)
+         use forum_m
+         import photint_t
+         class(photint_t), intent(in)   :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine write
+         
+   end interface
+         
+   interface photint_t
+
+      module function photint_t_type_(type) result(photint)
+         character(*), intent(in)      :: type
+         class(photint_t), allocatable :: photint
+      end function photint_t_type_
+
+   end interface photint_t
+   
    ! Access specifiers
 
    private
 
    public :: photint_t
-
-   ! Procedures
-
-contains
-
-   function photint_t_(c, limb) result(photint)
-
-      real(RD), intent(in)     :: c(:)
-      type(limb_t), intent(in) :: limb
-      type(photint_t)          :: photint
-
-      integer :: n_b
-
-      ! Construct the photint_t from the supplied data
-
-      call limb%inquire(n=n_b)
-
-      @:CHECK_BOUNDS(SIZE(c), n_b)
-
-      photint%limb = limb
-      photint%c = c
-
-      photint%n_b = n_b
-      
-      ! Finish
-
-      return
-
-   end function photint_t_
-
-   !****
-
-   function photint_t_fit_(I, mu, limb) result(photint)
-
-      real(RD), intent(in)     :: I(:)
-      real(RD), intent(in)     :: mu(:)
-      type(limb_t), intent(in) :: limb
-      type(photint_t)          :: photint
-
-      real(RD), allocatable :: c(:)
-
-      ! Construct the photint_t by fitting the supplied I(mu)
-      ! intensity data
-
-      call limb%fit_intensity(I, mu, c)
-
-      photint = photint_t(c, limb)
-
-      ! Finish
-
-      return
-
-   end function photint_t_fit_
-
-   !****
-
-   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
-                                     ('E_moment', 'k', 'integer'), &
-                                     ('D_moment', 'l', 'integer'))
-
-      subroutine interp_${name}$(self, ${arg_var}$, res, stat)
-
-         class(photint_t), intent(in)   :: self
-         ${arg_type}$, intent(in)       :: ${arg_var}$
-         real(RD), intent(out)          :: res
-         integer, intent(out), optional :: stat
-
-         real(RD) :: b(self%n_b)
-
-         ! Set up the basis functions
-
-         call self%limb%eval_${name}$_basis(${arg_var}$, b, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
-
-         ! Interpolate ${name}$
-
-         res = DOT_PRODUCT(b, self%c)
-
-         if (PRESENT(stat)) stat = STAT_OK
-
-         ! Finish
-
-         return
-
-      end subroutine interp_${name}$
-
-   #:endfor
-      
-   !****
-
-   #:for name in ('flux',)
-
-      subroutine interp_${name}$(self, res, stat)
-
-         class(photint_t), intent(in)   :: self
-         real(RD), intent(out)          :: res
-         integer, intent(out), optional :: stat
-
-         real(RD) :: b(self%n_b)
-
-         ! Set up the basis functions
-
-         call self%limb%eval_${name}$_basis(b, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
-
-         ! Interpolate ${name}$
-
-         res = DOT_PRODUCT(b, self%c)
-
-         if (PRESENT(stat)) stat = STAT_OK
-
-         ! Finish
-
-         return
-
-      end subroutine interp_${name}$
-
-   #:endfor
-
-   !****
-
-   subroutine read(self, hdf5io, stat)
-
-      class(photint_t), intent(out)  :: self
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      integer, intent(out), optional :: stat
-
-      character(TYPE_LEN)   :: type
-      real(RD), allocatable :: c(:)
-      type(hdf5io_t)        :: hdf5io_limb
-      type(limb_t)          :: limb
-
-      ! Read the photint_t
-
-      call hdf5io%read_attr('TYPE', type)
-      if (type /= 'photint_t') then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_TYPE
-            return
-         else
-            @:ABORT('invalid type')
-         endif
-      endif
-
-      call hdf5io%alloc_read_dset('c', c)
-
-      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
-      call limb%read(hdf5io_limb, stat)
-      call hdf5io_limb%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      select type(self)
-      type is(photint_t)
-         self = photint_t(c, limb)
-      class default
-         @:ABORT('incalid type')
-      end select
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine read
-
-   !****
-
-   subroutine write(self, hdf5io, stat)
-
-      class(photint_t), intent(in)   :: self
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      integer, intent(out), optional :: stat
-
-      type(hdf5io_t) :: hdf5io_limb
-
-      ! Write the photint_t
-
-      call hdf5io%write_attr('TYPE', 'photint_t')
-
-      call hdf5io%write_attr('n_b', self%n_b)
-
-      call hdf5io%write_dset('c', self%c)
-
-      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
-      call self%limb%write(hdf5io_limb, stat)
-      call hdf5io_limb%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine write
 
 end module photint_m

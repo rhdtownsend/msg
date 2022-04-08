@@ -49,7 +49,10 @@ module ngrid_m
       integer                   :: n_stn
    contains
       private
-      procedure, public :: inquire
+      procedure, public :: get_rank
+      procedure, public :: get_n_con
+      procedure, public :: get_n_lin
+      procedure, public :: get_axis
       procedure, public :: locate
       procedure, public :: map
       procedure, public :: con_from_lin
@@ -98,7 +101,7 @@ contains
       rank = SIZE(axes)
 
       do j = 1, rank
-         call axes(j)%inquire(n=shape(j))
+         call axes(j)%get_n(shape(j))
       end do
 
       @:CHECK_BOUNDS(SIZE(mask), PRODUCT(shape))
@@ -125,66 +128,46 @@ contains
 
    !****
 
-   subroutine inquire(self, n_con, n_lin, shape, rank, axis_min, axis_max, axis_labels)
+   !****
 
-      class(ngrid_t), intent(in)          :: self
-      integer, intent(out), optional      :: n_con
-      integer, intent(out), optional      :: n_lin
-      integer, intent(out), optional      :: shape(:)
-      integer, intent(out), optional      :: rank
-      real(RD), intent(out), optional     :: axis_min(:)
-      real(RD), intent(out), optional     :: axis_max(:)
-      character(*), intent(out), optional :: axis_labels(:)
+   #:for name, type in (('rank', 'integer'),  &
+                        ('n_con', 'integer'), &
+                        ('n_lin', 'integer'))
 
-      integer :: j
+      subroutine get_${name}$(self, ${name}$)
 
-      if (PRESENT(shape)) then
-         @:CHECK_BOUNDS(SIZE(shape), self%rank)
-      end if
+         class(ngrid_t), intent(in) :: self
+         ${type}$, intent(out)      :: ${name}$
 
-      if (PRESENT(axis_min)) then
-         @:CHECK_BOUNDS(SIZE(axis_min), self%rank)
-      end if
+         ! Get ${name}$
 
-      if (PRESENT(axis_max)) then
-         @:CHECK_BOUNDS(SIZE(axis_max), self%rank)
-      end if
+         ${name}$ = self%${name}$
 
-      if (PRESENT(axis_labels)) then
-         @:CHECK_BOUNDS(SIZE(axis_labels), self%rank)
-      end if
+         ! Finish
 
-      ! Inquire metadata
+         return
 
-      if (PRESENT(n_con)) n_con = self%n_con
-      if (PRESENT(n_lin)) n_lin = self%n_lin
+      end subroutine get_${name}$
 
-      if (PRESENT(shape)) shape = self%shape
-      if (PRESENT(rank)) rank = self%rank
+   #:endfor
 
-      if (PRESENT(axis_min)) then
-         do j = 1, self%rank
-            call self%axes(j)%inquire(min=axis_min(j))
-         end do
-      end if
+   !****
+      
+   subroutine get_axis(self, i, axis)
 
-      if (PRESENT(axis_max)) then
-         do j = 1, self%rank
-            call self%axes(j)%inquire(max=axis_max(j))
-         end do
-      end if
+      class(ngrid_t), intent(in) :: self
+      integer, intent(in)        :: i
+      type(axis_t), intent(out)  :: axis
 
-      if (PRESENT(axis_labels)) then
-         do j = 1, self%rank
-            call self%axes(j)%inquire(label=axis_labels(j))
-         end do
-      end if
+      ! Get the i'th axis
+
+      axis = self%axes(i)
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_axis
 
    !****
 
@@ -212,7 +195,7 @@ contains
                stat = STAT_OUT_OF_BOUNDS_AXIS_LO
                return
             else
-               call self%axes(j)%inquire(label=label)
+               call self%axes(j)%get_label(label)
                @:ABORT('out-of-bounds (lo) on '//label//' axis')
             endif
          endif
@@ -222,7 +205,7 @@ contains
                stat = STAT_OUT_OF_BOUNDS_AXIS_HI
                return
             else
-               call self%axes(j)%inquire(label=label)
+               call self%axes(j)%get_label(label)
                @:ABORT('out-of-bounds (hi) on '//label//' axis')
             endif
          endif

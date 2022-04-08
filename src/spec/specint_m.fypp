@@ -1,5 +1,6 @@
 ! Module  : specint_m
-! Purpose : define specint_t type, for representing spectral intensity
+! Purpose : Define specint_t abstract type, for representing spectral
+!           intensity
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -19,586 +20,136 @@
 
 module specint_m
 
-   ! Uses
-
-   use forum_m
-
-   use limb_m
-   use math_m
-   use passband_m
-   use photint_m
-   use range_m
-   use stat_m
-
-   use ISO_FORTRAN_ENV
-
    ! No implicit typing
 
    implicit none
 
    ! Derived-type definitions
 
-   type specint_t
-      private
-      real(RD), allocatable       :: c(:,:)
-      real(RD), allocatable       :: lam(:)
-      class(range_t), allocatable :: range
-      type(limb_t)                :: limb
-      integer                     :: n_b
-      integer                     :: n_lam
-      logical                     :: low_acc
+   type, abstract :: specint_t
    contains
       private
-      procedure, public :: inquire
+      procedure(get_lam_min), deferred, public :: get_lam_min
+      procedure(get_lam_max), deferred, public :: get_lam_max
+      procedure(get_precise), deferred, public :: get_precise
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
-         procedure, public :: interp_${name}$
+         procedure(interp_${name}$), deferred, public :: interp_${name}$
       #:endfor
-      procedure         :: interp_f_
-      procedure, public :: subset
-      procedure, public :: filter
-      procedure, public :: read
-      procedure, public :: write
+      procedure(subset), deferred, public :: subset
+      procedure(rebin), deferred, public  :: rebin
+      procedure(filter), deferred, public :: filter
+      procedure(read), deferred, public   :: read
+      procedure(write), deferred, public  :: write
    end type specint_t
 
    ! Interfaces
 
-   interface specint_t
-      module procedure specint_t_
-      module procedure specint_t_fit_
-      module procedure specint_t_interp_
-   end interface specint_t
+   abstract interface
 
+      #:for name, type in (('lam_min', 'real(RD)'),  &
+                           ('lam_max', 'real(RD)'),  &
+                           ('precise', 'logical'))
+
+         subroutine get_${name}$(self, ${name}$)
+            use forum_m
+            import specint_t
+            class(specint_t), intent(in) :: self
+            ${type}$, intent(out)        :: ${name}$
+         end subroutine get_${name}$
+      
+      #:endfor
+
+      #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                        ('E_moment', 'k', 'integer'), &
+                                        ('D_moment', 'l', 'integer'))
+
+         subroutine interp_${name}$(self, ${arg_var}$, lam, res, stat)
+            use forum_m
+            import specint_t
+            class(specint_t), intent(in)   :: self
+            ${arg_type}$, intent(in)       :: ${arg_var}$
+            real(RD), intent(in)           :: lam(:)
+            real(RD), intent(out)          :: res(:)
+            integer, intent(out), optional :: stat
+         end subroutine interp_${name}$
+
+      #:endfor
+      
+      #:for name, var in (('flux', 'F'),)
+
+         subroutine interp_${name}$(self, lam, res, stat)
+            use forum_m
+            import specint_t
+            class(specint_t), intent(in)   :: self
+            real(RD), intent(in)           :: lam(:)
+            real(RD), intent(out)          :: res(:)
+            integer, intent(out), optional :: stat
+         end subroutine interp_${name}$
+
+      #:endfor
+
+      subroutine subset(self, lam_min, lam_max, specint, stat)
+         use forum_m
+         import specint_t
+         class(specint_t), intent(in)               :: self
+         real(RD), intent(in)                       :: lam_min
+         real(RD), intent(in)                       :: lam_max
+         class(specint_t), allocatable, intent(out) :: specint
+         integer, intent(out), optional             :: stat
+      end subroutine subset
+
+      subroutine rebin(self, range, specint, stat)
+         use forum_m
+         use range_m
+         import specint_t
+         class(specint_t), intent(in)               :: self
+         class(range_t), intent(in)                 :: range
+         class(specint_t), allocatable, intent(out) :: specint
+         integer, intent(out), optional             :: stat
+      end subroutine rebin
+
+      subroutine filter(self, passband, photint, stat)
+         use forum_m
+         use passband_m
+         use photint_m
+         import specint_t
+         class(specint_t), intent(in)               :: self
+         type(passband_t), intent(in)               :: passband
+         class(photint_t), allocatable, intent(out) :: photint
+         integer, intent(out), optional             :: stat
+      end subroutine filter
+
+      subroutine read(self, hdf5io, stat)
+         use forum_m
+         import specint_t
+         class(specint_t), intent(out)  :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine read
+         
+      subroutine write(self, hdf5io, stat)
+         use forum_m
+         import specint_t
+         class(specint_t), intent(in)   :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine write
+         
+   end interface
+         
+   interface specint_t
+
+      module function specint_t_type_(type) result(specint)
+         character(*), intent(in)      :: type
+         class(specint_t), allocatable :: specint
+      end function specint_t_type_
+
+   end interface specint_t
+   
    ! Access specifiers
 
    private
 
    public :: specint_t
-
-   ! Procedures
-
-contains
-
-   function specint_t_(c, range, limb, low_acc) result(specint)
-
-      real(RD), intent(in)          :: c(:,:)
-      class(range_t), intent(in)    :: range
-      type(limb_t), intent(in)      :: limb
-      logical, intent(in), optional :: low_acc
-      type(specint_t)               :: specint
-
-      logical :: low_acc_
-      integer :: n_b
-      integer :: n_lam 
-
-      if (PRESENT(low_acc)) then
-         low_acc_ = low_acc
-      else
-         low_acc_ = .FALSE.
-      endif
-
-      ! Construct specint from the supplied data
-
-      call limb%inquire(n=n_b)
-      call range%inquire(n=n_lam)
-
-      @:CHECK_BOUNDS(n_b, SIZE(c, 1))
-      @:CHECK_BOUNDS(n_lam, SIZE(c, 2)+1)
-
-      specint%c = c
-
-      allocate(specint%lam(n_lam))
-      call range%expand(specint%lam)
-
-      specint%range = range
-      specint%limb = limb
-
-      specint%n_b = n_b
-      specint%n_lam = n_lam
-
-      specint%low_acc = low_acc_
-      
-      ! Finish
-
-      return
-
-   end function specint_t_
-
-   !****
-
-   function specint_t_fit_(I, mu, range, limb, low_acc) result(specint)
-
-      real(RD), intent(in)          :: I(:,:)
-      real(RD), intent(in)          :: mu(:)
-      class(range_t), intent(in)    :: range
-      type(limb_t), intent(in)      :: limb
-      logical, intent(in), optional :: low_acc
-      type(specint_t)               :: specint
-
-      real(RD), allocatable :: c(:,:)
-
-      ! Construct specint by fitting the supplied I(mu,lambda)
-      ! intensity data
-
-      call limb%fit_intensity(I, mu, c)
-
-      specint = specint_t(c, range, limb, low_acc)
-
-      ! Finish
-
-      return
-
-   end function specint_t_fit_
-
-   !****
-
-   function specint_t_interp_(specint_in, range) result(specint)
-
-      type(specint_t), intent(inout) :: specint_in
-      class(range_t), intent(in)     :: range
-      type(specint_t)                :: specint
-
-      integer               :: n_lam
-      real(RD), allocatable :: lam(:)
-      real(RD), allocatable :: c(:,:)
-      integer               :: p
-      real(RD)              :: b(specint_in%n_b)
-
-      ! Construct specint by interpolating specint_in onto the range
-      ! abscissa
-
-      call range%inquire(n=n_lam)
-
-      allocate(lam(n_lam))
-      allocate(c(specint_in%n_b,n_lam-1))
-
-      call range%expand(lam)
-
-      do p = 1, specint_in%n_b
-
-         b = 0._RD
-         b(p) = 1._RD
-
-         call specint_in%interp_f_(b, lam, c(p,:))
-
-      end do
-
-      specint = specint_t(c, range, specint_in%limb, specint_in%low_acc)
-
-      ! Finish
-
-      return
-
-   end function specint_t_interp_
-
-   !****
-
-   subroutine inquire(self, lam_min, lam_max, low_acc)
-
-      class(specint_t), intent(in)    :: self
-      real(RD), intent(out), optional :: lam_min
-      real(RD), intent(out), optional :: lam_max
-      logical, intent(out), optional  :: low_acc
-
-      ! Inquire metadata
-
-      if (PRESENT(lam_min)) lam_min = self%lam(1)
-      if (PRESENT(lam_max)) lam_max = self%lam(self%n_lam)
-
-      if (PRESENT(low_acc)) low_acc = self%low_acc
-
-      ! Finish
-
-      return
-
-   end subroutine inquire
-
-   !****
-
-   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
-                                     ('E_moment', 'k', 'integer'), &
-                                     ('D_moment', 'l', 'integer'))
-
-      subroutine interp_${name}$(self, ${arg_var}$, lam, res, stat)
-
-         class(specint_t), intent(in)   :: self
-         ${arg_type}$, intent(in)       :: ${arg_var}$
-         real(RD), intent(in)           :: lam(:)
-         real(RD), intent(out)          :: res(:)
-         integer, intent(out), optional :: stat
-
-         real(RD) :: b(self%n_b)
-
-         ! Set up the basis functions
-
-         call self%limb%eval_${name}$_basis(${arg_var}$, b, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
-
-         ! Do the interpolation
-
-         call self%interp_f_(b, lam, res, stat)
-
-         ! Finish
-
-         return
-
-      end subroutine interp_${name}$
-
-   #:endfor
-      
-   !****
-
-   #:for name, var in (('flux', 'F'),)
-
-      subroutine interp_${name}$(self, lam, res, stat)
-
-         class(specint_t), intent(in)   :: self
-         real(RD), intent(in)           :: lam(:)
-         real(RD), intent(out)          :: res(:)
-         integer, intent(out), optional :: stat
-
-         real(RD) :: b(self%n_b)
-
-         ! Set up the basis functions
-
-         call self%limb%eval_${name}$_basis(b, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
-
-         ! Do the interpolation
-
-         call self%interp_f_(b, lam, res, stat)
-
-         ! Finish
-
-         return
-
-      end subroutine interp_${name}$
-
-   #:endfor
-
-   !****
-      
-   subroutine interp_f_(self, b, lam, f, stat)
-
-      class(specint_t), intent(in)   :: self
-      real(RD), intent(in)           :: b(:)
-      real(RD), intent(in)           :: lam(:)
-      real(RD), intent(out)          :: f(:)
-      integer, intent(out), optional :: stat
-
-      integer  :: n_lam
-      integer  :: i
-      integer  :: j
-      real(RD) :: lam_a
-      real(RD) :: lam_b
-
-      @:CHECK_BOUNDS(SIZE(b), self%n_b)
-      @:CHECK_BOUNDS(SIZE(f), SIZE(lam)-1)
-
-      ! Check lam is valid
-
-      n_lam = SIZE(lam)
-
-      if (lam(1) < self%lam(1)) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_LAM_LO
-            return
-         else
-            @:ABORT('out-of-bounds (lo) lam')
-         endif
-      endif
-
-      if (lam(n_lam) > self%lam(self%n_lam)) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_LAM_HI
-            return
-         else
-            @:ABORT('out-of-bounds (hi) lam')
-         endif
-      endif
-
-      ! Perform the interpolation (conservative piecewise-constant
-      ! rebin)
-
-      call locate(self%lam, lam(1), i)
-
-      if (i == self%n_lam) i = i - 1
-
-      j = 1
-
-      f = 0._RD
-
-      interp_loop : do
-
-         if (j >= n_lam) exit interp_loop
-
-         lam_a = MAX(self%lam(i), lam(j))
-         lam_b = MIN(self%lam(i+1), lam(j+1))
-
-         f(j) = f(j) + (lam_b - lam_a)/(lam(j+1) - lam(j))*DOT_PRODUCT(b, self%c(:,i))
-
-         if (lam_b == self%lam(i+1)) i = i + 1
-         if (lam_b == lam(j+1)) j = j + 1
-
-      end do interp_loop
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      ! Finish
-
-      return
-
-   end subroutine interp_f_
-
-   !****
-
-   subroutine subset(self, lam_min, lam_max, specint, stat)
-
-      class(specint_t), intent(in)   :: self
-      real(RD), intent(in)           :: lam_min
-      real(RD), intent(in)           :: lam_max
-      type(specint_t), intent(out)   :: specint
-      integer, intent(out), optional :: stat
-
-      integer                     :: i_a
-      integer                     :: i_b
-      class(range_t), allocatable :: range
-
-      ! Construct a new specint by subsetting self
-
-      if (lam_max < lam_min) then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_ARGUMENT
-            return
-         else
-            @:ABORT('invalid argument')
-         end if
-      end if
-
-      call locate(self%lam, lam_min, i_a, right=.FALSE.)
-      call locate(self%lam, lam_max, i_b, right=.TRUE.)
-
-      if (i_a < 1) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_LAM_LO
-            return
-         else
-            @:ABORT('out-of-bounds (lo) lam')
-         end if
-      end if
-
-      if (i_a > self%n_lam) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_LAM_LO
-            return
-         else
-            @:ABORT('out-of-bounds (lo) lam')
-         end if
-      end if
-
-      call self%range%subset(i_a, i_b, range)
-
-      specint = specint_t(self%c(:,i_a:i_b-1), range, self%limb, self%low_acc)
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine subset
-
-   !****
-
-   subroutine filter(self, passband, photint, stat)
-
-      class(specint_t), intent(in)   :: self
-      type(passband_t), intent(in)   :: passband
-      type(photint_t), intent(out)   :: photint
-      integer, intent(out), optional :: stat
-
-      real(RD) :: lam_min
-      real(RD) :: lam_max
-      real(RD) :: lam_min_pb
-      real(RD) :: lam_max_pb
-      real(RD) :: c(self%n_b)
-      integer  :: i
-      real(RD) :: P
-
-      ! Filter the specint through the passband to yield photint
-
-      ! First check that the spectrum is defined across the passband support
-
-      call self%inquire(lam_min=lam_min, lam_max=lam_max)
-      call passband%inquire(lam_min=lam_min_pb, lam_max=lam_max_pb)
-
-      if (lam_min_pb < lam_min) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_LAM_LO
-            return
-         else
-            @:ABORT('out-of-bounds (lo) lam')
-         endif
-      endif
-
-      if (lam_max_pb > lam_max) then
-         if (PRESENT(stat)) then
-            stat = STAT_OUT_OF_BOUNDS_LAM_HI
-            return
-         else
-            @:ABORT('out-of-bounds (hi) lam')
-         endif
-      endif
-
-      ! Evaluate the coefficients
-
-      c = 0._RD
-
-      coeff_loop : do i = 1, self%n_lam-1
-
-         ! Evaluate the passthrough
-
-         P = passband%passthru(self%lam(i), self%lam(i+1))
-
-         ! Add the contribution to c
-
-         c = c + P*self%c(:,i)
-
-      end do coeff_loop
-
-      ! Construct the photint
-
-      photint = photint_t(c, self%limb)
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine filter
-
-   !****
-
-   subroutine read(self, hdf5io, stat)
-
-      class(specint_t), intent(out)  :: self
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      integer, intent(out), optional :: stat
-
-      character(TYPE_LEN)         :: type
-      real(RD), allocatable       :: c(:,:)
-      type(hdf5io_t)              :: hdf5io_range
-      character(TYPE_LEN)         :: type_range
-      class(range_t), allocatable :: range
-      type(hdf5io_t)              :: hdf5io_limb
-      type(limb_t)                :: limb
-      logical                     :: low_acc
-
-      character(:), allocatable :: file_name
-
-      ! Read the specint_t
-
-      call hdf5io%read_attr('TYPE', type)
-      if (type /= 'specint_t') then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_TYPE
-            return
-         else
-            @:ABORT('invalid type')
-         endif
-      endif
-
-      call hdf5io%read_attr('low_acc', low_acc)
-
-      call hdf5io%alloc_read_dset('c', c)
-
-      call hdf5io%inquire(file_name=file_name)
-
-      hdf5io_range = hdf5io_t(hdf5io, 'range')
-      call hdf5io_range%read_attr('TYPE', type_range)
-      range = range_t(type_range)
-      call range%read(hdf5io_range, stat)
-      call hdf5io_range%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
-      call limb%read(hdf5io_limb, stat)
-      call hdf5io_limb%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      select type(self)
-      type is(specint_t)
-         self = specint_t(c, range, limb, low_acc)
-      class default
-         @:ABORT('invalid type')
-      end select
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine read
-
-   !****
-
-   subroutine write(self, hdf5io, stat)
-
-      class(specint_t), intent(in)   :: self
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      integer, intent(out), optional :: stat
-
-      real(RD)       :: lam_min
-      real(RD)       :: lam_max
-      type(hdf5io_t) :: hdf5io_range
-      type(hdf5io_t) :: hdf5io_limb
-
-      ! Write the specint_t
-
-      call hdf5io%write_attr('TYPE', 'specint_t')
-
-      call self%inquire(lam_min=lam_min, lam_max=lam_max)
-
-      call hdf5io%write_attr('lam_min', lam_min)
-      call hdf5io%write_attr('lam_max', lam_max)
-
-      call hdf5io%write_attr('low_acc', self%low_acc)
-
-      if (self%low_acc) then
-         call hdf5io%write_dset('c', REAL(self%c, RS))
-      else
-         call hdf5io%write_dset('c', self%c)
-      endif
-
-      hdf5io_range = hdf5io_t(hdf5io, 'range')
-      call self%range%write(hdf5io_range, stat)
-      call hdf5io_range%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
-      call self%limb%write(hdf5io_limb, stat)
-      call hdf5io_limb%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine write
 
 end module specint_m

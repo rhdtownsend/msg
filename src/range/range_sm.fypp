@@ -17,14 +17,13 @@
 
 #:include 'forum.inc'
 
-submodule (range_m) range_sm
+submodule(range_m) range_sm
 
    ! Uses
 
    use forum_m
 
-   use agg_range_m
-   use elem_range_m
+   use comp_range_m
    use lin_range_m
    use log_range_m
    use tab_range_m
@@ -42,13 +41,11 @@ contains
       character(*), intent(in)    :: type
       class(range_t), allocatable :: range
 
-      ! Construct range by subsetting range_in
+      ! Construct range by allocating with the indicated type
 
       select case(type)
-      case('agg_range_t')
-         allocate(agg_range_t::range)
-      case('elem_range_t')
-         allocate(elem_range_t::range)
+      case('comp_range_t')
+         allocate(comp_range_t::range)
       case('lin_range_t')
          allocate(lin_range_t::range)
       case ('log_range_t')

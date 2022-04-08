@@ -43,7 +43,8 @@ module passband_m
       real(RD)       :: lam_max
    contains
       private
-      procedure, public :: inquire
+      procedure, public :: get_lam_min
+      procedure, public :: get_lam_max
       procedure, public :: passthru
       procedure, public :: read
       procedure, public :: write
@@ -96,7 +97,8 @@ contains
 
       passband%cubint = cubint
 
-      call cubint%inquire(x_min=passband%lam_min, x_max=passband%lam_max)
+      call cubint%get_x_min(passband%lam_min)
+      call cubint%get_x_max(passband%lam_max)
 
       passband%F_0 = F_0
       passband%Delta = cubint%integ(passband%lam_max) - &
@@ -110,22 +112,37 @@ contains
 
    !****
 
-   subroutine inquire(self, lam_min, lam_max)
+   subroutine get_lam_min(self, lam_min)
 
-      class(passband_t), intent(in)   :: self
-      real(RD), intent(out), optional :: lam_min
-      real(RD), intent(out), optional :: lam_max
+      class(passband_t), intent(in) :: self
+      real(RD), intent(out)         :: lam_min
 
-      ! Inquire metadata
+      ! Get the wavelength-minimum
 
-      if (PRESENT(lam_min)) lam_min = self%lam_min
-      if (PRESENT(lam_max)) lam_max = self%lam_max
+      lam_min = self%lam_min
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_lam_min
+
+   !****
+
+   subroutine get_lam_max(self, lam_max)
+
+      class(passband_t), intent(in) :: self
+      real(RD), intent(out)         :: lam_max
+
+      ! Get the wavelength-maximum
+
+      lam_max = self%lam_max
+
+      ! Finish
+
+      return
+
+   end subroutine get_lam_max
 
    !****
 

@@ -51,7 +51,7 @@ module limb_m
       integer :: n
    contains
       private
-      procedure, public :: inquire
+      procedure, public :: get_n
       procedure, public :: eval_intensity_basis
       procedure, public :: eval_flux_basis
       procedure, public :: eval_E_moment_basis
@@ -171,20 +171,20 @@ contains
 
    !****
 
-   subroutine inquire(self, n)
+   subroutine get_n(self, n)
    
-      class(limb_t), intent(in)      :: self
-      integer, intent(out), optional :: n
+      class(limb_t), intent(in) :: self
+      integer, intent(out)      :: n
 
-      ! Inquire metadata
+      ! Get the number of limb-darkening coefficients
 
-      if (PRESENT(n)) n = self%n
+      n = self%n
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_n
 
    !****
 

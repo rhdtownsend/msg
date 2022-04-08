@@ -229,7 +229,7 @@ contains
       type(log_range_t)                 :: range
       real(RD), allocatable             :: I(:,:)
       type(limb_t)                      :: limb
-      type(specint_t)                   :: specint
+      type(limb_specint_t)              :: specint
       type(hdf5io_t)                    :: hdf5io
       type(hdf5io_t)                    :: hdf5io_labels
 
@@ -278,7 +278,7 @@ contains
 
       limb = limb_t('CONST')
 
-      specint = specint_t(I, [1._RD], range, limb, low_acc=.TRUE.)
+      specint = limb_specint_t(I, [1._RD], range, limb, precise=.FALSE.)
 
       ! Write it
 

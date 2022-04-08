@@ -53,7 +53,7 @@ program synspec_to_specint
    type(log_range_t)         :: range
    real(RD), allocatable     :: lam(:)
    real(RD), allocatable     :: I(:,:)
-   type(specint_t)           :: specint
+   type(limb_specint_t)      :: specint
    type(hdf5io_t)            :: hdf5io
    type(hdf5io_t)            :: hdf5io_labels
    character(:), allocatable :: label
@@ -93,7 +93,7 @@ program synspec_to_specint
    range = log_range_t(w_0, dw, n_lam)
 
    allocate(lam(n_lam))
-   call range%expand(lam)
+   call range%unpack(lam)
 
    ! Bin the data onto this axis
 
@@ -103,7 +103,7 @@ program synspec_to_specint
 
    ! Create specint
 
-   specint = specint_t(I, mu, range, limb)
+   specint = limb_specint_t(I, mu, range, limb)
 
    ! Write it (together with labels)
 

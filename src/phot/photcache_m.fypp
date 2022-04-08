@@ -1,0 +1,343 @@
+! Module  : photcache_m
+! Purpose : Define photache_t type, for representing a cached
+!           table of photint_t's
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module photcache_m
+
+   ! Uses
+
+   use forum_m
+
+   use photint_m
+   use photsource_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type :: photcache_t
+      private
+      class(photsource_t), allocatable     :: photsource
+      type(photint_element_t), allocatable :: photint_elements(:)
+      integer, allocatable                 :: ltimes(:)
+      integer                              :: count
+      integer                              :: limit
+      integer                              :: n
+   contains
+      private
+      procedure, public :: get_count
+      procedure, public :: get_limit
+      procedure, public :: set_limit
+      procedure, public :: fetch
+      procedure         :: update_cache_
+      procedure         :: flush_cache_
+   end type photcache_t
+
+   type :: photint_element_t
+      class(photint_t), allocatable :: photint
+   end type photint_element_t
+
+   ! Interfaces
+
+   interface photcache_t
+      module procedure photcache_t_
+   end interface photcache_t
+
+   ! Access specifiers
+
+   private
+
+   public :: photcache_t
+
+contains
+
+   function photcache_t_(n) result(photcache)
+
+      integer, intent(in) :: n
+      type(photcache_t)   :: photcache
+
+      ! Construct photcache with n entries
+
+      allocate(photcache%photint_elements(n))
+
+      allocate(photcache%ltimes(n))
+      photcache%ltimes = 0
+
+      photcache%limit = n
+      photcache%count = 0
+
+      photcache%n = n
+
+      ! Finish
+
+      return
+
+   end function photcache_t_
+
+   !****
+
+   #:for name, type in (('count', 'integer'), &
+                        ('limit', 'integer'))
+
+      subroutine get_${name}$(self, ${name}$)
+
+         class(photcache_t), intent(in) :: self
+         ${type}$, intent(out)          :: ${name}$
+
+         ! Get ${name}$
+
+         ${name}$ = self%${name}$
+
+         ! Finish
+
+         return
+
+      end subroutine get_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine set_limit(self, limit, stat)
+
+      class(photcache_t), intent(inout) :: self
+      integer, intent(in), optional     :: limit
+      integer, intent(out), optional    :: stat
+
+      ! Set limit
+
+      if (PRESENT(limit)) then
+
+         if (limit > self%n .OR. limit < 0) then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_ARGUMENT
+               return
+            else
+               @:ABORT('invalid argument')
+            end if
+         end if
+
+         self%limit = limit
+
+      else
+
+         self%limit = self%n
+
+      end if
+
+      ! If necessary, flush the cache
+
+      if (self%count > 0) then
+         call self%flush_cache_()
+      end if
+         
+      ! Finish
+
+      return
+
+   end subroutine set_limit
+
+   !****
+
+   subroutine fetch(self, i, fetch_proc, photint, stat)
+
+      class(photcache_t), target, intent(inout) :: self
+      integer, intent(in)                       :: i
+      interface
+         subroutine fetch_proc(i, photint, stat)
+            use photint_m
+            integer, intent(in)                        :: i
+            class(photint_t), allocatable, intent(out) :: photint
+            integer, intent(out), optional             :: stat
+         end subroutine fetch_proc
+      end interface
+      class(photint_t), allocatable, intent(out) :: photint
+      integer, intent(out), optional             :: stat
+
+      integer :: j
+         
+      ! Fetch the i'th photint
+
+      if (i < 0 .OR. i > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      if (self%limit > 0) then
+         
+         ! Fetch from the cache; first check if the entry is already
+         ! present
+
+         if (self%ltimes(i) > 0) then
+
+            ! Update lifetime counters
+
+            where (self%ltimes > self%ltimes(i))
+               self%ltimes = self%ltimes - 1
+            end where
+            
+            self%ltimes(i) = self%count
+
+         else
+
+            ! Fetch into the cache
+
+            if (self%count == self%limit) then
+
+               ! Evict the oldest entry to make room
+
+               j = MINLOC(self%ltimes, DIM=1, mask=self%ltimes > 0)
+
+               deallocate(self%photint_elements(j)%photint)
+
+               where (self%ltimes > 0)
+                  self%ltimes = self%ltimes - 1
+               end where
+               
+            else
+
+               self%count = self%count + 1
+
+            end if
+
+            self%ltimes(i) = self%count
+
+            call fetch_proc(i, self%photint_elements(i)%photint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+         end if
+
+         ! Assign the entry
+
+         photint = self%photint_elements(i)%photint
+
+      else
+
+         ! Fetch using fetch_proc
+
+         call fetch_proc(i, photint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end if
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine fetch
+
+   !****
+      
+   subroutine update_cache_(self, i, stat)
+
+      class(photcache_t), intent(inout) :: self
+      integer, intent(in)               :: i
+      integer, intent(out), optional    :: stat
+
+      integer :: j
+
+      ! Update the cache to ensure the i'th entry is present
+
+      if (self%ltimes(i) > 0) then
+
+         ! Entry is already in the cache; update the lifetime counters
+
+         where (self%ltimes > self%ltimes(i))
+            self%ltimes = self%ltimes - 1
+         end where
+
+      else
+
+         ! Entry is not in the cache; fetch it
+
+         if (self%count == self%limit) then
+
+            ! Evict the oldest entry to make room
+
+            j = MINLOC(self%ltimes, DIM=1, mask=self%ltimes > 0)
+
+            deallocate(self%photint_elements(j)%photint)
+
+            where (self%ltimes > 0)
+               self%ltimes = self%ltimes - 1
+            end where
+
+         else
+
+            self%count = self%count + 1
+
+         end if
+
+         call self%photsource%fetch(i, self%photint_elements(i)%photint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end if
+
+      self%ltimes(i) = self%count
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine update_cache_
+
+   !****
+
+   subroutine flush_cache_(self)
+
+      class(photcache_t), intent(inout) :: self
+
+      integer :: i
+
+      ! Flush the cache
+
+      flush_loop : do i = 1, self%n
+         deallocate(self%photint_elements(i)%photint)
+      end do flush_loop
+
+      self%ltimes = 0
+
+      self%count = 0
+
+      ! Finish
+
+      return
+
+   end subroutine flush_cache_
+
+end module photcache_m

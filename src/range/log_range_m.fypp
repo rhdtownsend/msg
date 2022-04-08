@@ -1,6 +1,6 @@
-! Module  : tab_range_m
-! Purpose : define tab_range_t type, representing a tabulated
-!           range
+! Module  : log_range_m
+! Purpose : define log_range_t type, representing a logarithmically
+!           distributed range
 !
 ! Copyright 2022 Rich Townsend & The MSG Team
 !
@@ -18,7 +18,7 @@
 
 #:include 'forum.inc'
 
-module tab_range_m
+module log_range_m
 
    ! Uses
 
@@ -35,102 +35,141 @@ module tab_range_m
 
    ! Derived-type definitions
 
-   type, extends(range_t) :: tab_range_t
+   type, extends(range_t) :: log_range_t
       private
-      real(RD), allocatable :: x(:)
-      integer               :: n
+      real(RD) :: logx_0
+      real(RD) :: dlogx
+      integer  :: n
    contains
       private
-      procedure, public :: inquire
-      procedure, public :: expand
+      procedure, public :: get_n
+      procedure, public :: get_x_min
+      procedure, public :: get_x_max
+      procedure, public :: unpack
       procedure, public :: subset
       procedure, public :: read
-      procedure, public :: write
-   end type tab_range_t
+      procedure, public :: write 
+  end type log_range_t
 
    ! Interfaces
 
-   interface tab_range_t
-      module procedure tab_range_t_
-   end interface tab_range_t
+   interface log_range_t
+      module procedure log_range_t_
+   end interface log_range_t
 
    ! Access specifiers
 
    private
 
-   public :: tab_range_t
+   public :: log_range_t
 
 contains
 
-   function tab_range_t_(x) result (range)
+   function log_range_t_(logx_0, dlogx, n) result(range)
 
-      real(RD), intent(in) :: x(:)
-      type(tab_range_t)    :: range
-
-      integer :: n
-
+      real(RD), intent(in) :: logx_0
+      real(RD), intent(in) :: dlogx
+      integer, intent(in)  :: n
+      type(log_range_t)    :: range
+      
       ! Construct range from the supplied data
 
-      n = SIZE(x)
-
       @:ASSERT(n >= 1,'insufficient data')
-      @:ASSERT_DEBUG(ALL(x(2:) > x(:n-1)),'non-monotonic data')
 
-      range%x = x
+      range%logx_0 = logx_0
+      range%dlogx = dlogx
+
       range%n = n
 
       ! Finish
 
       return
 
-   end function tab_range_t_
+   end function log_range_t_
 
    !****
 
-   subroutine inquire(self, n, min, max)
+   subroutine get_n(self, n)
 
-      class(tab_range_t), intent(in)  :: self
-      integer, intent(out), optional  :: n
-      real(RD), intent(out), optional :: min
-      real(RD), intent(out), optional :: max
+      class(log_range_t), intent(in) :: self
+      integer, intent(out)           :: n
 
-      ! Inquire metadata
+      ! Get the size
 
-      if (PRESENT(n)) n = self%n
-
-      if (PRESENT(min)) min = self%x(1)
-      if (PRESENT(max)) max = self%x(self%n)
+      n = self%n
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_n
 
    !****
 
-   subroutine expand(self, x)
+   subroutine get_x_min(self, x_min)
 
-      class(tab_range_t), intent(in) :: self
+      class(log_range_t), intent(in) :: self
+      real(RD), intent(out)          :: x_min
+
+      ! Get the x-minimum
+
+      x_min = EXP(self%logx_0)
+
+      ! Finish
+
+      return
+
+   end subroutine get_x_min
+
+   !****
+
+   subroutine get_x_max(self, x_max)
+
+      class(log_range_t), intent(in) :: self
+      real(RD), intent(out)          :: x_max
+
+      ! Get the x-maximum
+
+      x_max = EXP(self%logx_0 + self%dlogx*(self%n-1))
+
+      ! Finish
+
+      return
+
+   end subroutine get_x_max
+
+   !****
+
+   subroutine unpack(self, x)
+
+      class(log_range_t), intent(in) :: self
       real(RD), intent(out)          :: x(:)
+
+      integer :: i
+
+      ! Unpack the range into the array
 
       @:CHECK_BOUNDS(SIZE(x), self%n)
 
-      ! Expand the range into the array
+      ! Unpack the range into the array
 
-      x = self%x
+      do i = 1, self%n
+         x(i) = EXP(self%logx_0 + self%dlogx*(i-1))
+      end do
+
+      ! Finish
 
       ! Finish
 
       return
 
-   end subroutine expand
+   end subroutine unpack
 
    !****
-    
+
    subroutine subset(self, i_a, i_b, range, stat)
 
-      class(tab_range_t), intent(in)           :: self
+      class(log_range_t), intent(in)           :: self
       integer, intent(in)                      :: i_a
       integer, intent(in)                      :: i_b
       class(range_t), allocatable, intent(out) :: range
@@ -165,7 +204,7 @@ contains
          end if
       end if
 
-      range = tab_range_t(self%x(i_a:i_b))
+      range = log_range_t(self%logx_0+self%dlogx*(i_a-1), self%dlogx, i_b-i_a+1)
 
       ! Finish
 
@@ -177,37 +216,38 @@ contains
 
    subroutine read(self, hdf5io, stat)
 
-      class(tab_range_t), intent(out) :: self
+      class(log_range_t), intent(out) :: self
       type(hdf5io_t), intent(inout)   :: hdf5io
-      integer, intent(out), optional :: stat
+      integer, intent(out), optional  :: stat
 
-      character(TYPE_LEN)   :: type
-      real(RD), allocatable :: x(:)
+      character(TYPE_LEN) :: type
+      real(RD)            :: logx_0
+      real(RD)            :: dlogx
+      integer             :: n
 
       ! Read the range
 
       call hdf5io%read_attr('TYPE', type)
-      if (type /= 'tab_range_t') then
+      if (type /= 'log_range_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
-            return
          else
             @:ABORT('invalid type')
-         endif
-      endif
+         end if
+      end if
 
-      call hdf5io%alloc_read_dset('x', x)
+      call hdf5io%read_dset('logx_0', logx_0)
+      call hdf5io%read_dset('dlogx', dlogx)
+      call hdf5io%read_dset('n', n)
 
       select type(self)
-      type is (tab_range_t)
-         self = tab_range_t(x)
+      type is (log_range_t)
+         self = log_range_t(logx_0, dlogx, n)
       class default
          @:ABORT('invalid type')
       end select
 
       ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -217,22 +257,22 @@ contains
 
    subroutine write(self, hdf5io, stat)
 
-      class(tab_range_t), intent(in) :: self
+      class(log_range_t), intent(in) :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
       ! Write range
 
-      call hdf5io%write_attr('TYPE', 'tab_range_t')
-      
-      call hdf5io%write_dset('x', self%x)
+      call hdf5io%write_attr('TYPE', 'log_range_t')
 
+      call hdf5io%write_dset('logx_0', self%logx_0)
+      call hdf5io%write_dset('dlogx', self%dlogx)
+      call hdf5io%write_dset('n', self%n)
+     
       ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
    end subroutine write
 
-end module tab_range_m
+end module log_range_m

@@ -1,5 +1,5 @@
-! Module  : msg_m
-! Purpose : Low-level interface for MSG
+! Submdule : specint_m
+! Purpose  : Factory routines for specint_m
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,31 +17,40 @@
 
 #:include 'forum.inc'
 
-module msg_m
+submodule(specint_m) specint_sm
 
    ! Uses
 
-   use axis_m
-   use limb_m
-   use ngrid_m
-   use passband_m
-   use photint_m
-   use limb_photint_m
-   use photgrid_m
-   use photsource_m
-   use hdf5_photsource_m
-   use spec_photsource_m
-   use mem_photsource_m
-   use range_m
-   use comp_range_m, only: comp_range_t
-   use lin_range_m, only: lin_range_t
-   use log_range_m, only: log_range_t
-   use tab_range_m, only: tab_range_t
-   use specgrid_m
-   use specint_m
-   use limb_specint_m
-   use specsource_m
-   use hdf5_specsource_m
-   use stat_m
+   use forum_m
 
-end module msg_m
+   use limb_specint_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+contains
+
+   function specint_t_type_(type) result(specint)
+
+      character(*), intent(in)      :: type
+      class(specint_t), allocatable :: specint
+
+      ! Construct specint by allocating with the indicated type
+
+      select case(type)
+      case('limb_specint_t')
+         allocate(limb_specint_t::specint)
+      case default
+         @:ABORT('invalid type')
+      end select
+
+      ! Finish
+
+      return
+
+   end function specint_t_type_
+
+end submodule specint_sm

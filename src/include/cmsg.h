@@ -21,36 +21,48 @@
 
 typedef void *SpecGrid;
 
-void load_SpecGrid(const char *specgrid_file_name, SpecGrid *specgrid, int *stat);
-void unload_SpecGrid(SpecGrid specgrid);
+void load_specgrid(const char *specgrid_file_name, SpecGrid *specgrid, int *stat);
+void unload_specgrid(SpecGrid specgrid);
 
-void inquire_SpecGrid(SpecGrid specgrid, double *lam_min, double *lam_max, int shape[], int *rank, double axis_min[], double axis_max[]);
-void config_SpecGrid(SpecGrid specgrid, double *cache_lam_min, double *cache_lam_max, int *cache_limit, int *stat);
+void get_specgrid_rank(SpecGrid specgrid, int *rank);
+void get_specgrid_cache_count(SpecGrid specgrid, int *cache_count);
+void get_specgrid_cache_limit(SpecGrid specgrid, int *cache_limit);
+void get_specgrid_cache_lam_min(SpecGrid specgrid, double *cache_lam_min);
+void get_specgrid_cache_lam_max(SpecGrid specgrid, double *cache_lam_max);
+void get_specgrid_axis_x_min(SpecGrid specgrid, int i, double *axis_x_min);
+void get_specgrid_axis_x_max(SpecGrid specgrid, int i, double *axis_x_max);
+void get_specgrid_axis_label(SpecGrid specgrid, int i, char *axis_label);
 
-void get_axis_label_SpecGrid(SpecGrid specgrid, int i, char *axis_label);
+void set_specgrid_cache_limit(SpecGrid specgrid, int *cache_limit, int *stat);
+void set_specgrid_cache_lam_min(SpecGrid specgrid, double *cache_lam_min, int *stat);
+void set_specgrid_cache_lam_max(SpecGrid specgrid, double *cache_lam_max, int *stat);
 
-void interp_intensity_SpecGrid(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], int *stat, bool deriv_vec[]);
-void interp_E_moment_SpecGrid(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], int *stat, bool deriv_vec[]);
-void interp_D_moment_SpecGrid(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], int *stat, bool deriv_vec[]);
-void interp_flux_SpecGrid(SpecGrid specgrid, double x_vec[], int n, double lam[], double F[], int *stat, bool deriv_vec[]);
+void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], int *stat, bool deriv_vec[]);
+void interp_specgrid_e_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], int *stat, bool deriv_vec[]);
+void interp_specgrid_d_moment(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], int *stat, bool deriv_vec[]);
+void interp_specgrid_flux(SpecGrid specgrid, double x_vec[], int n, double lam[], double F[], int *stat, bool deriv_vec[]);
 
 // photgrid interface
 
 typedef void *PhotGrid;
 
-void load_PhotGrid(const char *photgrid_file_name, PhotGrid *photgrid, int *stat);
-void load_PhotGrid_from_SpecGrid(const char *specgrid_file_name, const char *passband_file_name, PhotGrid *photgrid, int *stat);
+void load_photgrid(const char *photgrid_file_name, PhotGrid *photgrid, int *stat);
+void load_photgrid_from_specgrid(const char *specgrid_file_name, const char *passband_filename, PhotGrid *photgrid, int *stat);
+void unload_photgrid(PhotGrid photgrid);
 
-void unload_PhotGrid(PhotGrid photgrid);
+void get_photgrid_rank(PhotGrid photgrid, int *rank);
+void get_photgrid_cache_count(PhotGrid photgrid, int *cache_count);
+void get_photgrid_cache_limit(PhotGrid photgrid, int *cache_limit);
+void get_photgrid_axis_x_min(PhotGrid photgrid, int i, double *axis_x_min);
+void get_photgrid_axis_x_max(PhotGrid photgrid, int i, double *axis_x_max);
+void get_photgrid_axis_label(PhotGrid photgrid, int i, char *axis_label);
 
-void inquire_PhotGrid(PhotGrid photgrid, int shape[], int *rank, double axis_min[], double axis_max[]);
+void set_photgrid_cache_limit(PhotGrid photgrid, int *cache_limit, int *stat);
 
-void get_axis_label_PhotGrid(PhotGrid photgrid, int i, char *axis_label);
-
-void interp_intensity_PhotGrid(PhotGrid photgrid, double x_vec[], double mu, double *I, int *stat, bool deriv_vec[]);
-void interp_E_moment_PhotGrid(PhotGrid photgrid, double x_vec[], int k, double *E, int *stat, bool deriv_vec[]);
-void interp_D_moment_PhotGrid(PhotGrid photgrid, double x_vec[], int l, double *D, int *stat, bool deriv_vec[]);
-void interp_flux_PhotGrid(PhotGrid photgrid, double x_vec[], double *F, int *stat, bool deriv_vec[]);
+void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, int *stat, bool deriv_vec[]);
+void interp_photgrid_e_moment(PhotGrid photgrid, double x_vec[], int k, double *E, int *stat, bool deriv_vec[]);
+void interp_photgrid_d_moment(PhotGrid photgrid, double x_vec[], int l, double *D, int *stat, bool deriv_vec[]);
+void interp_photgrid_flux(PhotGrid photgrid, double x_vec[], double *F, int *stat, bool deriv_vec[]);
 
 // enums etc
 

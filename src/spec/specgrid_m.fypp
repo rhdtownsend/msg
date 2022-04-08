@@ -1,5 +1,5 @@
 ! Module  : specgrid_m
-! Purpose : define specgrid_t type, for representing spectral intensity
+! Purpose : Define specgrid_t type, for representing spectral intensity
 !           grids
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
@@ -24,13 +24,15 @@ module specgrid_m
    
    use forum_m
 
+   use axis_m
    use ngrid_m
    use passband_m
    use photgrid_m
-   use spec_phottable_m
+   use speccache_m
    use specint_m
-   use spectable_m
-   use hdf5_spectable_m
+   use specsource_m
+   use hdf5_specsource_m
+   use spec_photsource_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -43,14 +45,20 @@ module specgrid_m
 
    type :: specgrid_t
       private
-      class(spectable_t), allocatable :: spectable
-      type(ngrid_t)                   :: ngrid
-      integer, allocatable            :: shape(:)
-      integer                         :: rank
+      class(specsource_t), allocatable :: specsource
+      type(speccache_t)                :: speccache
+      type(ngrid_t)                    :: ngrid
    contains
       private
-      procedure, public :: inquire
-      procedure, public :: config
+      procedure, public :: get_rank
+      procedure, public :: get_axis
+      procedure, public :: get_cache_count
+      procedure, public :: get_cache_limit
+      procedure, public :: get_cache_lam_min
+      procedure, public :: get_cache_lam_max
+      procedure, public :: set_cache_limit
+      procedure, public :: set_cache_lam_min
+      procedure, public :: set_cache_lam_max
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -75,34 +83,28 @@ module specgrid_m
 
 contains
 
-   function specgrid_t_(spectable, ngrid) result (specgrid)
+   function specgrid_t_(specsource, ngrid, lam_min, lam_max) result (specgrid)
 
-      class(spectable_t), intent(in) :: spectable
-      type(ngrid_t), intent(in)      :: ngrid
-      type(specgrid_t)               :: specgrid
+      class(specsource_t), intent(in) :: specsource
+      type(ngrid_t), intent(in)       :: ngrid
+      real(RD), intent(in)            :: lam_min
+      real(RD), intent(in)            :: lam_max
+      type(specgrid_t)                :: specgrid
 
-      integer              :: n
-      integer              :: n_con
-      integer              :: rank
-      integer, allocatable :: shape(:)
+      integer :: n
+      integer :: n_con
 
       ! Construct specgrid from the supplied data
 
-      call spectable%inquire(n=n)
-
-      call ngrid%inquire(n_con=n_con, rank=rank)
+      call specsource%get_n(n)
+      call ngrid%get_n_con(n_con)
 
       @:CHECK_BOUNDS(n, n_con)
 
-      allocate(shape(rank))
+      specgrid%specsource = specsource
+      specgrid%speccache = speccache_t(n, lam_min, lam_max)
 
-      call ngrid%inquire(shape=shape)
-
-      specgrid%spectable = spectable
       specgrid%ngrid = ngrid
-
-      specgrid%shape = shape
-      specgrid%rank = rank
 
       ! Finish
 
@@ -112,60 +114,160 @@ contains
 
    !****
 
-   subroutine inquire(self, lam_min, lam_max, shape, rank, axis_min, axis_max, axis_labels)
+   subroutine get_rank(self, rank)
 
-      class(specgrid_t), intent(in)       :: self
-      real(RD), intent(out), optional     :: lam_min
-      real(RD), intent(out), optional     :: lam_max
-      integer, intent(out), optional      :: shape(:)
-      integer, intent(out), optional      :: rank
-      real(RD), intent(out), optional     :: axis_min(:)
-      real(RD), intent(out), optional     :: axis_max(:)
-      character(*), intent(out), optional :: axis_labels(:)
+      class(specgrid_t), intent(in) :: self
+      integer, intent(out)          :: rank
 
-      if (PRESENT(shape)) then
-         @:CHECK_BOUNDS(SIZE(shape), self%rank)
-      end if
+      ! Get the rank
 
-      ! Inquire metadata
-
-      if (PRESENT(shape)) shape = self%shape
-      if (PRESENT(rank)) rank = self%rank
-
-      call self%spectable%inquire(lam_min=lam_min, lam_max=lam_max)
-
-      call self%ngrid%inquire(axis_min=axis_min, axis_max=axis_max, axis_labels=axis_labels)
+      call self%ngrid%get_rank(rank)
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_rank
 
    !****
 
-   subroutine config(self, cache_limit, cache_lam_min, cache_lam_max, stat)
-      
-      class(specgrid_t), intent(inout) :: self
-      integer, intent(in), optional    :: cache_limit
-      real(RD), intent(in), optional   :: cache_lam_min
-      real(RD), intent(in), optional   :: cache_lam_max
-      integer, intent(out), optional   :: stat
+   subroutine get_axis(self, i, axis)
 
-      ! Configure parameters
+      class(specgrid_t), intent(in) :: self
+      integer, intent(in)           :: i
+      type(axis_t), intent(out)     :: axis
 
-      select type(spectable => self%spectable)
-      type is(hdf5_spectable_t)
-         call spectable%config(cache_limit=cache_limit, cache_lam_min=cache_lam_min, cache_lam_max=cache_lam_max, stat=stat)
-      class default
-         @:ABORT('invalid type')
-      end select
+      ! Get the i'th axis
+
+      call self%ngrid%get_axis(i, axis)
 
       ! Finish
 
       return
 
-   end subroutine config
+   end subroutine get_axis
+
+   !****
+
+   subroutine get_cache_lam_min(self, cache_lam_min)
+
+      class(specgrid_t), intent(in) :: self
+      real(RD), intent(out)         :: cache_lam_min
+
+      ! Get the cache minimum wavelength
+
+      call self%speccache%get_lam_min(cache_lam_min)
+
+      ! Finish
+
+      return
+
+   end subroutine get_cache_lam_min
+      
+   !****
+
+   subroutine get_cache_lam_max(self, cache_lam_max)
+
+      class(specgrid_t), intent(in) :: self
+      real(RD), intent(out)         :: cache_lam_max
+
+      ! Get the cache maximum wavelength
+
+      call self%speccache%get_lam_max(cache_lam_max)
+
+      ! Finish
+
+      return
+
+   end subroutine get_cache_lam_max
+      
+   !****
+
+   subroutine get_cache_count(self, cache_count)
+
+      class(specgrid_t), intent(in) :: self
+      integer, intent(out)          :: cache_count
+
+      ! Get the cache occupancy
+
+      call self%speccache%get_count(cache_count)
+
+      ! Finish
+
+      return
+
+   end subroutine get_cache_count
+
+   !****
+
+   subroutine get_cache_limit(self, cache_limit)
+
+      class(specgrid_t), intent(in) :: self
+      integer, intent(out)          :: cache_limit
+
+      ! Get the cache occupancy limit
+
+      call self%speccache%get_limit(cache_limit)
+
+      ! Finish
+
+      return
+
+   end subroutine get_cache_limit
+
+   !****
+
+   subroutine set_cache_lam_min(self, cache_lam_min, stat)
+
+      class(specgrid_t), intent(inout) :: self
+      real(RD), intent(in), optional   :: cache_lam_min
+      integer, intent(out), optional   :: stat
+
+      ! Set the cache minimum wavelength
+
+      call self%speccache%set_lam_min(cache_lam_min, stat)
+
+      ! Finish
+
+      return
+
+   end subroutine set_cache_lam_min
+
+   !****
+
+   subroutine set_cache_lam_max(self, cache_lam_max, stat)
+
+      class(specgrid_t), intent(inout) :: self
+      real(RD), intent(in), optional   :: cache_lam_max
+      integer, intent(out), optional   :: stat
+
+      ! Set the cache maximum wavelength
+
+      call self%speccache%set_lam_max(cache_lam_max, stat)
+
+      ! Finish
+
+      return
+
+   end subroutine set_cache_lam_max
+
+   !****
+
+   subroutine set_cache_limit(self, cache_limit, stat)
+
+      class(specgrid_t), intent(inout) :: self
+      integer, intent(in), optional    :: cache_limit
+      integer, intent(out), optional   :: stat
+
+      ! Set the cache occupancy limit
+
+      call self%speccache%set_limit(cache_limit, stat)
+
+      ! Finish
+
+      return
+
+   end subroutine set_cache_limit
 
    !****
 
@@ -175,13 +277,13 @@ contains
 
       subroutine interp_${name}$(self, x_vec, ${arg_var}$, lam, res, stat, deriv_vec)
 
-         class(specgrid_t), intent(inout) :: self
-         real(RD), intent(in)             :: x_vec(:)
-         ${arg_type}$, intent(in)         :: ${arg_var}$
-         real(RD), intent(in)             :: lam(:)
-         real(RD), intent(out)            :: res(:)
-         integer, intent(out), optional   :: stat
-         logical, intent(in), optional    :: deriv_vec(:)
+         class(specgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:)
+         ${arg_type}$, intent(in)                 :: ${arg_var}$
+         real(RD), intent(in)                     :: lam(:)
+         real(RD), intent(out)                    :: res(:)
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
 
          ! Interpolate ${name}$
 
@@ -197,17 +299,35 @@ contains
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer :: i_lin
-            integer :: i_con
+            integer                       :: i_lin
+            integer                       :: i_con
+            class(specint_t), allocatable :: specint
 
             i_lin = self%ngrid%lin_from_vec(i_vec)
             i_con = self%ngrid%con_from_lin(i_lin)
 
-            call self%spectable%interp_${name}$(i_con, ${arg_var}$, lam, f, stat)
+            call self%speccache%fetch(i_con, fetch_proc_, specint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call specint%interp_${name}$(${arg_var}$, lam, f, stat)
 
             return
 
          end subroutine data_proc_
+
+         subroutine fetch_proc_(i, specint, stat)
+
+            integer, intent(in)                        :: i
+            class(specint_t), allocatable, intent(out) :: specint
+            integer, intent(out), optional             :: stat
+
+            call self%specsource%fetch(i, specint, stat)
+
+            return
+
+         end subroutine fetch_proc_
 
       end subroutine interp_${name}$
 
@@ -240,17 +360,35 @@ contains
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer :: i_lin
-            integer :: i_con
+            integer                       :: i_lin
+            integer                       :: i_con
+            class(specint_t), allocatable :: specint
 
             i_lin = self%ngrid%lin_from_vec(i_vec)
             i_con = self%ngrid%con_from_lin(i_lin)
 
-            call self%spectable%interp_${name}$(i_con, lam, f, stat)
+            call self%speccache%fetch(i_con, fetch_proc_, specint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call specint%interp_${name}$(lam, f, stat)
 
             return
 
          end subroutine data_proc_
+
+         subroutine fetch_proc_(i, specint, stat)
+
+            integer, intent(in)                        :: i
+            class(specint_t), allocatable, intent(out) :: specint
+            integer, intent(out), optional             :: stat
+
+            call self%specsource%fetch(i, specint, stat)
+
+            return
+
+         end subroutine fetch_proc_
 
       end subroutine interp_${name}$
 
@@ -260,21 +398,23 @@ contains
 
    subroutine filter(self, passband, photgrid, stat)
 
-      class(specgrid_t), intent(inout) :: self
-      type(passband_t), intent(in)     :: passband
-      type(photgrid_t), intent(out)    :: photgrid
-      integer, intent(out), optional   :: stat
+      class(specgrid_t), intent(in)  :: self
+      type(passband_t), intent(in)   :: passband
+      type(photgrid_t), intent(out)  :: photgrid
+      integer, intent(out), optional :: stat
 
-      ! Filter the specgrid through the passband to yield photgrid
+      ! Apply the passband to create a photgrid
 
-      photgrid = photgrid_t(spec_phottable_t(self%spectable, passband), self%ngrid)
+      photgrid = photgrid_t(spec_photsource_t(self%specsource, passband), self%ngrid)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
    end subroutine filter
-
+      
    !****
 
    subroutine read(self, hdf5io, stat)
@@ -283,11 +423,19 @@ contains
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)    :: type
-      type(hdf5io_t)         :: hdf5io_spectable
-      type(hdf5_spectable_t) :: spectable
-      type(hdf5io_t)         :: hdf5io_ngrid
-      type(ngrid_t)          :: ngrid
+      character(TYPE_LEN)       :: type
+      type(hdf5io_t)            :: hdf5io_specsource
+      integer                   :: n
+      real(RD)                  :: lam_min
+      real(RD)                  :: lam_max
+      character(:), allocatable :: file_name
+      character(:), allocatable :: group_name
+      character(:), allocatable :: file_names(:)
+      character(:), allocatable :: group_names(:)
+      integer                   :: i
+      type(hdf5_specsource_t)   :: specsource
+      type(hdf5io_t)            :: hdf5io_ngrid
+      type(ngrid_t)             :: ngrid
 
       ! Read the specgrid
 
@@ -301,6 +449,26 @@ contains
          endif
       endif
 
+      hdf5io_specsource = hdf5io_t(hdf5io, 'specsource')
+      call hdf5io_specsource%read_attr('n', n)
+      call hdf5io_specsource%read_attr('lam_min', lam_min)
+      call hdf5io_specsource%read_attr('lam_max', lam_max)
+      call hdf5io_specsource%final()
+
+      call hdf5io%inquire(file_name=file_name, group_name=group_name)
+
+      allocate(character(LEN(file_name))::file_names(n))
+      allocate(character(LEN(group_name)+24)::group_names(n))
+
+      name_loop : do i = 1, n
+
+         file_names(i) = file_name
+         group_names(i) = group_name//'/specsource/'//specint_group_name_(i)
+
+      end do name_loop
+      
+      specsource = hdf5_specsource_t(file_names, group_names)
+
       hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
       call ngrid%read(hdf5io_ngrid, stat)
       call hdf5io_ngrid%final()
@@ -308,16 +476,9 @@ contains
          if (stat /= STAT_OK) return
       end if
 
-      hdf5io_spectable = hdf5io_t(hdf5io, 'spectable')
-      call spectable%read(hdf5io_spectable, stat)
-      call hdf5io_spectable%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
       select type(self)
       type is(specgrid_t)
-         self = specgrid_t(spectable, ngrid)
+         self = specgrid_t(specsource, ngrid, lam_min, lam_max)
       class default
          @:ABORT('invalid type')
       end select
@@ -338,19 +499,46 @@ contains
       type(hdf5io_t), intent(inout)    :: hdf5io
       integer, intent(out), optional   :: stat
 
-      type(hdf5io_t) :: hdf5io_spectable
-      type(hdf5io_t) :: hdf5io_ngrid
+      integer                       :: n
+      real(RD)                      :: lam_min
+      real(RD)                      :: lam_max
+      type(hdf5io_t)                :: hdf5io_specsource
+      integer                       :: i
+      class(specint_t), allocatable :: specint
+      type(hdf5io_t)                :: hdf5io_specint
+      type(hdf5io_t)                :: hdf5io_ngrid
 
       ! Write the specgrid
 
       call hdf5io%write_attr('TYPE', 'specgrid_t')
 
-      call hdf5io%write_attr('shape', self%shape)
-      call hdf5io%write_attr('rank', self%rank)
+      call self%ngrid%get_n_con(n)
+      call self%speccache%get_lam_min(lam_min)
+      call self%speccache%get_lam_max(lam_max)
 
-      hdf5io_spectable = hdf5io_t(hdf5io, 'spectable')
-      call self%spectable%write(hdf5io_spectable, stat)
-      call hdf5io_spectable%final()
+      hdf5io_specsource = hdf5io_t(hdf5io, 'specsource')
+
+      call hdf5io_specsource%write_attr('n', n)
+      call hdf5io_specsource%write_attr('lam_min', lam_min)
+      call hdf5io_specsource%write_attr('lam_max', lam_max)
+
+      write_loop: do i = 1, n
+
+         call self%speccache%fetch(i, fetch_proc_, specint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+         hdf5io_specint = hdf5io_t(hdf5io_specsource, specint_group_name_(i))
+         call specint%write(hdf5io_specint, stat)
+         call hdf5io_specint%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+      end do write_loop
+
+      call hdf5io_specsource%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
@@ -368,6 +556,32 @@ contains
 
       return
 
+   contains
+
+      subroutine fetch_proc_(i, specint, stat)
+
+         integer, intent(in)                        :: i
+         class(specint_t), allocatable, intent(out) :: specint
+         integer, intent(out), optional             :: stat
+
+         call self%specsource%fetch(i, specint, stat)
+
+         return
+
+      end subroutine fetch_proc_
+
    end subroutine write
+
+   !****
+
+   function specint_group_name_(i) result(name)
+
+      integer, intent(in) :: i
+      character(256)      :: name
+
+      write(name, 100) i
+100   format('specints[',I0,']')
+      
+   end function specint_group_name_
 
 end module specgrid_m

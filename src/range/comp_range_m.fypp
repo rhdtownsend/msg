@@ -1,5 +1,5 @@
-! Module  : agg_range_m
-! Purpose : define agg_range_t type, representing an aggregate of other
+! Module  : comp_range_m
+! Purpose : define comp_range_t type, representing a composite of other
 !           ranges
 !
 ! Copyright 2022 Rich Townsend & The MSG Team
@@ -18,14 +18,13 @@
 
 #:include 'forum.inc'
 
-module agg_range_m
+module comp_range_m
 
    ! Uses
 
    use forum_m
    
    use range_m
-   use elem_range_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -36,38 +35,68 @@ module agg_range_m
 
    ! Derived-type definitions
 
-   type, extends(range_t) :: agg_range_t
+   type, extends(range_t) :: comp_range_t
       private
-      type(elem_range_t), allocatable :: ranges(:)
-      integer, allocatable            :: i_bdy(:)
-      integer                         :: n_ranges
+      type(range_element_t), allocatable :: range_elements(:)
+      integer, allocatable               :: i_bdy(:)
+      integer                            :: n_ranges
    contains
       private
-      procedure, public :: inquire
-      procedure, public :: expand
+      procedure, public :: get_n
+      procedure, public :: get_x_min
+      procedure, public :: get_x_max
+      procedure, public :: unpack
       procedure, public :: subset
       procedure, public :: read
       procedure, public :: write
-   end type agg_range_t
+   end type comp_range_t
+
+   type :: range_element_t
+      class(range_t), allocatable :: range
+   end type range_element_t
 
    ! Interfaces
 
-   interface agg_range_t
-      module procedure agg_range_t_
-   end interface agg_range_t
+   interface comp_range_t
+      module procedure comp_range_t_
+   end interface comp_range_t
 
    ! Access specifiers
 
    private
 
-   public :: agg_range_t
+   public :: comp_range_t
 
 contains
 
-   function agg_range_t_(ranges) result(range)
+   function comp_range_t_(ranges) result(range)
 
-      type(elem_range_t), intent(in) :: ranges(:)
-      type(agg_range_t)              :: range
+      class(range_t), intent(in) :: ranges(:)
+      type(comp_range_t)         :: range
+
+      type(range_element_t) :: range_elements(SIZE(ranges))
+      integer               :: j
+
+      ! Construct range from the ranges
+
+      do j = 1, SIZE(ranges)
+         range_elements(j)%range = ranges(j)
+      end do
+
+      range = comp_range_t_elements_(range_elements)
+
+      ! Finish
+
+      return
+
+   end function comp_range_t_
+
+   !****
+
+   function comp_range_t_elements_(range_elements) result(range)
+
+      type(range_element_t), intent(in) :: range_elements(:)
+      type(comp_range_t)                :: range
 
       integer  :: n_ranges
       integer  :: n
@@ -76,18 +105,20 @@ contains
       real(RD) :: x_max_prev
       integer  :: j
 
-      ! Construct range from the sequence of range elements
+      ! Construct range from the range elements
 
-      n_ranges = SIZE(ranges)
+      n_ranges = SIZE(range_elements)
 
       @:ASSERT(n_ranges >= 1,'insufficient data')
 
-      range%ranges = ranges
-
+      range%range_elements = range_elements
+      
       allocate(range%i_bdy(n_ranges+1))
 
-      range%i_bdy = 1
-      call ranges(1)%inquire(n=n, max=x_max)
+      range%i_bdy(1) = 1
+
+      call range_elements(1)%range%get_n(n)
+      call range_elements(1)%range%get_x_max(x_max)
 
       do j = 2, n_ranges
 
@@ -95,7 +126,9 @@ contains
 
          x_max_prev = x_max
          
-         call ranges(j)%inquire(n=n, min=x_min, max=x_max)
+         call range_elements(j)%range%get_n(n)
+         call range_elements(j)%range%get_x_min(x_min)
+         call range_elements(j)%range%get_x_max(x_max)
 
          @:ASSERT(x_min > x_max_prev,'overlapping ranges')
 
@@ -109,48 +142,77 @@ contains
 
       return
 
-   end function agg_range_t_
+   end function comp_range_t_elements_
 
    !****
 
-   subroutine inquire(self, n, min, max)
+   subroutine get_n(self, n)
 
-      class(agg_range_t), intent(in)  :: self
-      integer, intent(out), optional  :: n
-      real(RD), intent(out), optional :: min
-      real(RD), intent(out), optional :: max
+      class(comp_range_t), intent(in) :: self
+      integer, intent(out)            :: n
 
-      ! Inquire metadata
+      ! Get the size
 
-      if (PRESENT(n)) n = self%i_bdy(self%n_ranges+1)-1
-
-      call self%ranges(1)%inquire(min=min)
-      call self%ranges(self%n_ranges)%inquire(max=max)
+      n = self%i_bdy(self%n_ranges+1)-1
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_n
 
    !****
 
-   subroutine expand(self, x)
+   subroutine get_x_min(self, x_min)
 
-      class(agg_range_t), intent(in) :: self
-      real(RD), intent(out)          :: x(:)
+      class(comp_range_t), intent(in) :: self
+      real(RD), intent(out)           :: x_min
+
+      ! Get the x-minimum
+
+      call self%range_elements(1)%range%get_x_min(x_min)
+
+      ! Finish
+
+      return
+
+   end subroutine get_x_min
+
+   !****
+
+   subroutine get_x_max(self, x_max)
+
+      class(comp_range_t), intent(in) :: self
+      real(RD), intent(out)           :: x_max
+
+      ! Get the x-maximum
+
+      call self%range_elements(self%n_ranges)%range%get_x_max(x_max)
+
+      ! Finish
+
+      return
+
+   end subroutine get_x_max
+
+   !****
+
+   subroutine unpack(self, x)
+
+      class(comp_range_t), intent(in) :: self
+      real(RD), intent(out)           :: x(:)
 
       integer :: j
 
       @:CHECK_BOUNDS(SIZE(x), self%i_bdy(self%n_ranges+1)-1)
 
-      ! Expand the range into the array
+      ! Unpack the range into the array
 
       ranges_loop: do j = 1, self%n_ranges
          
          associate (i_a => self%i_bdy(j), &
-              i_b => self%i_bdy(j+1)-1)
-           call self%ranges(j)%expand(x(i_a:i_b))
+                    i_b => self%i_bdy(j+1)-1)
+           call self%range_elements(j)%range%unpack(x(i_a:i_b))
          end associate
       end do ranges_loop
 
@@ -158,26 +220,25 @@ contains
 
       return
 
-   end subroutine expand
+   end subroutine unpack
 
    !****
 
    subroutine subset(self, i_a, i_b, range, stat)
 
-      class(agg_range_t), intent(in)           :: self
+      class(comp_range_t), intent(in)          :: self
       integer, intent(in)                      :: i_a
       integer, intent(in)                      :: i_b
       class(range_t), allocatable, intent(out) :: range
       integer, intent(out), optional           :: stat
 
-      integer                         :: j_a
-      integer                         :: j_b
-      integer                         :: n_ranges
-      type(elem_range_t), allocatable :: ranges(:)
-      integer                         :: j
-      integer                         :: k_a
-      integer                         :: k_b
-      class(range_t), allocatable     :: range_j
+      integer                            :: j_a
+      integer                            :: j_b
+      integer                            :: n_ranges
+      type(range_element_t), allocatable :: range_elements(:)
+      integer                             :: j
+      integer                             :: k_a
+      integer                             :: k_b
 
       ! Subset the range
 
@@ -220,7 +281,7 @@ contains
 
       n_ranges = j_b - j_a + 1
 
-      allocate(ranges(n_ranges))
+      allocate(range_elements(n_ranges))
 
       ranges_loop : do j = j_a, j_b
 
@@ -236,12 +297,11 @@ contains
             k_b = self%i_bdy(j+1) - self%i_bdy(j)
          end if
 
-         call self%ranges(j)%subset(k_a, k_b, range_j)
-         ranges(j-j_a+1) = elem_range_t(range_j)
+         call self%range_elements(j)%range%subset(k_a, k_b, range_elements(j-j_a+1)%range)
 
       end do ranges_loop
 
-      range = agg_range_t(ranges)
+      range = comp_range_t_elements_(range_elements)
 
       ! Finish
 
@@ -253,20 +313,20 @@ contains
 
    subroutine read(self, hdf5io, stat)
 
-      class(agg_range_t), intent(out) :: self
-      type(hdf5io_t), intent(inout)   :: hdf5io
-      integer, intent(out), optional  :: stat
+      class(comp_range_t), intent(out) :: self
+      type(hdf5io_t), intent(inout)    :: hdf5io
+      integer, intent(out), optional   :: stat
 
-      character(TYPE_LEN)             :: type
-      integer                         :: n_ranges
-      type(elem_range_t), allocatable :: ranges(:)
-      integer                         :: j
-      type(hdf5io_t)                  :: hdf5io_range
+      character(TYPE_LEN)                :: type
+      integer                            :: n_ranges
+      type(range_element_t), allocatable :: range_elements(:)
+      type(hdf5io_t)                     :: hdf5io_range
+      integer                            :: j
 
       ! Read the range
 
       call hdf5io%read_attr('TYPE', type)
-      if (type /= 'agg_range_t') then
+      if (type /= 'comp_range_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_TYPE
             return
@@ -277,12 +337,17 @@ contains
 
       call hdf5io%read_attr('n_ranges', n_ranges)
 
-      allocate(ranges(n_ranges))
+      allocate(range_elements(n_ranges))
 
       ranges_loop : do j = 1, n_ranges
 
-         hdf5io_range = hdf5io_t(hdf5io, ranges_group_name_(j))
-         call ranges(j)%read(hdf5io_range, stat)
+         hdf5io_range = hdf5io_t(hdf5io, range_group_name_(j))
+
+         call hdf5io_range%read_attr('TYPE', type)
+         allocate(range_elements(j)%range, MOLD=range_t(type))
+         
+         call range_elements(j)%range%read(hdf5io_range, stat)
+
          call hdf5io_range%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
@@ -291,8 +356,8 @@ contains
       end do ranges_loop
 
       select type(self)
-      type is (agg_range_t)
-         self = agg_range_t(ranges)
+      type is (comp_range_t)
+         self = comp_range_t_elements_(range_elements)
       class default
          @:ABORT('invalid type')
       end select
@@ -307,23 +372,23 @@ contains
 
    subroutine write(self, hdf5io, stat)
 
-      class(agg_range_t), intent(in) :: self
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      integer, intent(out), optional :: stat
+      class(comp_range_t), intent(in) :: self
+      type(hdf5io_t), intent(inout)   :: hdf5io
+      integer, intent(out), optional  :: stat
 
       integer        :: j
       type(hdf5io_t) :: hdf5io_range
 
       ! Write the range
 
-      call hdf5io%write_attr('TYPE', 'agg_range_t')
+      call hdf5io%write_attr('TYPE', 'comp_range_t')
 
       call hdf5io%write_attr('n_ranges', self%n_ranges)
 
       ranges_loop : do j = 1, self%n_ranges
 
-         hdf5io_range = hdf5io_t(hdf5io, ranges_group_name_(j))
-         call self%ranges(j)%write(hdf5io_range, stat)
+         hdf5io_range = hdf5io_t(hdf5io, range_group_name_(j))
+         call self%range_elements(j)%range%write(hdf5io_range, stat)
          call hdf5io_range%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
@@ -339,14 +404,14 @@ contains
 
    !****
 
-   function ranges_group_name_(i) result(name)
+   function range_group_name_(i) result(name)
 
       integer, intent(in) :: i
       character(256)      :: name
 
       write(name, 100) i
-100   format('ranges(',I0,')')
+100   format('ranges[',I0,']')
       
-   end function ranges_group_name_
+   end function range_group_name_
 
-end module agg_range_m
+end module comp_range_m

@@ -43,18 +43,18 @@ program make_bb_photgrid
    character(:), allocatable :: law_str
    character(:), allocatable :: photgrid_file_name
 
-   type(axis_t)                 :: axes(2)
-   integer                      :: n_nodes
-   logical, allocatable         :: mask(:)
-   type(ngrid_t)                :: ngrid
-   type(limb_t)                 :: limb
-   integer                      :: i
-   real(RD), allocatable        :: mu(:)
-   real(RD), allocatable        :: f_mu(:)
-   type(photint_t), allocatable :: photints(:)
-   type(hdf5_phottable_t)       :: phottable
-   type(photgrid_t)             :: photgrid
-   type(hdf5io_t)               :: hdf5io
+   type(axis_t)                      :: axes(2)
+   integer                           :: n_nodes
+   logical, allocatable              :: mask(:)
+   type(ngrid_t)                     :: ngrid
+   type(limb_t)                      :: limb
+   integer                           :: i
+   real(RD), allocatable             :: mu(:)
+   real(RD), allocatable             :: f_mu(:)
+   type(limb_photint_t), allocatable :: photints(:)
+   type(mem_photsource_t)            :: photsource
+   type(photgrid_t)                  :: photgrid
+   type(hdf5io_t)                    :: hdf5io
 
    ! Read command-line arguments
 
@@ -101,13 +101,13 @@ program make_bb_photgrid
 
    call ngrid%map(make_photint)
 
-   ! Create phottable
+   ! Create photsource
 
-   phottable = hdf5_phottable_t(photints)
+   photsource = mem_photsource_t(photints)
 
    ! Create photgrid
 
-   photgrid = photgrid_t(phottable, ngrid)
+   photgrid = photgrid_t(photsource, ngrid)
 
    ! Write it
 
@@ -169,7 +169,7 @@ contains
 
       ! Construct the photint_t
 
-      photints(i_lin) = photint_t(I, mu, limb)
+      photints(i_lin) = limb_photint_t(I, mu, limb)
 
       ! Finish
 

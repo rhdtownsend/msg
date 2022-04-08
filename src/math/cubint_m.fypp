@@ -46,7 +46,8 @@ module cubint_m
       integer               :: n       
    contains
       private
-      procedure, public :: inquire
+      procedure, public :: get_x_min
+      procedure, public :: get_x_max
       procedure         :: func_0_
       procedure         :: func_1_
       generic, public   :: func => func_0_, func_1_
@@ -367,22 +368,37 @@ contains
 
    !****
    
-   subroutine inquire(self, x_min, x_max)
+   subroutine get_x_min(self, x_min)
 
-      class(cubint_t), intent(in)     :: self
-      real(RD), intent(out), optional :: x_min
-      real(RD), intent(out), optional :: x_max
+      class(cubint_t), intent(in) :: self
+      real(RD), intent(out)       :: x_min
 
-      ! Inquire metadata
+      ! Get the x-minimum
 
-      if (PRESENT(x_min)) x_min = self%x(1)
-      if (PRESENT(x_max)) x_max = self%x(self%n)
+      x_min = self%x(1)
 
       ! Finish
 
       return
 
-   end subroutine inquire
+   end subroutine get_x_min
+
+   !****
+
+   subroutine get_x_max(self, x_max)
+
+      class(cubint_t), intent(in) :: self
+      real(RD), intent(out)       :: x_max
+
+      ! Get the x-maximum
+
+      x_max = self%x(self%n)
+
+      ! Finish
+
+      return
+
+   end subroutine get_x_max
 
    !****
 

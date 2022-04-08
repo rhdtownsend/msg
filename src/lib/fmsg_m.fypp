@@ -46,6 +46,7 @@ module fmsg_m
    public :: STAT_INVALID_ARGUMENT
    public :: STAT_INVALID_TYPE
    public :: STAT_FILE_NOT_FOUND
+   public :: axis_t
    public :: photgrid_t
    public :: specgrid_t
    public :: load_specgrid
@@ -139,7 +140,7 @@ contains
          if (stat /= STAT_OK) return
       endif
 
-      call specgrid%config(cache_limit=0)
+      call specgrid%set_cache_limit(0)
 
       call specgrid%filter(passband, photgrid, stat)
 

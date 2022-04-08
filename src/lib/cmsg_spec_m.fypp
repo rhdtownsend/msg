@@ -1,0 +1,341 @@
+! Module  : cmsg_spec_m
+! Purpose : C public interface for MSG modules (spec portion)
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module cmsg_spec_m
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use cmsg_utils_m
+
+   use ISO_FORTRAN_ENV
+   use ISO_C_BINDING
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: load_specgrid
+   public :: unload_specgrid
+   public :: get_specgrid_rank
+   public :: get_specgrid_cache_lam_min
+   public :: get_specgrid_cache_lam_max
+   public :: get_specgrid_cache_count
+   public :: get_specgrid_cache_limit
+   public :: get_specgrid_axis_x_min
+   public :: get_specgrid_axis_x_max
+   public :: get_specgrid_axis_label
+   public :: set_specgrid_cache_lam_min
+   public :: set_specgrid_cache_lam_max
+   public :: set_specgrid_cache_limit
+   public :: interp_specgrid_intensity
+   public :: interp_specgrid_E_moment
+   public :: interp_specgrid_D_moment
+   public :: interp_specgrid_flux
+
+   ! Procedures
+
+contains
+
+   subroutine load_specgrid(specgrid_file_name, specgrid_ptr, stat) bind(C)
+
+      character(C_CHAR)        :: specgrid_file_name(*)
+      type(C_PTR)              :: specgrid_ptr
+      integer(C_INT), optional :: stat
+
+      type(hdf5io_t)            :: hdf5io
+      type(specgrid_t), pointer :: specgrid
+
+      ! Open the file
+
+      call open_file(specgrid_file_name, hdf5io, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Load the specgrid
+      
+      allocate(specgrid)
+
+      call specgrid%read(hdf5io, stat)
+      call hdf5io%final()
+      if (STAT /= STAT_OK) then
+         deallocate(specgrid)
+         return
+      endif
+ 
+      ! Set up the C pointer
+
+      specgrid_ptr = C_LOC(specgrid)
+
+      ! Finish
+
+      return
+
+   end subroutine load_specgrid
+
+   !****
+
+   subroutine unload_specgrid(specgrid_ptr) bind(C)
+
+      type(C_PTR), value :: specgrid_ptr
+
+      type(specgrid_t), pointer :: specgrid
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Deallocate the grid
+
+      if (ASSOCIATED(specgrid)) deallocate(specgrid)
+
+      ! Finish
+
+      return
+
+   end subroutine unload_specgrid
+
+   !****
+
+   #:for name, type in (('rank', 'integer(C_INT)'),          &
+                        ('cache_lam_min', 'real(C_DOUBLE)'), &
+                        ('cache_lam_max', 'real(C_DOUBLE)'), &
+                        ('cache_count', 'integer(C_INT)'),   &
+                        ('cache_limit', 'integer(C_INT)'))
+                        
+      subroutine get_specgrid_${name}$(specgrid_ptr, ${name}$) bind(C)
+
+         type(C_PTR), value :: specgrid_ptr
+         ${type}$           :: ${name}$
+
+         type(specgrid_t), pointer :: specgrid
+
+         ! Set up the Fortran pointer
+
+         call C_F_POINTER(specgrid_ptr, specgrid)
+
+         ! Get ${name}$
+
+         call specgrid%get_${name}$(${name}$)
+
+         ! Finish
+
+         return
+
+      end subroutine get_specgrid_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine get_specgrid_axis_x_min(specgrid_ptr, i, axis_x_min) bind(C)
+         
+      type(C_PTR), value    :: specgrid_ptr
+      integer(C_INT), value :: i
+      real(C_DOUBLE)        :: axis_x_min
+
+      type(specgrid_t), pointer :: specgrid
+      type(axis_t)              :: axis
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Get the axis minimum
+
+      call specgrid%get_axis(i, axis)
+
+      call axis%get_x_min(axis_x_min)
+
+      ! Finish
+
+      return
+
+   end subroutine get_specgrid_axis_x_min
+
+   !****
+
+   subroutine get_specgrid_axis_x_max(specgrid_ptr, i, axis_x_max) bind(C)
+         
+      type(C_PTR), value    :: specgrid_ptr
+      integer(C_INT), value :: i
+      real(C_DOUBLE)        :: axis_x_max
+
+      type(specgrid_t), pointer :: specgrid
+      type(axis_t)              :: axis
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Get the axis minimum
+
+      call specgrid%get_axis(i, axis)
+
+      call axis%get_x_max(axis_x_max)
+
+      ! Finish
+
+      return
+
+   end subroutine get_specgrid_axis_x_max
+
+   !****
+
+   subroutine get_specgrid_axis_label(specgrid_ptr, i, axis_label) bind(C)
+         
+      type(C_PTR), value    :: specgrid_ptr
+      integer(C_INT), value :: i
+      character(C_CHAR)     :: axis_label(*)
+
+      type(specgrid_t), pointer :: specgrid
+      integer                   :: rank
+      type(axis_t)              :: axis
+      character(LABEL_LEN)      :: label
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Get the axis label
+
+      call specgrid%get_axis(i, axis)
+
+      call axis%get_label(label)
+
+      call f_c_string(label, axis_label)
+
+      ! Finish
+
+      return
+
+   end subroutine get_specgrid_axis_label
+
+   !****
+
+   #:for name, type in (('cache_lam_min', 'real(C_DOUBLE)'), &
+                        ('cache_lam_max', 'real(C_DOUBLE)'), &
+                        ('cache_limit', 'integer(C_INT)'))
+                        
+      subroutine set_specgrid_${name}$(specgrid_ptr, ${name}$) bind(C)
+
+         type(C_PTR), value :: specgrid_ptr
+         ${type}$, optional :: ${name}$
+
+         type(specgrid_t), pointer :: specgrid
+
+         ! Set up the Fortran pointer
+
+         call C_F_POINTER(specgrid_ptr, specgrid)
+
+         ! Set ${name}$
+
+         call specgrid%set_${name}$(${name}$)
+
+         ! Finish
+
+         return
+
+      end subroutine set_specgrid_${name}$
+
+   #:endfor
+
+   !****
+
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(C_DOUBLE)'), &
+                                     ('E_moment', 'k', 'integer(C_INT)'), &
+                                     ('D_moment', 'l', 'integer(C_INT)'))
+
+      subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, ${arg_var}$, n, lam, res, &
+                                          stat, deriv_vec) bind(C)
+
+         type(C_PTR), value    :: specgrid_ptr
+         real(C_DOUBLE)        :: x_vec(*)
+         ${arg_type}$, value   :: ${arg_var}$
+         integer(C_INT), value :: n
+         real(C_DOUBLE)        :: lam(n)
+         real(C_DOUBLE)        :: res(n-1)
+         integer(C_INT)        :: stat
+         logical(C_BOOL)       :: deriv_vec(*)
+
+         type(specgrid_t), pointer :: specgrid
+         integer                   :: rank
+
+         ! Set up the Fortran pointer
+
+         call C_F_POINTER(specgrid_ptr, specgrid)
+
+         ! Interpolate the ${name}$
+
+         call specgrid%get_rank(rank)
+
+         call specgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, lam, res, stat, LOGICAL(deriv_vec(1:rank)))
+
+         ! Finish
+
+         return
+
+      end subroutine interp_specgrid_${name}$
+
+   #:endfor
+
+   !****
+      
+   #:for name, var in (('flux', 'F'),)
+
+      subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, n, lam, res, &
+                                          stat, deriv_vec) bind(C)
+
+         type(C_PTR), value    :: specgrid_ptr
+         real(C_DOUBLE)        :: x_vec(*)
+         integer(C_INT), value :: n
+         real(C_DOUBLE)        :: lam(n)
+         real(C_DOUBLE)        :: res(n-1)
+         integer(C_INT)        :: stat
+         logical(C_BOOL)       :: deriv_vec(*)
+
+         type(specgrid_t), pointer :: specgrid
+         integer                   :: rank
+
+         ! Set up the Fortran pointer
+
+         call C_F_POINTER(specgrid_ptr, specgrid)
+
+         ! Interpolate the ${name}$
+
+         call specgrid%get_rank(rank)
+
+         call specgrid%interp_${name}$(x_vec(1:rank), lam, res, stat, LOGICAL(deriv_vec(1:rank)))
+
+         ! Finish
+
+         return
+
+      end subroutine interp_specgrid_${name}$
+
+   #:endfor
+
+end module cmsg_spec_m
