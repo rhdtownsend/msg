@@ -42,7 +42,7 @@ endif
 ifeq (${TOOLS},yes)
   EXEC_TARGETS := ${EXEC_TARGETS} synspec_to_specint ferre_to_specint \
                   specint_to_specint specgrid_to_photgrid make_specgrid \
-                  make_bb_photgrid make_passband parse_wavelen
+                  make_bb_photgrid make_passband
   ifneq (${FITS_LDFLAGS},)
     EXEC_TARGETS := ${EXEC_TARGETS} goettingen_to_specint
   endif
@@ -61,9 +61,9 @@ libforum_OBJS = forum_m.o cinter_m.o const_m.o hdf5io_m.o kinds_m.o memory_m.o \
                 order_m.o system_m.o
 
 libmsg_OBJS = msg_m.o axis_m.o ngrid_m.o ncubic_m.o \
-              range_m.o range_sm.o agg_range_m.o elem_range_m.o lin_range_m.o log_range_m.o tab_range_m.o \
-              specgrid_m.o spectable_m.o hdf5_spectable_m.o specint_m.o \
-              photgrid_m.o phottable_m.o hdf5_phottable_m.o spec_phottable_m.o photint_m.o \
+              range_m.o range_sm.o comp_range_m.o lin_range_m.o log_range_m.o tab_range_m.o \
+              specgrid_m.o speccache_m.o specsource_m.o hdf5_specsource_m.o specint_m.o specint_sm.o limb_specint_m.o proxy_specint_m.o \
+              photgrid_m.o photcache_m.o photsource_m.o hdf5_photsource_m.o spec_photsource_m.o mem_photsource_m.o photint_m.o photint_sm.o limb_photint_m.o \
               passband_m.o cubint_m.o stat_m.o fit_m.o limb_m.o math_m.o
 libmsg_LIBS = libforum
 libmsg_DEPS = forum_m
@@ -72,7 +72,7 @@ libfmsg_OBJS = fmsg_m.o
 libfmsg_LIBS = libforum libmsg
 libfmsg_DEPS = forum_m msg_m
 
-libcmsg_OBJS = cmsg_m.o
+libcmsg_OBJS = cmsg_m.o cmsg_spec_m.o cmsg_phot_m.o cmsg_utils_m.o
 libcmsg_LIBS = libforum libmsg
 libcmsg_DEPS = forum_m msg_m
 
