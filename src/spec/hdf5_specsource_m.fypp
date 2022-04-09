@@ -38,8 +38,9 @@ module hdf5_specsource_m
 
    type, extends(specsource_t) :: hdf5_specsource_t
       private
-      character(:), allocatable :: file_names(:)
-      character(:), allocatable :: group_names(:)
+      ! Character lengths hard-coded to work around gfortran bug
+      character(256), allocatable :: file_names(:)
+      character(256), allocatable :: group_names(:)
       integer                   :: n
    contains
       private
