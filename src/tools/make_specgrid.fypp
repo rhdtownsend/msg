@@ -124,7 +124,6 @@ contains
       integer                   :: rank
       integer                   :: j
       real(RD), allocatable     :: x(:)
-      type(tab_range_t)         :: range
 
       ! Open the manifest file & count nodes (lines)
 
@@ -295,7 +294,7 @@ contains
       character(NAME_LEN), allocatable :: file_names(:)
       character(NAME_LEN), allocatable :: group_names(:)
       integer                          :: i
-      integer                          :: i_vec(SIZE(axes))
+      integer, allocatable             :: i_vec(:)
       integer                          :: i_lin
       integer                          :: i_con
       type(hdf5_specsource_t)          :: specsource
@@ -312,7 +311,9 @@ contains
 
       ngrid = ngrid_t(PACK(axes, shape > 1), mask)
 
-!      print *,'shape:',shape
+      rank = COUNT(shape > 1)
+
+      allocate(i_vec(rank))
 
       ! Set up the file/group name lists (with duplicate nodes removed)
 
@@ -326,9 +327,6 @@ contains
          call ngrid%locate(PACK(nodes(i)%x_vec, shape > 1), i_vec)
          i_lin = ngrid%lin_from_vec(i_vec)
          i_con = ngrid%con_from_lin(i_lin)
-
-!         print *,'i_vec:', i_vec
-!         print *,'i_lin, i_con, n_con:', i_lin, i_con, n_con
 
          if (file_names(i_con) /= '' .AND. .NOT. allow_dupes) then
             write(ERROR_UNIT, 100) TRIM(nodes(i)%file_name), TRIM(file_names(i_con)), nodes(i)%x_vec
