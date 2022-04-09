@@ -345,7 +345,7 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            call specint%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
+            call specint_full%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
