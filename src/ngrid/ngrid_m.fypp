@@ -171,24 +171,24 @@ contains
 
    !****
 
-   subroutine locate(self, vx, i_vec, stat)
+   subroutine locate(self, x_vec, i_vec, stat)
 
       class(ngrid_t), intent(in)     :: self
-      real(RD), intent(in)           :: vx(:)
+      real(RD), intent(in)           :: x_vec(:)
       integer, intent(out)           :: i_vec(:)
       integer, intent(out), optional :: stat
 
       integer              :: j
       character(LABEL_LEN) :: label
 
-      @:CHECK_BOUNDS(SIZE(vx), self%rank)
+      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
       @:CHECK_BOUNDS(SIZE(i_vec), self%rank)
 
-      ! Locate vx in the grid
+      ! Locate x_vec in the grid
 
       do j = 1, self%rank
 
-         call self%axes(j)%locate(vx(j), i_vec(j))
+         call self%axes(j)%locate(x_vec(j), i_vec(j))
 
          if (i_vec(j) < 1) then
             if (PRESENT(stat)) then
@@ -504,9 +504,6 @@ contains
       real(RD), allocatable :: F(:,:)
       real(RD)              :: C(self%n_stn)
       integer               :: m
-
-      real(RD) :: x_1, x_2
-      integer  :: r
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
