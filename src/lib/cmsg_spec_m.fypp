@@ -212,7 +212,6 @@ contains
       character(C_CHAR)     :: axis_label(*)
 
       type(specgrid_t), pointer :: specgrid
-      integer                   :: rank
       type(axis_t)              :: axis
       character(LABEL_LEN)      :: label
 

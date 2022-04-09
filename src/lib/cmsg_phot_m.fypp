@@ -266,7 +266,6 @@ contains
       character(C_CHAR)     :: axis_label(*)
 
       type(photgrid_t), pointer :: photgrid
-      integer                   :: rank
       type(axis_t)              :: axis
       character(LABEL_LEN)      :: label
 
