@@ -244,7 +244,7 @@ contains
 
       ! Pass
 
-      call self%specint%read(hdf5io, stat)
+      call self%specint%write(hdf5io, stat)
 
       ! Finish
 
