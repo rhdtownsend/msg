@@ -430,6 +430,7 @@ contains
       real(RD)                  :: lam_max
       character(:), allocatable :: file_name
       character(:), allocatable :: group_name
+      integer                   :: group_names_len
       character(:), allocatable :: file_names(:)
       character(:), allocatable :: group_names(:)
       integer                   :: i
@@ -450,20 +451,24 @@ contains
       endif
 
       hdf5io_specsource = hdf5io_t(hdf5io, 'specsource')
+
+      call hdf5io_specsource%inquire(file_name=file_name, group_name=group_name)
+
       call hdf5io_specsource%read_attr('n', n)
       call hdf5io_specsource%read_attr('lam_min', lam_min)
       call hdf5io_specsource%read_attr('lam_max', lam_max)
+
       call hdf5io_specsource%final()
 
-      call hdf5io%inquire(file_name=file_name, group_name=group_name)
+      group_names_len = LEN(group_name) + 1 + LEN(specint_group_name_(HUGE(0)))
 
       allocate(character(LEN(file_name))::file_names(n))
-      allocate(character(LEN(group_name)+24)::group_names(n))
+      allocate(character(group_names_len)::group_names(n))
 
       name_loop : do i = 1, n
 
          file_names(i) = file_name
-         group_names(i) = group_name//'/specsource/'//specint_group_name_(i)
+         group_names(i) = group_name//'/'//specint_group_name_(i)
 
       end do name_loop
       
@@ -530,7 +535,9 @@ contains
          end if
 
          hdf5io_specint = hdf5io_t(hdf5io_specsource, specint_group_name_(i))
+
          call specint%write(hdf5io_specint, stat)
+
          call hdf5io_specint%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) exit write_loop
