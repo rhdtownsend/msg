@@ -46,7 +46,7 @@ program make_bb_photgrid
    type(axis_t)                      :: axes(2)
    integer                           :: n_nodes
    logical, allocatable              :: mask(:)
-   type(ngrid_t)                     :: ngrid
+   type(vgrid_t)                     :: vgrid
    type(limb_t)                      :: limb
    integer                           :: i
    real(RD), allocatable             :: mu(:)
@@ -79,14 +79,14 @@ program make_bb_photgrid
    axes(1) = make_axis(LOG10(Teff_min), LOG10(Teff_max), n_Teff, 'logT')
    axes(2) = make_axis(logg_min, logg_max, n_logg, 'logg')
 
-   ! Create ngrid
+   ! Create vgrid
 
    n_nodes = n_Teff*n_logg
 
    allocate(mask(n_nodes))
    mask = .TRUE.
 
-   ngrid = ngrid_t(axes, mask)
+   vgrid = vgrid_t(axes, mask)
 
    ! Set up limb-darkening stuff
 
@@ -99,7 +99,7 @@ program make_bb_photgrid
 
    allocate(photints(n_nodes))
 
-   call ngrid%map(make_photint)
+   call vgrid%map(make_photint)
 
    ! Create photsource
 
@@ -107,7 +107,7 @@ program make_bb_photgrid
 
    ! Create photgrid
 
-   photgrid = photgrid_t(photsource, ngrid)
+   photgrid = photgrid_t(photsource, vgrid)
 
    ! Write it
 
@@ -158,7 +158,7 @@ contains
 
       ! Convert vector indices into linear indices
 
-      i_lin = ngrid%lin_from_vec(i_vec)
+      i_lin = vgrid%lin_from_vec(i_vec)
 
       ! Create intensity data
 

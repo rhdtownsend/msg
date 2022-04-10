@@ -25,7 +25,7 @@ module specgrid_m
    use forum_m
 
    use axis_m
-   use ngrid_m
+   use vgrid_m
    use passband_m
    use photgrid_m
    use speccache_m
@@ -47,7 +47,7 @@ module specgrid_m
       private
       class(specsource_t), allocatable :: specsource
       type(speccache_t)                :: speccache
-      type(ngrid_t)                    :: ngrid
+      type(vgrid_t)                    :: vgrid
       real(RD)                         :: lam_min
       real(RD)                         :: lam_max
    contains
@@ -87,10 +87,10 @@ module specgrid_m
 
 contains
 
-   function specgrid_t_(specsource, ngrid) result (specgrid)
+   function specgrid_t_(specsource, vgrid) result (specgrid)
 
       class(specsource_t), intent(in) :: specsource
-      type(ngrid_t), intent(in)       :: ngrid
+      type(vgrid_t), intent(in)       :: vgrid
       type(specgrid_t)                :: specgrid
 
       integer  :: n
@@ -104,14 +104,14 @@ contains
       call specsource%get_lam_min(lam_min)
       call specsource%get_lam_max(lam_max)
       
-      call ngrid%get_n_con(n_con)
+      call vgrid%get_n_con(n_con)
 
       @:CHECK_BOUNDS(n, n_con)
 
       specgrid%specsource = specsource
       specgrid%speccache = speccache_t(n, lam_min, lam_max)
 
-      specgrid%ngrid = ngrid
+      specgrid%vgrid = vgrid
 
       specgrid%lam_min = lam_min
       specgrid%lam_max = lam_max
@@ -131,7 +131,7 @@ contains
 
       ! Get the rank
 
-      call self%ngrid%get_rank(rank)
+      call self%vgrid%get_rank(rank)
 
       ! Finish
 
@@ -149,7 +149,7 @@ contains
 
       ! Get the i'th axis
 
-      call self%ngrid%get_axis(i, axis)
+      call self%vgrid%get_axis(i, axis)
 
       ! Finish
 
@@ -293,7 +293,7 @@ contains
 
          ! Interpolate ${name}$
 
-         call self%ngrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
+         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
 
@@ -309,8 +309,8 @@ contains
             integer                       :: i_con
             class(specint_t), allocatable :: specint
 
-            i_lin = self%ngrid%lin_from_vec(i_vec)
-            i_con = self%ngrid%con_from_lin(i_lin)
+            i_lin = self%vgrid%lin_from_vec(i_vec)
+            i_con = self%vgrid%con_from_lin(i_lin)
 
             call self%speccache%fetch(i_con, fetch_proc_, specint, stat)
             if (PRESENT(stat)) then
@@ -354,7 +354,7 @@ contains
 
          ! Interpolate ${name}$
 
-         call self%ngrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
+         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
 
@@ -370,8 +370,8 @@ contains
             integer                       :: i_con
             class(specint_t), allocatable :: specint
 
-            i_lin = self%ngrid%lin_from_vec(i_vec)
-            i_con = self%ngrid%con_from_lin(i_lin)
+            i_lin = self%vgrid%lin_from_vec(i_vec)
+            i_con = self%vgrid%con_from_lin(i_lin)
 
             call self%speccache%fetch(i_con, fetch_proc_, specint, stat)
             if (PRESENT(stat)) then
@@ -411,7 +411,7 @@ contains
 
       ! Apply the passband to create a photgrid
 
-      photgrid = photgrid_t(spec_photsource_t(self%specsource, passband), self%ngrid)
+      photgrid = photgrid_t(spec_photsource_t(self%specsource, passband), self%vgrid)
 
       ! Finish
 
@@ -481,8 +481,8 @@ contains
          character(:), allocatable :: group_names(:)
          integer                   :: i
          type(hdf5_specsource_t)   :: specsource
-         type(hdf5io_t)            :: hdf5io_ngrid
-         type(ngrid_t)             :: ngrid
+         type(hdf5io_t)            :: hdf5io_vgrid
+         type(vgrid_t)             :: vgrid
          
          hdf5io_specsource = hdf5io_t(hdf5io, 'specsource')
 
@@ -508,16 +508,16 @@ contains
 
          specsource = hdf5_specsource_t(file_names, group_names, lam_min, lam_max)
 
-         hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
-         call ngrid%read(hdf5io_ngrid, stat)
-         call hdf5io_ngrid%final()
+         hdf5io_vgrid = hdf5io_t(hdf5io, 'vgrid')
+         call vgrid%read(hdf5io_vgrid, stat)
+         call hdf5io_vgrid%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
 
          select type(self)
          type is(specgrid_t)
-            self = specgrid_t(specsource, ngrid)
+            self = specgrid_t(specsource, vgrid)
          class default
             @:ABORT('invalid type')
          end select
@@ -545,14 +545,14 @@ contains
       integer                       :: i
       class(specint_t), allocatable :: specint
       type(hdf5io_t)                :: hdf5io_specint
-      type(hdf5io_t)                :: hdf5io_ngrid
+      type(hdf5io_t)                :: hdf5io_vgrid
 
       ! Write the specgrid
 
       call hdf5io%write_attr('TYPE', 'specgrid_t')
       call hdf5io%write_attr('REVISION', 1)
 
-      call self%ngrid%get_n_con(n)
+      call self%vgrid%get_n_con(n)
       call self%speccache%get_lam_min(lam_min)
       call self%speccache%get_lam_max(lam_max)
 
@@ -585,9 +585,9 @@ contains
          if (stat /= STAT_OK) return
       end if
 
-      hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
-      call self%ngrid%write(hdf5io_ngrid, stat)
-      call hdf5io_ngrid%final()
+      hdf5io_vgrid = hdf5io_t(hdf5io, 'vgrid')
+      call self%vgrid%write(hdf5io_vgrid, stat)
+      call hdf5io_vgrid%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

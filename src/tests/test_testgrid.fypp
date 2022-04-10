@@ -4,7 +4,7 @@ program test_testgrid
 
    use axis_m
    use testgrid_m
-   use ngrid_m
+   use vgrid_m
    use stat_m
 
    implicit none
@@ -21,7 +21,7 @@ program test_testgrid
    integer               :: j
    type(axis_t)          :: ax(2)
    logical, allocatable  :: mask(:)
-   type(ngrid_t)         :: ng
+   type(vgrid_t)         :: ng
    real(RD), allocatable :: f(:)
    integer               :: li
    type(testgrid_t)      :: tg
@@ -35,13 +35,13 @@ program test_testgrid
    ax(1) = axis_t(x, 'x')
    ax(2) = axis_t(y, 'y')
 
-   ! Create the ngrid
+   ! Create the vgrid
 
    allocate(mask(n_x*n_y))
 
    mask = .TRUE.
 
-   ng = ngrid_t(ax, mask)
+   ng = vgrid_t(ax, mask)
 
    ! Create the testgrid
 

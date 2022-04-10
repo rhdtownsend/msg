@@ -236,7 +236,7 @@ contains
       integer, allocatable :: shape(:)
       integer              :: j
       integer              :: n_lin
-      type(ngrid_t)        :: ngrid
+      type(vgrid_t)        :: vgrid
       integer              :: i
       integer              :: i_vec(SIZE(axes))
       integer              :: i_lin
@@ -255,16 +255,16 @@ contains
       allocate(mask(n_lin))
       mask = .FALSE.
 
-      ! Create a dummy ngrid to provide indexing      
+      ! Create a dummy vgrid to provide indexing      
 
-      ngrid = ngrid_t(axes, mask)
+      vgrid = vgrid_t(axes, mask)
 
       ! Update the mask
 
       do i = 1, SIZE(nodes)
 
-         call ngrid%locate(nodes(i)%x_vec, i_vec)
-         i_lin = ngrid%lin_from_vec(i_vec)
+         call vgrid%locate(nodes(i)%x_vec, i_vec)
+         i_lin = vgrid%lin_from_vec(i_vec)
 
          mask(i_lin) = .TRUE.
 
@@ -289,7 +289,7 @@ contains
       integer                          :: rank
       integer, allocatable             :: shape(:)
       integer                          :: j
-      type(ngrid_t)                    :: ngrid
+      type(vgrid_t)                    :: vgrid
       integer                          :: n_con
       character(NAME_LEN), allocatable :: file_names(:)
       character(NAME_LEN), allocatable :: group_names(:)
@@ -299,7 +299,7 @@ contains
       integer                          :: i_con
       type(hdf5_specsource_t)          :: specsource
       
-      ! Create ngrid with degenerate (length-1) dimensions stripped
+      ! Create vgrid with degenerate (length-1) dimensions stripped
       ! out
 
       rank = SIZE(axes)
@@ -309,7 +309,7 @@ contains
          call axes(j)%get_n(shape(j))
       end do
 
-      ngrid = ngrid_t(PACK(axes, shape > 1), mask)
+      vgrid = vgrid_t(PACK(axes, shape > 1), mask)
 
       rank = COUNT(shape > 1)
 
@@ -324,9 +324,9 @@ contains
 
       do i = 1, SIZE(nodes)
 
-         call ngrid%locate(PACK(nodes(i)%x_vec, shape > 1), i_vec)
-         i_lin = ngrid%lin_from_vec(i_vec)
-         i_con = ngrid%con_from_lin(i_lin)
+         call vgrid%locate(PACK(nodes(i)%x_vec, shape > 1), i_vec)
+         i_lin = vgrid%lin_from_vec(i_vec)
+         i_con = vgrid%con_from_lin(i_lin)
 
          if (file_names(i_con) /= '' .AND. .NOT. allow_dupes) then
             write(ERROR_UNIT, 100) TRIM(nodes(i)%file_name), TRIM(file_names(i_con)), nodes(i)%x_vec
@@ -347,7 +347,7 @@ contains
 
       ! Create specgrid
 
-      specgrid = specgrid_t(specsource, ngrid)
+      specgrid = specgrid_t(specsource, vgrid)
 
       ! Finish
 

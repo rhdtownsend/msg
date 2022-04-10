@@ -25,7 +25,7 @@ module photgrid_m
    use forum_m
 
    use axis_m
-   use ngrid_m
+   use vgrid_m
    use photcache_m
    use photint_m
    use photsource_m
@@ -44,7 +44,7 @@ module photgrid_m
       private
       class(photsource_t), allocatable :: photsource
       type(photcache_t)                :: photcache
-      type(ngrid_t)                    :: ngrid
+      type(vgrid_t)                    :: vgrid
    contains
       private
       procedure, public :: get_rank
@@ -75,10 +75,10 @@ module photgrid_m
    
 contains
 
-   function photgrid_t_(photsource, ngrid) result (photgrid)
+   function photgrid_t_(photsource, vgrid) result (photgrid)
 
       class(photsource_t), intent(in) :: photsource
-      type(ngrid_t), intent(in)       :: ngrid
+      type(vgrid_t), intent(in)       :: vgrid
       type(photgrid_t)                :: photgrid
 
       integer :: n
@@ -87,14 +87,14 @@ contains
       ! Construct photgrid from the supplied data
 
       call photsource%get_n(n)
-      call ngrid%get_n_con(n_con)
+      call vgrid%get_n_con(n_con)
 
       @:CHECK_BOUNDS(n, n_con)
 
       photgrid%photsource = photsource
       photgrid%photcache = photcache_t(n)
 
-      photgrid%ngrid = ngrid
+      photgrid%vgrid = vgrid
 
       ! Finish
 
@@ -111,7 +111,7 @@ contains
 
       ! Get the rank
 
-      call self%ngrid%get_rank(rank)
+      call self%vgrid%get_rank(rank)
 
       ! Finish
 
@@ -129,7 +129,7 @@ contains
 
       ! Get the i'th axis
 
-      call self%ngrid%get_axis(i, axis)
+      call self%vgrid%get_axis(i, axis)
 
       ! Finish
 
@@ -194,7 +194,7 @@ contains
 
          ! Interpolate ${name}$
 
-         call self%ngrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
+         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
 
@@ -212,8 +212,8 @@ contains
             integer                       :: i_con
             class(photint_t), allocatable :: photint
 
-            i_lin = self%ngrid%lin_from_vec(i_vec)
-            i_con = self%ngrid%con_from_lin(i_lin)
+            i_lin = self%vgrid%lin_from_vec(i_vec)
+            i_con = self%vgrid%con_from_lin(i_lin)
 
             call self%photcache%fetch(i_con, fetch_proc_, photint, stat)
             if (PRESENT(stat)) then
@@ -256,7 +256,7 @@ contains
 
          ! Interpolate the ${name}$
 
-         call self%ngrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
+         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
 
          ! Finish
 
@@ -272,8 +272,8 @@ contains
             integer                       :: i_con
             class(photint_t), allocatable :: photint
 
-            i_lin = self%ngrid%lin_from_vec(i_vec)
-            i_con = self%ngrid%con_from_lin(i_lin)
+            i_lin = self%vgrid%lin_from_vec(i_vec)
+            i_con = self%vgrid%con_from_lin(i_lin)
 
             call self%photcache%fetch(i_con, fetch_proc_, photint, stat)
             if (PRESENT(stat)) then
@@ -360,8 +360,8 @@ contains
          character(:), allocatable :: group_names(:)
          integer                   :: i
          type(hdf5_photsource_t)   :: photsource
-         type(hdf5io_t)            :: hdf5io_ngrid
-         type(ngrid_t)             :: ngrid
+         type(hdf5io_t)            :: hdf5io_vgrid
+         type(vgrid_t)             :: vgrid
          
          hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
          call hdf5io_photsource%read_attr('n', n)
@@ -383,16 +383,16 @@ contains
       
          photsource = hdf5_photsource_t(file_names, group_names)
 
-         hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
-         call ngrid%read(hdf5io_ngrid, stat)
-         call hdf5io_ngrid%final()
+         hdf5io_vgrid = hdf5io_t(hdf5io, 'vgrid')
+         call vgrid%read(hdf5io_vgrid, stat)
+         call hdf5io_vgrid%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
 
          select type(self)
          type is(photgrid_t)
-            self = photgrid_t(photsource, ngrid)
+            self = photgrid_t(photsource, vgrid)
          class default
             @:ABORT('invalid type')
          end select
@@ -418,14 +418,14 @@ contains
       integer                       :: i
       class(photint_t), allocatable :: photint
       type(hdf5io_t)                :: hdf5io_photint
-      type(hdf5io_t)                :: hdf5io_ngrid
+      type(hdf5io_t)                :: hdf5io_vgrid
 
       ! Write the photgrid
 
       call hdf5io%write_attr('TYPE', 'photgrid_t')
       call hdf5io%write_attr('REVISION', 1)
 
-      call self%ngrid%get_n_con(n)
+      call self%vgrid%get_n_con(n)
 
       hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
 
@@ -452,9 +452,9 @@ contains
          if (stat /= STAT_OK) return
       end if
 
-      hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
-      call self%ngrid%write(hdf5io_ngrid, stat)
-      call hdf5io_ngrid%final()
+      hdf5io_vgrid = hdf5io_t(hdf5io, 'vgrid')
+      call self%vgrid%write(hdf5io_vgrid, stat)
+      call hdf5io_vgrid%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

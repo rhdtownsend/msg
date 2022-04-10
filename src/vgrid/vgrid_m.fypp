@@ -1,5 +1,5 @@
-! Module  : ngrid_m
-! Purpose : define ngrid_t type, a simple base type for N-dimensional
+! Module  : vgrid_m
+! Purpose : Define vgrid_t type, providing support for virtual N-dimensional
 !           interpolating grids
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
@@ -18,7 +18,7 @@
 
 #:include 'forum.inc'
 
-module ngrid_m
+module vgrid_m
 
    ! Uses
    
@@ -36,7 +36,7 @@ module ngrid_m
 
    ! Derived-type definitions
 
-   type ngrid_t
+   type vgrid_t
       private
       type(axis_t), allocatable :: axes(:)
       logical, allocatable      :: mask(:)
@@ -66,29 +66,29 @@ module ngrid_m
       procedure         :: setup_interp_
       procedure, public :: read
       procedure, public :: write
-   end type ngrid_t
+   end type vgrid_t
 
    ! Interfaces
 
-   interface ngrid_t
-      module procedure ngrid_t_
-   end interface ngrid_t
+   interface vgrid_t
+      module procedure vgrid_t_
+   end interface vgrid_t
 
    ! Access specifiers
 
    private
 
-   public :: ngrid_t
+   public :: vgrid_t
 
    ! Procedures
 
 contains
 
-   function ngrid_t_ (axes, mask) result(ngrid)
+   function vgrid_t_ (axes, mask) result(vgrid)
 
       type(axis_t), intent(in) :: axes(:)
       logical, intent(in)      :: mask(:)
-      type(ngrid_t)            :: ngrid
+      type(vgrid_t)            :: vgrid
 
       integer :: rank
       integer :: j
@@ -96,7 +96,7 @@ contains
       integer :: i_con
       integer :: i_lin
 
-      ! Construct ngrid from the supplied data
+      ! Construct vgrid from the supplied data
 
       rank = SIZE(axes)
 
@@ -106,25 +106,25 @@ contains
 
       @:CHECK_BOUNDS(SIZE(mask), PRODUCT(shape))
 
-      ngrid%mask = mask
-      ngrid%axes = axes
+      vgrid%mask = mask
+      vgrid%axes = axes
 
-      ngrid%shape = shape
-      ngrid%rank = rank
+      vgrid%shape = shape
+      vgrid%rank = rank
 
-      ngrid%n_con = COUNT(mask)
-      ngrid%n_lin = SIZE(mask)
+      vgrid%n_con = COUNT(mask)
+      vgrid%n_lin = SIZE(mask)
 
-      ngrid%con_lin = UNPACK([(i_con, i_con=1,ngrid%n_con)], mask, 0)
-      ngrid%lin_con = PACK([(i_lin, i_lin=1,ngrid%n_lin)], ngrid%con_lin /= 0)
+      vgrid%con_lin = UNPACK([(i_con, i_con=1,vgrid%n_con)], mask, 0)
+      vgrid%lin_con = PACK([(i_lin, i_lin=1,vgrid%n_lin)], vgrid%con_lin /= 0)
 
-      ngrid%n_stn = 4**rank
+      vgrid%n_stn = 4**rank
 
       ! Finish
 
       return
 
-   end function ngrid_t_
+   end function vgrid_t_
 
    !****
 
@@ -136,7 +136,7 @@ contains
 
       subroutine get_${name}$(self, ${name}$)
 
-         class(ngrid_t), intent(in) :: self
+         class(vgrid_t), intent(in) :: self
          ${type}$, intent(out)      :: ${name}$
 
          ! Get ${name}$
@@ -155,7 +155,7 @@ contains
       
    subroutine get_axis(self, i, axis)
 
-      class(ngrid_t), intent(in) :: self
+      class(vgrid_t), intent(in) :: self
       integer, intent(in)        :: i
       type(axis_t), intent(out)  :: axis
 
@@ -173,7 +173,7 @@ contains
 
    subroutine locate(self, x_vec, i_vec, stat)
 
-      class(ngrid_t), intent(in)     :: self
+      class(vgrid_t), intent(in)     :: self
       real(RD), intent(in)           :: x_vec(:)
       integer, intent(out)           :: i_vec(:)
       integer, intent(out), optional :: stat
@@ -224,7 +224,7 @@ contains
 
    subroutine map(self, map_proc, stat)
 
-      class(ngrid_t), intent(in) :: self
+      class(vgrid_t), intent(in) :: self
       interface
          subroutine map_proc(i_vec, stat)
             use forum_m
@@ -264,7 +264,7 @@ contains
 
    function con_from_lin(self, i_lin) result(i_con)
 
-      class(ngrid_t), intent(in) :: self
+      class(vgrid_t), intent(in) :: self
       integer, intent(in)        :: i_lin
       integer                    :: i_con
 
@@ -282,7 +282,7 @@ contains
 
    function lin_from_con(self, i_con) result(i_lin)
 
-      class(ngrid_t), intent(in) :: self
+      class(vgrid_t), intent(in) :: self
       integer, intent(in)        :: i_con
       integer                    :: i_lin
 
@@ -300,7 +300,7 @@ contains
 
    function lin_from_vec(self, i_vec) result(i_lin)
 
-      class(ngrid_t), intent(in) :: self
+      class(vgrid_t), intent(in) :: self
       integer, intent(in)        :: i_vec(:)
       integer                    :: i_lin
 
@@ -329,7 +329,7 @@ contains
 
    function vec_from_lin(self, i_lin) result(i_vec)
 
-      class(ngrid_t), intent(in) :: self
+      class(vgrid_t), intent(in) :: self
       integer, intent(in)        :: i_lin
       integer                    :: i_vec(self%rank)
 
@@ -360,7 +360,7 @@ contains
 
    function vec_from_stn_(self, i_cell, i_stn) result(i_vec)
 
-      class(ngrid_t), intent(in) :: self
+      class(vgrid_t), intent(in) :: self
       integer, intent(in)        :: i_cell(:)
       integer, intent(in)        :: i_stn
       integer                    :: i_vec(self%rank)
@@ -396,7 +396,7 @@ contains
 
    subroutine interp_0_(self, data_proc, x_vec, f_int, stat, vderiv)
 
-      class(ngrid_t), intent(in) :: self
+      class(vgrid_t), intent(in) :: self
       interface
          subroutine data_proc(i_vec, data, stat)
             use forum_m
@@ -479,7 +479,7 @@ contains
 
    subroutine interp_1_(self, data_proc, x_vec, f_int, stat, vderiv)
 
-      class(ngrid_t), intent(in) :: self
+      class(vgrid_t), intent(in) :: self
       interface
          subroutine data_proc(i_vec, data, stat)
             use forum_m
@@ -575,7 +575,7 @@ contains
    
    subroutine setup_interp_(self, x_vec, i_cell, mask, vdelta, vu, stat)
 
-      class(ngrid_t), intent(in)     :: self
+      class(vgrid_t), intent(in)     :: self
       real(RD), intent(in)           :: x_vec(:)
       integer, intent(out)           :: i_cell(:)
       logical, intent(out)           :: mask(:)
@@ -743,17 +743,17 @@ contains
 
    subroutine read(self, hdf5io, stat)
 
-      class(ngrid_t), intent(out)    :: self
+      class(vgrid_t), intent(out)    :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN) :: type
       integer             :: revision
 
-      ! Read the ngrid_t
+      ! Read the vgrid_t
 
       call hdf5io%read_attr('TYPE', type)
-      if (type /= 'ngrid_t') then
+      if (type /= 'vgrid_t') then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_FILE_TYPE
             return
@@ -784,7 +784,7 @@ contains
 
       subroutine read_rev1_(self, hdf5io, stat)
 
-         class(ngrid_t), intent(out)    :: self
+         class(vgrid_t), intent(out)    :: self
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
 
@@ -810,8 +810,8 @@ contains
          call hdf5io%alloc_read_dset('mask', mask)
 
          select type(self)
-         type is(ngrid_t)
-            self = ngrid_t(axes, mask)
+         type is(vgrid_t)
+            self = vgrid_t(axes, mask)
          class default
             @:ABORT('invalid type')
          end select
@@ -828,16 +828,16 @@ contains
 
    subroutine write(self, hdf5io, stat)
 
-      class(ngrid_t), intent(in)     :: self
+      class(vgrid_t), intent(in)     :: self
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
       integer        :: j
       type(hdf5io_t) :: hdf5io_axis
 
-      ! Write the ngrid
+      ! Write the vgrid
       
-      call hdf5io%write_attr('TYPE', 'ngrid_t')
+      call hdf5io%write_attr('TYPE', 'vgrid_t')
       call hdf5io%write_attr('REVISION', 1)
 
       call hdf5io%write_attr('shape', self%shape)
@@ -874,4 +874,4 @@ contains
 
    end function axis_group_name_
 
-end module ngrid_m
+end module vgrid_m

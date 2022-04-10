@@ -1,5 +1,5 @@
 ! Module  : testgrid_m
-! Purpose : define testgrid_t type, for testing ngrid_m
+! Purpose : define testgrid_t type, for testing vgrid_m
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -36,7 +36,7 @@ module testgrid_m
    type :: testgrid_t
       private
       real(RD), allocatable :: f(:)
-      type(ngrid_t)         :: ng
+      type(vgrid_t)         :: ng
       integer, allocatable  :: shape(:)
       integer               :: rank
    contains
@@ -64,7 +64,7 @@ contains
    function testgrid_t_ (f, ng) result (tg)
 
       real(RD), intent(in)      :: f(:)
-      type(ngrid_t), intent(in) :: ng
+      type(vgrid_t), intent(in) :: ng
       type(testgrid_t)          :: tg
 
       integer              :: rank
