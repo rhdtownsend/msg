@@ -88,7 +88,7 @@ ifeq ($(shell uname -s),Darwin)
   LIB_LDFLAGS = -shared -install_name ${MSG_DIR}/lib/$@
   EXEC_LDFLAGS = ${FITS_LDFLAGS}
   PYM_SUFFIX = $(shell python3-config --extension-suffix)
-  PYM_LDFLAGS = ${LIB_LDFLAGS} -undefined dynamic_lookup 
+  PYM_LDFLAGS = -shared -install_name ${MSG_DIR}/python/$@ -undefined dynamic_lookup 
 else			   
   LIB_SUFFIX = .so
   LIB_LDFLAGS = -shared -Wl,-rpath -Wl,${MSG_DIR}/lib
@@ -131,8 +131,8 @@ lib-install : ${LIB_TARGETS_}
 
 pym-install : ${PYM_TARGETS_}
 	@for t in $^; do \
-            echo CP $${t} ${LIBDIR}; \
-            cp $${t} ${LIBDIR}; \
+            echo CP $${t} ${PYMDIR}; \
+            cp $${t} ${PYMDIR}; \
         done
 
 exec-install : ${EXEC_TARGETS}
@@ -187,7 +187,7 @@ ${DEP_TARGETS} :
 
 %.c : %.pyx
 	@echo CYTHON $<
-	@$(CYTHON) $(CYFLAGS) -o $@ $<
+	$(CYTHON) $(CYFLAGS) -o $@ $<
 
 %.o : %.c
 	@echo CC $<

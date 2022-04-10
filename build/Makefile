@@ -32,7 +32,7 @@ EXEC_TARGETS =
 PYM_TARGETS = 
 
 ifeq ($(PYTHON),yes)
-  PYM_TARGETS := pymsg
+  PYM_TARGETS := pymsg_specgrid pymsg_photgrid pymsg_common
 endif
 
 ifeq (${TESTS},yes)
@@ -76,8 +76,14 @@ libcmsg_OBJS = cmsg_m.o cmsg_spec_m.o cmsg_phot_m.o cmsg_utils_m.o
 libcmsg_LIBS = libforum libmsg
 libcmsg_DEPS = forum_m msg_m
 
-pymsg_OBJS = pymsg.o
-pymsg_LIBS = libforum libmsg libcmsg
+pymsg_specgrid_OBJS = pymsg_specgrid.o
+pymsg_specgrid_LIBS = libforum libmsg libcmsg
+
+pymsg_photgrid_OBJS = pymsg_photgrid.o
+pymsg_photgrid_LIBS = libforum libmsg libcmsg
+
+pymsg_common_OBJS = pymsg_common.o
+pymsg_common_LIBS = libforum libmsg libcmsg
 
 synspec_to_specint_OBJS = synspec_to_specint.o
 synspec_to_specint_LIBS = libforum libmsg
@@ -142,5 +148,13 @@ include Make.inc
 
 # Additional dependencies
 
-pymsg.o : cmsg.h
+pymsg_specgrid.c : pymsg_common.pyx
+pymsg_photgrid.c : pymsg_common.pyx
+
+pymsg_specgrid.o : cmsg.h
+pymsg_photgrid.o : cmsg.h
+
+
+
+
 
