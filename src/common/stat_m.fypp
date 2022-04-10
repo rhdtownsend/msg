@@ -41,8 +41,9 @@ module stat_m
       enumerator :: STAT_OUT_OF_BOUNDS_MU_HI
       enumerator :: STAT_UNAVAILABLE_DATA
       enumerator :: STAT_INVALID_ARGUMENT
-      enumerator :: STAT_INVALID_TYPE
       enumerator :: STAT_FILE_NOT_FOUND
+      enumerator :: STAT_INVALID_FILE_TYPE
+      enumerator :: STAT_INVALID_FILE_REVISION
    end enum
 
    ! Access specifiers
@@ -60,7 +61,8 @@ module stat_m
    public :: STAT_OUT_OF_BOUNDS_MU_HI
    public :: STAT_UNAVAILABLE_DATA
    public :: STAT_INVALID_ARGUMENT
-   public :: STAT_INVALID_TYPE
    public :: STAT_FILE_NOT_FOUND
+   public :: STAT_INVALID_FILE_TYPE
+   public :: STAT_INVALID_FILE_REVISION
 
 end module stat_m

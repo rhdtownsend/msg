@@ -44,8 +44,9 @@ module fmsg_m
    public :: STAT_OUT_OF_BOUNDS_MU_HI
    public :: STAT_UNAVAILABLE_DATA
    public :: STAT_INVALID_ARGUMENT
-   public :: STAT_INVALID_TYPE
    public :: STAT_FILE_NOT_FOUND
+   public :: STAT_INVALID_FILE_TYPE
+   public :: STAT_INVALID_FILE_REVISION
    public :: axis_t
    public :: photgrid_t
    public :: specgrid_t

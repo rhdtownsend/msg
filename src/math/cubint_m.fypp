@@ -640,39 +640,69 @@ contains
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)   :: type
-      real(RD), allocatable :: x(:)
-      real(RD), allocatable :: f(:)
-      real(RD), allocatable :: df_dx(:)
+      character(TYPE_LEN) :: type
+      integer             :: revision
 
       ! Read cubint
 
       call hdf5io%read_attr('TYPE', type)
       if (type /= 'cubint_t') then
          if (PRESENT(stat)) then
-            stat = STAT_INVALID_TYPE
+            stat = STAT_INVALID_FILE_TYPE
             return
          else
-            @:ABORT('invalid type')
+            @:ABORT('invalid file type')
          end if
       end if
 
-      call hdf5io%alloc_read_dset('x', x)
-      call hdf5io%alloc_read_dset('f', f)
-      call hdf5io%alloc_read_dset('df_dx', df_dx)
+      call hdf5io%read_attr('REVISION', revision)
 
-      select type(self)
-      type is(cubint_t)
-         self = cubint_t(x, f, df_dx)
-      class default
-         @:ABORT('invalid type')
+      select case(revision)
+      case(1)
+         call read_rev1_(self, hdf5io, stat)
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_FILE_REVISION
+            return
+         else
+            @:ABORT('invalid file revision')
+         end if
       end select
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
+
+   contains
+
+      subroutine read_rev1_(self, hdf5io, stat)
+
+         class(cubint_t), intent(out)   :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+
+         real(RD), allocatable :: x(:)
+         real(RD), allocatable :: f(:)
+         real(RD), allocatable :: df_dx(:)
+
+         call hdf5io%alloc_read_dset('x', x)
+         call hdf5io%alloc_read_dset('f', f)
+         call hdf5io%alloc_read_dset('df_dx', df_dx)
+
+         select type(self)
+         type is(cubint_t)
+            self = cubint_t(x, f, df_dx)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         ! Finish
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
 
    end subroutine read
 
@@ -687,6 +717,7 @@ contains
       ! Write cubintkthe cubint_t
 
       call hdf5io%write_attr('TYPE', 'cubint_t')
+      call hdf5io%write_attr('TYPE', 1)
 
       call hdf5io%write_attr('n', self%n)
 

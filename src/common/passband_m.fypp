@@ -178,43 +178,71 @@ contains
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN) :: type
-      real(RD)            :: F_0
-      type(hdf5io_t)      :: hdf5io_cubint
-      type(cubint_t)      :: cubint
+      integer             :: revision
 
       ! Read the passband_t
 
       call hdf5io%read_attr('TYPE', type)
       if (type /= 'passband_t') then
          if (PRESENT(stat)) then
-            stat = STAT_INVALID_TYPE
+            stat = STAT_INVALID_FILE_TYPE
             return
          else
-            @:ABORT('invalid type')
+            @:ABORT('invalid file type')
          end if
       end if
 
-      call hdf5io%read_attr('F_0', F_0)
+      call hdf5io%read_attr('REVISION', revision)
 
-      hdf5io_cubint = hdf5io_t(hdf5io, 'cubint')
-      call cubint%read(hdf5io_cubint, stat)
-      call hdf5io_cubint%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      select type(self)
-      type is(passband_t)
-         self = passband_t_cubint_(cubint, F_0)
-      class default
-         @:ABORT('invalid type')
+      select case(revision)
+      case(1)
+         call read_rev1_(self, hdf5io, stat)
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_FILE_REVISION
+            return
+         else
+            @:ABORT('invalid file revision')
+         end if
       end select
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
+
+   contains
+
+      subroutine read_rev1_(self, hdf5io, stat)
+
+         class(passband_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+
+         real(RD)       :: F_0
+         type(hdf5io_t) :: hdf5io_cubint
+         type(cubint_t) :: cubint
+
+         call hdf5io%read_attr('F_0', F_0)
+
+         hdf5io_cubint = hdf5io_t(hdf5io, 'cubint')
+         call cubint%read(hdf5io_cubint, stat)
+         call hdf5io_cubint%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         select type(self)
+         type is(passband_t)
+            self = passband_t_cubint_(cubint, F_0)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
 
    end subroutine read
 
@@ -231,6 +259,7 @@ contains
       ! Write the passband_t
 
       call hdf5io%write_attr('TYPE', 'passband_t')
+      call hdf5io%write_attr('REVISION', 1)
 
       call hdf5io%write_attr('F_0', self%F_0)
 

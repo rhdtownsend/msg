@@ -310,67 +310,98 @@ contains
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN)       :: type
-      type(hdf5io_t)            :: hdf5io_photsource
-      integer                   :: n
-      character(:), allocatable :: file_name
-      character(:), allocatable :: group_name
-      character(:), allocatable :: file_names(:)
-      character(:), allocatable :: group_names(:)
-      integer                   :: i
-      type(hdf5_photsource_t)   :: photsource
-      type(hdf5io_t)            :: hdf5io_ngrid
-      type(ngrid_t)             :: ngrid
+      character(TYPE_LEN) :: type
+      integer             :: revision
 
       ! Read the photgrid
 
       call hdf5io%read_attr('TYPE', type)
       if (type /= 'photgrid_t') then
          if (PRESENT(stat)) then
-            stat = STAT_INVALID_TYPE
+            stat = STAT_INVALID_FILE_TYPE
             return
          else
-            @:ABORT('invalid type')
+            @:ABORT('invalid file type')
          endif
       endif
 
-      hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
-      call hdf5io_photsource%read_attr('n', n)
-      call hdf5io_photsource%final()
+      call hdf5io%read_attr('REVISION', revision)
 
-      call hdf5io%inquire(file_name=file_name, group_name=group_name)
-
-      allocate(character(LEN(file_name))::file_names(n))
-      allocate(character(LEN(group_name)+24)::group_names(n))
-
-      name_loop : do i = 1, n
-
-         file_names(i) = file_name
-         group_names(i) = group_name//'/photsource/'//photint_group_name_(i)
-
-      end do name_loop
-      
-      photsource = hdf5_photsource_t(file_names, group_names)
-
-      hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
-      call ngrid%read(hdf5io_ngrid, stat)
-      call hdf5io_ngrid%final()
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      select type(self)
-      type is(photgrid_t)
-         self = photgrid_t(photsource, ngrid)
-      class default
-         @:ABORT('invalid type')
+      select case(revision)
+      case(1)
+         call read_rev1_(self, hdf5io, stat)
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_FILE_REVISION
+            return
+         else
+            @:ABORT('invalid file revision')
+         end if
       end select
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
+
+   contains
+
+      subroutine read_rev1_(self, hdf5io, stat)
+
+         class(photgrid_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+
+         type(hdf5io_t)            :: hdf5io_photsource
+         integer                   :: n
+         character(:), allocatable :: file_name
+         character(:), allocatable :: group_name
+         integer                   :: group_names_len
+         character(:), allocatable :: file_names(:)
+         character(:), allocatable :: group_names(:)
+         integer                   :: i
+         type(hdf5_photsource_t)   :: photsource
+         type(hdf5io_t)            :: hdf5io_ngrid
+         type(ngrid_t)             :: ngrid
+         
+         hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
+         call hdf5io_photsource%read_attr('n', n)
+         call hdf5io_photsource%final()
+
+         call hdf5io%inquire(file_name=file_name, group_name=group_name)
+ 
+         group_names_len = LEN(group_name) + 1 + LEN(photint_group_name_(HUGE(0)))
+
+         allocate(character(LEN(file_name))::file_names(n))
+         allocate(character(group_names_len)::group_names(n))
+
+         name_loop : do i = 1, n
+
+            file_names(i) = file_name
+            group_names(i) = group_name//'/'//photint_group_name_(i)
+
+         end do name_loop
+      
+         photsource = hdf5_photsource_t(file_names, group_names)
+
+         hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
+         call ngrid%read(hdf5io_ngrid, stat)
+         call hdf5io_ngrid%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         select type(self)
+         type is(photgrid_t)
+            self = photgrid_t(photsource, ngrid)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
 
    end subroutine read
 
@@ -392,6 +423,7 @@ contains
       ! Write the photgrid
 
       call hdf5io%write_attr('TYPE', 'photgrid_t')
+      call hdf5io%write_attr('REVISION', 1)
 
       call self%ngrid%get_n_con(n)
 
