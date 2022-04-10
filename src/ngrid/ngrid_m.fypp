@@ -584,7 +584,7 @@ contains
       integer, intent(out), optional :: stat
 
       integer  :: j
-      real(RD) :: x(4)
+      real(RD) :: x_bdy(self%rank)
       logical  :: on_bdy(self%rank)
       integer  :: i_adj
       integer  :: i_cell_adj(self%rank)
@@ -594,6 +594,7 @@ contains
       integer  :: i_stn
       integer  :: l
       integer  :: i
+      real(RD) :: x(4)
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
       @:CHECK_BOUNDS(SIZE(i_cell), self%rank)
@@ -613,22 +614,28 @@ contains
 
       i_cell = MIN(i_cell, self%shape-1)
 
-      ! Determine whether the point lies on cell boundary(ies)
+      ! Now (possibly) update the interpolation cell, to handle cases
+      ! where it doesn't have all corners defined. If the point lies
+      ! on a boundary with a neighboring cell, and that neighbor has
+      ! all corners defined, then this will set i_cell to point to the
+      ! neighbor
+
+      ! First, determine which boundary(ies) the point is on
 
       do j = 1, self%rank
-         call self%axes(j)%fetch(i_cell(j), x(j))
+         call self%axes(j)%fetch(i_cell(j), x_bdy(j))
       end do
 
-      on_bdy = x_vec == x
+      on_bdy = x_vec == x_bdy
 
-      ! Iterate over the interpolation cell and all adjacent cells
+      ! Iterate over the interpolation cell and all neighboring cells
 
       adjacent_loop : do i_adj = 1, 2**self%rank
 
          do j = 1, self%rank
 
             ! Set up the cell index, weeding out cases that don't
-            ! contain the point or don't exist
+            ! contain the point or fall outside the grid
 
             if (BTEST(i_adj-1, j-1)) then
 
@@ -645,7 +652,7 @@ contains
 
          end do
 
-         ! Check whether all corners are present
+         ! Check whether all corners are defined
 
          corner_loop : do i_cnr = 1, 2**self%rank
 
@@ -665,12 +672,14 @@ contains
 
          end do corner_loop
 
-         ! If so, set i_cell
+         ! If so, update i_cell and finish
 
          i_cell = i_cell_adj
          exit adjacent_loop
 
       end do adjacent_loop
+
+      ! Check whether the exercise failed
 
       if (i_adj > 2**self%rank) then
 
