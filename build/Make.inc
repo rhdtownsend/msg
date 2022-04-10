@@ -187,7 +187,7 @@ ${DEP_TARGETS} :
 
 %.c : %.pyx
 	@echo CYTHON $<
-	$(CYTHON) $(CYFLAGS) -o $@ $<
+	@$(CYTHON) $(CYFLAGS) -o $@ $<
 
 %.o : %.c
 	@echo CC $<
