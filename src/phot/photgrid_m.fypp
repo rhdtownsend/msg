@@ -139,44 +139,32 @@ contains
 
    !****
 
-   subroutine get_cache_count(self, cache_count)
+   #:for name, type in (('count', 'integer'), &
+                        ('limit', 'integer'))
+   
+      subroutine get_cache_${name}$(self, cache_${name}$)
 
-      class(photgrid_t), intent(in) :: self
-      integer, intent(out)          :: cache_count
+         class(photgrid_t), intent(in) :: self
+         ${type}$, intent(out)         :: cache_${name}$
 
-      ! Get the cache occupancy
+         ! Get cache_${name}$
 
-      call self%photcache%get_count(cache_count)
+         call self%photcache%get_${name}$(cache_${name}$)
 
-      ! Finish
+         ! Finish
 
-      return
+         return
 
-   end subroutine get_cache_count
+      end subroutine get_cache_${name}$
 
-   !****
-
-   subroutine get_cache_limit(self, cache_limit)
-
-      class(photgrid_t), intent(in) :: self
-      integer, intent(out)          :: cache_limit
-
-      ! Get the cache occupancy limit
-
-      call self%photcache%get_limit(cache_limit)
-
-      ! Finish
-
-      return
-
-   end subroutine get_cache_limit
+   #:endfor
 
    !****
 
    subroutine set_cache_limit(self, cache_limit, stat)
 
       class(photgrid_t), intent(inout) :: self
-      integer, intent(in), optional    :: cache_limit
+      integer, intent(in)              :: cache_limit
       integer, intent(out), optional   :: stat
 
       ! Set the cache occupancy limit

@@ -48,17 +48,21 @@ module specgrid_m
       class(specsource_t), allocatable :: specsource
       type(speccache_t)                :: speccache
       type(ngrid_t)                    :: ngrid
+      real(RD)                         :: lam_min
+      real(RD)                         :: lam_max
    contains
       private
       procedure, public :: get_rank
       procedure, public :: get_axis
-      procedure, public :: get_cache_count
-      procedure, public :: get_cache_limit
+      procedure, public :: get_lam_min
+      procedure, public :: get_lam_max
       procedure, public :: get_cache_lam_min
       procedure, public :: get_cache_lam_max
-      procedure, public :: set_cache_limit
+      procedure, public :: get_cache_count
+      procedure, public :: get_cache_limit
       procedure, public :: set_cache_lam_min
       procedure, public :: set_cache_lam_max
+      procedure, public :: set_cache_limit
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -83,20 +87,23 @@ module specgrid_m
 
 contains
 
-   function specgrid_t_(specsource, ngrid, lam_min, lam_max) result (specgrid)
+   function specgrid_t_(specsource, ngrid) result (specgrid)
 
       class(specsource_t), intent(in) :: specsource
       type(ngrid_t), intent(in)       :: ngrid
-      real(RD), intent(in)            :: lam_min
-      real(RD), intent(in)            :: lam_max
       type(specgrid_t)                :: specgrid
 
-      integer :: n
-      integer :: n_con
+      integer  :: n
+      real(RD) :: lam_min
+      real(RD) :: lam_max
+      integer  :: n_con
 
       ! Construct specgrid from the supplied data
 
       call specsource%get_n(n)
+      call specsource%get_lam_min(lam_min)
+      call specsource%get_lam_max(lam_max)
+      
       call ngrid%get_n_con(n_con)
 
       @:CHECK_BOUNDS(n, n_con)
@@ -105,6 +112,9 @@ contains
       specgrid%speccache = speccache_t(n, lam_min, lam_max)
 
       specgrid%ngrid = ngrid
+
+      specgrid%lam_min = lam_min
+      specgrid%lam_max = lam_max
 
       ! Finish
 
@@ -149,81 +159,68 @@ contains
 
    !****
 
-   subroutine get_cache_lam_min(self, cache_lam_min)
+   #:for name, type in (('lam_min', 'real(RD)'), &
+                        ('lam_max', 'real(RD)'))
+                        
+      subroutine get_${name}$(self, ${name}$)
 
-      class(specgrid_t), intent(in) :: self
-      real(RD), intent(out)         :: cache_lam_min
+         class(specgrid_t), intent(in) :: self
+         ${type}$, intent(out)         :: ${name}$
 
-      ! Get the cache minimum wavelength
+         ! Get ${name}$
 
-      call self%speccache%get_lam_min(cache_lam_min)
+         ${name}$ = self%${name}$
 
-      ! Finish
+         ! Finish
 
-      return
+         return
 
-   end subroutine get_cache_lam_min
-      
-   !****
+      end subroutine get_${name}$
 
-   subroutine get_cache_lam_max(self, cache_lam_max)
-
-      class(specgrid_t), intent(in) :: self
-      real(RD), intent(out)         :: cache_lam_max
-
-      ! Get the cache maximum wavelength
-
-      call self%speccache%get_lam_max(cache_lam_max)
-
-      ! Finish
-
-      return
-
-   end subroutine get_cache_lam_max
-      
-   !****
-
-   subroutine get_cache_count(self, cache_count)
-
-      class(specgrid_t), intent(in) :: self
-      integer, intent(out)          :: cache_count
-
-      ! Get the cache occupancy
-
-      call self%speccache%get_count(cache_count)
-
-      ! Finish
-
-      return
-
-   end subroutine get_cache_count
+   #:endfor
 
    !****
 
-   subroutine get_cache_limit(self, cache_limit)
+   #:for name, type in (('lam_min', 'real(RD)'), &
+                        ('lam_max', 'real(RD)'), &
+                        ('count', 'integer'),    &
+                        ('limit', 'integer'))
 
-      class(specgrid_t), intent(in) :: self
-      integer, intent(out)          :: cache_limit
+      subroutine get_cache_${name}$(self, cache_${name}$)
 
-      ! Get the cache occupancy limit
+         class(specgrid_t), intent(in) :: self
+         ${type}$, intent(out)         :: cache_${name}$
 
-      call self%speccache%get_limit(cache_limit)
+         ! Get cache_${name}$
 
-      ! Finish
+         call self%speccache%get_${name}$(cache_${name}$)
 
-      return
+         ! Finish
 
-   end subroutine get_cache_limit
+         return
+
+      end subroutine get_cache_${name}$
+
+   #:endfor
 
    !****
 
    subroutine set_cache_lam_min(self, cache_lam_min, stat)
 
       class(specgrid_t), intent(inout) :: self
-      real(RD), intent(in), optional   :: cache_lam_min
+      real(RD), intent(in)             :: cache_lam_min
       integer, intent(out), optional   :: stat
 
       ! Set the cache minimum wavelength
+
+      if (cache_lam_min < self%lam_min) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
 
       call self%speccache%set_lam_min(cache_lam_min, stat)
 
@@ -238,10 +235,19 @@ contains
    subroutine set_cache_lam_max(self, cache_lam_max, stat)
 
       class(specgrid_t), intent(inout) :: self
-      real(RD), intent(in), optional   :: cache_lam_max
+      real(RD), intent(in)             :: cache_lam_max
       integer, intent(out), optional   :: stat
 
       ! Set the cache maximum wavelength
+
+      if (cache_lam_max > self%lam_max) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
 
       call self%speccache%set_lam_max(cache_lam_max, stat)
 
@@ -255,9 +261,9 @@ contains
 
    subroutine set_cache_limit(self, cache_limit, stat)
 
-      class(specgrid_t), intent(inout) :: self
-      integer, intent(in), optional    :: cache_limit
-      integer, intent(out), optional   :: stat
+      class(specgrid_t), intent(inout)  :: self
+      integer, intent(in)               :: cache_limit
+      integer, intent(out), optional    :: stat
 
       ! Set the cache occupancy limit
 
@@ -471,8 +477,8 @@ contains
          group_names(i) = group_name//'/'//specint_group_name_(i)
 
       end do name_loop
-      
-      specsource = hdf5_specsource_t(file_names, group_names)
+
+      specsource = hdf5_specsource_t(file_names, group_names, lam_min, lam_max)
 
       hdf5io_ngrid = hdf5io_t(hdf5io, 'ngrid')
       call ngrid%read(hdf5io_ngrid, stat)
@@ -483,7 +489,7 @@ contains
 
       select type(self)
       type is(specgrid_t)
-         self = specgrid_t(specsource, ngrid, lam_min, lam_max)
+         self = specgrid_t(specsource, ngrid)
       class default
          @:ABORT('invalid type')
       end select

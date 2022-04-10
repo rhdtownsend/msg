@@ -343,11 +343,11 @@ contains
 
       ! Create specsource
 
-      specsource = hdf5_specsource_t(file_names, group_names)
+      specsource = hdf5_specsource_t(file_names, group_names, MAXVAL(nodes%lam_min), MINVAL(nodes%lam_max))
 
       ! Create specgrid
 
-      specgrid = specgrid_t(specsource, ngrid, MAXVAL(nodes%lam_min), MINVAL(nodes%lam_max))
+      specgrid = specgrid_t(specsource, ngrid)
 
       ! Finish
 

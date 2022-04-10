@@ -40,6 +40,8 @@ module cmsg_spec_m
    public :: load_specgrid
    public :: unload_specgrid
    public :: get_specgrid_rank
+   public :: get_specgrid_lam_min
+   public :: get_specgrid_lam_max
    public :: get_specgrid_cache_lam_min
    public :: get_specgrid_cache_lam_max
    public :: get_specgrid_cache_count
@@ -121,6 +123,8 @@ contains
    !****
 
    #:for name, type in (('rank', 'integer(C_INT)'),          &
+                        ('lam_min', 'real(C_DOUBLE)'),       &
+                        ('lam_max', 'real(C_DOUBLE)'),       &
                         ('cache_lam_min', 'real(C_DOUBLE)'), &
                         ('cache_lam_max', 'real(C_DOUBLE)'), &
                         ('cache_count', 'integer(C_INT)'),   &
@@ -239,11 +243,12 @@ contains
                         ('cache_lam_max', 'real(C_DOUBLE)'), &
                         ('cache_limit', 'integer(C_INT)'))
                         
-      subroutine set_specgrid_${name}$(specgrid_ptr, ${name}$) bind(C)
+      subroutine set_specgrid_${name}$(specgrid_ptr, ${name}$, stat) bind(C)
 
-         type(C_PTR), value :: specgrid_ptr
-         ${type}$, optional :: ${name}$
-
+         type(C_PTR), value       :: specgrid_ptr
+         ${type}$, value          :: ${name}$
+         integer(C_INT), optional :: stat
+         
          type(specgrid_t), pointer :: specgrid
 
          ! Set up the Fortran pointer
@@ -252,7 +257,7 @@ contains
 
          ! Set ${name}$
 
-         call specgrid%set_${name}$(${name}$)
+         call specgrid%set_${name}$(${name}$, stat)
 
          ! Finish
 

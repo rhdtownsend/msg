@@ -29,8 +29,10 @@ module specsource_m
    type, abstract :: specsource_t
    contains
       private
-      procedure(get_n), deferred, public :: get_n
-      procedure(fetch), deferred, public :: fetch
+      procedure(get_n), deferred, public       :: get_n
+      procedure(get_lam_min), deferred, public :: get_lam_min
+      procedure(get_lam_max), deferred, public :: get_lam_max
+      procedure(fetch), deferred, public       :: fetch
    end type specsource_t
 
    ! Interfaces
@@ -42,6 +44,20 @@ module specsource_m
          class(specsource_t), intent(in) :: self
          integer, intent(out)            :: n
       end subroutine get_n
+
+      subroutine get_lam_min(self, lam_min)
+         use forum_m
+         import specsource_t
+         class(specsource_t), intent(in) :: self
+         real(RD), intent(out)           :: lam_min
+      end subroutine get_lam_min
+
+      subroutine get_lam_max(self, lam_max)
+         use forum_m
+         import specsource_t
+         class(specsource_t), intent(in) :: self
+         real(RD), intent(out)           :: lam_max
+      end subroutine get_lam_max
 
       subroutine fetch(self, i, specint, stat)
          use specint_m

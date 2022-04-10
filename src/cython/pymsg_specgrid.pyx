@@ -33,6 +33,8 @@ cdef extern from "cmsg.h":
     void unload_specgrid(void *specgrid)
 
     void get_specgrid_rank(void *specgrid, int *rank)
+    void get_specgrid_lam_min(void *specgrid, double *lam_min)
+    void get_specgrid_lam_max(void *specgrid, double *lam_max)
     void get_specgrid_cache_count(void *specgrid, int *cache_count)
     void get_specgrid_cache_limit(void *specgrid, int *cache_limit)
     void get_specgrid_cache_lam_min(void *specgrid, double *cache_lam_min)
@@ -41,9 +43,9 @@ cdef extern from "cmsg.h":
     void get_specgrid_axis_x_max(void *specgrid, int i, double *axis_x_max)
     void get_specgrid_axis_label(void *specgrid, int i, char *axis_label)
 
-    void set_specgrid_cache_limit(void *specgrid, int *cache_limit, int *stat)
-    void set_specgrid_cache_lam_min(void *specgrid, double *cache_lam_min, int *stat)
-    void set_specgrid_cache_lam_max(void *specgrid, double *cache_lam_max, int *stat)
+    void set_specgrid_cache_limit(void *specgrid, int cache_limit, int *stat)
+    void set_specgrid_cache_lam_min(void *specgrid, double cache_lam_min, int *stat)
+    void set_specgrid_cache_lam_max(void *specgrid, double cache_lam_max, int *stat)
 
     void interp_specgrid_intensity(void *specgrid, double x_vec[], double mu,
                                    int n, double lam[], double I[], int *stat,
@@ -140,6 +142,50 @@ cdef class SpecGrid:
 
 
     @property
+    def lam_min(self):
+        """double: Minimum wavelength of grid."""
+        cdef double lam_min
+        get_specgrid_lam_min(self.specgrid, &lam_min)
+        return lam_min
+
+
+    @property
+    def lam_max(self):
+        """double: Maximum wavelength of grid."""
+        cdef double lam_max
+        get_specgrid_cache_lam_max(self.specgrid, &lam_max)
+        return lam_max
+
+
+    @property
+    def cache_lam_min(self):
+        """double: Minimum wavelength of cached spectra."""
+        cdef double lam_min
+        get_specgrid_cache_lam_min(self.specgrid, &lam_min)
+        return lam_min
+
+    @cache_lam_min.setter
+    def cache_lam_min(self, double cache_lam_min):
+        cdef int stat
+        set_specgrid_cache_lam_min(self.specgrid, cache_lam_min, &stat)
+        handle_error(stat)
+
+
+    @property
+    def cache_lam_max(self):
+        """double: Maximum wavelength of cached spectra."""
+        cdef double lam_max
+        get_specgrid_cache_lam_max(self.specgrid, &lam_max)
+        return lam_max
+
+    @cache_lam_max.setter
+    def cache_lam_max(self, double cache_lam_max):
+        cdef int stat
+        set_specgrid_cache_lam_max(self.specgrid, cache_lam_max, &stat)
+        handle_error(stat)
+        
+
+    @property
     def cache_count(self):
         """int: Number of nodes currently in cache."""
         cdef int count
@@ -150,62 +196,17 @@ cdef class SpecGrid:
     @property
     def cache_limit(self):
         """double: Maximum number of nodes to hold in cache. Set to 0 to disable 
-           caching, or to None to reset to default."""
+           caching."""
         cdef int limit
         get_specgrid_cache_limit(self.specgrid, &limit)
         return limit
 
     @cache_limit.setter
-    def cache_limit(self, cache_limit):
+    def cache_limit(self, int cache_limit):
         cdef int stat
-        cdef int limit
-        if cache_limit is not None:
-            limit = int(cache_limit)
-            set_specgrid_cache_limit(self.specgrid, &limit, &stat)
-        else:
-            set_specgrid_cache_limit(self.specgrid, NULL, &stat)
+        set_specgrid_cache_limit(self.specgrid, limit, &stat)
         handle_error(stat)
 
-
-    @property
-    def cache_lam_min(self):
-        """double: Minimum wavelength of cached spectra. Set to None to reset to 
-        default."""
-        cdef double lam_min
-        get_specgrid_cache_lam_min(self.specgrid, &lam_min)
-        return lam_min
-
-    @cache_lam_min.setter
-    def cache_lam_min(self, cache_lam_min):
-        cdef int stat
-        cdef double lam_min
-        if cache_lam_min is not None:
-            lam_min = float(cache_lam_min)
-            set_specgrid_cache_lam_min(self.specgrid, &lam_min, &stat)
-        else:
-            set_specgrid_cache_lam_min(self.specgrid, NULL, &stat)
-        handle_error(stat)
-
-
-    @property
-    def cache_lam_max(self):
-        """double: Maximum wavelength of cached spectra. Set to None to reset to 
-           default."""
-        cdef double lam_max
-        get_specgrid_cache_lam_max(self.specgrid, &lam_max)
-        return lam_max
-
-    @cache_lam_max.setter
-    def cache_lam_max(self, cache_lam_max):
-        cdef int stat
-        cdef double lam_max
-        if cache_lam_max is not None:
-            lam_max = float(cache_lam_max)
-            set_specgrid_cache_lam_max(self.specgrid, &lam_max, &stat)
-        else:
-            set_specgrid_cache_lam_max(self.specgrid, NULL, &stat)
-        handle_error(stat)
-        
 
     def intensity(self, dict x, double mu, double[:] lam,
                   dict deriv=None):

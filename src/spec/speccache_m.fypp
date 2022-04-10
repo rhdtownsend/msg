@@ -40,8 +40,6 @@ module speccache_m
       private
       type(specint_element_t), allocatable :: specint_elements(:)
       integer, allocatable                 :: ltimes(:)
-      real(RD)                             :: lam_min_in
-      real(RD)                             :: lam_max_in
       real(RD)                             :: lam_min
       real(RD)                             :: lam_max
       integer                              :: count
@@ -92,9 +90,6 @@ contains
       allocate(speccache%ltimes(n))
       speccache%ltimes = 0
 
-      speccache%lam_min_in = lam_min
-      speccache%lam_max_in = lam_max
-
       speccache%lam_min = lam_min
       speccache%lam_max = lam_max
 
@@ -114,7 +109,7 @@ contains
    #:for name, type in (('lam_min', 'real(RD)'), &
                         ('lam_max', 'real(RD)'), &
                         ('count', 'integer'),    &
-                        ('limit', 'integer'))
+                        ('limit', 'integer'))        
                         
       subroutine get_${name}$(self, ${name}$)
 
@@ -138,44 +133,31 @@ contains
    subroutine set_lam_min(self, lam_min, stat)
 
       class(speccache_t), intent(inout) :: self
-      real(RD), intent(in), optional    :: lam_min
+      real(RD), intent(in)              :: lam_min
       integer, intent(out), optional    :: stat
 
       ! Set lam_min
 
-      if (PRESENT(lam_min)) then
-
-         if (lam_min < self%lam_min_in) then
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_LAM_LO
-               return
-            else
-               @:ABORT('out-of-bounds (lo) lam')
-            end if
-         else if(lam_min > self%lam_max) then
-            if (PRESENT(stat)) then
-               stat = STAT_INVALID_ARGUMENT
-               return
-            else
-               @:ABORT('invalid argument')
-            end if
+      if(lam_min >= self%lam_max) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
          end if
-
-         self%lam_min = lam_min
-
-      else
-
-         self%lam_min = self%lam_min_in
-
       end if
+
+      self%lam_min = lam_min
 
       ! If necessary, flush the cache
 
       if (self%count > 0) then
          call self%flush_cache_()
       end if
-         
+
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -186,36 +168,21 @@ contains
    subroutine set_lam_max(self, lam_max, stat)
 
       class(speccache_t), intent(inout) :: self
-      real(RD), intent(in), optional    :: lam_max
+      real(RD), intent(in)              :: lam_max
       integer, intent(out), optional    :: stat
 
       ! Set lam_max
 
-      if (PRESENT(lam_max)) then
-
-         if (lam_max > self%lam_max_in) then
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_LAM_HI
-               return
-            else
-               @:ABORT('out-of-bounds (hi) lam')
-            end if
-         else if(lam_max < self%lam_min) then
-            if (PRESENT(stat)) then
-               stat = STAT_INVALID_ARGUMENT
-               return
-            else
-               @:ABORT('invalid argument')
-            end if
+      if(lam_max <= self%lam_min) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
          end if
-
-         self%lam_max = lam_max
-
-      else
-
-         self%lam_max = self%lam_max_in
-
       end if
+
+      self%lam_max = lam_max
 
       ! If necessary, flush the cache
 
@@ -224,6 +191,8 @@ contains
       end if
          
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -234,29 +203,21 @@ contains
    subroutine set_limit(self, limit, stat)
 
       class(speccache_t), intent(inout) :: self
-      integer, intent(in), optional     :: limit
+      integer, intent(in)               :: limit
       integer, intent(out), optional    :: stat
 
       ! Set limit
 
-      if (PRESENT(limit)) then
-
-         if (limit > self%n .OR. limit < 0) then
-            if (PRESENT(stat)) then
-               stat = STAT_INVALID_ARGUMENT
-               return
-            else
-               @:ABORT('invalid argument')
-            end if
+      if (limit < 0) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
          end if
-
-         self%limit = limit
-
-      else
-
-         self%limit = self%n
-
       end if
+
+      self%limit = limit
 
       ! If necessary, flush the cache
 
@@ -265,6 +226,8 @@ contains
       end if
          
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -391,7 +354,7 @@ contains
       ! Flush the cache
 
       flush_loop : do i = 1, self%n
-         deallocate(self%specint_elements(i)%specint)
+         if (self%ltimes(i) > 0) deallocate(self%specint_elements(i)%specint)
       end do flush_loop
 
       self%ltimes = 0

@@ -289,11 +289,12 @@ contains
 
    !****
 
-   subroutine set_photgrid_cache_limit(photgrid_ptr, cache_limit) bind(C)
+   subroutine set_photgrid_cache_limit(photgrid_ptr, cache_limit, stat) bind(C)
 
       type(C_PTR), value       :: photgrid_ptr
-      integer(C_INT), optional :: cache_limit
-
+      integer(C_INT), value    :: cache_limit
+      integer(C_INT), optional :: stat
+      
       type(photgrid_t), pointer :: photgrid
 
       ! Set up the Fortran pointer
@@ -302,7 +303,7 @@ contains
 
       ! Set the cache limit
 
-      call photgrid%set_cache_limit(cache_limit)
+      call photgrid%set_cache_limit(cache_limit, stat)
 
       ! Finish
 

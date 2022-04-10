@@ -122,29 +122,21 @@ contains
    subroutine set_limit(self, limit, stat)
 
       class(photcache_t), intent(inout) :: self
-      integer, intent(in), optional     :: limit
+      integer, intent(in)               :: limit
       integer, intent(out), optional    :: stat
 
-      ! Set limit
+      ! Set the cache occupancy limit
 
-      if (PRESENT(limit)) then
-
-         if (limit > self%n .OR. limit < 0) then
-            if (PRESENT(stat)) then
-               stat = STAT_INVALID_ARGUMENT
-               return
-            else
-               @:ABORT('invalid argument')
-            end if
+      if (limit < 0) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
          end if
-
-         self%limit = limit
-
-      else
-
-         self%limit = self%n
-
       end if
+
+      self%limit = limit
 
       ! If necessary, flush the cache
 
@@ -153,6 +145,8 @@ contains
       end if
          
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -327,7 +321,7 @@ contains
       ! Flush the cache
 
       flush_loop : do i = 1, self%n
-         deallocate(self%photint_elements(i)%photint)
+         if (self%ltimes(i) > 0) deallocate(self%photint_elements(i)%photint)
       end do flush_loop
 
       self%ltimes = 0

@@ -41,10 +41,14 @@ module hdf5_specsource_m
       ! Character lengths hard-coded to work around gfortran bug
       character(256), allocatable :: file_names(:)
       character(256), allocatable :: group_names(:)
-      integer                   :: n
+      real(RD)                    :: lam_min
+      real(RD)                    :: lam_max
+      integer                     :: n
    contains
       private
       procedure, public :: get_n
+      procedure, public :: get_lam_min
+      procedure, public :: get_lam_max
       procedure, public :: fetch
    end type hdf5_specsource_t
 
@@ -62,10 +66,12 @@ module hdf5_specsource_m
 
 contains
 
-   function hdf5_specsource_t_(file_names, group_names) result(specsource)
+   function hdf5_specsource_t_(file_names, group_names, lam_min, lam_max) result(specsource)
 
       character(*), intent(in) :: file_names(:)
       character(*), intent(in) :: group_names(:)
+      real(RD), intent(in)     :: lam_min
+      real(RD), intent(in)     :: lam_max
       type(hdf5_specsource_t)  :: specsource
 
       @:CHECK_BOUNDS(SIZE(group_names), SIZE(file_names))
@@ -74,6 +80,9 @@ contains
 
       specsource%file_names = file_names
       specsource%group_names = group_names
+
+      specsource%lam_min = lam_min
+      specsource%lam_max = lam_max
 
       specsource%n = SIZE(file_names)
 
@@ -99,6 +108,28 @@ contains
       return
 
    end subroutine get_n
+
+   !****
+
+   #:for name, type in (('lam_min', 'real(RD)'), &
+                        ('lam_max', 'real(RD)'))
+                        
+      subroutine get_${name}$(self, ${name}$)
+
+         class(hdf5_specsource_t), intent(in) :: self
+         ${type}$, intent(out)                :: ${name}$
+
+         ! Get ${name}$
+
+         ${name}$ = self%${name}$
+
+         ! Finish
+
+         return
+
+      end subroutine get_${name}$
+
+   #:endfor
 
    !****
 

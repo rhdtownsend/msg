@@ -41,7 +41,7 @@ cdef extern from "cmsg.h":
     void get_photgrid_axis_x_max(void *photgrid, int i, double *axis_x_max)
     void get_photgrid_axis_label(void *photgrid, int i, char *axis_label)
 
-    void set_photgrid_cache_limit(void *photgrid, int *cache_limit, int *stat)
+    void set_photgrid_cache_limit(void *photgrid, int cache_limit, int *stat)
 
     void interp_photgrid_intensity(void *photgrid, double x_vec[], double mu,
                                    double *I, int *stat, bool deriv_vec[])
@@ -151,20 +151,15 @@ cdef class PhotGrid:
     @property
     def cache_limit(self):
         """double: Maximum number of nodes to hold in cache. Set to 0 to disable 
-        chaching, or to None to reset to default."""
+        caching."""
         cdef int limit
         get_photgrid_cache_limit(self.photgrid, &limit)
         return limit
 
     @cache_limit.setter
-    def cache_limit(self, cache_limit):
+    def cache_limit(self, int cache_limit):
         cdef int stat
-        cdef int limit
-        if cache_limit is not None:
-            limit = int(cache_limit)
-            set_photgrid_cache_limit(self.photgrid, &limit, &stat)
-        else:
-            set_photgrid_cache_limit(self.photgrid, NULL, &stat)
+        set_photgrid_cache_limit(self.photgrid, limit, &stat)
         handle_error(stat)
 
 
