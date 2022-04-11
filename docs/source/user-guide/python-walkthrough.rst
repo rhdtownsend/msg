@@ -10,7 +10,7 @@ to evaluate flux and intensity spectra for a model of Sirius
 sequence of Jupyter notebook cells, but pasting all of the fragments
 into a Python script should work also.
 
-.. _python-walkthrough-grid:
+.. _python-walkthrough-prep:
 
 Preparation
 ===========
@@ -41,7 +41,7 @@ statements into the first cell:
 
    MSG_DIR = os.environ['MSG_DIR']
 
-   sys.path.insert(0, os.path.join(MSG_DIR, 'lib'))
+   sys.path.insert(0, os.path.join(MSG_DIR, 'python'))
    import pymsg
 
    # Set plot parameters

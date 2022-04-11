@@ -31,4 +31,3 @@
    :p photgrid_t photgrid [out]: Returned grid object.
 
    :o integer stat [out]: Returned status code.
-			   

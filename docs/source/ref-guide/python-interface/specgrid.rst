@@ -1,5 +1,6 @@
 .. _python-specgrid:
 
+========
 SpecGrid
 ========
 

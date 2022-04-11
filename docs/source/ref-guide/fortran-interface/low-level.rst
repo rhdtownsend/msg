@@ -4,5 +4,5 @@
 Fortran Low-Level Interface
 ===========================
 
-.. include:: msg_m.rst
+.. include:: msg_m.inc
 	     

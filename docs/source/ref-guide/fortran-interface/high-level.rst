@@ -11,5 +11,5 @@ derived type definitions for the :f:type:`specgrid_t` and
 interface <fortran-low-level>`) together with support routines and
 constants.
 
-.. include:: fmsg_m.rst
+.. include:: fmsg_m.inc
 

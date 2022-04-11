@@ -1,5 +1,6 @@
 .. _python-photgrid:
 
+========
 PhotGrid
 ========
 
