@@ -50,9 +50,9 @@ cdef extern from "cmsg.h":
     void interp_specgrid_intensity(void *specgrid, double x_vec[], double mu,
                                    int n, double lam[], double I[], int *stat,
                                    bool deriv_vec[])
-    void interp_specgrid_e_moment(void *specgrid, double x_vec[], int k, int n,
+    void interp_specgrid_E_moment(void *specgrid, double x_vec[], int k, int n,
                                   double lam[], double E[], int *stat, bool deriv_vec[])
-    void interp_specgrid_d_moment(void *specgrid, double x_vec[], int l, int n,
+    void interp_specgrid_D_moment(void *specgrid, double x_vec[], int l, int n,
                                   double lam[], double D[], int *stat, bool deriv_vec[])
     void interp_specgrid_flux(void *specgrid, double x_vec[], int n, double lam[],
                               double F[], int *stat, bool deriv_vec[])
@@ -159,7 +159,7 @@ cdef class SpecGrid:
 
     @property
     def cache_lam_min(self):
-        """double: Minimum wavelength of cached spectra."""
+        """double: Minimum wavelength of grid cache."""
         cdef double lam_min
         get_specgrid_cache_lam_min(self.specgrid, &lam_min)
         return lam_min
@@ -173,7 +173,7 @@ cdef class SpecGrid:
 
     @property
     def cache_lam_max(self):
-        """double: Maximum wavelength of cached spectra."""
+        """double: Maximum wavelength of grid cache."""
         cdef double lam_max
         get_specgrid_cache_lam_max(self.specgrid, &lam_max)
         return lam_max
@@ -187,7 +187,7 @@ cdef class SpecGrid:
 
     @property
     def cache_count(self):
-        """int: Number of nodes currently in cache."""
+        """int: Number of nodes currently held in grid cache."""
         cdef int count
         get_specgrid_cache_count(self.specgrid, &count)
         return count
@@ -195,7 +195,7 @@ cdef class SpecGrid:
 
     @property
     def cache_limit(self):
-        """double: Maximum number of nodes to hold in cache. Set to 0 to disable 
+        """double: Maximum number of nodes to hold in grid cache. Set to 0 to disable 
            caching."""
         cdef int limit
         get_specgrid_cache_limit(self.specgrid, &limit)
@@ -289,7 +289,7 @@ cdef class SpecGrid:
 
         x_vec, deriv_vec = self._vector_args(x, deriv)
 
-        interp_specgrid_d_moment(self.specgrid, &x_vec[0], k, n, &lam[0], &E[0],
+        interp_specgrid_E_moment(self.specgrid, &x_vec[0], k, n, &lam[0], &E[0],
                                  &stat, &deriv_vec[0])
         handle_error(stat)
 
@@ -332,7 +332,7 @@ cdef class SpecGrid:
 
         x_vec, deriv_vec = self._vector_args(x, deriv)
 
-        interp_specgrid_e_moment(self.specgrid, &x_vec[0], l, n, &lam[0], &D[0],
+        interp_specgrid_D_moment(self.specgrid, &x_vec[0], l, n, &lam[0], &D[0],
                                  &stat, &deriv_vec[0])
         handle_error(stat)
 

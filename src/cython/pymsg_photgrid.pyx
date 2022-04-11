@@ -45,9 +45,9 @@ cdef extern from "cmsg.h":
 
     void interp_photgrid_intensity(void *photgrid, double x_vec[], double mu,
                                    double *I, int *stat, bool deriv_vec[])
-    void interp_photgrid_e_moment(void *photgrid, double x_vec[], int k, double *E,
+    void interp_photgrid_E_moment(void *photgrid, double x_vec[], int k, double *E,
                                   int *stat, bool deriv_vec[])
-    void interp_photgrid_d_moment(void *photgrid, double x_vec[], int l, double *D,
+    void interp_photgrid_D_moment(void *photgrid, double x_vec[], int l, double *D,
                                   int *stat, bool deriv_vec[])
     void interp_photgrid_flux(void *photgrid, double x_vec[], double *F, int *stat,
                               bool deriv_vec[])
@@ -233,7 +233,7 @@ cdef class PhotGrid:
 
         x_vec, deriv_vec = self._vector_args(x, deriv)
 
-        interp_photgrid_e_moment(self.photgrid, &x_vec[0], k, &E, &stat,
+        interp_photgrid_E_moment(self.photgrid, &x_vec[0], k, &E, &stat,
                                  &deriv_vec[0])
         handle_error(stat)
 
@@ -271,7 +271,7 @@ cdef class PhotGrid:
 
         x_vec, deriv_vec = self._vector_args(x, deriv)
 
-        interp_photgrid_d_moment(self.photgrid, &x_vec[0], l, &D, &stat,
+        interp_photgrid_D_moment(self.photgrid, &x_vec[0], l, &D, &stat,
                                  &deriv_vec[0])
         handle_error(stat)
 

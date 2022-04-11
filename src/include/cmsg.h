@@ -40,8 +40,8 @@ void set_specgrid_cache_lam_max(SpecGrid specgrid, double cache_lam_max, int *st
 void set_specgrid_cache_limit(SpecGrid specgrid, int cache_limit, int *stat);
 
 void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], int *stat, bool deriv_vec[]);
-void interp_specgrid_e_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], int *stat, bool deriv_vec[]);
-void interp_specgrid_d_moment(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], int *stat, bool deriv_vec[]);
+void interp_specgrid_E_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], int *stat, bool deriv_vec[]);
+void interp_specgrid_D_moment(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], int *stat, bool deriv_vec[]);
 void interp_specgrid_flux(SpecGrid specgrid, double x_vec[], int n, double lam[], double F[], int *stat, bool deriv_vec[]);
 
 // photgrid interface
@@ -62,8 +62,8 @@ void get_photgrid_axis_label(PhotGrid photgrid, int i, char *axis_label);
 void set_photgrid_cache_limit(PhotGrid photgrid, int cache_limit, int *stat);
 
 void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, int *stat, bool deriv_vec[]);
-void interp_photgrid_e_moment(PhotGrid photgrid, double x_vec[], int k, double *E, int *stat, bool deriv_vec[]);
-void interp_photgrid_d_moment(PhotGrid photgrid, double x_vec[], int l, double *D, int *stat, bool deriv_vec[]);
+void interp_photgrid_E_moment(PhotGrid photgrid, double x_vec[], int k, double *E, int *stat, bool deriv_vec[]);
+void interp_photgrid_D_moment(PhotGrid photgrid, double x_vec[], int l, double *D, int *stat, bool deriv_vec[]);
 void interp_photgrid_flux(PhotGrid photgrid, double x_vec[], double *F, int *stat, bool deriv_vec[]);
 
 // enums etc
@@ -83,3 +83,5 @@ enum {
   STAT_INVALID_TYPE,
   STAT_FILE_NOT_FOUND
 };
+
+// Stop cython from complaining
