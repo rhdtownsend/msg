@@ -717,7 +717,7 @@ contains
       ! Write cubintkthe cubint_t
 
       call hdf5io%write_attr('TYPE', 'cubint_t')
-      call hdf5io%write_attr('TYPE', 1)
+      call hdf5io%write_attr('REVISION', 1)
 
       call hdf5io%write_attr('n', self%n)
 
