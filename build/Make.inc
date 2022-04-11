@@ -64,7 +64,7 @@ CFLAGS := -fPIC -I../src/include
 ifeq (${DEBUG},yes)
   CFLAGS := ${CFLAGS} -ggdb
 else
-  CFLAGS := ${CFLAGS} -O2 -march=native
+  CFLAGS := ${CFLAGS} -O2 -march=native -Wno-cpp
 endif
 
 ifeq (${PYTHON},yes)
