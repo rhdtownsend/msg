@@ -51,7 +51,7 @@ SpecGrid
    Get the minimum wavelength of the grid cache.
 
    :param specgrid: Grid object.
-   :param ceche_lam_min: Returned minimum wavelength.
+   :param cache_lam_min: Returned minimum wavelength.
 
 
 .. c:function:: void get_specgrid_cache_lam_max(SpecGrid specgrid, double *cache_lam_max)
@@ -59,7 +59,7 @@ SpecGrid
    Get the maximum wavelength of the grid cache.
 
    :param specgrid: Grid object.
-   :param ceche_lam_max: Returned maximum wavelength.
+   :param cache_lam_max: Returned maximum wavelength.
 
 
 .. c:function:: void get_specgrid_cache_count(SpecGrid specgrid, int *cache_count)
@@ -67,7 +67,7 @@ SpecGrid
    Get the number of nodes currently held in the grid cache.
 
    :param specgrid: Grid object.
-   :param ceche_count: Returned number of nodes.
+   :param cache_count: Returned number of nodes.
 
 
 .. c:function:: void get_specgrid_cache_limit(SpecGrid specgrid, int *cache_limit)

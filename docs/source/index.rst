@@ -37,5 +37,6 @@ condiment to add flavor to your science!`
    :caption: Appendices
    :name: appendices
 
+   appendices/tensor-product-interpolation.rst
    appendices/spectral-grids.rst
    appendices/passband-files.rst

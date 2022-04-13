@@ -10,3 +10,4 @@ radian	{\rm rad}
 steradian	{\rm srad}
 barye	{\rm Ba}
 diff	\operatorname{d}
+sderiv	{\rm d}#1/{\rm d}#2

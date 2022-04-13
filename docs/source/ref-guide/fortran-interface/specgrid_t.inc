@@ -11,11 +11,57 @@ The specgrid_t type represents a grid of spectroscopic intensity data.
    atmospheric parameter values.
 
 
-   .. f:subroutine:: inquire(lam_min, lam_max, shape, rank, axis_min, axis_max, axis_labels)
+   .. f:subroutine:: get_rank(rank)
 
-      Inquire about grid properties.
+      Get the rank (dimension) of the grid.
 
-      :o real(RD) lam_min [out]: Wavelength abscissa minimum.
+      :o integer rank: Returned rank.
+
+
+   .. f:subroutine:: get_lam_min(lam_min)
+
+      Get the minimum wavelength of the grid.
+
+      :o real(RD) lam_min [out]: Returned minimum wavelength.
+
+
+   .. f:subroutine:: get_lam_max(lam_max)
+
+      Get the maximum wavelength of the grid.
+
+      :o real(RD) lam_max [out]: Returned maximum wavelength.
+
+
+   .. f:subroutine:: get_cache_lam_min(cache_lam_min)
+
+      Get the minimum wavelength of the grid cache.
+
+      :o real(RD) lam_min [out]: Returned minimum wavelength.
+
+
+   .. f:subroutine:: get_cache_lam_max(cache_lam_max)
+
+      Get the maximum wavelength of the grid cache.
+
+      :o real(RD) cacheLlam_max [out]: Returned maximum wavelength.
+
+
+   .. f:subroutine:: get_cache_count(cache_count)
+
+      Get the number of nodes currently held in the grid cache.
+
+      :o integer cache_count: Returned number of nodes.
+
+      
+   .. f:subroutine:: get_cache_count(cache_count)
+
+      Get the number of nodes currently held in the grid cache.
+
+      :o integer cache_count: Returned number of nodes.
+
+
+
+Wavelength abscissa minimum.
       :o real(RD) lam_max [out]: Wavelength abscissa maximum.
       :o integer shape(:) [out]: Atmospheric parameter axes lengths.
       :o integer rank [out]: Number of atmospheric parameters.
