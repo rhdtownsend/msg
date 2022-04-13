@@ -320,7 +320,7 @@ contains
       !****
 
       subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, ${arg_var}$, res, &
-                                          stat, deriv_vec) bind(C)
+                                          stat, deriv_vec) bind(C, name='interp_photgrid_${name}$')
 
          type(C_PTR), value  :: photgrid_ptr
          real(C_DOUBLE)      :: x_vec(*)
@@ -355,7 +355,7 @@ contains
    #:for name, var in (('flux', 'F'),)
 
       subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, res, &
-                                          stat, deriv_vec) bind(C)
+                                          stat, deriv_vec) bind(C, name='interp_photgrid_${name}$')
 
          type(C_PTR), value :: photgrid_ptr
          real(C_DOUBLE)     :: x_vec(*)

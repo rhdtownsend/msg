@@ -274,7 +274,7 @@ contains
                                      ('D_moment', 'l', 'integer(C_INT)'))
 
       subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, ${arg_var}$, n, lam, res, &
-                                          stat, deriv_vec) bind(C)
+                                          stat, deriv_vec) bind(C, name='interp_specgrid_${name}$')
 
          type(C_PTR), value    :: specgrid_ptr
          real(C_DOUBLE)        :: x_vec(*)
@@ -311,7 +311,7 @@ contains
    #:for name, var in (('flux', 'F'),)
 
       subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, n, lam, res, &
-                                          stat, deriv_vec) bind(C)
+                                          stat, deriv_vec) bind(C, name='interp_specgrid_${name}$')
 
          type(C_PTR), value    :: specgrid_ptr
          real(C_DOUBLE)        :: x_vec(*)
