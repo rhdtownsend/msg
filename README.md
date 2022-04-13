@@ -20,7 +20,7 @@ Overview
 
 MSG (Multidimensinal Stellar Grids) is a library that synthesizes
 astrophysical spectra and photometric colors via interpolation in
-pre-calculated grids. Given a set of stellar atmospheric parameters
+pre-calculated grids.  Given a set of stellar atmospheric parameters
 (e.g., effective temperature, gravity and metallicity), MSG can
 calculate the specific intensity of the emergent radiation field as a
 function of wavelength and angle. It can also convolve these data with
