@@ -11,6 +11,9 @@ The MSG Library
 .. image:: https://img.shields.io/github/issues/rhdtownsend/msg
    :alt: GitHub issues
    :target: https://github.com/rhdtownsend/msg/issues
+.. image:: https://img.shields.io/readthedocs/msg
+   :alt: Read the Docs
+   :target: https://gyre.readthedocs.io/en/stable
 
 Overview
 ========
@@ -27,4 +30,4 @@ wide variety of photometric systems.
 Documentation
 =============
 
-Full documentation for GYRE can be found at http://www.astro.wisc.edu/~townsend/resource/docs/msg/
+Full documentation for MSG can be found at https://msg.readthedocs.io/en/latest.
