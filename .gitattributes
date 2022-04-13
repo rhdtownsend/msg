@@ -1,3 +1,4 @@
 *.inc linguist-language=Fortran
 *.fypp linguist-language=Fortran
 docs linguist-documentation
+*.ipynb    filter=jupyter_clear_output

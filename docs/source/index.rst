@@ -18,9 +18,9 @@ condiment to add flavor to your science!`
 
    user-guide/preliminaries.rst
    user-guide/quick-start.rst
-   user-guide/python-walkthrough.rst
+   user-guide/python-walkthrough.ipynb
    user-guide/fortran-walkthrough.rst
-   user-guide/fundamentals.rst
+   user-guide/how-msg-works.rst
 
 .. toctree::
    :caption: Reference Guide

@@ -47,7 +47,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx-prompt',
     'sphinx_substitution_extensions',
-    'jupyter_sphinx',
+    'nbsphinx',
     'ads_cite',
     'sphinxfortran.fortran_domain'
 ]
@@ -182,3 +182,6 @@ autodoc_member_order = 'groupwise'
 # Set up napoleon
 napoleon_google_docstring = True
 napoleon_include_init_with_doc = True
+
+# Set up nbsphinx
+nbsphinx_execute = 'always'
