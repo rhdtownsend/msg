@@ -88,8 +88,7 @@ html_theme_options = {
 # CSS
 html_context = {
     'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-        '_static/jupyter-sphinx.css'    # support for nice cell formatting
+        '_static/theme_overrides.css'  # override wide tables in RTD theme
     ],
 }
 
