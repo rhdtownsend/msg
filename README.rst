@@ -13,7 +13,7 @@ The MSG Library
    :target: https://github.com/rhdtownsend/msg/issues
 .. image:: https://img.shields.io/readthedocs/msg
    :alt: Read the Docs
-   :target: https://msg.readthedocs.io/en/stable
+   :target: https://msg.readthedocs.io/en/latest
 
 Overview
 ========
