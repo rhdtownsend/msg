@@ -120,7 +120,6 @@ contains
       type(hdf5io_t)            :: hdf5io
       type(hdf5io_t)            :: hdf5io_labels
       character(:), allocatable :: labels(:)
-      character(:), allocatable :: labels_chk(:)
       integer                   :: rank
       integer                   :: j
       real(RD), allocatable     :: x(:)
@@ -144,10 +143,14 @@ contains
 
       allocate(nodes(n_nodes))
 
+      write(*,*) 'Reading node metadata...'
+
       node_loop : do i = 1, n_nodes
 
          read(unit, 110) nodes(i)%file_name
 110      format(A)
+
+         write(*,*) '  ', TRIM(nodes(i)%file_name), i, n_nodes
 
          ! Open the HDF5 file
 
@@ -159,7 +162,7 @@ contains
 
          if (i == 1) then
 
-            labels = hdf5io_labels%dset_names()
+            labels = hdf5io_labels%attr_names()
 
             associate (s => sort_indices(labels))
               labels = labels(s)
@@ -167,23 +170,12 @@ contains
 
             rank = SIZE(labels)
 
-         else
-
-            labels_chk = hdf5io_labels%dset_names()
-
-            associate (s => sort_indices(labels_chk))
-              labels_chk = labels_chk(s)
-            end associate
-
-            @:ASSERT(SIZE(labels_chk) == rank, 'mismatched labels')
-            @:ASSERT(ALL(labels_chk == labels), 'mismatched labels')
-
          endif
 
          allocate(nodes(i)%x_vec(rank))
 
          do j = 1, rank
-            call hdf5io_labels%read_dset(labels(j), nodes(i)%x_vec(j))
+            call hdf5io_labels%read_attr(labels(j), nodes(i)%x_vec(j))
          end do
 
          call hdf5io_labels%final()

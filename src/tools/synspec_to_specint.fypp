@@ -116,7 +116,7 @@ program synspec_to_specint
    do j = 9, n_arg(), 2
       call get_arg(j, label)
       call get_arg(j+1, value)
-      call hdf5io_labels%write_dset(label, value)
+      call hdf5io_labels%write_attr(label, value)
    end do
 
    call hdf5io_labels%final()

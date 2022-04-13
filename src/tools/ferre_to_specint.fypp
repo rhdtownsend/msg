@@ -289,7 +289,7 @@ contains
       hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
       do j = 1, fh%n_of_dim
-         call hdf5io_labels%write_dset(labels(j), values(j))
+         call hdf5io_labels%write_attr(labels(j), values(j))
       end do
 
       call hdf5io_labels%final()
