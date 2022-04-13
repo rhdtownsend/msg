@@ -21,9 +21,42 @@ module cmsg_m
 
    ! Uses
 
+   use forum_m, only: f_c_string
+
+   use msg_m, only: get_version
+   use stat_m
+
    use cmsg_spec_m
    use cmsg_phot_m
 
-   use stat_m
+   use ISO_C_BINDING
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   public
+
+contains
+
+   subroutine get_msg_version(version) bind(C)
+
+      character(C_CHAR) :: version(*)
+
+      character(:), allocatable :: f_version
+
+      ! Get the library version
+
+      call get_version(f_version)
+
+      call f_c_string(f_version, version)
+
+      ! Finish
+
+      return
+
+   end subroutine get_msg_version
 
 end module cmsg_m

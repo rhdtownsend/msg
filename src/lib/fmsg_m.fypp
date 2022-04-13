@@ -50,6 +50,7 @@ module fmsg_m
    public :: axis_t
    public :: photgrid_t
    public :: specgrid_t
+   public :: get_version
    public :: load_specgrid
    public :: load_photgrid
    public :: load_photgrid_from_specgrid

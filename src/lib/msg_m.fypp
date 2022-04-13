@@ -44,4 +44,28 @@ module msg_m
    use hdf5_specsource_m
    use stat_m
 
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   public
+
+contains
+
+   subroutine get_version(version)
+
+      character(:), allocatable, intent(out) :: version
+
+      ! Get the library version
+
+      #:include 'version.inc'
+
+      ! Finish
+
+      return
+
+   end subroutine get_version
+
 end module msg_m

@@ -21,6 +21,8 @@
 
 cdef extern from "cmsg.h":
 
+    cdef void get_msg_version(char *version);
+
     cdef enum:
        STAT_OK,
        STAT_OUT_OF_BOUNDS_RANGE_LO,
@@ -66,3 +68,12 @@ def handle_error(stat):
         raise FileNotFoundError('file not found')
     else:
         raise Exception(f'error with unknown stat code: {stat}')
+
+# Set the version number
+
+cdef char version[17]
+
+get_msg_version(version)
+__version__ = version.decode('ascii')
+
+    

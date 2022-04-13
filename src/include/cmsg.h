@@ -66,6 +66,10 @@ void interp_photgrid_E_moment(PhotGrid photgrid, double x_vec[], int k, double *
 void interp_photgrid_D_moment(PhotGrid photgrid, double x_vec[], int l, double *D, int *stat, bool deriv_vec[]);
 void interp_photgrid_flux(PhotGrid photgrid, double x_vec[], double *F, int *stat, bool deriv_vec[]);
 
+// library routines
+
+void get_msg_version(char *version);
+
 // enums etc
 
 enum {
