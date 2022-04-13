@@ -11,9 +11,6 @@ The MSG Library
 .. image:: https://img.shields.io/github/issues/rhdtownsend/msg
    :alt: GitHub issues
    :target: https://github.com/rhdtownsend/msg/issues
-.. image:: https://img.shields.io/readthedocs/msg
-   :alt: Read the Docs
-   :target: http://www.astro.wisc.edu/~townsend/resource/docs/msg/
 
 Overview
 ========
