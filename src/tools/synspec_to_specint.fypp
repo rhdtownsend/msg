@@ -107,7 +107,7 @@ program synspec_to_specint
 
    ! Write it (together with labels)
 
-   hdf5io = hdf5io_t(specint_file_name, CREATE_FILE, comp_level=9)
+   hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
 
    call specint%write(hdf5io)
 
