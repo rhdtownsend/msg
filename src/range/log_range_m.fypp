@@ -264,9 +264,9 @@ contains
          real(RD) :: dlogx
          integer  :: n
 
-         call hdf5io%read_dset('logx_0', logx_0)
-         call hdf5io%read_dset('dlogx', dlogx)
-         call hdf5io%read_dset('n', n)
+         call hdf5io%read_attr('logx_0', logx_0)
+         call hdf5io%read_attr('dlogx', dlogx)
+         call hdf5io%read_attr('n', n)
 
          select type(self)
          type is (log_range_t)
@@ -296,9 +296,9 @@ contains
       call hdf5io%write_attr('TYPE', 'log_range_t')
       call hdf5io%write_attr('REVISION', 1)
 
-      call hdf5io%write_dset('logx_0', self%logx_0)
-      call hdf5io%write_dset('dlogx', self%dlogx)
-      call hdf5io%write_dset('n', self%n)
+      call hdf5io%write_attr('logx_0', self%logx_0)
+      call hdf5io%write_attr('dlogx', self%dlogx)
+      call hdf5io%write_attr('n', self%n)
      
       ! Finish
 

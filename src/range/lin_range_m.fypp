@@ -263,9 +263,9 @@ contains
          real(RD) :: dx
          integer  :: n
 
-         call hdf5io%read_dset('x_0', x_0)
-         call hdf5io%read_dset('dx', dx)
-         call hdf5io%read_dset('n', n)
+         call hdf5io%read_attr('x_0', x_0)
+         call hdf5io%read_attr('dx', dx)
+         call hdf5io%read_attr('n', n)
 
          select type(self)
          type is (lin_range_t)
@@ -295,9 +295,9 @@ contains
       call hdf5io%write_attr('TYPE', 'lin_range_t')
       call hdf5io%write_attr('TYPE', 1)
       
-      call hdf5io%write_dset('x_0', self%x_0)
-      call hdf5io%write_dset('dx', self%dx)
-      call hdf5io%write_dset('n', self%n)
+      call hdf5io%write_attr('x_0', self%x_0)
+      call hdf5io%write_attr('dx', self%dx)
+      call hdf5io%write_attr('n', self%n)
      
       ! Finish
 
