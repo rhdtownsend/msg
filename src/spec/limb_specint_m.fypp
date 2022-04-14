@@ -649,9 +649,9 @@ contains
       call hdf5io%write_attr('precise', self%precise)
 
       if (self%precise) then
-         call hdf5io%write_dset('c', REAL(self%c, RS), comp_level=9)
+         call hdf5io%write_dset('c', REAL(self%c, RS), comp_level=6)
       else
-         call hdf5io%write_dset('c', self%c, comp_level=9)
+         call hdf5io%write_dset('c', self%c, comp_level=6)
       endif
 
       hdf5io_range = hdf5io_t(hdf5io, 'range')
