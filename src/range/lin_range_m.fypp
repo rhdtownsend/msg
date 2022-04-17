@@ -293,7 +293,7 @@ contains
       ! Write the range
 
       call hdf5io%write_attr('TYPE', 'lin_range_t')
-      call hdf5io%write_attr('TYPE', 1)
+      call hdf5io%write_attr('REVISION', 1)
       
       call hdf5io%write_attr('x_0', self%x_0)
       call hdf5io%write_attr('dx', self%dx)
