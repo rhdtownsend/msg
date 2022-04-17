@@ -79,8 +79,9 @@ contains
 
       ! Construct range from the ranges
 
-      do j = 1, SIZE(ranges)
-         range_elements(j)%range = ranges(j)
+      do j = 1, SIZE(range_elements)
+         ! Straight assignment here seems to trigger a segfault with gfortran
+         allocate(range_elements(j)%range, SOURCE=ranges(j))
       end do
 
       range = comp_range_t_elements_(range_elements)
@@ -112,7 +113,7 @@ contains
       @:ASSERT(n_ranges >= 1,'insufficient data')
 
       range%range_elements = range_elements
-      
+
       allocate(range%i_bdy(n_ranges+1))
 
       range%i_bdy(1) = 1
