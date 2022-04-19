@@ -33,16 +33,15 @@ program goettingen_to_specint
    ! Variables
 
    character(:), allocatable :: flux_file_name
-   character(:), allocatable :: wave_file_name
+   character(:), allocatable :: wave_type
    character(:), allocatable :: specint_file_name
 
-   real(RD), allocatable             :: lam(:)
    real(RD), allocatable             :: F(:)
    character(LABEL_LEN), allocatable :: head_labels(:)
    real(RD), allocatable             :: head_values(:)
    integer                           :: n_lam
    real(RD), allocatable             :: I(:,:)
-   type(comp_range_t)                :: range
+   class(range_t), allocatable       :: range
    type(limb_t)                      :: limb
    type(limb_specint_t)              :: specint
    type(hdf5io_t)                    :: hdf5io
@@ -51,22 +50,19 @@ program goettingen_to_specint
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: goettingen_to_specint flux_file_name wave_file_name specint_file_name')
+   @:ASSERT(n_arg() == 3, 'Syntax: goettingen_to_specint flux_file_name wave_type specint_file_name')
 
    call get_arg(1, flux_file_name)
-   call get_arg(2, wave_file_name)
+   call get_arg(2, wave_type)
    call get_arg(3, specint_file_name)
 
-   ! Read data from the two input files
+   ! Read data from the input file
 
-   call read_fits_file(wave_file_name, lam)
    call read_fits_file(flux_file_name, F, head_labels, head_values)
 
    ! Set up the bin-averaged intensity
 
-   n_lam = SIZE(lam)
-
-   @:CHECK_BOUNDS(n_lam, SIZE(F))
+   n_lam = SIZE(F)
 
    allocate(I(1,n_lam-1))
 
@@ -74,7 +70,16 @@ program goettingen_to_specint
 
    ! Set up the range
 
-   call lam_to_range(lam, range)
+   select case(wave_type)
+   case('HiRes')
+      call create_range_hires(range)
+   case('MedRes-A1')
+      call create_range_medres_a1(range)
+   case('MedRes-R10000')
+      call create_range_medres_r10000(range)
+   case default
+      @:ABORT('invalid wave_type')
+   end select
 
    ! Create specint
 
@@ -230,13 +235,44 @@ contains
 
    !****
 
-   subroutine lam_to_range(lam, range)
+   subroutine create_range_medres_a1(range)
 
-      real(RD), intent(in)           :: lam(:)
-      type(comp_range_t), intent(out) :: range
+      class(range_t), allocatable, intent(out) :: range
 
-      real(RD) :: lam_chk(SIZE(lam))
-      
+      ! Set up range (this may need updating if the Goettingen grids
+      ! evolve)
+
+      range = lin_range_t(3000._RD, 0.1_RD, 70000)
+
+      ! Finish
+
+      return
+
+   end subroutine create_range_medres_a1
+
+   !****
+
+   subroutine create_range_medres_r10000(range)
+
+      class(range_t), allocatable, intent(out) :: range
+
+      ! Set up range (this may need updating if the Goettingen grids
+      ! evolve)
+
+      range = log_range_t(LOG(3000._RD), 1E-5_RD, 212027)
+
+      ! Finish
+
+      return
+
+   end subroutine create_range_medres_r10000
+
+   !****
+
+   subroutine create_range_hires(range)
+
+      class(range_t), allocatable, intent(out) :: range
+
       ! Set up range (this may need updating if the Goettingen grids
       ! evolve)
 
@@ -254,17 +290,11 @@ contains
            lin_range_t(45000._RD, 0.225_RD, 22223), &
            lin_range_t(50000._RD, 0.25_RD, 20000)])
 
-      ! Check that this matches lam to within toler
-
-      call range%unpack(lam_chk)
-
-      @:ASSERT(MAXVAL(ABS(lam-lam_chk)) < 1E-11_RD, 'wavelength out of tolerance')
-
       ! Finish
 
       return
 
-   end subroutine lam_to_range
+   end subroutine create_range_hires
 
 end program goettingen_to_specint
 
