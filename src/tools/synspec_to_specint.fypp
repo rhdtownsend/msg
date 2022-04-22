@@ -80,6 +80,9 @@ program synspec_to_specint
 
    call read_data(synspec_file_name, n_mu, lam_in, I_in)
 
+   @:ASSERT(lam_min >= lam_in(1),'out-of-bounds lam_min')
+   @:ASSERT(lam_max >= lam_in(SIZE(lam_in)),'out-of-bounds lam_min')
+
    ! Set up the angle axis
 
    mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
@@ -94,6 +97,9 @@ program synspec_to_specint
 
    allocate(lam(n_lam))
    call range%unpack(lam)
+
+   lam(1) = MAX(lam_in(1), lam(1))
+   lam(n_lam) = MIN(lam_in(SIZE(lam_in)), lam(n_lam))
 
    ! Bin the data onto this axis
 
