@@ -65,6 +65,9 @@ contains
 
       n_x = SIZE(x)
 
+      i_a = MIN(i_a, n_x-1)
+      i_b = MIN(i_b, n_x-1)
+
       @:ASSERT_DEBUG(i_a >= 1, 'out-of-bounds integration')
       @:ASSERT_DEBUG(i_a < n_x, 'out-of-bounds integration')
 
@@ -120,6 +123,9 @@ contains
       call locate(x, x_b, i_b)
 
       n_x = SIZE(x)
+
+      i_a = MIN(i_a, n_x-1)
+      i_b = MIN(i_b, n_x-1)
 
       @:ASSERT_DEBUG(i_a >= 1, 'out-of-bounds integration')
       @:ASSERT_DEBUG(i_a < n_x, 'out-of-bounds integration')
