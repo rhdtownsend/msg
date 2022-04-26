@@ -82,7 +82,7 @@ cdef class SpecGrid:
     """dict: Atmospheric parameter axis maxima."""
     
     def __init__(self, str filename):
-        """SpecGridg constructor.
+        """SpecGrid constructor.
 
         Args:
             filename (string): Filename of grid to load.
