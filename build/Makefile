@@ -36,7 +36,7 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq (${TESTS},yes)
-  EXEC_TARGETS := ${EXEC_TARGETS} test_specgrid test_photgrid test_spec_photgrid
+  EXEC_TARGETS := ${EXEC_TARGETS} test_specgrid time_specgrid test_photgrid test_spec_photgrid
 endif
 
 ifeq (${TOOLS},yes)
@@ -128,6 +128,10 @@ make_passband_DEPS = forum_m msg_m
 test_specgrid_OBJS = test_specgrid.o
 test_specgrid_LIBS = libforum libmsg libfmsg
 test_specgrid_DEPS = forum_m fmsg_m
+
+time_specgrid_OBJS = time_specgrid.o
+time_specgrid_LIBS = libforum libmsg libfmsg
+time_specgrid_DEPS = forum_m fmsg_m
 
 test_photgrid_OBJS = test_photgrid.o
 test_photgrid_LIBS = libforum libmsg libfmsg

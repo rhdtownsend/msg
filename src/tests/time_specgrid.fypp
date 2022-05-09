@@ -1,0 +1,68 @@
+program time_specgrid
+
+   use forum_m
+   use fmsg_m
+
+   implicit none
+
+   integer               :: n
+   integer               :: k
+   real(RD), allocatable :: lam(:)
+   real(RD), allocatable :: F(:)
+   type(specgrid_t)      :: specgrid
+   integer               :: rank
+   real(RD), allocatable :: vx(:)
+   integer               :: j
+   type(axis_t)          :: axis
+   character(LABEL_LEN)  :: label
+   integer               :: stat
+
+   integer(ID) :: start_time, stop_time, rate
+
+   read(*,*) n
+
+   lam = [(4000._RD + (k-1)*3000._RD/n,k=1,n+1)]
+
+   allocate(F(n))
+
+   call load_specgrid('sg.h5', specgrid)
+
+   call specgrid%get_rank(rank)
+
+   allocate(vx(rank))
+
+   do j = 1, rank
+
+      call specgrid%get_axis(j, axis)
+      call axis%get_label(label)
+
+      select case(label)
+      case('logT')
+         vx(j) = LOG10(5777._RD)
+      case('logg')
+         vx(j) = 4.0_RD
+      case default
+         stop 'invalid axis'
+      end select
+
+   end do
+
+   ! Timing loop
+
+   do
+
+      call SYSTEM_CLOCK(count=start_time, count_rate=rate)
+
+      call specgrid%interp_intensity(vx, 1.0_RD, lam, F, stat)
+      if (stat /= STAT_OK) then
+         print *,'Failed in interp_intensity with stat:',stat
+         stop
+      end if
+
+      call SYSTEM_CLOCK(count=stop_time)
+
+      print *,REAL(stop_time-start_time)/REAL(rate)
+
+   end do
+
+end program time_specgrid
