@@ -36,7 +36,8 @@ module vgrid_m
 
    ! Parameter definitions
 
-   logical, parameter :: faster = .FALSE.
+   logical, parameter :: faster = .TRUE.
+   logical, parameter :: fastest = .TRUE.
 
    ! Derived-type definitions
 
@@ -571,20 +572,39 @@ contains
 
       if (faster) then
 
-         call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
+         if (fastest) then
 
-         !$OMP PARALLEL DO PRIVATE(C)
-         do m = 1, n_m
+            call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
 
-            ! Evaluate the C vector
+            H = MATMUL(H, K)
 
-            C = MATMUL(K, F(:,m))
+            !$OMP PARALLEL DO PRIVATE(C)
+            do m = 1, n_m
 
-            ! Perform the interpolation
+               ! Perform the interpolation
 
-            f_int(m) = DOT_PRODUCT(H, C)
+               f_int(m) = DOT_PRODUCT(H, F(:,m))
 
-         end do
+            end do
+
+         else
+
+            call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
+
+            !$OMP PARALLEL DO PRIVATE(C)
+            do m = 1, n_m
+
+               ! Evaluate the C vector
+
+               C = MATMUL(K, F(:,m))
+
+               ! Perform the interpolation
+
+               f_int(m) = DOT_PRODUCT(H, C)
+
+            end do
+
+         end if
 
       else
 
