@@ -34,6 +34,10 @@ module vgrid_m
 
    implicit none
 
+   ! Parameter definitions
+
+   logical, parameter :: faster = .FALSE.
+
    ! Derived-type definitions
 
    type vgrid_t
@@ -419,6 +423,7 @@ contains
       integer  :: i_vec(self%rank)
       real(RD) :: F(self%n_stn)
       real(RD) :: C(self%n_stn)
+      real(RD) :: H(self%n_stn)
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
@@ -459,13 +464,26 @@ contains
 
       end do
 
-      ! Evaluate the C vector
-
-      C = MATMUL(K, F)
-
       ! Perform the interpolation
 
-      call interp_ncubic(self%rank, vu, C, vdelta, f_int, vderiv)
+      if (faster) then
+
+         ! Evaluate the C vector
+
+         C = MATMUL(K, F)
+
+         call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
+         f_int = DOT_PRODUCT(H, C)
+
+      else
+
+         ! Evaluate the C vector
+
+         C = MATMUL(K, F)
+
+         call interp_ncubic(self%rank, vu, C, vdelta, f_int, vderiv)
+
+      end if
 
       if (PRESENT(stat)) stat = STAT_OK
 
@@ -503,6 +521,7 @@ contains
       integer               :: i_vec(self%rank)
       real(RD), allocatable :: F(:,:)
       real(RD)              :: C(self%n_stn)
+      real(RD)              :: H(self%n_stn)
       integer               :: m
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
@@ -550,18 +569,39 @@ contains
 
       ! Now loop through output points
 
-      !$OMP PARALLEL DO PRIVATE(C)
-      do m = 1, n_m
+      if (faster) then
 
-         ! Evaluate the C vector
+         call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
 
-         C = MATMUL(K, F(:,m))
+         !$OMP PARALLEL DO PRIVATE(C)
+         do m = 1, n_m
 
-         ! Perform the interpolation
+            ! Evaluate the C vector
 
-         call interp_ncubic(self%rank, vu, C, vdelta, f_int(m), vderiv)
+            C = MATMUL(K, F(:,m))
 
-      end do
+            ! Perform the interpolation
+
+            f_int(m) = DOT_PRODUCT(H, C)
+
+         end do
+
+      else
+
+         !$OMP PARALLEL DO PRIVATE(C)
+         do m = 1, n_m
+
+            ! Evaluate the C vector
+
+            C = MATMUL(K, F(:,m))
+
+            ! Perform the interpolation
+
+            call interp_ncubic(self%rank, vu, C, vdelta, f_int(m), vderiv)
+
+         end do
+
+      end if
 
       ! Finish
 
