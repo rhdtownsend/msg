@@ -14,10 +14,10 @@ To compile and run MSG, you'll need the following software
 components:
 
 * A modern (2003+) Fortran compiler
-* The :netlib:`BLAS <blas>` linear algebra library
 * The :netlib:`LAPACK <lapack>` linear algebra library
 * The :netlib:`LAPACK95 <lapack95>` Fortran 95
   interface to LAPACK
+* The :git:`fypp <aradi/fypp>` Fortran pre-processor
 * The `HDF5 <https://www.hdfgroup.org/solutions/hdf5/>`__ data management library
 
 On Linux and MacOS platforms, these components are bundled together in
@@ -106,7 +106,7 @@ MSG directly from the :git:`rhdtownsend/msg` git repository on
    git clone --recurse-submodules https://github.com/rhdtownsend/msg.git
 
 However, a word of caution: MSG is under constant development, and
-features in the main (``master``) branch can change without warning.
+features in the ``main`` branch can change without warning.
 
 .. rubric:: footnote
 

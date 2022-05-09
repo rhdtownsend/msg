@@ -1,8 +1,7 @@
 .. _python-photgrid:
 
-========
 PhotGrid
-========
+--------
 
 .. currentmodule:: pymsg
 

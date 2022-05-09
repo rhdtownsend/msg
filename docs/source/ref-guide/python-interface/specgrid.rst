@@ -1,8 +1,7 @@
 .. _python-specgrid:
 
-========
 SpecGrid
-========
+--------
 
 .. currentmodule:: pymsg
 

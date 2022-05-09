@@ -1,23 +1,20 @@
 .. _c-specgrid:
 
-========
-SpecGrid
-========
+SpecGrid Functions
+~~~~~~~~~~~~~~~~~~
 
-.. c:type:: SpecGrid
+.. c:function:: void load_specgrid(const char *specgrid_file_name, SpecGrid *specgrid, int *stat)
 
-.. c:function:: void load_specgrid(const char *specgrid_filename, SpecGrid *specgrid, int *stat)
+   Load a spectroscopic grid from file.
 
-   Load a spectroscopic intensity grid from file.
-
-   :param specgrid_filename: Name of the file.
+   :param specgrid_file_name: Name of the file.
    :param specgrid: Returned grid object.
    :param stat: Returned status code.
 
 		
 .. c:function:: void unload_specgrid(SpecGrid specgrid)
 
-   Unload a spectroscopic intensity grid, freeing up memory.
+   Unload a spectroscopic grid, freeing up memory.
 
    :param specgrid: Grid to unload.
 

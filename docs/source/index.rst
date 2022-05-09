@@ -28,9 +28,9 @@ condiment to add flavor to your science!`
    :maxdepth: 2
 
    ref-guide/installation.rst
+   ref-guide/python-interface.rst
    ref-guide/fortran-interface.rst
    ref-guide/c-interface.rst
-   ref-guide/python-interface.rst
    ref-guide/troubleshooting.rst
 
 .. toctree::

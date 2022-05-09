@@ -1,35 +1,32 @@
 .. _c-photgrid:
 
-========
-PhotGrid
-========
+PhotGrid Functions
+~~~~~~~~~~~~~~~~~~
 
-.. c:type:: PhotGrid
+.. c:function:: void load_photgrid(const char *photgrid_file_name, PhotGrid *photgrid, int *stat)
 
-.. c:function:: void load_photgrid(const char *photgrid_filename, PhotGrid *photgrid, int *stat)
+   Load a photometric grid from file.
 
-   Load a photometric intensity grid from file.
-
-   :param photgrid_filename: Name of the file.
+   :param photgrid_file_name: Name of the file.
    :param photgrid: Returned grid object.
    :param stat: Returned status code.
 
 		
-.. c:function:: void load_photgrid_from_specgrid(const char *specgrid_filename, const char *passband_filename, PhotGrid *photgrid, int *stat)
+.. c:function:: void load_photgrid_from_specgrid(const char *specgrid_file_name, const char *passband_file_name, PhotGrid *photgrid, int *stat)
 
-   Load a spectroscopic intensity grid from file, together with a
-   passband, and combine dynamically to create a photometric intensity
+   Load a spectroscopic grid from file, together with a
+   passband, and combine dynamically to create a photometric
    grid.
 
-   :param specgrid_filename: Name of the spectroscopic intensity grid file.
-   :param passband_filename: Name of the passband file.
+   :param specgrid_file_name: Name of the grid file.
+   :param passband_file_name: Name of the passband file.
    :param photgrid: Returned grid object.
    :param stat: Returned status code.
 
 		
 .. c:function:: void unload_photgrid(PhotGrid photgrid)
 
-   Unload a photometric intensity grid, freeing up memory.
+   Unload a photometric grid, freeing up memory.
 
    :param photgrid: Grid object.
 
@@ -48,7 +45,7 @@ PhotGrid
 
    :param photgrid: Grid object.
    :param ceche_count: Returned number of nodes.
-
+ 
 
 .. c:function:: void get_photgrid_cache_limit(Photgrid photgrid, int *cache_limit)
 
@@ -95,50 +92,50 @@ PhotGrid
    :param stat: Returned status code (set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void interp_photgrid_intensity(PhotGrid photgrid, double vx[], double mu, double *I, int *stat, bool vderiv[])
+.. c:function:: void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, int *stat, bool deriv_vec[])
 
    Interpolate the photometric intensity, normalized to the zero-point flux.
 
    :param photgrid: Grid object.
-   :param vx: Atmospheric parameter values.
+   :param x_vec: Atmospheric parameter values.
    :param mu: Cosine of angle of emergence relative to surface normal.
    :param I: Returned photometric intensity (/sr).
    :param stat: Returned status code (set to :c:expr:`NULL` if not required).
-   :param vderiv: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_photgrid_E_moment(PhotGrid photgrid, double vx[], int k, double *E, int *stat, bool vderiv[])
+.. c:function:: void interp_photgrid_E_moment(PhotGrid photgrid, double x_vec[], int k, double *E, int *stat, bool deriv_vec[])
 
    Interpolate the photometric intensity E-moment, normalized to the zero-point flux.
 
    :param photgrid: Grid object.
-   :param vx: Atmospheric parameter values.
+   :param x_vec: Atmospheric parameter values.
    :param k: Degree of moment.
    :param D: Returned photometric intensity E-moment.
    :param stat: Returned status code (set to :c:expr:`NULL` if not required).
-   :param vderiv: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 		  
 		
-.. c:function:: void interp_photgrid_D_moment(PhotGrid photgrid, double vx[], int l, double *D, int *stat, bool vderiv[])
+.. c:function:: void interp_photgrid_D_moment(PhotGrid photgrid, double x_vec[], int l, double *D, int *stat, bool deriv_vec[])
 
    Interpolate the photometric intensity D-moment, normalized to the zero-point flux.
 
    :param photgrid: Grid object.
-   :param vx: Atmospheric parameter values.
+   :param x_vec: Atmospheric parameter values.
    :param l: Harmonic degree of moment.
    :param D: Returned photometric intensity D-moment.
    :param stat: Returned status code (set to :c:expr:`NULL` if not required).
-   :param vderiv: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 		  
 		
-.. c:function:: void interp_photgrid_flux(PhotGrid photgrid, double vx[], double *F, int *stat, bool vderiv[])
+.. c:function:: void interp_photgrid_flux(PhotGrid photgrid, double x_vec[], double *F, int *stat, bool deriv_vec[])
 
    Interpolate the photometric flux, normalized to the zero-point flux.
 
    :param PhotGrid: Grid object.
-   :param vx: Atmospheric parameter values.
+   :param x_vec: Atmospheric parameter values.
    :param F: Returned photometric flux.
    :param stat: Returned status code (set to :c:expr:`NULL` if not required).
-   :param vderiv: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 	       
 

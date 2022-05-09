@@ -16,6 +16,9 @@ import re
 
 sys.path.insert(0, os.path.abspath('exts'))
 
+MSG_DIR = os.environ['MSG_DIR']
+sys.path.insert(0, os.path.join(MSG_DIR, 'python'))
+
 import sphinx_rtd_theme
 
 

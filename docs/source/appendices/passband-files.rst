@@ -4,7 +4,7 @@
 Passband Files
 **************
 
-As with the :ref:`spectral-grids`, the passband files used by MSG are
+As with the :ref:`grid-files`, the passband files used by MSG are
 not shipped as part of the :git:`rhdtownsend/msg` git repository; they
 must be downloaded separately. This chapter describes the various
 files available for download.

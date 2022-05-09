@@ -82,10 +82,14 @@ cdef class PhotGrid:
         Args:
             filename (string): Full pathname of grid file to load.
             passband (string): Full pathname of passband (for dynamic 
-               loading from a specgrid)
+               loading from a specgrid).
+
+        Returns:
+            pymsg.Specgrid: Constructed object.
+
         Raises:
-            FileNotFound: If the the file cannot be found.
-            TypeError: If the file contains an incorrect datatype.
+            FileNotFound: If either file cannot be found.
+            TypeError: If either file contains an incorrect datatype.
         """
 
         cdef int stat
