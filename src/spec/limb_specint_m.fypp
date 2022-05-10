@@ -39,10 +39,6 @@ module limb_specint_m
 
    implicit none
 
-   ! Parameter definitions
-
-   logical, parameter :: fast = .TRUE.
-   
    ! Derived-type definitions
 
    type, extends(specint_t) :: limb_specint_t
@@ -289,9 +285,9 @@ contains
       integer  :: n_lam
       integer  :: i
       integer  :: j
-      integer  :: j_prev
       real(RD) :: lam_a
       real(RD) :: lam_b
+      real(RD) :: dlam
 
       @:CHECK_BOUNDS(SIZE(b), self%n_b)
       @:CHECK_BOUNDS(SIZE(f), SIZE(lam)-1)
@@ -321,60 +317,33 @@ contains
       ! Perform the interpolation (conservative piecewise-constant
       ! rebin)
 
-      if (fast) then
+      i = 0
 
-         j_prev = HUGE(0)
+      !$OMP PARALLEL DO PRIVATE(lam_a, lam_b, dlam) FIRSTPRIVATE(i) SCHEDULE(static)
+      out_loop: do j = 1, n_lam-1
 
-         !$OMP PARALLEL DO PRIVATE(i, lam_a, lam_b) FIRSTPRIVATE(j_prev) SCHEDULE(guided)
-         do j = 1, n_lam-1
+         if (i == 0) then
+            call locate(self%lam, lam(j), i)
+            if (i == self%n_lam) i = i - 1
+         end if
 
-            if (j /= j_prev+1) then
+         f(j) = 0._RD
 
-               call locate(self%lam, lam(j), i)
-               if (i == self%n_lam) i = i - 1
+         dlam = lam(j+1) - lam(j)
 
-            end if
-
-            f(j) = 0._RD
-
-            do
-
-               lam_a = MAX(self%lam(i), lam(j))
-               lam_b = MIN(self%lam(i+1), lam(j+1))
-
-               f(j) = f(j) + (lam_b - lam_a)/(lam(j+1) - lam(j))*DOT_PRODUCT(b, self%c(:,i))
-
-               if (lam_b == self%lam(i+1)) i = i + 1
-               if (lam_b == lam(j+1)) exit
-
-            end do
-
-            j_prev = j
-
-         end do
-         !$OMP END PARALLEL DO
-               
-      else
-
-         j = 1
-
-         f = 0._RD
-
-         interp_loop : do
-
-            if (j >= n_lam) exit interp_loop
+         in_loop: do
 
             lam_a = MAX(self%lam(i), lam(j))
             lam_b = MIN(self%lam(i+1), lam(j+1))
 
-            f(j) = f(j) + (lam_b - lam_a)/(lam(j+1) - lam(j))*DOT_PRODUCT(b, self%c(:,i))
+            f(j) = f(j) + (lam_b - lam_a)/dlam*DOT_PRODUCT(b, self%c(:,i))
 
             if (lam_b == self%lam(i+1)) i = i + 1
-            if (lam_b == lam(j+1)) j = j + 1
+            if (lam_b == lam(j+1)) exit in_loop
 
-         end do interp_loop
+         end do in_loop
 
-      end if
+      end do out_loop
 
       if (PRESENT(stat)) stat = STAT_OK
 
