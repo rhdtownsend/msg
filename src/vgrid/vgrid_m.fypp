@@ -28,16 +28,15 @@ module vgrid_m
    use ncubic_m
    use stat_m
 
+   #:if OMP is not None
+   use omp_lib
+   #:endif
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
 
    implicit none
-
-   ! Parameter definitions
-
-   logical, parameter :: faster = .TRUE.
-   logical, parameter :: fastest = .TRUE.
 
    ! Derived-type definitions
 
@@ -74,6 +73,23 @@ module vgrid_m
    end type vgrid_t
 
    ! Interfaces
+
+   interface
+      subroutine dgemv(TRANS, M, N, ALPHA, A, LDA, X, INCX, BETA, Y, INCY)
+        use forum_m
+        character(1) :: TRANS
+        integer      :: M
+        integer      :: N
+        real(RD)     :: ALPHA
+        real(RD)     :: A(LDA,*)
+        integer      :: LDA
+        real(RD)     :: X(*)
+        integer      :: INCX
+        real(RD)     :: BETA
+        real(RD)     :: Y(*)
+        integer      :: INCY
+      end subroutine dgemv
+   end interface
 
    interface vgrid_t
       module procedure vgrid_t_
@@ -130,8 +146,6 @@ contains
       return
 
    end function vgrid_t_
-
-   !****
 
    !****
 
@@ -467,28 +481,15 @@ contains
 
       ! Perform the interpolation
 
-      if (faster) then
+      C = MATMUL(K, F)
 
-         ! Evaluate the C vector
+      call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
 
-         C = MATMUL(K, F)
-
-         call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
-         f_int = DOT_PRODUCT(H, C)
-
-      else
-
-         ! Evaluate the C vector
-
-         C = MATMUL(K, F)
-
-         call interp_ncubic(self%rank, vu, C, vdelta, f_int, vderiv)
-
-      end if
-
-      if (PRESENT(stat)) stat = STAT_OK
+      f_int = DOT_PRODUCT(H, C)
 
       ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
@@ -525,6 +526,14 @@ contains
       real(RD)              :: H(self%n_stn)
       integer               :: m
 
+      #:if OMP is not None
+         integer :: num_threads
+         integer :: thread_num
+         integer :: block_size
+         integer :: m_a
+         integer :: m_b
+      #:endif
+
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
       ! Interpolate an array value
@@ -547,7 +556,7 @@ contains
 
       n_m = SIZE(f_int)
 
-      allocate(F(self%n_stn,n_m))
+      allocate(F(n_m,self%n_stn))
 
       do i_stn = 1, self%n_stn
 
@@ -555,73 +564,55 @@ contains
 
             i_vec = self%vec_from_stn_(i_cell, i_stn)
 
-            call data_proc(i_vec, F(i_stn,:), stat)
+            call data_proc(i_vec, F(:,i_stn), stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
 
          else
 
-            F(i_stn,:) = 0._RD
+            !$OMP PARALLEL
+            !$OMP WORKSHARE
+            F(:,i_stn) = 0._RD
+            !$OMP END WORKSHARE
+            !$OMP END PARALLEL
 
          endif
 
       end do
 
-      ! Now loop through output points
+      ! Now perform the interpolation
 
-      if (faster) then
+      call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
 
-         if (fastest) then
+      H = MATMUL(H, K)
 
-            call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
+      #:if OMP is not None
 
-            H = MATMUL(H, K)
+         !$OMP PARALLEL PRIVATE(num_threads, block_size, thread_num, m_a, m_b)
 
-            !$OMP PARALLEL DO PRIVATE(C)
-            do m = 1, n_m
+         num_threads = omp_get_num_threads()
 
-               ! Perform the interpolation
+         block_size = n_m/num_threads
+         if (block_size*num_threads < n_m) block_size = block_size+1
 
-               f_int(m) = DOT_PRODUCT(H, F(:,m))
+         thread_num = omp_get_thread_num()
 
-            end do
+         m_a = thread_num*block_size + 1
+         m_b = thread_num*block_size + block_size
 
-         else
+         m_b = MIN(m_b, n_m)
 
-            call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
+         call dgemv('N', m_b-m_a+1, self%n_stn, 1._RD, F(m_a,1), n_m, &
+                    H, 1, 0._RD, f_int(m_a:m_b), 1)
 
-            !$OMP PARALLEL DO PRIVATE(C)
-            do m = 1, n_m
+         !$OMP END PARALLEL
 
-               ! Evaluate the C vector
+      #:else
 
-               C = MATMUL(K, F(:,m))
+         f_int = MATMUL(F, H)
 
-               ! Perform the interpolation
-
-               f_int(m) = DOT_PRODUCT(H, C)
-
-            end do
-
-         end if
-
-      else
-
-         !$OMP PARALLEL DO PRIVATE(C)
-         do m = 1, n_m
-
-            ! Evaluate the C vector
-
-            C = MATMUL(K, F(:,m))
-
-            ! Perform the interpolation
-
-            call interp_ncubic(self%rank, vu, C, vdelta, f_int(m), vderiv)
-
-         end do
-
-      end if
+      #:endif
 
       ! Finish
 
