@@ -42,7 +42,7 @@ module limb_specint_m
    ! Parameter definitions
 
    logical, parameter :: fast = .TRUE.
-
+   
    ! Derived-type definitions
 
    type, extends(specint_t) :: limb_specint_t
@@ -289,6 +289,7 @@ contains
       integer  :: n_lam
       integer  :: i
       integer  :: j
+      integer  :: j_prev
       real(RD) :: lam_a
       real(RD) :: lam_b
 
@@ -320,17 +321,21 @@ contains
       ! Perform the interpolation (conservative piecewise-constant
       ! rebin)
 
-      i = 1
-
       if (fast) then
 
-         !$OMP PARALLEL DO FIRSTPRIVATE(i) PRIVATE(lam_a, lam_b) SCHEDULE(static,1)
+         j_prev = HUGE(0)
+
+         !$OMP PARALLEL DO PRIVATE(i, lam_a, lam_b) FIRSTPRIVATE(j_prev) SCHEDULE(guided)
          do j = 1, n_lam-1
 
-            !if (self%lam(i) > lam(j)) then
+            if (j /= j_prev+1) then
+
                call locate(self%lam, lam(j), i)
                if (i == self%n_lam) i = i - 1
-            !end if
+
+            end if
+
+            f(j) = 0._RD
 
             do
 
@@ -343,6 +348,8 @@ contains
                if (lam_b == lam(j+1)) exit
 
             end do
+
+            j_prev = j
 
          end do
          !$OMP END PARALLEL DO
