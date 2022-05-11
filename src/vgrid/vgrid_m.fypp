@@ -433,12 +433,12 @@ contains
       logical  :: mask(self%n_stn)
       real(RD) :: vdelta(3,self%rank)
       real(RD) :: vu(self%rank)
-      real(RD) :: K(self%n_stn,self%n_stn)
+      real(RD) :: K_D(self%n_stn,self%n_stn)
+      real(RD) :: K_I(self%n_stn)
+      real(RD) :: K(self%n_stn)
+      real(RD) :: F(self%n_stn)
       integer  :: i_stn
       integer  :: i_vec(self%rank)
-      real(RD) :: F(self%n_stn)
-      real(RD) :: C(self%n_stn)
-      real(RD) :: H(self%n_stn)
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
@@ -451,18 +451,22 @@ contains
          if (stat /= STAT_OK) return
       end if
 
-      ! Evaluate the kernel
+      ! Evaluate the kernels
 
-      call eval_kernel(self%rank, mask, vdelta, K, stat)
+      call eval_deriv_kernel(self%rank, mask, vdelta, K_D, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
+
+      call eval_interp_kernel(self%rank, vu, vdelta, K_I, vderiv)
+
+      K = MATMUL(K_I, K_D)
 
       ! Evaluate data at the stencil nodes
 
       do i_stn = 1, self%n_stn
 
-         if (ANY(K(:,i_stn) /= 0._RD)) then
+         if (K(i_stn) /= 0._RD) then
 
             i_vec = self%vec_from_stn_(i_cell, i_stn)
 
@@ -481,11 +485,7 @@ contains
 
       ! Perform the interpolation
 
-      C = MATMUL(K, F)
-
-      call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
-
-      f_int = DOT_PRODUCT(H, C)
+      f_int = DOT_PRODUCT(K, F)
 
       ! Finish
 
@@ -517,7 +517,9 @@ contains
       logical               :: mask(self%n_stn)
       real(RD)              :: vdelta(3,self%rank)
       real(RD)              :: vu(self%rank)
-      real(RD)              :: K(self%n_stn,self%n_stn)
+      real(RD)              :: K_D(self%n_stn,self%n_stn)
+      real(RD)              :: K_I(self%n_stn)
+      real(RD)              :: K(self%n_stn)
       integer               :: n_m
       integer               :: i_stn
       integer               :: i_vec(self%rank)
@@ -545,12 +547,16 @@ contains
          if (stat /= STAT_OK) return
       end if
 
-      ! Evaluate the kernel
+      ! Evaluate the kernels
 
-      call eval_kernel(self%rank, mask, vdelta, K, stat)
+      call eval_deriv_kernel(self%rank, mask, vdelta, K_D, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
+
+      call eval_interp_kernel(self%rank, vu, vdelta, K_I, vderiv)
+
+      K = MATMUL(K_I, K_D)
 
       ! Evaluate data at the stencil nodes
 
@@ -560,7 +566,7 @@ contains
 
       do i_stn = 1, self%n_stn
 
-         if (ANY(K(:,i_stn) /= 0._RD)) then
+         if (K(i_stn) /= 0._RD) then
 
             i_vec = self%vec_from_stn_(i_cell, i_stn)
 
@@ -571,21 +577,16 @@ contains
 
          else
 
-            !$OMP PARALLEL
-            !$OMP WORKSHARE
-            F(:,i_stn) = 0._RD
-            !$OMP END WORKSHARE
-            !$OMP END PARALLEL
+            !$OMP PARALLEL DO
+            do m = 1, n_m
+               F(m,i_stn) = 0._RD
+            end do
 
          endif
 
       end do
 
       ! Now perform the interpolation
-
-      call eval_ncubic(self%rank, vu, vdelta, H, vderiv)
-
-      H = MATMUL(H, K)
 
       #:if OMP is not None
 
@@ -604,13 +605,13 @@ contains
          m_b = MIN(m_b, n_m)
 
          call dgemv('N', m_b-m_a+1, self%n_stn, 1._RD, F(m_a,1), n_m, &
-                    H, 1, 0._RD, f_int(m_a:m_b), 1)
+                    K, 1, 0._RD, f_int(m_a:m_b), 1)
 
          !$OMP END PARALLEL
 
       #:else
 
-         f_int = MATMUL(F, H)
+         f_int = MATMUL(K, F)
 
       #:endif
 

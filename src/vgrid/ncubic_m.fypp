@@ -35,20 +35,19 @@ module ncubic_m
 
    private
 
-   public :: eval_kernel
-   public :: interp_ncubic
-   public :: eval_ncubic
+   public :: eval_deriv_kernel
+   public :: eval_interp_kernel
 
    ! Procedures
 
 contains
 
-   subroutine eval_kernel(rank, mask, vdelta, K, stat)
+   subroutine eval_deriv_kernel(rank, mask, vdelta, K_D, stat)
 
       integer, intent(in)            :: rank
       logical, intent(in)            :: mask(:)
       real(RD), intent(in)           :: vdelta(:,:)
-      real(RD), intent(out)          :: K(:,:)
+      real(RD), intent(out)          :: K_D(:,:)
       integer, intent(out), optional :: stat
 
       integer  :: n_match
@@ -70,14 +69,14 @@ contains
       @:CHECK_BOUNDS(SIZE(K, 1), 4**rank)
       @:CHECK_BOUNDS(SIZE(K, 2), 4**rank)
 
-      ! Evaluate the kernel matrix K for setting up function values
-      ! and derivatives. The C vector used in interp_ncubic can then
-      ! be evaluated as C = MATMUL(K, F), where F is the vector of
-      ! function values on a 4**rank-point stencil
+      ! Evaluate the kernel matrix K_D for setting up function values
+      ! and derivatives. Given a vector F of function values on a
+      ! 4**rank-point stencil, MATMUL(K_D, F) gives the function values
+      ! and derivatives on the center 2**rank-point stencil
 
       ! First, set up the per-dimension masks. The outer product of
       ! these masks determines the rank-dimensional mask we are going to
-      ! use in constructing K. Out of all of the possible combinations
+      ! use in constructing K_D. Out of all of the possible combinations
       ! of per-dimension masks, the one that produces a rank-dimensional
       ! mask that lies within the passed-in mask, AND with the most
       ! points, is chosen.
@@ -161,7 +160,7 @@ contains
 
          ! Accumulate the outer product of per-dimension kernels
 
-         K(i,1) = 1._RD
+         K_D(i,1) = 1._RD
 
          dim_loop : do j = 1, rank
 
@@ -197,7 +196,7 @@ contains
 
             ! Accumulate it
 
-            K(i,1:4**j) = outer_prod_r_(K(i,1:4**(j-1)), dim_K)
+            K_D(i,1:4**j) = outer_prod_r_(K_D(i,1:4**(j-1)), dim_K)
 
          end do dim_loop
 
@@ -313,187 +312,16 @@ contains
 
       end function outer_prod_l_
 
-   end subroutine eval_kernel
+   end subroutine eval_deriv_kernel
 
    !****
 
-   subroutine interp_ncubic(rank, vu, C, vdelta, f_int, vderiv)
-
-      integer, intent(in)           :: rank
-      real(RD), intent(in)          :: vu(:)
-      real(RD), intent(in)          :: C(:)
-      real(RD), intent(in)          :: vdelta(:,:)
-      real(RD), intent(out)         :: f_int
-      logical, intent(in), optional :: vderiv(:)
-
-      logical  :: vderiv_(rank)
-      integer  :: i
-      integer  :: p
-      integer  :: d
-      integer  :: j
-      real(RD) :: H
-
-      @:CHECK_BOUNDS(SIZE(vu), rank)
-      @:CHECK_BOUNDS(SIZE(C), 4**rank)
-
-      @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
-      @:CHECK_BOUNDS(SIZE(vdelta, 2), rank)
-
-      if (PRESENT(vderiv)) then
-         @:CHECK_BOUNDS(SIZE(vderiv), rank)
-         vderiv_ = vderiv
-      else
-         vderiv_ = .FALSE.
-      endif
-
-      ! Perform cubic interpolation within an (rank)-dimensional hypercube
-      !
-      !  u(rank)     -- fractional position vector within hypercube
-      !  C(4**rank)  -- function and derivatives at corners of hypercube
-      !  delta(rank) -- side lengths of hypercube
-      !  deriv(rank) -- whether to calculate derivatives wrt each coord
-      !
-      ! For each element C(i) of C, let k = i-1, the rank least
-      ! significant bits of k give the position coordinate of the corner,
-      ! and the rank most significant bits indicate function (0) or
-      ! derivative (1) along each dimension
-
-      ! Build up f_int
-
-      f_int = 0._RD
-
-      do i = 1, 4**rank
-
-         ! Extract position and derivative indices
-
-         p = IBITS(i-1, 0, rank)
-         d = IBITS(i-1, rank, rank)
-
-         ! Evaluate the product of the basis function for each
-         ! dimension
-
-         H = 1._RD
-         
-         dim_loop : do j = 1, rank
-
-            if (BTEST(p, j-1)) then
-               if (BTEST(d, j-1)) then
-                  H = H*h_11(vu(j), vderiv_(j))*vdelta(2,j)
-               else
-                  H = H*h_01(vu(j), vderiv_(j))
-               endif
-            else
-               if (BTEST(d, j-1)) then
-                  H = H*h_10(vu(j), vderiv_(j))*vdelta(2,j)
-               else
-                  H = H*h_00(vu(j), vderiv_(j))
-               endif
-            endif
-               
-            if (vderiv_(j)) H = H/vdelta(2,j)
-
-         end do dim_loop
-
-         ! Add in the contribution to f_int
-
-         f_int = f_int + H*C(i)
-
-      end do
-      
-      ! Finish
-
-   contains
-
-      function h_00(u, deriv)
-
-         real(RD), intent(in) :: u
-         logical, intent(in)  :: deriv
-         real(RD)             :: h_00
-
-         ! Set up the h_00 hermite basis function
-
-         if (deriv) then
-            h_00 = 6*u**2 - 6*u
-         else
-            h_00 = 2*u**3 - 3*u**2 + 1
-         endif
-
-         ! Finish
-
-         return
-
-      end function h_00
-         
-      function h_01(u, deriv)
-
-         real(RD), intent(in) :: u
-         logical, intent(in)  :: deriv
-         real(RD)             :: h_01
-
-         ! Set up the h_01 hermite basis function
-
-         if (deriv) then
-            h_01 = -6*u**2 + 6*u
-         else
-            h_01 = -2*u**3 + 3*u**2
-         endif
-
-         ! Finish
-
-         return
-
-      end function h_01
-         
-      function h_10(u, deriv)
-
-         real(RD), intent(in) :: u
-         logical, intent(in)  :: deriv
-         real(RD)             :: h_10
-
-         ! Set up the h_10 hermite basis function
-
-         if (deriv) then
-            h_10 = 3*u**2 - 4*u + 1
-         else
-            h_10 = u**3 - 2*u**2 + u
-         endif
-         
-         ! Finish
-
-         return
-
-      end function h_10
-         
-      function h_11(u, deriv)
-
-         real(RD), intent(in) :: u
-         logical, intent(in)  :: deriv
-         real(RD)             :: h_11
-
-         ! Set up the h_11 hermite basis function
-
-         if (deriv) then
-            h_11 = 3*u**2 - 2*u
-         else
-            h_11 = u**3 - u**2
-         endif
-
-         ! Finish
-
-         return
-
-      end function h_11
-
-   end subroutine interp_ncubic
-
-   !****
-
-   subroutine eval_ncubic(rank, vu, vdelta, H, vderiv)
+   subroutine eval_interp_kernel(rank, vu, vdelta, K_I, vderiv)
 
       integer, intent(in)           :: rank
       real(RD), intent(in)          :: vu(:)
       real(RD), intent(in)          :: vdelta(:,:)
-      real(RD), intent(out)         :: H(:)
+      real(RD), intent(out)         :: K_I(:)
       logical, intent(in), optional :: vderiv(:)
 
       logical  :: vderiv_(rank)
@@ -507,7 +335,7 @@ contains
       @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
       @:CHECK_BOUNDS(SIZE(vdelta, 2), rank)
 
-      @:CHECK_BOUNDS(SIZE(H), 4**rank)
+      @:CHECK_BOUNDS(SIZE(K_I), 4**rank)
 
       if (PRESENT(vderiv)) then
          @:CHECK_BOUNDS(SIZE(vderiv), rank)
@@ -516,7 +344,10 @@ contains
          vderiv_ = .FALSE.
       endif
 
-      ! Evaluate the H-vector
+      ! Evaluate the kernel vector K_I for interpolating. Given a vector
+      ! D of function values and derivatives on a 2**rank-point stencil,
+      ! DOT_PRODUCT(K_I, D) gives the interpolant at normalized position
+      ! vu in the stencil.
 
       do i = 1, 4**rank
 
@@ -528,25 +359,25 @@ contains
          ! Evaluate the product of the basis function for each
          ! dimension
 
-         H(i) = 1._RD
+         K_I(i) = 1._RD
          
          dim_loop : do j = 1, rank
 
             if (BTEST(p, j-1)) then
                if (BTEST(d, j-1)) then
-                  H(i) = H(i)*h_11(vu(j), vderiv_(j))*vdelta(2,j)
+                  K_I(i) = K_I(i)*h_11(vu(j), vderiv_(j))*vdelta(2,j)
                else
-                  H(i) = H(i)*h_01(vu(j), vderiv_(j))
+                  K_I(i) = K_I(i)*h_01(vu(j), vderiv_(j))
                endif
             else
                if (BTEST(d, j-1)) then
-                  H(i) = H(i)*h_10(vu(j), vderiv_(j))*vdelta(2,j)
+                  K_I(i) = K_I(i)*h_10(vu(j), vderiv_(j))*vdelta(2,j)
                else
-                  H(i) = H(i)*h_00(vu(j), vderiv_(j))
+                  K_I(i) = K_I(i)*h_00(vu(j), vderiv_(j))
                endif
             endif
                
-            if (vderiv_(j)) H(i) = H(i)/vdelta(2,j)
+            if (vderiv_(j)) K_I(i) = K_I(i)/vdelta(2,j)
 
          end do dim_loop
 
@@ -636,6 +467,6 @@ contains
 
       end function h_11
 
-   end subroutine eval_ncubic
+   end subroutine eval_interp_kernel
 
 end module ncubic_m
