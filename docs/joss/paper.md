@@ -25,12 +25,12 @@ bibliography: paper.bib
 
 # Summary
 
-The spectrum of the light emitted by a star can be calculated by
-simulating the flow of radiation through the star's atmosphere at each
-wavelength of interest. This process is computationally expensive;
-therefore it is customary to pre-calculate spectra for a grid of
-atmospheric parameters. For parameters that fall between the grid
-nodes, interpolation can be used to evaluate a spectrum.
+While the spectrum of the light emitted by a star can be calculated by
+simulating the flow of radiation through each layer of the star's
+atmosphere, this process is exceedingly computationally expensive.
+Therefore, a standard approach is to pre-calculate spectra over a
+large grid of atmospheric parameters, and then interpolate within this
+grid.
 
 # Statement of Need
 
@@ -46,7 +46,7 @@ desirable features of a modern interpolation package:
 
 * Support for grids with irregularities (missing data, non-uniform grid spacing, etc).
 
-* Support for grids whose size can (greatly) exceed available RAM.
+* Support for grids whose size can exceed available RAM.
 
 * Smooth ($C^1$-continuous) interpolation in each dimension (see @Meszaros:2013 for a
   discussion of why this is important).
@@ -70,7 +70,7 @@ associated quantities such as moments of the radiation field. It can
 also convolve spectra with filter/instrument response functions, to
 provide corresponding photometric colors. Therefore, it is a
 straightforward and complete solution to synthesizing observables
-(spectra, colors, etc.) for stellar models, and as such an ideal seasoning
+(spectra, colors, etc.) for stellar models; MSG is the ideal seasoning
 to add flavor to stellar astrophysics research.
 
 # Figures
