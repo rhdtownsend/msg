@@ -543,14 +543,14 @@ contains
 
       ! Initialize f_int
 
+      n_m = SIZE(f_int)
+
       !$OMP PARALLEL DO
       do m = 1, n_m
          f_int(m) = 0._RD
       end do
 
       ! Now perform the interpolation
-
-      n_m = SIZE(f_int)
 
       do i_stn = 1, self%n_stn
 
