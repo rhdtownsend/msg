@@ -19,7 +19,7 @@ affiliations:
  - name: Department of Astronomy, University of Wisconsin-Madison, USA
    index: 1
 date: 9 May 2022
-bibliography: docs/joss/paper.bib
+bibliography: paper.bib
 
 ---
 
