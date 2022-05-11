@@ -1,5 +1,4 @@
 ---
-
 title: 'MSG: A package for interpolating in grids of spectra'
 tags:
   - Python
@@ -11,8 +10,10 @@ tags:
 authors:
   - name: Rich Townsend
     orcid: 0000-0002-2522-8605
+    email: townsend@astro.wisc.edu
     affiliation: 1
   - name: Aaron Lopez
+    email: alopez@astro.wisc.edu
     affiliation: 1
 affiliations:
  - name: Department of Astronomy, University of Wisconsin-Madison, USA
