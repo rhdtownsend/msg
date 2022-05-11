@@ -74,23 +74,6 @@ module vgrid_m
 
    ! Interfaces
 
-   interface
-      subroutine dgemv(TRANS, M, N, ALPHA, A, LDA, X, INCX, BETA, Y, INCY)
-        use forum_m
-        character(1) :: TRANS
-        integer      :: M
-        integer      :: N
-        real(RD)     :: ALPHA
-        real(RD)     :: A(LDA,*)
-        integer      :: LDA
-        real(RD)     :: X(*)
-        integer      :: INCX
-        real(RD)     :: BETA
-        real(RD)     :: Y(*)
-        integer      :: INCY
-      end subroutine dgemv
-   end interface
-
    interface vgrid_t
       module procedure vgrid_t_
    end interface vgrid_t
@@ -436,7 +419,7 @@ contains
       real(RD) :: K_D(self%n_stn,self%n_stn)
       real(RD) :: K_I(self%n_stn)
       real(RD) :: K(self%n_stn)
-      real(RD) :: F(self%n_stn)
+      real(RD) :: F
       integer  :: i_stn
       integer  :: i_vec(self%rank)
 
@@ -462,30 +445,32 @@ contains
 
       K = MATMUL(K_I, K_D)
 
-      ! Evaluate data at the stencil nodes
+      ! Initialize f_int
+
+      f_int = 0._RD
+
+      ! Now perform the interpolation
 
       do i_stn = 1, self%n_stn
 
          if (K(i_stn) /= 0._RD) then
 
+            ! Evaluate data for this node
+
             i_vec = self%vec_from_stn_(i_cell, i_stn)
 
-            call data_proc(i_vec, F(i_stn), stat)
+            call data_proc(i_vec, F, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
 
-         else
+            ! Add the contribution to f_int
 
-            F(i_stn) = 0._RD
-            
-         endif
+            f_int = f_int + K(i_stn)*F
+
+         end if
 
       end do
-
-      ! Perform the interpolation
-
-      f_int = DOT_PRODUCT(K, F)
 
       ! Finish
 
@@ -513,20 +498,18 @@ contains
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: vderiv(:)
 
-      integer               :: i_cell(self%rank)
-      logical               :: mask(self%n_stn)
-      real(RD)              :: vdelta(3,self%rank)
-      real(RD)              :: vu(self%rank)
-      real(RD)              :: K_D(self%n_stn,self%n_stn)
-      real(RD)              :: K_I(self%n_stn)
-      real(RD)              :: K(self%n_stn)
-      integer               :: n_m
-      integer               :: i_stn
-      integer               :: i_vec(self%rank)
-      real(RD), allocatable :: F(:,:)
-      real(RD)              :: C(self%n_stn)
-      real(RD)              :: H(self%n_stn)
-      integer               :: m
+      integer  :: i_cell(self%rank)
+      logical  :: mask(self%n_stn)
+      real(RD) :: vdelta(3,self%rank)
+      real(RD) :: vu(self%rank)
+      real(RD) :: K_D(self%n_stn,self%n_stn)
+      real(RD) :: K_I(self%n_stn)
+      real(RD) :: K(self%n_stn)
+      integer  :: n_m
+      integer  :: i_stn
+      integer  :: i_vec(self%rank)
+      real(RD) :: F(SIZE(f_int))
+      integer  :: m
 
       #:if OMP is not None
          integer :: num_threads
@@ -558,63 +541,62 @@ contains
 
       K = MATMUL(K_I, K_D)
 
-      ! Evaluate data at the stencil nodes
+      ! Initialize f_int
+
+      !$OMP PARALLEL DO
+      do m = 1, n_m
+         f_int(m) = 0._RD
+      end do
+
+      ! Now perform the interpolation
 
       n_m = SIZE(f_int)
-
-      allocate(F(n_m,self%n_stn))
 
       do i_stn = 1, self%n_stn
 
          if (K(i_stn) /= 0._RD) then
 
+            ! Evaluate data for this node
+
             i_vec = self%vec_from_stn_(i_cell, i_stn)
 
-            call data_proc(i_vec, F(:,i_stn), stat)
+            call data_proc(i_vec, F, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
 
-         else
+            ! Add the contribution to f_int
 
-            !$OMP PARALLEL DO
-            do m = 1, n_m
-               F(m,i_stn) = 0._RD
-            end do
+            #:if OMP is not None
 
-         endif
+               !$OMP PARALLEL PRIVATE(num_threads, block_size, thread_num, m_a, m_b)
+
+               num_threads = omp_get_num_threads()
+
+               block_size = n_m/num_threads
+               if (block_size*num_threads < n_m) block_size = block_size+1
+
+               thread_num = omp_get_thread_num()
+
+               m_a = thread_num*block_size + 1
+               m_b = thread_num*block_size + block_size
+
+               m_b = MIN(m_b, n_m)
+
+               f_int(m_a:m_b) = f_int(m_a:m_b) + K(i_stn)*F(m_a:m_b)
+
+               !$OMP END PARALLEL
+
+            #:else
+
+               f_int = f_int + K(i_stn)*F
+
+            #:endif
+
+         end if
 
       end do
-
-      ! Now perform the interpolation
-
-      #:if OMP is not None
-
-         !$OMP PARALLEL PRIVATE(num_threads, block_size, thread_num, m_a, m_b)
-
-         num_threads = omp_get_num_threads()
-
-         block_size = n_m/num_threads
-         if (block_size*num_threads < n_m) block_size = block_size+1
-
-         thread_num = omp_get_thread_num()
-
-         m_a = thread_num*block_size + 1
-         m_b = thread_num*block_size + block_size
-
-         m_b = MIN(m_b, n_m)
-
-         call dgemv('N', m_b-m_a+1, self%n_stn, 1._RD, F(m_a,1), n_m, &
-                    K, 1, 0._RD, f_int(m_a:m_b), 1)
-
-         !$OMP END PARALLEL
-
-      #:else
-
-         f_int = MATMUL(K, F)
-
-      #:endif
-
+               
       ! Finish
 
       if (PRESENT(stat)) stat = STAT_OK
