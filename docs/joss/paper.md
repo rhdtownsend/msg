@@ -3,12 +3,11 @@
 title: 'MSG: A package for interpolating in grids of spectra'
 tags:
   - Python
-  - C
   - Fortran
+  - C
   - astronomy
-  - dynamics
-  - galactic dynamics
-  - milky way
+  - spectra
+  - stars
 authors:
   - name: Rich Townsend
     orcid: 0000-0002-2522-8605
@@ -19,7 +18,7 @@ affiliations:
  - name: Department of Astronomy, University of Wisconsin-Madison, USA
    index: 1
 date: 9 May 2022
-bibliography: paper.bib
+bibliography: docs/joss/paper.bib
 
 ---
 
