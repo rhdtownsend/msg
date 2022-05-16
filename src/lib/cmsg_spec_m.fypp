@@ -83,10 +83,12 @@ contains
 
       call specgrid%read(hdf5io, stat)
       call hdf5io%final()
-      if (STAT /= STAT_OK) then
-         deallocate(specgrid)
-         return
-      endif
+      if (PRESENT(stat)) then
+         if (STAT /= STAT_OK) then
+            deallocate(specgrid)
+            return
+         end if
+      end if
  
       ! Set up the C pointer
 
@@ -225,7 +227,7 @@ contains
 
       ! Get the axis label
 
-      call specgrid%get_axis(i, axis)
+      call specgrid%get_axis(i+1, axis)
 
       call axis%get_label(label)
 
@@ -276,14 +278,14 @@ contains
       subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, ${arg_var}$, n, lam, res, &
                                           stat, deriv_vec) bind(C, name='interp_specgrid_${name}$')
 
-         type(C_PTR), value    :: specgrid_ptr
-         real(C_DOUBLE)        :: x_vec(*)
-         ${arg_type}$, value   :: ${arg_var}$
-         integer(C_INT), value :: n
-         real(C_DOUBLE)        :: lam(n)
-         real(C_DOUBLE)        :: res(n-1)
-         integer(C_INT)        :: stat
-         logical(C_BOOL)       :: deriv_vec(*)
+         type(C_PTR), value        :: specgrid_ptr
+         real(C_DOUBLE)            :: x_vec(*)
+         ${arg_type}$, value       :: ${arg_var}$
+         integer(C_INT), value     :: n
+         real(C_DOUBLE)            :: lam(n)
+         real(C_DOUBLE)            :: res(n-1)
+         integer(C_INT), optional  :: stat
+         logical(C_BOOL), optional :: deriv_vec(*)
 
          type(specgrid_t), pointer :: specgrid
          integer                   :: rank
@@ -296,7 +298,11 @@ contains
 
          call specgrid%get_rank(rank)
 
-         call specgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, lam, res, stat, LOGICAL(deriv_vec(1:rank)))
+         if (PRESENT(deriv_vec)) then
+            call specgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, lam, res, stat, LOGICAL(deriv_vec(1:rank)))
+         else
+            call specgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, lam, res, stat)
+         end if
 
          ! Finish
 
@@ -313,13 +319,13 @@ contains
       subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, n, lam, res, &
                                           stat, deriv_vec) bind(C, name='interp_specgrid_${name}$')
 
-         type(C_PTR), value    :: specgrid_ptr
-         real(C_DOUBLE)        :: x_vec(*)
-         integer(C_INT), value :: n
-         real(C_DOUBLE)        :: lam(n)
-         real(C_DOUBLE)        :: res(n-1)
-         integer(C_INT)        :: stat
-         logical(C_BOOL)       :: deriv_vec(*)
+         type(C_PTR), value        :: specgrid_ptr
+         real(C_DOUBLE)            :: x_vec(*)
+         integer(C_INT), value     :: n
+         real(C_DOUBLE)            :: lam(n)
+         real(C_DOUBLE)            :: res(n-1)
+         integer(C_INT), optional  :: stat
+         logical(C_BOOL), optional :: deriv_vec(*)
 
          type(specgrid_t), pointer :: specgrid
          integer                   :: rank
@@ -332,7 +338,11 @@ contains
 
          call specgrid%get_rank(rank)
 
-         call specgrid%interp_${name}$(x_vec(1:rank), lam, res, stat, LOGICAL(deriv_vec(1:rank)))
+         if (PRESENT(deriv_vec)) then
+            call specgrid%interp_${name}$(x_vec(1:rank), lam, res, stat, LOGICAL(deriv_vec(1:rank)))
+         else
+            call specgrid%interp_${name}$(x_vec(1:rank), lam, res, stat)
+         end if
 
          ! Finish
 

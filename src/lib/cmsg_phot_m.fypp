@@ -77,10 +77,12 @@ contains
 
       call photgrid%read(hdf5io, stat)
       call hdf5io%final()
-      if (STAT /= STAT_OK) then
-         deallocate(photgrid)
-         return
-      endif
+      if (PRESENT(stat)) then
+         if (STAT /= STAT_OK) then
+            deallocate(photgrid)
+            return
+         end if
+      end if
  
       ! Set up the C pointer
 
@@ -275,7 +277,7 @@ contains
 
       ! Get the axis label
 
-      call photgrid%get_axis(i, axis)
+      call photgrid%get_axis(i+1, axis)
 
       call axis%get_label(label)
 
@@ -322,12 +324,12 @@ contains
       subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, ${arg_var}$, res, &
                                           stat, deriv_vec) bind(C, name='interp_photgrid_${name}$')
 
-         type(C_PTR), value  :: photgrid_ptr
-         real(C_DOUBLE)      :: x_vec(*)
-         ${arg_type}$, value :: ${arg_var}$
-         real(C_DOUBLE)      :: res
-         integer(C_INT)      :: stat
-         logical(C_BOOL)     :: deriv_vec(*)
+         type(C_PTR), value        :: photgrid_ptr
+         real(C_DOUBLE)            :: x_vec(*)
+         ${arg_type}$, value       :: ${arg_var}$
+         real(C_DOUBLE)            :: res
+         integer(C_INT), optional  :: stat
+         logical(C_BOOL), optional :: deriv_vec(*)
 
          type(photgrid_t), pointer :: photgrid
          integer                   :: rank
@@ -340,7 +342,11 @@ contains
 
          call photgrid%get_rank(rank)
 
-         call photgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, res, stat, LOGICAL(deriv_vec(1:rank)))
+         if (PRESENT(deriv_vec)) then
+            call photgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, res, stat, LOGICAL(deriv_vec(1:rank)))
+         else
+            call photgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, res, stat)
+         end if
 
          ! Finish
 
@@ -357,11 +363,11 @@ contains
       subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, res, &
                                           stat, deriv_vec) bind(C, name='interp_photgrid_${name}$')
 
-         type(C_PTR), value :: photgrid_ptr
-         real(C_DOUBLE)     :: x_vec(*)
-         real(C_DOUBLE)     :: res
-         integer(C_INT)     :: stat
-         logical(C_BOOL)    :: deriv_vec(*)
+         type(C_PTR), value        :: photgrid_ptr
+         real(C_DOUBLE)            :: x_vec(*)
+         real(C_DOUBLE)            :: res
+         integer(C_INT), optional  :: stat
+         logical(C_BOOL), optional :: deriv_vec(*)
 
          type(photgrid_t), pointer :: photgrid
          integer                   :: rank
@@ -374,7 +380,11 @@ contains
 
          call photgrid%get_rank(rank)
 
-         call photgrid%interp_${name}$(x_vec(1:rank), res, stat, LOGICAL(deriv_vec(1:rank)))
+         if (PRESENT(deriv_vec)) then
+            call photgrid%interp_${name}$(x_vec(1:rank), res, stat, LOGICAL(deriv_vec(1:rank)))
+         else
+            call photgrid%interp_${name}$(x_vec(1:rank), res, stat)
+         end if
 
          ! Finish
 
