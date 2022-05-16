@@ -35,8 +35,9 @@ cdef extern from "cmsg.h":
        STAT_OUT_OF_BOUNDS_MU_HI,
        STAT_UNAVAILABLE_DATA,
        STAT_INVALID_ARGUMENT,
-       STAT_INVALID_TYPE,
-       STAT_FILE_NOT_FOUND
+       STAT_FILE_NOT_FOUND,
+       STAT_INVALID_FILE_TYPE,
+       STAT_INVALID_FILE_REVISION
 
 # Routines
 
@@ -62,10 +63,12 @@ def handle_error(stat):
         raise LookupError('unavailable data')
     elif stat == STAT_INVALID_ARGUMENT:
         raise ValueError('invalid argument')
-    elif stat == STAT_INVALID_TYPE:
-        raise TypeError('invalid type')
     elif stat == STAT_FILE_NOT_FOUND:
         raise FileNotFoundError('file not found')
+    elif stat == STAT_INVALID_FILE_TYPE:
+        raise TypeError('invalid file type')
+    elif stat == STAT_INVALID_FILE_REVISION:
+        raise TypeError('invalid file revision')
     else:
         raise Exception(f'error with unknown stat code: {stat}')
 
