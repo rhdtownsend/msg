@@ -112,9 +112,9 @@ cdef class SpecGrid:
 
         for j in range(self.rank):
 
-            get_specgrid_axis_label(self.specgrid, j+1, label)
-            get_specgrid_axis_x_min(self.specgrid, j+1, &x_min)
-            get_specgrid_axis_x_max(self.specgrid, j+1, &x_max)
+            get_specgrid_axis_label(self.specgrid, j, label)
+            get_specgrid_axis_x_min(self.specgrid, j, &x_min)
+            get_specgrid_axis_x_max(self.specgrid, j, &x_max)
 
             axis_label = label.decode('ascii')
 

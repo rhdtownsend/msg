@@ -115,9 +115,9 @@ cdef class PhotGrid:
 
         for j in range(self.rank):
 
-            get_photgrid_axis_label(self.photgrid, j+1, label)
-            get_photgrid_axis_x_min(self.photgrid, j+1, &x_min)
-            get_photgrid_axis_x_max(self.photgrid, j+1, &x_max)
+            get_photgrid_axis_label(self.photgrid, j, label)
+            get_photgrid_axis_x_min(self.photgrid, j, &x_min)
+            get_photgrid_axis_x_max(self.photgrid, j, &x_max)
 
             axis_label = label.decode('ascii')
 
