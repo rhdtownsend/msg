@@ -172,7 +172,7 @@ contains
 
       ! Get the axis minimum
 
-      call specgrid%get_axis(i, axis)
+      call specgrid%get_axis(i+1, axis)
 
       call axis%get_x_min(axis_x_min)
 
@@ -199,7 +199,7 @@ contains
 
       ! Get the axis minimum
 
-      call specgrid%get_axis(i, axis)
+      call specgrid%get_axis(i+1, axis)
 
       call axis%get_x_max(axis_x_max)
 
