@@ -20,6 +20,7 @@ condiment to add flavor to your science!`
    user-guide/quick-start.rst
    user-guide/python-walkthrough.ipynb
    user-guide/fortran-walkthrough.rst
+   user-guide/c-walkthrough.rst
    user-guide/how-msg-works.rst
 
 .. toctree::

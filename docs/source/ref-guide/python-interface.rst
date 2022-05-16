@@ -15,8 +15,8 @@ API Specification
 .. toctree::
    :maxdepth: 2
 
-   python-interface/SpecGrid.rst
-   python-interface/PhotGrid.rst
+   python-interface/specgrid.rst
+   python-interface/photgrid.rst
 
 Importing
 =========

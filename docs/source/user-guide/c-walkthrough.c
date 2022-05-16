@@ -105,6 +105,14 @@ int main(int argc, char *argv[]) {
   printf("U-B=  %.17e\n", U-V);
   printf("B-V=  %.17e\n", B-V);
 
+  // Clean up
+
+  unload_specgrid(specgrid);
+
+  unload_photgrid(photgrid_U);
+  unload_photgrid(photgrid_B);
+  unload_photgrid(photgrid_V);
+
   // Finish
 
   exit(0);

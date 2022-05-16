@@ -60,7 +60,7 @@ PhotGrid Functions
    Get the minimum value of the i'th grid axis.
 
    :param photgrid: Grid object.
-   :param i: Axis index (beginning at 1).
+   :param i: Axis index (beginning at 0).
    :param x_min: Returned minimum value.
 
 
@@ -69,7 +69,7 @@ PhotGrid Functions
    Get the maximum value of the i'th grid axis.
 
    :param photgrid: Grid object.
-   :param i: Axis index (beginning at 1).
+   :param i: Axis index (beginning at 0).
    :param x_max: Returned maximum value.
 
 
@@ -78,7 +78,7 @@ PhotGrid Functions
    Get the label of the i'th grid axis.
 
    :param photgrid: Grid object.
-   :param i: Index of the label (beginning at 1).
+   :param i: Index of the label (beginning at 0).
    :param axis_label: Buffer to store axis label buffer (at least 17 bytes, to accomodate label plus null terminator).
 
 
