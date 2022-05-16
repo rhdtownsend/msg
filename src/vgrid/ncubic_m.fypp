@@ -66,8 +66,8 @@ contains
       @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
       @:CHECK_BOUNDS(SIZE(vdelta, 2), rank)
 
-      @:CHECK_BOUNDS(SIZE(K, 1), 4**rank)
-      @:CHECK_BOUNDS(SIZE(K, 2), 4**rank)
+      @:CHECK_BOUNDS(SIZE(K_D, 1), 4**rank)
+      @:CHECK_BOUNDS(SIZE(K_D, 2), 4**rank)
 
       ! Evaluate the kernel matrix K_D for setting up function values
       ! and derivatives. Given a vector F of function values on a
