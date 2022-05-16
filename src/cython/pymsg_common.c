@@ -1513,7 +1513,7 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  *         raise LookupError('unavailable data')
  *     elif stat == STAT_INVALID_ARGUMENT:             # <<<<<<<<<<<<<<
  *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  */
   __pyx_t_1 = __Pyx_PyInt_From_int(STAT_INVALID_ARGUMENT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -1527,7 +1527,7 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  *         raise LookupError('unavailable data')
  *     elif stat == STAT_INVALID_ARGUMENT:
  *         raise ValueError('invalid argument')             # <<<<<<<<<<<<<<
- *     elif stat == STAT_INVALID_TYPE:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  *         raise TypeError('invalid type')
  */
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 62, __pyx_L1_error)
@@ -1541,18 +1541,18 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  *         raise LookupError('unavailable data')
  *     elif stat == STAT_INVALID_ARGUMENT:             # <<<<<<<<<<<<<<
  *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  */
   }
 
   /* "pymsg_common.pyx":63
  *     elif stat == STAT_INVALID_ARGUMENT:
  *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:             # <<<<<<<<<<<<<<
+ *     elif stat == STAT_INVALID_FILE_TYPE:             # <<<<<<<<<<<<<<
  *         raise TypeError('invalid type')
  *     elif stat == STAT_FILE_NOT_FOUND:
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_INVALID_TYPE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_INVALID_FILE_TYPE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -1562,7 +1562,7 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
 
     /* "pymsg_common.pyx":64
  *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  *         raise TypeError('invalid type')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_FILE_NOT_FOUND:
  *         raise FileNotFoundError('file not found')
@@ -1576,14 +1576,14 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
     /* "pymsg_common.pyx":63
  *     elif stat == STAT_INVALID_ARGUMENT:
  *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:             # <<<<<<<<<<<<<<
+ *     elif stat == STAT_INVALID_FILE_TYPE:             # <<<<<<<<<<<<<<
  *         raise TypeError('invalid type')
  *     elif stat == STAT_FILE_NOT_FOUND:
  */
   }
 
   /* "pymsg_common.pyx":65
- *     elif stat == STAT_INVALID_TYPE:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  *         raise TypeError('invalid type')
  *     elif stat == STAT_FILE_NOT_FOUND:             # <<<<<<<<<<<<<<
  *         raise FileNotFoundError('file not found')
@@ -1614,7 +1614,7 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
     __PYX_ERR(0, 66, __pyx_L1_error)
 
     /* "pymsg_common.pyx":65
- *     elif stat == STAT_INVALID_TYPE:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  *         raise TypeError('invalid type')
  *     elif stat == STAT_FILE_NOT_FOUND:             # <<<<<<<<<<<<<<
  *         raise FileNotFoundError('file not found')
@@ -1826,7 +1826,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         raise LookupError('unavailable data')
  *     elif stat == STAT_INVALID_ARGUMENT:
  *         raise ValueError('invalid argument')             # <<<<<<<<<<<<<<
- *     elif stat == STAT_INVALID_TYPE:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  *         raise TypeError('invalid type')
  */
   __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_invalid_argument); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 62, __pyx_L1_error)
@@ -1835,7 +1835,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
 
   /* "pymsg_common.pyx":64
  *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  *         raise TypeError('invalid type')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_FILE_NOT_FOUND:
  *         raise FileNotFoundError('file not found')
