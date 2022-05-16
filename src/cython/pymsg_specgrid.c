@@ -2683,13 +2683,13 @@ static PyObject *__pyx_codeobj__44;
  *     """dict: Atmospheric parameter axis maxima."""
  * 
  *     def __init__(self, str filename):             # <<<<<<<<<<<<<<
- *         """SpecGridg constructor.
+ *         """SpecGrid constructor.
  * 
  */
 
 /* Python wrapper */
 static int __pyx_pw_14pymsg_specgrid_8SpecGrid_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_14pymsg_specgrid_8SpecGrid___init__[] = "SpecGridg constructor.\n\n        Args:\n            filename (string): Filename of grid to load.\n\t    cache_limit (int): Limit on number of spectra to cache in memory. If\n\t       not specified, no limits are placed on the cache growth. Conversely,\n\t       if set to zero, caching is disabled (with a likely performance impact).\n\t       omit to allow for unlimited caching.\n        Raises:\n            FileNotFound: If the the file cannot be found.\n            TypeError: If the file contains an incorrect datatype.\n        ";
+static char __pyx_doc_14pymsg_specgrid_8SpecGrid___init__[] = "SpecGrid constructor.\n\n        Args:\n            filename (string): Filename of grid to load.\n\n        Returns:\n            pymsg.Specgrid: Constructed object.\n\n        Raises:\n            FileNotFound: If the the file cannot be found.\n            TypeError: If the file contains an incorrect datatype.\n        ";
 #if CYTHON_COMPILING_IN_CPYTHON
 struct wrapperbase __pyx_wrapperbase_14pymsg_specgrid_8SpecGrid___init__;
 #endif
@@ -3044,7 +3044,7 @@ static int __pyx_pf_14pymsg_specgrid_8SpecGrid___init__(struct __pyx_obj_14pymsg
  *     """dict: Atmospheric parameter axis maxima."""
  * 
  *     def __init__(self, str filename):             # <<<<<<<<<<<<<<
- *         """SpecGridg constructor.
+ *         """SpecGrid constructor.
  * 
  */
 

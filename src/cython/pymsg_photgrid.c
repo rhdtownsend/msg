@@ -2663,7 +2663,7 @@ static PyObject *__pyx_codeobj__44;
 
 /* Python wrapper */
 static int __pyx_pw_14pymsg_photgrid_8PhotGrid_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_14pymsg_photgrid_8PhotGrid___init__[] = "PhotGrid constructor.\n\n        Args:\n            filename (string): Full pathname of grid file to load.\n            passband (string): Full pathname of passband (for dynamic \n               loading from a specgrid)\n        Raises:\n            FileNotFound: If the the file cannot be found.\n            TypeError: If the file contains an incorrect datatype.\n        ";
+static char __pyx_doc_14pymsg_photgrid_8PhotGrid___init__[] = "PhotGrid constructor.\n\n        Args:\n            filename (string): Full pathname of grid file to load.\n            passband (string): Full pathname of passband (for dynamic \n               loading from a specgrid).\n\n        Returns:\n            pymsg.Specgrid: Constructed object.\n\n        Raises:\n            FileNotFound: If either file cannot be found.\n            TypeError: If either file contains an incorrect datatype.\n        ";
 #if CYTHON_COMPILING_IN_CPYTHON
 struct wrapperbase __pyx_wrapperbase_14pymsg_photgrid_8PhotGrid___init__;
 #endif
@@ -2765,7 +2765,7 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "pymsg_photgrid.pyx":93
+  /* "pymsg_photgrid.pyx":97
  *         cdef int stat
  * 
  *         if passband_filename is not None:             # <<<<<<<<<<<<<<
@@ -2776,7 +2776,7 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "pymsg_photgrid.pyx":94
+    /* "pymsg_photgrid.pyx":98
  * 
  *         if passband_filename is not None:
  *             load_photgrid_from_specgrid(filename.encode('ascii'),             # <<<<<<<<<<<<<<
@@ -2785,13 +2785,13 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
  */
     if (unlikely(__pyx_v_filename == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "encode");
-      __PYX_ERR(0, 94, __pyx_L1_error)
+      __PYX_ERR(0, 98, __pyx_L1_error)
     }
-    __pyx_t_3 = PyUnicode_AsASCIIString(__pyx_v_filename); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
+    __pyx_t_3 = PyUnicode_AsASCIIString(__pyx_v_filename); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyBytes_AsString(__pyx_t_3); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 94, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyBytes_AsString(__pyx_t_3); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) __PYX_ERR(0, 98, __pyx_L1_error)
 
-    /* "pymsg_photgrid.pyx":95
+    /* "pymsg_photgrid.pyx":99
  *         if passband_filename is not None:
  *             load_photgrid_from_specgrid(filename.encode('ascii'),
  *                                         passband_filename.encode('ascii'),             # <<<<<<<<<<<<<<
@@ -2800,13 +2800,13 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
  */
     if (unlikely(__pyx_v_passband_filename == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "encode");
-      __PYX_ERR(0, 95, __pyx_L1_error)
+      __PYX_ERR(0, 99, __pyx_L1_error)
     }
-    __pyx_t_5 = PyUnicode_AsASCIIString(__pyx_v_passband_filename); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 95, __pyx_L1_error)
+    __pyx_t_5 = PyUnicode_AsASCIIString(__pyx_v_passband_filename); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 99, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyBytes_AsString(__pyx_t_5); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 95, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyBytes_AsString(__pyx_t_5); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) __PYX_ERR(0, 99, __pyx_L1_error)
 
-    /* "pymsg_photgrid.pyx":94
+    /* "pymsg_photgrid.pyx":98
  * 
  *         if passband_filename is not None:
  *             load_photgrid_from_specgrid(filename.encode('ascii'),             # <<<<<<<<<<<<<<
@@ -2817,7 +2817,7 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "pymsg_photgrid.pyx":93
+    /* "pymsg_photgrid.pyx":97
  *         cdef int stat
  * 
  *         if passband_filename is not None:             # <<<<<<<<<<<<<<
@@ -2827,7 +2827,7 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
     goto __pyx_L3;
   }
 
-  /* "pymsg_photgrid.pyx":98
+  /* "pymsg_photgrid.pyx":102
  *                                         &self.photgrid, &stat)
  *         else:
  *             load_photgrid(filename.encode('ascii'), &self.photgrid, &stat)             # <<<<<<<<<<<<<<
@@ -2837,26 +2837,26 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
   /*else*/ {
     if (unlikely(__pyx_v_filename == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "encode");
-      __PYX_ERR(0, 98, __pyx_L1_error)
+      __PYX_ERR(0, 102, __pyx_L1_error)
     }
-    __pyx_t_5 = PyUnicode_AsASCIIString(__pyx_v_filename); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 98, __pyx_L1_error)
+    __pyx_t_5 = PyUnicode_AsASCIIString(__pyx_v_filename); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 102, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_7 = __Pyx_PyBytes_AsString(__pyx_t_5); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) __PYX_ERR(0, 98, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyBytes_AsString(__pyx_t_5); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) __PYX_ERR(0, 102, __pyx_L1_error)
     load_photgrid(__pyx_t_7, (&__pyx_v_self->photgrid), (&__pyx_v_stat));
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
   __pyx_L3:;
 
-  /* "pymsg_photgrid.pyx":100
+  /* "pymsg_photgrid.pyx":104
  *             load_photgrid(filename.encode('ascii'), &self.photgrid, &stat)
  * 
  *         handle_error(stat)             # <<<<<<<<<<<<<<
  * 
  *         get_photgrid_rank(self.photgrid, &self.rank)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 100, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __pyx_t_9 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -2871,12 +2871,12 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
   __pyx_t_5 = (__pyx_t_9) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_9, __pyx_t_8) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_8);
   __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 100, __pyx_L1_error)
+  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "pymsg_photgrid.pyx":102
+  /* "pymsg_photgrid.pyx":106
  *         handle_error(stat)
  * 
  *         get_photgrid_rank(self.photgrid, &self.rank)             # <<<<<<<<<<<<<<
@@ -2885,14 +2885,14 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
  */
   get_photgrid_rank(__pyx_v_self->photgrid, (&__pyx_v_self->rank));
 
-  /* "pymsg_photgrid.pyx":104
+  /* "pymsg_photgrid.pyx":108
  *         get_photgrid_rank(self.photgrid, &self.rank)
  * 
  *         self.axis_labels = []             # <<<<<<<<<<<<<<
  *         self.axis_min = {}
  *         self.axis_max = {}
  */
-  __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_5);
   __Pyx_GOTREF(__pyx_v_self->axis_labels);
@@ -2900,14 +2900,14 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
   __pyx_v_self->axis_labels = ((PyObject*)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "pymsg_photgrid.pyx":105
+  /* "pymsg_photgrid.pyx":109
  * 
  *         self.axis_labels = []
  *         self.axis_min = {}             # <<<<<<<<<<<<<<
  *         self.axis_max = {}
  * 
  */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_5);
   __Pyx_GOTREF(__pyx_v_self->axis_min);
@@ -2915,14 +2915,14 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
   __pyx_v_self->axis_min = ((PyObject*)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "pymsg_photgrid.pyx":106
+  /* "pymsg_photgrid.pyx":110
  *         self.axis_labels = []
  *         self.axis_min = {}
  *         self.axis_max = {}             # <<<<<<<<<<<<<<
  * 
  *         cdef char label[17]
  */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 106, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_5);
   __Pyx_GOTREF(__pyx_v_self->axis_max);
@@ -2930,25 +2930,25 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
   __pyx_v_self->axis_max = ((PyObject*)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "pymsg_photgrid.pyx":112
+  /* "pymsg_photgrid.pyx":116
  *         cdef double x_max
  * 
  *         for j in range(self.rank):             # <<<<<<<<<<<<<<
  * 
  *             get_photgrid_axis_label(self.photgrid, j+1, label)
  */
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_self->rank); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 112, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_self->rank); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 112, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
     __pyx_t_5 = __pyx_t_3; __Pyx_INCREF(__pyx_t_5); __pyx_t_10 = 0;
     __pyx_t_11 = NULL;
   } else {
-    __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 112, __pyx_L1_error)
+    __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 116, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_11 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 112, __pyx_L1_error)
+    __pyx_t_11 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 116, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   for (;;) {
@@ -2956,17 +2956,17 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
       if (likely(PyList_CheckExact(__pyx_t_5))) {
         if (__pyx_t_10 >= PyList_GET_SIZE(__pyx_t_5)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_3 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_3); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 112, __pyx_L1_error)
+        __pyx_t_3 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_3); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 116, __pyx_L1_error)
         #else
-        __pyx_t_3 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 112, __pyx_L1_error)
+        __pyx_t_3 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 116, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         #endif
       } else {
         if (__pyx_t_10 >= PyTuple_GET_SIZE(__pyx_t_5)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_3); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 112, __pyx_L1_error)
+        __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_10); __Pyx_INCREF(__pyx_t_3); __pyx_t_10++; if (unlikely(0 < 0)) __PYX_ERR(0, 116, __pyx_L1_error)
         #else
-        __pyx_t_3 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 112, __pyx_L1_error)
+        __pyx_t_3 = PySequence_ITEM(__pyx_t_5, __pyx_t_10); __pyx_t_10++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 116, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         #endif
       }
@@ -2976,7 +2976,7 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 112, __pyx_L1_error)
+          else __PYX_ERR(0, 116, __pyx_L1_error)
         }
         break;
       }
@@ -2985,70 +2985,70 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
     __Pyx_XDECREF_SET(__pyx_v_j, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "pymsg_photgrid.pyx":114
+    /* "pymsg_photgrid.pyx":118
  *         for j in range(self.rank):
  * 
  *             get_photgrid_axis_label(self.photgrid, j+1, label)             # <<<<<<<<<<<<<<
  *             get_photgrid_axis_x_min(self.photgrid, j+1, &x_min)
  *             get_photgrid_axis_x_max(self.photgrid, j+1, &x_max)
  */
-    __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_v_j, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 114, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_v_j, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 118, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 114, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 118, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     get_photgrid_axis_label(__pyx_v_self->photgrid, __pyx_t_12, __pyx_v_label);
 
-    /* "pymsg_photgrid.pyx":115
+    /* "pymsg_photgrid.pyx":119
  * 
  *             get_photgrid_axis_label(self.photgrid, j+1, label)
  *             get_photgrid_axis_x_min(self.photgrid, j+1, &x_min)             # <<<<<<<<<<<<<<
  *             get_photgrid_axis_x_max(self.photgrid, j+1, &x_max)
  * 
  */
-    __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_v_j, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_v_j, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 115, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     get_photgrid_axis_x_min(__pyx_v_self->photgrid, __pyx_t_12, (&__pyx_v_x_min));
 
-    /* "pymsg_photgrid.pyx":116
+    /* "pymsg_photgrid.pyx":120
  *             get_photgrid_axis_label(self.photgrid, j+1, label)
  *             get_photgrid_axis_x_min(self.photgrid, j+1, &x_min)
  *             get_photgrid_axis_x_max(self.photgrid, j+1, &x_max)             # <<<<<<<<<<<<<<
  * 
  *             axis_label = label.decode('ascii')
  */
-    __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_v_j, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 116, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_v_j, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 116, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 120, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     get_photgrid_axis_x_max(__pyx_v_self->photgrid, __pyx_t_12, (&__pyx_v_x_max));
 
-    /* "pymsg_photgrid.pyx":118
+    /* "pymsg_photgrid.pyx":122
  *             get_photgrid_axis_x_max(self.photgrid, j+1, &x_max)
  * 
  *             axis_label = label.decode('ascii')             # <<<<<<<<<<<<<<
  * 
  *             self.axis_labels += [axis_label]
  */
-    __pyx_t_3 = __Pyx_decode_c_string(__pyx_v_label, 0, strlen(__pyx_v_label), NULL, NULL, PyUnicode_DecodeASCII); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 118, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_decode_c_string(__pyx_v_label, 0, strlen(__pyx_v_label), NULL, NULL, PyUnicode_DecodeASCII); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 122, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_XDECREF_SET(__pyx_v_axis_label, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "pymsg_photgrid.pyx":120
+    /* "pymsg_photgrid.pyx":124
  *             axis_label = label.decode('ascii')
  * 
  *             self.axis_labels += [axis_label]             # <<<<<<<<<<<<<<
  *             self.axis_min[axis_label] = x_min
  *             self.axis_max[axis_label] = x_max
  */
-    __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
+    __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 124, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_INCREF(__pyx_v_axis_label);
     __Pyx_GIVEREF(__pyx_v_axis_label);
     PyList_SET_ITEM(__pyx_t_3, 0, __pyx_v_axis_label);
-    __pyx_t_8 = PyNumber_InPlaceAdd(__pyx_v_self->axis_labels, __pyx_t_3); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 120, __pyx_L1_error)
+    __pyx_t_8 = PyNumber_InPlaceAdd(__pyx_v_self->axis_labels, __pyx_t_3); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 124, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GIVEREF(__pyx_t_8);
@@ -3057,39 +3057,39 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
     __pyx_v_self->axis_labels = ((PyObject*)__pyx_t_8);
     __pyx_t_8 = 0;
 
-    /* "pymsg_photgrid.pyx":121
+    /* "pymsg_photgrid.pyx":125
  * 
  *             self.axis_labels += [axis_label]
  *             self.axis_min[axis_label] = x_min             # <<<<<<<<<<<<<<
  *             self.axis_max[axis_label] = x_max
  * 
  */
-    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_x_min); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 121, __pyx_L1_error)
+    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_x_min); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 125, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     if (unlikely(__pyx_v_self->axis_min == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 121, __pyx_L1_error)
+      __PYX_ERR(0, 125, __pyx_L1_error)
     }
-    if (unlikely(PyDict_SetItem(__pyx_v_self->axis_min, __pyx_v_axis_label, __pyx_t_8) < 0)) __PYX_ERR(0, 121, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_self->axis_min, __pyx_v_axis_label, __pyx_t_8) < 0)) __PYX_ERR(0, 125, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-    /* "pymsg_photgrid.pyx":122
+    /* "pymsg_photgrid.pyx":126
  *             self.axis_labels += [axis_label]
  *             self.axis_min[axis_label] = x_min
  *             self.axis_max[axis_label] = x_max             # <<<<<<<<<<<<<<
  * 
  * 
  */
-    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_x_max); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 122, __pyx_L1_error)
+    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_x_max); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 126, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     if (unlikely(__pyx_v_self->axis_max == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 122, __pyx_L1_error)
+      __PYX_ERR(0, 126, __pyx_L1_error)
     }
-    if (unlikely(PyDict_SetItem(__pyx_v_self->axis_max, __pyx_v_axis_label, __pyx_t_8) < 0)) __PYX_ERR(0, 122, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_self->axis_max, __pyx_v_axis_label, __pyx_t_8) < 0)) __PYX_ERR(0, 126, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-    /* "pymsg_photgrid.pyx":112
+    /* "pymsg_photgrid.pyx":116
  *         cdef double x_max
  * 
  *         for j in range(self.rank):             # <<<<<<<<<<<<<<
@@ -3124,7 +3124,7 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid___init__(struct __pyx_obj_14pymsg
   return __pyx_r;
 }
 
-/* "pymsg_photgrid.pyx":125
+/* "pymsg_photgrid.pyx":129
  * 
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -3147,7 +3147,7 @@ static void __pyx_pf_14pymsg_photgrid_8PhotGrid_2__dealloc__(struct __pyx_obj_14
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__dealloc__", 0);
 
-  /* "pymsg_photgrid.pyx":127
+  /* "pymsg_photgrid.pyx":131
  *     def __dealloc__(self):
  * 
  *         unload_photgrid(self.photgrid)             # <<<<<<<<<<<<<<
@@ -3156,7 +3156,7 @@ static void __pyx_pf_14pymsg_photgrid_8PhotGrid_2__dealloc__(struct __pyx_obj_14
  */
   unload_photgrid(__pyx_v_self->photgrid);
 
-  /* "pymsg_photgrid.pyx":125
+  /* "pymsg_photgrid.pyx":129
  * 
  * 
  *     def __dealloc__(self):             # <<<<<<<<<<<<<<
@@ -3168,7 +3168,7 @@ static void __pyx_pf_14pymsg_photgrid_8PhotGrid_2__dealloc__(struct __pyx_obj_14
   __Pyx_RefNannyFinishContext();
 }
 
-/* "pymsg_photgrid.pyx":130
+/* "pymsg_photgrid.pyx":134
  * 
  * 
  *     def _vector_args(self, x, deriv):             # <<<<<<<<<<<<<<
@@ -3211,11 +3211,11 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_5_vector_args(PyObject *__p
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_deriv)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_vector_args", 1, 2, 2, 1); __PYX_ERR(0, 130, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("_vector_args", 1, 2, 2, 1); __PYX_ERR(0, 134, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_vector_args") < 0)) __PYX_ERR(0, 130, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_vector_args") < 0)) __PYX_ERR(0, 134, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -3228,7 +3228,7 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_5_vector_args(PyObject *__p
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_vector_args", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 130, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("_vector_args", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 134, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("pymsg_photgrid.PhotGrid._vector_args", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3261,39 +3261,39 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_vector_args", 0);
 
-  /* "pymsg_photgrid.pyx":132
+  /* "pymsg_photgrid.pyx":136
  *     def _vector_args(self, x, deriv):
  * 
  *         x_vec = np.array([x[key] for key in self.axis_labels])             # <<<<<<<<<<<<<<
  * 
  *         if deriv is not None:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 132, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 136, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_array); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 132, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_array); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 136, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   { /* enter inner scope */
-    __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 132, __pyx_L5_error)
+    __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 136, __pyx_L5_error)
     __Pyx_GOTREF(__pyx_t_2);
     if (unlikely(__pyx_v_self->axis_labels == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-      __PYX_ERR(0, 132, __pyx_L5_error)
+      __PYX_ERR(0, 136, __pyx_L5_error)
     }
     __pyx_t_4 = __pyx_v_self->axis_labels; __Pyx_INCREF(__pyx_t_4); __pyx_t_5 = 0;
     for (;;) {
       if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_4)) break;
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-      __pyx_t_6 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_5); __Pyx_INCREF(__pyx_t_6); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 132, __pyx_L5_error)
+      __pyx_t_6 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_5); __Pyx_INCREF(__pyx_t_6); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 136, __pyx_L5_error)
       #else
-      __pyx_t_6 = PySequence_ITEM(__pyx_t_4, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 132, __pyx_L5_error)
+      __pyx_t_6 = PySequence_ITEM(__pyx_t_4, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 136, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_6);
       #endif
       __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_key, __pyx_t_6);
       __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_x, __pyx_7genexpr__pyx_v_key); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 132, __pyx_L5_error)
+      __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_x, __pyx_7genexpr__pyx_v_key); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 136, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_6);
-      if (unlikely(__Pyx_ListComp_Append(__pyx_t_2, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 132, __pyx_L5_error)
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_2, (PyObject*)__pyx_t_6))) __PYX_ERR(0, 136, __pyx_L5_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -3317,13 +3317,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
   __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_4, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 132, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 136, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_x_vec = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "pymsg_photgrid.pyx":134
+  /* "pymsg_photgrid.pyx":138
  *         x_vec = np.array([x[key] for key in self.axis_labels])
  * 
  *         if deriv is not None:             # <<<<<<<<<<<<<<
@@ -3334,40 +3334,40 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
   __pyx_t_8 = (__pyx_t_7 != 0);
   if (__pyx_t_8) {
 
-    /* "pymsg_photgrid.pyx":135
+    /* "pymsg_photgrid.pyx":139
  * 
  *         if deriv is not None:
  *             deriv_vec = np.array([key in deriv for key in self.axis_labels],             # <<<<<<<<<<<<<<
  *                                  dtype=np.uint8)
  *         else:
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 135, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_array); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 135, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_array); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 139, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     { /* enter inner scope */
-      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 135, __pyx_L12_error)
+      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L12_error)
       __Pyx_GOTREF(__pyx_t_1);
       if (unlikely(__pyx_v_self->axis_labels == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-        __PYX_ERR(0, 135, __pyx_L12_error)
+        __PYX_ERR(0, 139, __pyx_L12_error)
       }
       __pyx_t_2 = __pyx_v_self->axis_labels; __Pyx_INCREF(__pyx_t_2); __pyx_t_5 = 0;
       for (;;) {
         if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_5); __Pyx_INCREF(__pyx_t_4); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 135, __pyx_L12_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_5); __Pyx_INCREF(__pyx_t_4); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 139, __pyx_L12_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_2, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 135, __pyx_L12_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_2, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 139, __pyx_L12_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
         __Pyx_XDECREF_SET(__pyx_8genexpr1__pyx_v_key, __pyx_t_4);
         __pyx_t_4 = 0;
-        __pyx_t_8 = (__Pyx_PySequence_ContainsTF(__pyx_8genexpr1__pyx_v_key, __pyx_v_deriv, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 135, __pyx_L12_error)
-        __pyx_t_4 = __Pyx_PyBool_FromLong(__pyx_t_8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 135, __pyx_L12_error)
+        __pyx_t_8 = (__Pyx_PySequence_ContainsTF(__pyx_8genexpr1__pyx_v_key, __pyx_v_deriv, Py_EQ)); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 139, __pyx_L12_error)
+        __pyx_t_4 = __Pyx_PyBool_FromLong(__pyx_t_8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 139, __pyx_L12_error)
         __Pyx_GOTREF(__pyx_t_4);
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_4))) __PYX_ERR(0, 135, __pyx_L12_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_t_4))) __PYX_ERR(0, 139, __pyx_L12_error)
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -3378,37 +3378,37 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
       goto __pyx_L1_error;
       __pyx_L15_exit_scope:;
     } /* exit inner scope */
-    __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 135, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_GIVEREF(__pyx_t_1);
     PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "pymsg_photgrid.pyx":136
+    /* "pymsg_photgrid.pyx":140
  *         if deriv is not None:
  *             deriv_vec = np.array([key in deriv for key in self.axis_labels],
  *                                  dtype=np.uint8)             # <<<<<<<<<<<<<<
  *         else:
  *             deriv_vec = np.array([False]*self.rank, dtype=np.uint8)
  */
-    __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 136, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 140, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 136, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 140, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_uint8); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 136, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_uint8); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 140, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_6) < 0) __PYX_ERR(0, 136, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_6) < 0) __PYX_ERR(0, 140, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-    /* "pymsg_photgrid.pyx":135
+    /* "pymsg_photgrid.pyx":139
  * 
  *         if deriv is not None:
  *             deriv_vec = np.array([key in deriv for key in self.axis_labels],             # <<<<<<<<<<<<<<
  *                                  dtype=np.uint8)
  *         else:
  */
-    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 135, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 139, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -3416,7 +3416,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
     __pyx_v_deriv_vec = __pyx_t_6;
     __pyx_t_6 = 0;
 
-    /* "pymsg_photgrid.pyx":134
+    /* "pymsg_photgrid.pyx":138
  *         x_vec = np.array([x[key] for key in self.axis_labels])
  * 
  *         if deriv is not None:             # <<<<<<<<<<<<<<
@@ -3426,7 +3426,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
     goto __pyx_L9;
   }
 
-  /* "pymsg_photgrid.pyx":138
+  /* "pymsg_photgrid.pyx":142
  *                                  dtype=np.uint8)
  *         else:
  *             deriv_vec = np.array([False]*self.rank, dtype=np.uint8)             # <<<<<<<<<<<<<<
@@ -3434,12 +3434,12 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
  *         return x_vec, deriv_vec
  */
   /*else*/ {
-    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 138, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_array); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 138, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_array); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = PyList_New(1 * ((__pyx_v_self->rank<0) ? 0:__pyx_v_self->rank)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 138, __pyx_L1_error)
+    __pyx_t_6 = PyList_New(1 * ((__pyx_v_self->rank<0) ? 0:__pyx_v_self->rank)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     { Py_ssize_t __pyx_temp;
       for (__pyx_temp=0; __pyx_temp < __pyx_v_self->rank; __pyx_temp++) {
@@ -3448,21 +3448,21 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
         PyList_SET_ITEM(__pyx_t_6, __pyx_temp, Py_False);
       }
     }
-    __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 138, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_GIVEREF(__pyx_t_6);
     PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_6);
     __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 138, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 138, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_uint8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 138, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_uint8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 138, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_2, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 138, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_2, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -3472,7 +3472,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
   }
   __pyx_L9:;
 
-  /* "pymsg_photgrid.pyx":140
+  /* "pymsg_photgrid.pyx":144
  *             deriv_vec = np.array([False]*self.rank, dtype=np.uint8)
  * 
  *         return x_vec, deriv_vec             # <<<<<<<<<<<<<<
@@ -3480,7 +3480,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_INCREF(__pyx_v_x_vec);
   __Pyx_GIVEREF(__pyx_v_x_vec);
@@ -3492,7 +3492,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
   __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "pymsg_photgrid.pyx":130
+  /* "pymsg_photgrid.pyx":134
  * 
  * 
  *     def _vector_args(self, x, deriv):             # <<<<<<<<<<<<<<
@@ -3519,7 +3519,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_4_vector_args(struct __pyx_
   return __pyx_r;
 }
 
-/* "pymsg_photgrid.pyx":144
+/* "pymsg_photgrid.pyx":148
  * 
  *     @property
  *     def cache_count(self):             # <<<<<<<<<<<<<<
@@ -3550,7 +3550,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_count___get__(struc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "pymsg_photgrid.pyx":147
+  /* "pymsg_photgrid.pyx":151
  *         """int: Number of nodes currently in cache."""
  *         cdef int count
  *         get_photgrid_cache_count(self.photgrid, &count)             # <<<<<<<<<<<<<<
@@ -3559,7 +3559,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_count___get__(struc
  */
   get_photgrid_cache_count(__pyx_v_self->photgrid, (&__pyx_v_count));
 
-  /* "pymsg_photgrid.pyx":148
+  /* "pymsg_photgrid.pyx":152
  *         cdef int count
  *         get_photgrid_cache_count(self.photgrid, &count)
  *         return count             # <<<<<<<<<<<<<<
@@ -3567,13 +3567,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_count___get__(struc
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_count); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_count); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "pymsg_photgrid.pyx":144
+  /* "pymsg_photgrid.pyx":148
  * 
  *     @property
  *     def cache_count(self):             # <<<<<<<<<<<<<<
@@ -3592,7 +3592,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_count___get__(struc
   return __pyx_r;
 }
 
-/* "pymsg_photgrid.pyx":152
+/* "pymsg_photgrid.pyx":156
  * 
  *     @property
  *     def cache_limit(self):             # <<<<<<<<<<<<<<
@@ -3623,7 +3623,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_limit___get__(struc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "pymsg_photgrid.pyx":156
+  /* "pymsg_photgrid.pyx":160
  *         caching."""
  *         cdef int limit
  *         get_photgrid_cache_limit(self.photgrid, &limit)             # <<<<<<<<<<<<<<
@@ -3632,7 +3632,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_limit___get__(struc
  */
   get_photgrid_cache_limit(__pyx_v_self->photgrid, (&__pyx_v_limit));
 
-  /* "pymsg_photgrid.pyx":157
+  /* "pymsg_photgrid.pyx":161
  *         cdef int limit
  *         get_photgrid_cache_limit(self.photgrid, &limit)
  *         return limit             # <<<<<<<<<<<<<<
@@ -3640,13 +3640,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_limit___get__(struc
  *     @cache_limit.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_limit); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_limit); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 161, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "pymsg_photgrid.pyx":152
+  /* "pymsg_photgrid.pyx":156
  * 
  *     @property
  *     def cache_limit(self):             # <<<<<<<<<<<<<<
@@ -3665,7 +3665,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_limit___get__(struc
   return __pyx_r;
 }
 
-/* "pymsg_photgrid.pyx":160
+/* "pymsg_photgrid.pyx":164
  * 
  *     @cache_limit.setter
  *     def cache_limit(self, int cache_limit):             # <<<<<<<<<<<<<<
@@ -3684,7 +3684,7 @@ static int __pyx_pw_14pymsg_photgrid_8PhotGrid_11cache_limit_3__set__(PyObject *
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   assert(__pyx_arg_cache_limit); {
-    __pyx_v_cache_limit = __Pyx_PyInt_As_int(__pyx_arg_cache_limit); if (unlikely((__pyx_v_cache_limit == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 160, __pyx_L3_error)
+    __pyx_v_cache_limit = __Pyx_PyInt_As_int(__pyx_arg_cache_limit); if (unlikely((__pyx_v_cache_limit == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 164, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3713,29 +3713,29 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_limit_2__set__(struct __p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "pymsg_photgrid.pyx":162
+  /* "pymsg_photgrid.pyx":166
  *     def cache_limit(self, int cache_limit):
  *         cdef int stat
  *         set_photgrid_cache_limit(self.photgrid, limit, &stat)             # <<<<<<<<<<<<<<
  *         handle_error(stat)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_limit); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_limit); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   set_photgrid_cache_limit(__pyx_v_self->photgrid, __pyx_t_2, (&__pyx_v_stat));
 
-  /* "pymsg_photgrid.pyx":163
+  /* "pymsg_photgrid.pyx":167
  *         cdef int stat
  *         set_photgrid_cache_limit(self.photgrid, limit, &stat)
  *         handle_error(stat)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 167, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 167, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_5 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -3750,12 +3750,12 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_limit_2__set__(struct __p
   __pyx_t_1 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_5, __pyx_t_4) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pymsg_photgrid.pyx":160
+  /* "pymsg_photgrid.pyx":164
  * 
  *     @cache_limit.setter
  *     def cache_limit(self, int cache_limit):             # <<<<<<<<<<<<<<
@@ -3778,7 +3778,7 @@ static int __pyx_pf_14pymsg_photgrid_8PhotGrid_11cache_limit_2__set__(struct __p
   return __pyx_r;
 }
 
-/* "pymsg_photgrid.pyx":166
+/* "pymsg_photgrid.pyx":170
  * 
  * 
  *     def intensity(self, dict x, double mu, dict deriv=None):             # <<<<<<<<<<<<<<
@@ -3826,7 +3826,7 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_7intensity(PyObject *__pyx_
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_mu)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("intensity", 0, 2, 3, 1); __PYX_ERR(0, 166, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("intensity", 0, 2, 3, 1); __PYX_ERR(0, 170, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -3836,7 +3836,7 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_7intensity(PyObject *__pyx_
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "intensity") < 0)) __PYX_ERR(0, 166, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "intensity") < 0)) __PYX_ERR(0, 170, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -3849,19 +3849,19 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_7intensity(PyObject *__pyx_
       }
     }
     __pyx_v_x = ((PyObject*)values[0]);
-    __pyx_v_mu = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_mu == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 166, __pyx_L3_error)
+    __pyx_v_mu = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_mu == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 170, __pyx_L3_error)
     __pyx_v_deriv = ((PyObject*)values[2]);
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("intensity", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 166, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("intensity", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 170, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("pymsg_photgrid.PhotGrid.intensity", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), (&PyDict_Type), 1, "x", 1))) __PYX_ERR(0, 166, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_deriv), (&PyDict_Type), 1, "deriv", 1))) __PYX_ERR(0, 166, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), (&PyDict_Type), 1, "x", 1))) __PYX_ERR(0, 170, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_deriv), (&PyDict_Type), 1, "deriv", 1))) __PYX_ERR(0, 170, __pyx_L1_error)
   __pyx_r = __pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(((struct __pyx_obj_14pymsg_photgrid_PhotGrid *)__pyx_v_self), __pyx_v_x, __pyx_v_mu, __pyx_v_deriv);
 
   /* function exit code */
@@ -3895,14 +3895,14 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("intensity", 0);
 
-  /* "pymsg_photgrid.pyx":196
+  /* "pymsg_photgrid.pyx":200
  *         cdef bool[:] deriv_vec
  * 
  *         x_vec, deriv_vec = self._vector_args(x, deriv)             # <<<<<<<<<<<<<<
  * 
  *         interp_photgrid_intensity(self.photgrid, &x_vec[0], mu, &I, &stat,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vector_args); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vector_args); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 200, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -3919,7 +3919,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_x, __pyx_v_deriv};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
@@ -3927,13 +3927,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_x, __pyx_v_deriv};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
   #endif
   {
-    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 200, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -3944,7 +3944,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
     __Pyx_INCREF(__pyx_v_deriv);
     __Pyx_GIVEREF(__pyx_v_deriv);
     PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_v_deriv);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
@@ -3955,7 +3955,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
     if (unlikely(size != 2)) {
       if (size > 2) __Pyx_RaiseTooManyValuesError(2);
       else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-      __PYX_ERR(0, 196, __pyx_L1_error)
+      __PYX_ERR(0, 200, __pyx_L1_error)
     }
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
     if (likely(PyTuple_CheckExact(sequence))) {
@@ -3968,15 +3968,15 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
     __Pyx_INCREF(__pyx_t_2);
     __Pyx_INCREF(__pyx_t_5);
     #else
-    __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 200, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 200, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     #endif
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   } else {
     Py_ssize_t index = -1;
-    __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 200, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext;
@@ -3984,7 +3984,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
     __Pyx_GOTREF(__pyx_t_2);
     index = 1; __pyx_t_5 = __pyx_t_6(__pyx_t_3); if (unlikely(!__pyx_t_5)) goto __pyx_L3_unpacking_failed;
     __Pyx_GOTREF(__pyx_t_5);
-    if (__Pyx_IternextUnpackEndCheck(__pyx_t_6(__pyx_t_3), 2) < 0) __PYX_ERR(0, 196, __pyx_L1_error)
+    if (__Pyx_IternextUnpackEndCheck(__pyx_t_6(__pyx_t_3), 2) < 0) __PYX_ERR(0, 200, __pyx_L1_error)
     __pyx_t_6 = NULL;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     goto __pyx_L4_unpacking_done;
@@ -3992,12 +3992,12 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_6 = NULL;
     if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-    __PYX_ERR(0, 196, __pyx_L1_error)
+    __PYX_ERR(0, 200, __pyx_L1_error)
     __pyx_L4_unpacking_done:;
   }
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_2, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_2, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 200, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_bool(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_bool(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 200, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_x_vec = __pyx_t_7;
   __pyx_t_7.memview = NULL;
@@ -4006,7 +4006,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "pymsg_photgrid.pyx":198
+  /* "pymsg_photgrid.pyx":202
  *         x_vec, deriv_vec = self._vector_args(x, deriv)
  * 
  *         interp_photgrid_intensity(self.photgrid, &x_vec[0], mu, &I, &stat,             # <<<<<<<<<<<<<<
@@ -4021,10 +4021,10 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
   } else if (unlikely(__pyx_t_9 >= __pyx_v_x_vec.shape[0])) __pyx_t_4 = 0;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    __PYX_ERR(0, 198, __pyx_L1_error)
+    __PYX_ERR(0, 202, __pyx_L1_error)
   }
 
-  /* "pymsg_photgrid.pyx":199
+  /* "pymsg_photgrid.pyx":203
  * 
  *         interp_photgrid_intensity(self.photgrid, &x_vec[0], mu, &I, &stat,
  *                                   &deriv_vec[0])             # <<<<<<<<<<<<<<
@@ -4039,10 +4039,10 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
   } else if (unlikely(__pyx_t_10 >= __pyx_v_deriv_vec.shape[0])) __pyx_t_4 = 0;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    __PYX_ERR(0, 199, __pyx_L1_error)
+    __PYX_ERR(0, 203, __pyx_L1_error)
   }
 
-  /* "pymsg_photgrid.pyx":198
+  /* "pymsg_photgrid.pyx":202
  *         x_vec, deriv_vec = self._vector_args(x, deriv)
  * 
  *         interp_photgrid_intensity(self.photgrid, &x_vec[0], mu, &I, &stat,             # <<<<<<<<<<<<<<
@@ -4051,16 +4051,16 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
  */
   interp_photgrid_intensity(__pyx_v_self->photgrid, (&(*((double *) ( /* dim=0 */ (__pyx_v_x_vec.data + __pyx_t_9 * __pyx_v_x_vec.strides[0]) )))), __pyx_v_mu, (&__pyx_v_I), (&__pyx_v_stat), (&(*((bool *) ( /* dim=0 */ (__pyx_v_deriv_vec.data + __pyx_t_10 * __pyx_v_deriv_vec.strides[0]) )))));
 
-  /* "pymsg_photgrid.pyx":200
+  /* "pymsg_photgrid.pyx":204
  *         interp_photgrid_intensity(self.photgrid, &x_vec[0], mu, &I, &stat,
  *                                   &deriv_vec[0])
  *         handle_error(stat)             # <<<<<<<<<<<<<<
  * 
  *         return I
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 200, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 200, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -4075,12 +4075,12 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pymsg_photgrid.pyx":202
+  /* "pymsg_photgrid.pyx":206
  *         handle_error(stat)
  * 
  *         return I             # <<<<<<<<<<<<<<
@@ -4088,13 +4088,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_I); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_I); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 206, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "pymsg_photgrid.pyx":166
+  /* "pymsg_photgrid.pyx":170
  * 
  * 
  *     def intensity(self, dict x, double mu, dict deriv=None):             # <<<<<<<<<<<<<<
@@ -4120,7 +4120,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_6intensity(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "pymsg_photgrid.pyx":205
+/* "pymsg_photgrid.pyx":209
  * 
  * 
  *     def E_moment(self, dict x, int k, dict deriv=None):             # <<<<<<<<<<<<<<
@@ -4168,7 +4168,7 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_9E_moment(PyObject *__pyx_v
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_k)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("E_moment", 0, 2, 3, 1); __PYX_ERR(0, 205, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("E_moment", 0, 2, 3, 1); __PYX_ERR(0, 209, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -4178,7 +4178,7 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_9E_moment(PyObject *__pyx_v
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "E_moment") < 0)) __PYX_ERR(0, 205, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "E_moment") < 0)) __PYX_ERR(0, 209, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -4191,19 +4191,19 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_9E_moment(PyObject *__pyx_v
       }
     }
     __pyx_v_x = ((PyObject*)values[0]);
-    __pyx_v_k = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_k == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 205, __pyx_L3_error)
+    __pyx_v_k = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_k == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 209, __pyx_L3_error)
     __pyx_v_deriv = ((PyObject*)values[2]);
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("E_moment", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 205, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("E_moment", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 209, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("pymsg_photgrid.PhotGrid.E_moment", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), (&PyDict_Type), 1, "x", 1))) __PYX_ERR(0, 205, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_deriv), (&PyDict_Type), 1, "deriv", 1))) __PYX_ERR(0, 205, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), (&PyDict_Type), 1, "x", 1))) __PYX_ERR(0, 209, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_deriv), (&PyDict_Type), 1, "deriv", 1))) __PYX_ERR(0, 209, __pyx_L1_error)
   __pyx_r = __pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(((struct __pyx_obj_14pymsg_photgrid_PhotGrid *)__pyx_v_self), __pyx_v_x, __pyx_v_k, __pyx_v_deriv);
 
   /* function exit code */
@@ -4237,14 +4237,14 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("E_moment", 0);
 
-  /* "pymsg_photgrid.pyx":234
+  /* "pymsg_photgrid.pyx":238
  *         cdef bool[:] deriv_vec
  * 
  *         x_vec, deriv_vec = self._vector_args(x, deriv)             # <<<<<<<<<<<<<<
  * 
  *         interp_photgrid_E_moment(self.photgrid, &x_vec[0], k, &E, &stat,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vector_args); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vector_args); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 238, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -4261,7 +4261,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_x, __pyx_v_deriv};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 238, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
@@ -4269,13 +4269,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_x, __pyx_v_deriv};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 238, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
   #endif
   {
-    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 234, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 238, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -4286,7 +4286,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
     __Pyx_INCREF(__pyx_v_deriv);
     __Pyx_GIVEREF(__pyx_v_deriv);
     PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_v_deriv);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 238, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
@@ -4297,7 +4297,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
     if (unlikely(size != 2)) {
       if (size > 2) __Pyx_RaiseTooManyValuesError(2);
       else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-      __PYX_ERR(0, 234, __pyx_L1_error)
+      __PYX_ERR(0, 238, __pyx_L1_error)
     }
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
     if (likely(PyTuple_CheckExact(sequence))) {
@@ -4310,15 +4310,15 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
     __Pyx_INCREF(__pyx_t_2);
     __Pyx_INCREF(__pyx_t_5);
     #else
-    __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
+    __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 238, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 234, __pyx_L1_error)
+    __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 238, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     #endif
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   } else {
     Py_ssize_t index = -1;
-    __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 234, __pyx_L1_error)
+    __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 238, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext;
@@ -4326,7 +4326,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
     __Pyx_GOTREF(__pyx_t_2);
     index = 1; __pyx_t_5 = __pyx_t_6(__pyx_t_3); if (unlikely(!__pyx_t_5)) goto __pyx_L3_unpacking_failed;
     __Pyx_GOTREF(__pyx_t_5);
-    if (__Pyx_IternextUnpackEndCheck(__pyx_t_6(__pyx_t_3), 2) < 0) __PYX_ERR(0, 234, __pyx_L1_error)
+    if (__Pyx_IternextUnpackEndCheck(__pyx_t_6(__pyx_t_3), 2) < 0) __PYX_ERR(0, 238, __pyx_L1_error)
     __pyx_t_6 = NULL;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     goto __pyx_L4_unpacking_done;
@@ -4334,12 +4334,12 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_6 = NULL;
     if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-    __PYX_ERR(0, 234, __pyx_L1_error)
+    __PYX_ERR(0, 238, __pyx_L1_error)
     __pyx_L4_unpacking_done:;
   }
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_2, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_2, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 238, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_bool(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_bool(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 238, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_x_vec = __pyx_t_7;
   __pyx_t_7.memview = NULL;
@@ -4348,7 +4348,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "pymsg_photgrid.pyx":236
+  /* "pymsg_photgrid.pyx":240
  *         x_vec, deriv_vec = self._vector_args(x, deriv)
  * 
  *         interp_photgrid_E_moment(self.photgrid, &x_vec[0], k, &E, &stat,             # <<<<<<<<<<<<<<
@@ -4363,10 +4363,10 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
   } else if (unlikely(__pyx_t_9 >= __pyx_v_x_vec.shape[0])) __pyx_t_4 = 0;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    __PYX_ERR(0, 236, __pyx_L1_error)
+    __PYX_ERR(0, 240, __pyx_L1_error)
   }
 
-  /* "pymsg_photgrid.pyx":237
+  /* "pymsg_photgrid.pyx":241
  * 
  *         interp_photgrid_E_moment(self.photgrid, &x_vec[0], k, &E, &stat,
  *                                  &deriv_vec[0])             # <<<<<<<<<<<<<<
@@ -4381,10 +4381,10 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
   } else if (unlikely(__pyx_t_10 >= __pyx_v_deriv_vec.shape[0])) __pyx_t_4 = 0;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    __PYX_ERR(0, 237, __pyx_L1_error)
+    __PYX_ERR(0, 241, __pyx_L1_error)
   }
 
-  /* "pymsg_photgrid.pyx":236
+  /* "pymsg_photgrid.pyx":240
  *         x_vec, deriv_vec = self._vector_args(x, deriv)
  * 
  *         interp_photgrid_E_moment(self.photgrid, &x_vec[0], k, &E, &stat,             # <<<<<<<<<<<<<<
@@ -4393,16 +4393,16 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
  */
   interp_photgrid_E_moment(__pyx_v_self->photgrid, (&(*((double *) ( /* dim=0 */ (__pyx_v_x_vec.data + __pyx_t_9 * __pyx_v_x_vec.strides[0]) )))), __pyx_v_k, (&__pyx_v_E), (&__pyx_v_stat), (&(*((bool *) ( /* dim=0 */ (__pyx_v_deriv_vec.data + __pyx_t_10 * __pyx_v_deriv_vec.strides[0]) )))));
 
-  /* "pymsg_photgrid.pyx":238
+  /* "pymsg_photgrid.pyx":242
  *         interp_photgrid_E_moment(self.photgrid, &x_vec[0], k, &E, &stat,
  *                                  &deriv_vec[0])
  *         handle_error(stat)             # <<<<<<<<<<<<<<
  * 
  *         return E
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 242, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 242, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -4417,12 +4417,12 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 238, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 242, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pymsg_photgrid.pyx":240
+  /* "pymsg_photgrid.pyx":244
  *         handle_error(stat)
  * 
  *         return E             # <<<<<<<<<<<<<<
@@ -4430,13 +4430,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_E); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_E); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 244, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "pymsg_photgrid.pyx":205
+  /* "pymsg_photgrid.pyx":209
  * 
  * 
  *     def E_moment(self, dict x, int k, dict deriv=None):             # <<<<<<<<<<<<<<
@@ -4462,7 +4462,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_8E_moment(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "pymsg_photgrid.pyx":243
+/* "pymsg_photgrid.pyx":247
  * 
  * 
  *     def D_moment(self, dict x, int l, dict deriv=None):             # <<<<<<<<<<<<<<
@@ -4510,7 +4510,7 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_11D_moment(PyObject *__pyx_
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_l)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("D_moment", 0, 2, 3, 1); __PYX_ERR(0, 243, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("D_moment", 0, 2, 3, 1); __PYX_ERR(0, 247, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -4520,7 +4520,7 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_11D_moment(PyObject *__pyx_
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "D_moment") < 0)) __PYX_ERR(0, 243, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "D_moment") < 0)) __PYX_ERR(0, 247, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -4533,19 +4533,19 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_11D_moment(PyObject *__pyx_
       }
     }
     __pyx_v_x = ((PyObject*)values[0]);
-    __pyx_v_l = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_l == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 243, __pyx_L3_error)
+    __pyx_v_l = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_l == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 247, __pyx_L3_error)
     __pyx_v_deriv = ((PyObject*)values[2]);
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("D_moment", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 243, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("D_moment", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 247, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("pymsg_photgrid.PhotGrid.D_moment", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), (&PyDict_Type), 1, "x", 1))) __PYX_ERR(0, 243, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_deriv), (&PyDict_Type), 1, "deriv", 1))) __PYX_ERR(0, 243, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), (&PyDict_Type), 1, "x", 1))) __PYX_ERR(0, 247, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_deriv), (&PyDict_Type), 1, "deriv", 1))) __PYX_ERR(0, 247, __pyx_L1_error)
   __pyx_r = __pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(((struct __pyx_obj_14pymsg_photgrid_PhotGrid *)__pyx_v_self), __pyx_v_x, __pyx_v_l, __pyx_v_deriv);
 
   /* function exit code */
@@ -4579,14 +4579,14 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("D_moment", 0);
 
-  /* "pymsg_photgrid.pyx":272
+  /* "pymsg_photgrid.pyx":276
  *         cdef bool[:] deriv_vec
  * 
  *         x_vec, deriv_vec = self._vector_args(x, deriv)             # <<<<<<<<<<<<<<
  * 
  *         interp_photgrid_D_moment(self.photgrid, &x_vec[0], l, &D, &stat,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vector_args); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vector_args); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -4603,7 +4603,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_x, __pyx_v_deriv};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
@@ -4611,13 +4611,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_x, __pyx_v_deriv};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
   #endif
   {
-    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 276, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -4628,7 +4628,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
     __Pyx_INCREF(__pyx_v_deriv);
     __Pyx_GIVEREF(__pyx_v_deriv);
     PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_v_deriv);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
@@ -4639,7 +4639,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
     if (unlikely(size != 2)) {
       if (size > 2) __Pyx_RaiseTooManyValuesError(2);
       else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-      __PYX_ERR(0, 272, __pyx_L1_error)
+      __PYX_ERR(0, 276, __pyx_L1_error)
     }
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
     if (likely(PyTuple_CheckExact(sequence))) {
@@ -4652,15 +4652,15 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
     __Pyx_INCREF(__pyx_t_2);
     __Pyx_INCREF(__pyx_t_5);
     #else
-    __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 276, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     #endif
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   } else {
     Py_ssize_t index = -1;
-    __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 276, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext;
@@ -4668,7 +4668,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
     __Pyx_GOTREF(__pyx_t_2);
     index = 1; __pyx_t_5 = __pyx_t_6(__pyx_t_3); if (unlikely(!__pyx_t_5)) goto __pyx_L3_unpacking_failed;
     __Pyx_GOTREF(__pyx_t_5);
-    if (__Pyx_IternextUnpackEndCheck(__pyx_t_6(__pyx_t_3), 2) < 0) __PYX_ERR(0, 272, __pyx_L1_error)
+    if (__Pyx_IternextUnpackEndCheck(__pyx_t_6(__pyx_t_3), 2) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
     __pyx_t_6 = NULL;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     goto __pyx_L4_unpacking_done;
@@ -4676,12 +4676,12 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_6 = NULL;
     if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-    __PYX_ERR(0, 272, __pyx_L1_error)
+    __PYX_ERR(0, 276, __pyx_L1_error)
     __pyx_L4_unpacking_done:;
   }
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_2, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 272, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_2, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_bool(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 272, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_bool(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_x_vec = __pyx_t_7;
   __pyx_t_7.memview = NULL;
@@ -4690,7 +4690,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "pymsg_photgrid.pyx":274
+  /* "pymsg_photgrid.pyx":278
  *         x_vec, deriv_vec = self._vector_args(x, deriv)
  * 
  *         interp_photgrid_D_moment(self.photgrid, &x_vec[0], l, &D, &stat,             # <<<<<<<<<<<<<<
@@ -4705,10 +4705,10 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
   } else if (unlikely(__pyx_t_9 >= __pyx_v_x_vec.shape[0])) __pyx_t_4 = 0;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    __PYX_ERR(0, 274, __pyx_L1_error)
+    __PYX_ERR(0, 278, __pyx_L1_error)
   }
 
-  /* "pymsg_photgrid.pyx":275
+  /* "pymsg_photgrid.pyx":279
  * 
  *         interp_photgrid_D_moment(self.photgrid, &x_vec[0], l, &D, &stat,
  *                                  &deriv_vec[0])             # <<<<<<<<<<<<<<
@@ -4723,10 +4723,10 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
   } else if (unlikely(__pyx_t_10 >= __pyx_v_deriv_vec.shape[0])) __pyx_t_4 = 0;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    __PYX_ERR(0, 275, __pyx_L1_error)
+    __PYX_ERR(0, 279, __pyx_L1_error)
   }
 
-  /* "pymsg_photgrid.pyx":274
+  /* "pymsg_photgrid.pyx":278
  *         x_vec, deriv_vec = self._vector_args(x, deriv)
  * 
  *         interp_photgrid_D_moment(self.photgrid, &x_vec[0], l, &D, &stat,             # <<<<<<<<<<<<<<
@@ -4735,16 +4735,16 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
  */
   interp_photgrid_D_moment(__pyx_v_self->photgrid, (&(*((double *) ( /* dim=0 */ (__pyx_v_x_vec.data + __pyx_t_9 * __pyx_v_x_vec.strides[0]) )))), __pyx_v_l, (&__pyx_v_D), (&__pyx_v_stat), (&(*((bool *) ( /* dim=0 */ (__pyx_v_deriv_vec.data + __pyx_t_10 * __pyx_v_deriv_vec.strides[0]) )))));
 
-  /* "pymsg_photgrid.pyx":276
+  /* "pymsg_photgrid.pyx":280
  *         interp_photgrid_D_moment(self.photgrid, &x_vec[0], l, &D, &stat,
  *                                  &deriv_vec[0])
  *         handle_error(stat)             # <<<<<<<<<<<<<<
  * 
  *         return D
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 280, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 280, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -4759,12 +4759,12 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 280, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pymsg_photgrid.pyx":278
+  /* "pymsg_photgrid.pyx":282
  *         handle_error(stat)
  * 
  *         return D             # <<<<<<<<<<<<<<
@@ -4772,13 +4772,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_D); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_D); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "pymsg_photgrid.pyx":243
+  /* "pymsg_photgrid.pyx":247
  * 
  * 
  *     def D_moment(self, dict x, int l, dict deriv=None):             # <<<<<<<<<<<<<<
@@ -4804,7 +4804,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_10D_moment(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "pymsg_photgrid.pyx":281
+/* "pymsg_photgrid.pyx":285
  * 
  * 
  *     def flux(self, dict x, dict deriv=None):             # <<<<<<<<<<<<<<
@@ -4853,7 +4853,7 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_13flux(PyObject *__pyx_v_se
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "flux") < 0)) __PYX_ERR(0, 281, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "flux") < 0)) __PYX_ERR(0, 285, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -4869,14 +4869,14 @@ static PyObject *__pyx_pw_14pymsg_photgrid_8PhotGrid_13flux(PyObject *__pyx_v_se
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("flux", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 281, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("flux", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 285, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("pymsg_photgrid.PhotGrid.flux", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), (&PyDict_Type), 1, "x", 1))) __PYX_ERR(0, 281, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_deriv), (&PyDict_Type), 1, "deriv", 1))) __PYX_ERR(0, 281, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), (&PyDict_Type), 1, "x", 1))) __PYX_ERR(0, 285, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_deriv), (&PyDict_Type), 1, "deriv", 1))) __PYX_ERR(0, 285, __pyx_L1_error)
   __pyx_r = __pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(((struct __pyx_obj_14pymsg_photgrid_PhotGrid *)__pyx_v_self), __pyx_v_x, __pyx_v_deriv);
 
   /* function exit code */
@@ -4910,14 +4910,14 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("flux", 0);
 
-  /* "pymsg_photgrid.pyx":309
+  /* "pymsg_photgrid.pyx":313
  *         cdef bool[:] deriv_vec
  * 
  *         x_vec, deriv_vec = self._vector_args(x, deriv)             # <<<<<<<<<<<<<<
  * 
  *         interp_photgrid_flux(self.photgrid, &x_vec[0], &F, &stat, &deriv_vec[0])
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vector_args); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 309, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vector_args); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 313, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -4934,7 +4934,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_x, __pyx_v_deriv};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 309, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 313, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
@@ -4942,13 +4942,13 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_x, __pyx_v_deriv};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 309, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 2+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 313, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
   #endif
   {
-    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 309, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(2+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 313, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -4959,7 +4959,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
     __Pyx_INCREF(__pyx_v_deriv);
     __Pyx_GIVEREF(__pyx_v_deriv);
     PyTuple_SET_ITEM(__pyx_t_5, 1+__pyx_t_4, __pyx_v_deriv);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 309, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 313, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
@@ -4970,7 +4970,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
     if (unlikely(size != 2)) {
       if (size > 2) __Pyx_RaiseTooManyValuesError(2);
       else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-      __PYX_ERR(0, 309, __pyx_L1_error)
+      __PYX_ERR(0, 313, __pyx_L1_error)
     }
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
     if (likely(PyTuple_CheckExact(sequence))) {
@@ -4983,15 +4983,15 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
     __Pyx_INCREF(__pyx_t_2);
     __Pyx_INCREF(__pyx_t_5);
     #else
-    __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 309, __pyx_L1_error)
+    __pyx_t_2 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 313, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 309, __pyx_L1_error)
+    __pyx_t_5 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 313, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     #endif
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   } else {
     Py_ssize_t index = -1;
-    __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 309, __pyx_L1_error)
+    __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 313, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext;
@@ -4999,7 +4999,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
     __Pyx_GOTREF(__pyx_t_2);
     index = 1; __pyx_t_5 = __pyx_t_6(__pyx_t_3); if (unlikely(!__pyx_t_5)) goto __pyx_L3_unpacking_failed;
     __Pyx_GOTREF(__pyx_t_5);
-    if (__Pyx_IternextUnpackEndCheck(__pyx_t_6(__pyx_t_3), 2) < 0) __PYX_ERR(0, 309, __pyx_L1_error)
+    if (__Pyx_IternextUnpackEndCheck(__pyx_t_6(__pyx_t_3), 2) < 0) __PYX_ERR(0, 313, __pyx_L1_error)
     __pyx_t_6 = NULL;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     goto __pyx_L4_unpacking_done;
@@ -5007,12 +5007,12 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_6 = NULL;
     if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-    __PYX_ERR(0, 309, __pyx_L1_error)
+    __PYX_ERR(0, 313, __pyx_L1_error)
     __pyx_L4_unpacking_done:;
   }
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_2, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 309, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_2, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 313, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_bool(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 309, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_bool(__pyx_t_5, PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 313, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_x_vec = __pyx_t_7;
   __pyx_t_7.memview = NULL;
@@ -5021,7 +5021,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "pymsg_photgrid.pyx":311
+  /* "pymsg_photgrid.pyx":315
  *         x_vec, deriv_vec = self._vector_args(x, deriv)
  * 
  *         interp_photgrid_flux(self.photgrid, &x_vec[0], &F, &stat, &deriv_vec[0])             # <<<<<<<<<<<<<<
@@ -5036,7 +5036,7 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
   } else if (unlikely(__pyx_t_9 >= __pyx_v_x_vec.shape[0])) __pyx_t_4 = 0;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    __PYX_ERR(0, 311, __pyx_L1_error)
+    __PYX_ERR(0, 315, __pyx_L1_error)
   }
   __pyx_t_10 = 0;
   __pyx_t_4 = -1;
@@ -5046,20 +5046,20 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
   } else if (unlikely(__pyx_t_10 >= __pyx_v_deriv_vec.shape[0])) __pyx_t_4 = 0;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    __PYX_ERR(0, 311, __pyx_L1_error)
+    __PYX_ERR(0, 315, __pyx_L1_error)
   }
   interp_photgrid_flux(__pyx_v_self->photgrid, (&(*((double *) ( /* dim=0 */ (__pyx_v_x_vec.data + __pyx_t_9 * __pyx_v_x_vec.strides[0]) )))), (&__pyx_v_F), (&__pyx_v_stat), (&(*((bool *) ( /* dim=0 */ (__pyx_v_deriv_vec.data + __pyx_t_10 * __pyx_v_deriv_vec.strides[0]) )))));
 
-  /* "pymsg_photgrid.pyx":312
+  /* "pymsg_photgrid.pyx":316
  * 
  *         interp_photgrid_flux(self.photgrid, &x_vec[0], &F, &stat, &deriv_vec[0])
  *         handle_error(stat)             # <<<<<<<<<<<<<<
  * 
  *         return F
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 312, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_handle_error); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 316, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 312, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_stat); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 316, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -5074,24 +5074,24 @@ static PyObject *__pyx_pf_14pymsg_photgrid_8PhotGrid_12flux(struct __pyx_obj_14p
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 312, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 316, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "pymsg_photgrid.pyx":314
+  /* "pymsg_photgrid.pyx":318
  *         handle_error(stat)
  * 
  *         return F             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_F); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 314, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_F); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "pymsg_photgrid.pyx":281
+  /* "pymsg_photgrid.pyx":285
  * 
  * 
  *     def flux(self, dict x, dict deriv=None):             # <<<<<<<<<<<<<<
@@ -20706,7 +20706,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 112, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 116, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(1, 2, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(2, 947, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(1, 133, __pyx_L1_error)
@@ -20957,65 +20957,65 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__22);
   __Pyx_GIVEREF(__pyx_tuple__22);
 
-  /* "pymsg_photgrid.pyx":130
+  /* "pymsg_photgrid.pyx":134
  * 
  * 
  *     def _vector_args(self, x, deriv):             # <<<<<<<<<<<<<<
  * 
  *         x_vec = np.array([x[key] for key in self.axis_labels])
  */
-  __pyx_tuple__24 = PyTuple_Pack(7, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_deriv, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec, __pyx_n_s_key, __pyx_n_s_key); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_tuple__24 = PyTuple_Pack(7, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_deriv, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec, __pyx_n_s_key, __pyx_n_s_key); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__24);
   __Pyx_GIVEREF(__pyx_tuple__24);
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(3, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_vector_args, 130, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(3, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_vector_args, 134, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 134, __pyx_L1_error)
 
-  /* "pymsg_photgrid.pyx":166
+  /* "pymsg_photgrid.pyx":170
  * 
  * 
  *     def intensity(self, dict x, double mu, dict deriv=None):             # <<<<<<<<<<<<<<
  *         r"""Evaluate the photometric intensity, normalized to the zero-
  *             point flux.
  */
-  __pyx_tuple__26 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_mu, __pyx_n_s_deriv, __pyx_n_s_I, __pyx_n_s_stat, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_tuple__26 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_mu, __pyx_n_s_deriv, __pyx_n_s_I, __pyx_n_s_stat, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__26);
   __Pyx_GIVEREF(__pyx_tuple__26);
-  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(4, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_intensity, 166, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(4, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_intensity, 170, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 170, __pyx_L1_error)
 
-  /* "pymsg_photgrid.pyx":205
+  /* "pymsg_photgrid.pyx":209
  * 
  * 
  *     def E_moment(self, dict x, int k, dict deriv=None):             # <<<<<<<<<<<<<<
  *         r"""Evaluate the photometric intensity E-moment, normalized to
  *             the zero-point flux.
  */
-  __pyx_tuple__28 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_k, __pyx_n_s_deriv, __pyx_n_s_E, __pyx_n_s_stat, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_tuple__28 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_k, __pyx_n_s_deriv, __pyx_n_s_E, __pyx_n_s_stat, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 209, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__28);
   __Pyx_GIVEREF(__pyx_tuple__28);
-  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(4, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_E_moment, 205, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(4, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_E_moment, 209, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 209, __pyx_L1_error)
 
-  /* "pymsg_photgrid.pyx":243
+  /* "pymsg_photgrid.pyx":247
  * 
  * 
  *     def D_moment(self, dict x, int l, dict deriv=None):             # <<<<<<<<<<<<<<
  *         r"""Evaluate the photometric intensity D-moment, normalized to
  *             the zero-point flux.
  */
-  __pyx_tuple__30 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_l, __pyx_n_s_deriv, __pyx_n_s_D, __pyx_n_s_stat, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 243, __pyx_L1_error)
+  __pyx_tuple__30 = PyTuple_Pack(8, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_l, __pyx_n_s_deriv, __pyx_n_s_D, __pyx_n_s_stat, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__30);
   __Pyx_GIVEREF(__pyx_tuple__30);
-  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(4, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_D_moment, 243, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 243, __pyx_L1_error)
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(4, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_D_moment, 247, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 247, __pyx_L1_error)
 
-  /* "pymsg_photgrid.pyx":281
+  /* "pymsg_photgrid.pyx":285
  * 
  * 
  *     def flux(self, dict x, dict deriv=None):             # <<<<<<<<<<<<<<
  *         r"""Evaluate the photometric flux, normalized to the zero-point
  *             flux.
  */
-  __pyx_tuple__32 = PyTuple_Pack(7, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_deriv, __pyx_n_s_F, __pyx_n_s_stat, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_tuple__32 = PyTuple_Pack(7, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_deriv, __pyx_n_s_F, __pyx_n_s_stat, __pyx_n_s_x_vec, __pyx_n_s_deriv_vec); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 285, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__32);
   __Pyx_GIVEREF(__pyx_tuple__32);
-  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(3, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_flux, 281, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(3, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_flux, 285, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 285, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
@@ -21552,68 +21552,68 @@ if (!__Pyx_RefNanny) {
   if (__pyx_import_star(__pyx_t_2) < 0) __PYX_ERR(0, 26, __pyx_L1_error);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "pymsg_photgrid.pyx":130
+  /* "pymsg_photgrid.pyx":134
  * 
  * 
  *     def _vector_args(self, x, deriv):             # <<<<<<<<<<<<<<
  * 
  *         x_vec = np.array([x[key] for key in self.axis_labels])
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_5_vector_args, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid__vector_args, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_5_vector_args, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid__vector_args, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_vector_args, __pyx_t_2) < 0) __PYX_ERR(0, 130, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_vector_args, __pyx_t_2) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_14pymsg_photgrid_PhotGrid);
 
-  /* "pymsg_photgrid.pyx":166
+  /* "pymsg_photgrid.pyx":170
  * 
  * 
  *     def intensity(self, dict x, double mu, dict deriv=None):             # <<<<<<<<<<<<<<
  *         r"""Evaluate the photometric intensity, normalized to the zero-
  *             point flux.
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_7intensity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid_intensity, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_7intensity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid_intensity, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 166, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_14pymsg_photgrid_PhotGrid);
 
-  /* "pymsg_photgrid.pyx":205
+  /* "pymsg_photgrid.pyx":209
  * 
  * 
  *     def E_moment(self, dict x, int k, dict deriv=None):             # <<<<<<<<<<<<<<
  *         r"""Evaluate the photometric intensity E-moment, normalized to
  *             the zero-point flux.
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_9E_moment, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid_E_moment, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_9E_moment, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid_E_moment, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 209, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_E_moment, __pyx_t_2) < 0) __PYX_ERR(0, 205, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_E_moment, __pyx_t_2) < 0) __PYX_ERR(0, 209, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_14pymsg_photgrid_PhotGrid);
 
-  /* "pymsg_photgrid.pyx":243
+  /* "pymsg_photgrid.pyx":247
  * 
  * 
  *     def D_moment(self, dict x, int l, dict deriv=None):             # <<<<<<<<<<<<<<
  *         r"""Evaluate the photometric intensity D-moment, normalized to
  *             the zero-point flux.
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_11D_moment, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid_D_moment, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_11D_moment, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid_D_moment, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_D_moment, __pyx_t_2) < 0) __PYX_ERR(0, 243, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_D_moment, __pyx_t_2) < 0) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_14pymsg_photgrid_PhotGrid);
 
-  /* "pymsg_photgrid.pyx":281
+  /* "pymsg_photgrid.pyx":285
  * 
  * 
  *     def flux(self, dict x, dict deriv=None):             # <<<<<<<<<<<<<<
  *         r"""Evaluate the photometric flux, normalized to the zero-point
  *             flux.
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_13flux, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid_flux, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_14pymsg_photgrid_8PhotGrid_13flux, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_PhotGrid_flux, NULL, __pyx_n_s_pymsg_photgrid, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 285, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_flux, __pyx_t_2) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_14pymsg_photgrid_PhotGrid->tp_dict, __pyx_n_s_flux, __pyx_t_2) < 0) __PYX_ERR(0, 285, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_14pymsg_photgrid_PhotGrid);
 

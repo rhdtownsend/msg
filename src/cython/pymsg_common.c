@@ -1048,6 +1048,29 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject
 /* PyObjectCallOneArg.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
+/* IncludeStringH.proto */
+#include <string.h>
+
+/* decode_c_string_utf16.proto */
+static CYTHON_INLINE PyObject *__Pyx_PyUnicode_DecodeUTF16(const char *s, Py_ssize_t size, const char *errors) {
+    int byteorder = 0;
+    return PyUnicode_DecodeUTF16(s, size, errors, &byteorder);
+}
+static CYTHON_INLINE PyObject *__Pyx_PyUnicode_DecodeUTF16LE(const char *s, Py_ssize_t size, const char *errors) {
+    int byteorder = -1;
+    return PyUnicode_DecodeUTF16(s, size, errors, &byteorder);
+}
+static CYTHON_INLINE PyObject *__Pyx_PyUnicode_DecodeUTF16BE(const char *s, Py_ssize_t size, const char *errors) {
+    int byteorder = 1;
+    return PyUnicode_DecodeUTF16(s, size, errors, &byteorder);
+}
+
+/* decode_c_string.proto */
+static CYTHON_INLINE PyObject* __Pyx_decode_c_string(
+         const char* cstring, Py_ssize_t start, Py_ssize_t stop,
+         const char* encoding, const char* errors,
+         PyObject* (*decode_func)(const char *s, Py_ssize_t size, const char *errors));
+
 /* CLineInTraceback.proto */
 #ifdef CYTHON_CLINE_IN_TRACEBACK
 #define __Pyx_CLineForTraceback(tstate, c_line)  (((CYTHON_CLINE_IN_TRACEBACK)) ? c_line : 0)
@@ -1112,6 +1135,7 @@ static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 
 /* Module declarations from 'pymsg_common' */
+static char __pyx_v_12pymsg_common_version[17];
 #define __Pyx_MODULE_NAME "pymsg_common"
 extern int __pyx_module_is_main_pymsg_common;
 int __pyx_module_is_main_pymsg_common = 0;
@@ -1124,21 +1148,23 @@ static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_stat[] = "stat";
 static const char __pyx_k_test[] = "__test__";
+static const char __pyx_k_version[] = "__version__";
 static const char __pyx_k_TypeError[] = "TypeError";
 static const char __pyx_k_ValueError[] = "ValueError";
 static const char __pyx_k_LookupError[] = "LookupError";
 static const char __pyx_k_handle_error[] = "handle_error";
-static const char __pyx_k_invalid_type[] = "invalid type";
 static const char __pyx_k_pymsg_common[] = "pymsg_common";
 static const char __pyx_k_file_not_found[] = "file not found";
 static const char __pyx_k_invalid_argument[] = "invalid argument";
 static const char __pyx_k_unavailable_data[] = "unavailable data";
 static const char __pyx_k_FileNotFoundError[] = "FileNotFoundError";
+static const char __pyx_k_invalid_file_type[] = "invalid file type";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_out_of_bounds_hi_mu[] = "out-of-bounds (hi) mu";
 static const char __pyx_k_out_of_bounds_lo_mu[] = "out-of-bounds (lo) mu";
 static const char __pyx_k_out_of_bounds_hi_lam[] = "out-of-bounds (hi) lam";
 static const char __pyx_k_out_of_bounds_lo_lam[] = "out-of-bounds (lo) lam";
+static const char __pyx_k_invalid_file_revision[] = "invalid file revision";
 static const char __pyx_k_out_of_bounds_hi_axis[] = "out-of-bounds (hi) axis";
 static const char __pyx_k_out_of_bounds_lo_axis[] = "out-of-bounds (lo) axis";
 static const char __pyx_k_error_with_unknown_stat_code[] = "error with unknown stat code: ";
@@ -1153,7 +1179,8 @@ static PyObject *__pyx_kp_u_error_with_unknown_stat_code;
 static PyObject *__pyx_kp_u_file_not_found;
 static PyObject *__pyx_n_s_handle_error;
 static PyObject *__pyx_kp_u_invalid_argument;
-static PyObject *__pyx_kp_u_invalid_type;
+static PyObject *__pyx_kp_u_invalid_file_revision;
+static PyObject *__pyx_kp_u_invalid_file_type;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_name;
 static PyObject *__pyx_kp_u_out_of_bounds_hi_axis;
@@ -1166,6 +1193,7 @@ static PyObject *__pyx_n_s_pymsg_common;
 static PyObject *__pyx_n_s_stat;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_kp_u_unavailable_data;
+static PyObject *__pyx_n_s_version;
 static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_stat); /* proto */
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_tuple__2;
@@ -1178,10 +1206,11 @@ static PyObject *__pyx_tuple__8;
 static PyObject *__pyx_tuple__9;
 static PyObject *__pyx_tuple__10;
 static PyObject *__pyx_tuple__11;
-static PyObject *__pyx_codeobj__12;
+static PyObject *__pyx_tuple__12;
+static PyObject *__pyx_codeobj__13;
 /* Late includes */
 
-/* "pymsg_common.pyx":41
+/* "pymsg_common.pyx":44
  * # Routines
  * 
  * def handle_error(stat):             # <<<<<<<<<<<<<<
@@ -1214,22 +1243,22 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("handle_error", 0);
 
-  /* "pymsg_common.pyx":45
+  /* "pymsg_common.pyx":48
  *     # Take action based on the stat value
  * 
  *     if stat == STAT_OK:             # <<<<<<<<<<<<<<
  *         return
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_LO:
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_OK); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_OK); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 48, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 48, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "pymsg_common.pyx":46
+    /* "pymsg_common.pyx":49
  * 
  *     if stat == STAT_OK:
  *         return             # <<<<<<<<<<<<<<
@@ -1240,7 +1269,7 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "pymsg_common.pyx":45
+    /* "pymsg_common.pyx":48
  *     # Take action based on the stat value
  * 
  *     if stat == STAT_OK:             # <<<<<<<<<<<<<<
@@ -1249,35 +1278,35 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "pymsg_common.pyx":47
+  /* "pymsg_common.pyx":50
  *     if stat == STAT_OK:
  *         return
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_LO:             # <<<<<<<<<<<<<<
  *         raise ValueError('out-of-bounds (lo) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_AXIS_LO); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_AXIS_LO); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (unlikely(__pyx_t_3)) {
 
-    /* "pymsg_common.pyx":48
+    /* "pymsg_common.pyx":51
  *         return
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_LO:
  *         raise ValueError('out-of-bounds (lo) axis')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
  *         raise ValueError('out-of-bounds (hi) axis')
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 51, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 48, __pyx_L1_error)
+    __PYX_ERR(0, 51, __pyx_L1_error)
 
-    /* "pymsg_common.pyx":47
+    /* "pymsg_common.pyx":50
  *     if stat == STAT_OK:
  *         return
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_LO:             # <<<<<<<<<<<<<<
@@ -1286,35 +1315,35 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "pymsg_common.pyx":49
+  /* "pymsg_common.pyx":52
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_LO:
  *         raise ValueError('out-of-bounds (lo) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:             # <<<<<<<<<<<<<<
  *         raise ValueError('out-of-bounds (hi) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_AXIS_HI); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_AXIS_HI); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_t_3)) {
 
-    /* "pymsg_common.pyx":50
+    /* "pymsg_common.pyx":53
  *         raise ValueError('out-of-bounds (lo) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
  *         raise ValueError('out-of-bounds (hi) axis')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:
  *         raise ValueError('out-of-bounds (lo) lam')
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 50, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 53, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 50, __pyx_L1_error)
+    __PYX_ERR(0, 53, __pyx_L1_error)
 
-    /* "pymsg_common.pyx":49
+    /* "pymsg_common.pyx":52
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_LO:
  *         raise ValueError('out-of-bounds (lo) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:             # <<<<<<<<<<<<<<
@@ -1323,35 +1352,35 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "pymsg_common.pyx":51
+  /* "pymsg_common.pyx":54
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
  *         raise ValueError('out-of-bounds (hi) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:             # <<<<<<<<<<<<<<
  *         raise ValueError('out-of-bounds (lo) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_LAM_LO); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_LAM_LO); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (unlikely(__pyx_t_3)) {
 
-    /* "pymsg_common.pyx":52
+    /* "pymsg_common.pyx":55
  *         raise ValueError('out-of-bounds (hi) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:
  *         raise ValueError('out-of-bounds (lo) lam')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:
  *         raise ValueError('out-of-bounds (hi) lam')
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 52, __pyx_L1_error)
+    __PYX_ERR(0, 55, __pyx_L1_error)
 
-    /* "pymsg_common.pyx":51
+    /* "pymsg_common.pyx":54
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
  *         raise ValueError('out-of-bounds (hi) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:             # <<<<<<<<<<<<<<
@@ -1360,35 +1389,35 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "pymsg_common.pyx":53
+  /* "pymsg_common.pyx":56
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:
  *         raise ValueError('out-of-bounds (lo) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:             # <<<<<<<<<<<<<<
  *         raise ValueError('out-of-bounds (hi) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_LO:
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_LAM_HI); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_LAM_HI); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_t_3)) {
 
-    /* "pymsg_common.pyx":54
+    /* "pymsg_common.pyx":57
  *         raise ValueError('out-of-bounds (lo) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:
  *         raise ValueError('out-of-bounds (hi) lam')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_LO:
  *         raise ValueError('out-of-bounds (lo) mu')
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 57, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 54, __pyx_L1_error)
+    __PYX_ERR(0, 57, __pyx_L1_error)
 
-    /* "pymsg_common.pyx":53
+    /* "pymsg_common.pyx":56
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:
  *         raise ValueError('out-of-bounds (lo) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:             # <<<<<<<<<<<<<<
@@ -1397,35 +1426,35 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "pymsg_common.pyx":55
+  /* "pymsg_common.pyx":58
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:
  *         raise ValueError('out-of-bounds (hi) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_LO:             # <<<<<<<<<<<<<<
  *         raise ValueError('out-of-bounds (lo) mu')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_HI:
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_MU_LO); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_MU_LO); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (unlikely(__pyx_t_3)) {
 
-    /* "pymsg_common.pyx":56
+    /* "pymsg_common.pyx":59
  *         raise ValueError('out-of-bounds (hi) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_LO:
  *         raise ValueError('out-of-bounds (lo) mu')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_HI:
  *         raise ValueError('out-of-bounds (hi) mu')
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 56, __pyx_L1_error)
+    __PYX_ERR(0, 59, __pyx_L1_error)
 
-    /* "pymsg_common.pyx":55
+    /* "pymsg_common.pyx":58
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:
  *         raise ValueError('out-of-bounds (hi) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_LO:             # <<<<<<<<<<<<<<
@@ -1434,35 +1463,35 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "pymsg_common.pyx":57
+  /* "pymsg_common.pyx":60
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_LO:
  *         raise ValueError('out-of-bounds (lo) mu')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_HI:             # <<<<<<<<<<<<<<
  *         raise ValueError('out-of-bounds (hi) mu')
  *     elif stat == STAT_UNAVAILABLE_DATA:
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_MU_HI); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_OUT_OF_BOUNDS_MU_HI); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_t_3)) {
 
-    /* "pymsg_common.pyx":58
+    /* "pymsg_common.pyx":61
  *         raise ValueError('out-of-bounds (lo) mu')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_HI:
  *         raise ValueError('out-of-bounds (hi) mu')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_UNAVAILABLE_DATA:
  *         raise LookupError('unavailable data')
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 58, __pyx_L1_error)
+    __PYX_ERR(0, 61, __pyx_L1_error)
 
-    /* "pymsg_common.pyx":57
+    /* "pymsg_common.pyx":60
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_LO:
  *         raise ValueError('out-of-bounds (lo) mu')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_HI:             # <<<<<<<<<<<<<<
@@ -1471,35 +1500,35 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "pymsg_common.pyx":59
+  /* "pymsg_common.pyx":62
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_HI:
  *         raise ValueError('out-of-bounds (hi) mu')
  *     elif stat == STAT_UNAVAILABLE_DATA:             # <<<<<<<<<<<<<<
  *         raise LookupError('unavailable data')
  *     elif stat == STAT_INVALID_ARGUMENT:
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_UNAVAILABLE_DATA); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_UNAVAILABLE_DATA); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 62, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 62, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (unlikely(__pyx_t_3)) {
 
-    /* "pymsg_common.pyx":60
+    /* "pymsg_common.pyx":63
  *         raise ValueError('out-of-bounds (hi) mu')
  *     elif stat == STAT_UNAVAILABLE_DATA:
  *         raise LookupError('unavailable data')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_INVALID_ARGUMENT:
  *         raise ValueError('invalid argument')
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_LookupError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 60, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_LookupError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 60, __pyx_L1_error)
+    __PYX_ERR(0, 63, __pyx_L1_error)
 
-    /* "pymsg_common.pyx":59
+    /* "pymsg_common.pyx":62
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_HI:
  *         raise ValueError('out-of-bounds (hi) mu')
  *     elif stat == STAT_UNAVAILABLE_DATA:             # <<<<<<<<<<<<<<
@@ -1508,140 +1537,179 @@ static PyObject *__pyx_pf_12pymsg_common_handle_error(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "pymsg_common.pyx":61
+  /* "pymsg_common.pyx":64
  *     elif stat == STAT_UNAVAILABLE_DATA:
  *         raise LookupError('unavailable data')
  *     elif stat == STAT_INVALID_ARGUMENT:             # <<<<<<<<<<<<<<
  *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:
+ *     elif stat == STAT_FILE_NOT_FOUND:
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_INVALID_ARGUMENT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_INVALID_ARGUMENT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_t_3)) {
 
-    /* "pymsg_common.pyx":62
+    /* "pymsg_common.pyx":65
  *         raise LookupError('unavailable data')
  *     elif stat == STAT_INVALID_ARGUMENT:
  *         raise ValueError('invalid argument')             # <<<<<<<<<<<<<<
- *     elif stat == STAT_INVALID_TYPE:
- *         raise TypeError('invalid type')
+ *     elif stat == STAT_FILE_NOT_FOUND:
+ *         raise FileNotFoundError('file not found')
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 62, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 62, __pyx_L1_error)
+    __PYX_ERR(0, 65, __pyx_L1_error)
 
-    /* "pymsg_common.pyx":61
+    /* "pymsg_common.pyx":64
  *     elif stat == STAT_UNAVAILABLE_DATA:
  *         raise LookupError('unavailable data')
  *     elif stat == STAT_INVALID_ARGUMENT:             # <<<<<<<<<<<<<<
  *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:
- */
-  }
-
-  /* "pymsg_common.pyx":63
- *     elif stat == STAT_INVALID_ARGUMENT:
- *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:             # <<<<<<<<<<<<<<
- *         raise TypeError('invalid type')
- *     elif stat == STAT_FILE_NOT_FOUND:
- */
-  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_INVALID_TYPE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 63, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(__pyx_t_3)) {
-
-    /* "pymsg_common.pyx":64
- *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:
- *         raise TypeError('invalid type')             # <<<<<<<<<<<<<<
- *     elif stat == STAT_FILE_NOT_FOUND:
- *         raise FileNotFoundError('file not found')
- */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 64, __pyx_L1_error)
-
-    /* "pymsg_common.pyx":63
- *     elif stat == STAT_INVALID_ARGUMENT:
- *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:             # <<<<<<<<<<<<<<
- *         raise TypeError('invalid type')
  *     elif stat == STAT_FILE_NOT_FOUND:
  */
   }
 
-  /* "pymsg_common.pyx":65
- *     elif stat == STAT_INVALID_TYPE:
- *         raise TypeError('invalid type')
+  /* "pymsg_common.pyx":66
+ *     elif stat == STAT_INVALID_ARGUMENT:
+ *         raise ValueError('invalid argument')
  *     elif stat == STAT_FILE_NOT_FOUND:             # <<<<<<<<<<<<<<
  *         raise FileNotFoundError('file not found')
- *     else:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_FILE_NOT_FOUND); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_FILE_NOT_FOUND); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 66, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (unlikely(__pyx_t_3)) {
 
-    /* "pymsg_common.pyx":66
- *         raise TypeError('invalid type')
+    /* "pymsg_common.pyx":67
+ *         raise ValueError('invalid argument')
  *     elif stat == STAT_FILE_NOT_FOUND:
  *         raise FileNotFoundError('file not found')             # <<<<<<<<<<<<<<
- *     else:
- *         raise Exception(f'error with unknown stat code: {stat}')
+ *     elif stat == STAT_INVALID_FILE_TYPE:
+ *         raise TypeError('invalid file type')
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_FileNotFoundError); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_FileNotFoundError); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 67, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 66, __pyx_L1_error)
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 67, __pyx_L1_error)
 
-    /* "pymsg_common.pyx":65
- *     elif stat == STAT_INVALID_TYPE:
- *         raise TypeError('invalid type')
+    /* "pymsg_common.pyx":66
+ *     elif stat == STAT_INVALID_ARGUMENT:
+ *         raise ValueError('invalid argument')
  *     elif stat == STAT_FILE_NOT_FOUND:             # <<<<<<<<<<<<<<
  *         raise FileNotFoundError('file not found')
- *     else:
+ *     elif stat == STAT_INVALID_FILE_TYPE:
  */
   }
 
   /* "pymsg_common.pyx":68
+ *     elif stat == STAT_FILE_NOT_FOUND:
  *         raise FileNotFoundError('file not found')
- *     else:
- *         raise Exception(f'error with unknown stat code: {stat}')             # <<<<<<<<<<<<<<
+ *     elif stat == STAT_INVALID_FILE_TYPE:             # <<<<<<<<<<<<<<
+ *         raise TypeError('invalid file type')
+ *     elif stat == STAT_INVALID_FILE_REVISION:
  */
-  /*else*/ {
-    __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_stat, __pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 68, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(STAT_INVALID_FILE_TYPE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 68, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 68, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 68, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (unlikely(__pyx_t_3)) {
+
+    /* "pymsg_common.pyx":69
+ *         raise FileNotFoundError('file not found')
+ *     elif stat == STAT_INVALID_FILE_TYPE:
+ *         raise TypeError('invalid file type')             # <<<<<<<<<<<<<<
+ *     elif stat == STAT_INVALID_FILE_REVISION:
+ *         raise TypeError('invalid file revision')
+ */
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 69, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = __Pyx_PyUnicode_Concat(__pyx_kp_u_error_with_unknown_stat_code, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 68, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])), __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 68, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 68, __pyx_L1_error)
+    __PYX_ERR(0, 69, __pyx_L1_error)
+
+    /* "pymsg_common.pyx":68
+ *     elif stat == STAT_FILE_NOT_FOUND:
+ *         raise FileNotFoundError('file not found')
+ *     elif stat == STAT_INVALID_FILE_TYPE:             # <<<<<<<<<<<<<<
+ *         raise TypeError('invalid file type')
+ *     elif stat == STAT_INVALID_FILE_REVISION:
+ */
   }
 
-  /* "pymsg_common.pyx":41
+  /* "pymsg_common.pyx":70
+ *     elif stat == STAT_INVALID_FILE_TYPE:
+ *         raise TypeError('invalid file type')
+ *     elif stat == STAT_INVALID_FILE_REVISION:             # <<<<<<<<<<<<<<
+ *         raise TypeError('invalid file revision')
+ *     else:
+ */
+  __pyx_t_1 = __Pyx_PyInt_From_int(STAT_INVALID_FILE_REVISION); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_stat, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(__pyx_t_3)) {
+
+    /* "pymsg_common.pyx":71
+ *         raise TypeError('invalid file type')
+ *     elif stat == STAT_INVALID_FILE_REVISION:
+ *         raise TypeError('invalid file revision')             # <<<<<<<<<<<<<<
+ *     else:
+ *         raise Exception(f'error with unknown stat code: {stat}')
+ */
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 71, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 71, __pyx_L1_error)
+
+    /* "pymsg_common.pyx":70
+ *     elif stat == STAT_INVALID_FILE_TYPE:
+ *         raise TypeError('invalid file type')
+ *     elif stat == STAT_INVALID_FILE_REVISION:             # <<<<<<<<<<<<<<
+ *         raise TypeError('invalid file revision')
+ *     else:
+ */
+  }
+
+  /* "pymsg_common.pyx":73
+ *         raise TypeError('invalid file revision')
+ *     else:
+ *         raise Exception(f'error with unknown stat code: {stat}')             # <<<<<<<<<<<<<<
+ * 
+ * # Set the version number
+ */
+  /*else*/ {
+    __pyx_t_2 = __Pyx_PyObject_FormatSimple(__pyx_v_stat, __pyx_empty_unicode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 73, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_kp_u_error_with_unknown_stat_code, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 73, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])), __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 73, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 73, __pyx_L1_error)
+  }
+
+  /* "pymsg_common.pyx":44
  * # Routines
  * 
  * def handle_error(stat):             # <<<<<<<<<<<<<<
@@ -1717,7 +1785,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_u_file_not_found, __pyx_k_file_not_found, sizeof(__pyx_k_file_not_found), 0, 1, 0, 0},
   {&__pyx_n_s_handle_error, __pyx_k_handle_error, sizeof(__pyx_k_handle_error), 0, 0, 1, 1},
   {&__pyx_kp_u_invalid_argument, __pyx_k_invalid_argument, sizeof(__pyx_k_invalid_argument), 0, 1, 0, 0},
-  {&__pyx_kp_u_invalid_type, __pyx_k_invalid_type, sizeof(__pyx_k_invalid_type), 0, 1, 0, 0},
+  {&__pyx_kp_u_invalid_file_revision, __pyx_k_invalid_file_revision, sizeof(__pyx_k_invalid_file_revision), 0, 1, 0, 0},
+  {&__pyx_kp_u_invalid_file_type, __pyx_k_invalid_file_type, sizeof(__pyx_k_invalid_file_type), 0, 1, 0, 0},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
   {&__pyx_kp_u_out_of_bounds_hi_axis, __pyx_k_out_of_bounds_hi_axis, sizeof(__pyx_k_out_of_bounds_hi_axis), 0, 1, 0, 0},
@@ -1730,12 +1799,13 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_stat, __pyx_k_stat, sizeof(__pyx_k_stat), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_kp_u_unavailable_data, __pyx_k_unavailable_data, sizeof(__pyx_k_unavailable_data), 0, 1, 0, 0},
+  {&__pyx_n_s_version, __pyx_k_version, sizeof(__pyx_k_version), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 48, __pyx_L1_error)
-  __pyx_builtin_LookupError = __Pyx_GetBuiltinName(__pyx_n_s_LookupError); if (!__pyx_builtin_LookupError) __PYX_ERR(0, 60, __pyx_L1_error)
-  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_builtin_LookupError = __Pyx_GetBuiltinName(__pyx_n_s_LookupError); if (!__pyx_builtin_LookupError) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 69, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -1745,127 +1815,138 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "pymsg_common.pyx":48
+  /* "pymsg_common.pyx":51
  *         return
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_LO:
  *         raise ValueError('out-of-bounds (lo) axis')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
  *         raise ValueError('out-of-bounds (hi) axis')
  */
-  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_lo_axis); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_lo_axis); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 51, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "pymsg_common.pyx":50
+  /* "pymsg_common.pyx":53
  *         raise ValueError('out-of-bounds (lo) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
  *         raise ValueError('out-of-bounds (hi) axis')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:
  *         raise ValueError('out-of-bounds (lo) lam')
  */
-  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_hi_axis); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_hi_axis); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "pymsg_common.pyx":52
+  /* "pymsg_common.pyx":55
  *         raise ValueError('out-of-bounds (hi) axis')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_LO:
  *         raise ValueError('out-of-bounds (lo) lam')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:
  *         raise ValueError('out-of-bounds (hi) lam')
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_lo_lam); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_lo_lam); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 55, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
 
-  /* "pymsg_common.pyx":54
+  /* "pymsg_common.pyx":57
  *         raise ValueError('out-of-bounds (lo) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_LAM_HI:
  *         raise ValueError('out-of-bounds (hi) lam')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_LO:
  *         raise ValueError('out-of-bounds (lo) mu')
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_hi_lam); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_hi_lam); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
 
-  /* "pymsg_common.pyx":56
+  /* "pymsg_common.pyx":59
  *         raise ValueError('out-of-bounds (hi) lam')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_LO:
  *         raise ValueError('out-of-bounds (lo) mu')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_HI:
  *         raise ValueError('out-of-bounds (hi) mu')
  */
-  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_lo_mu); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_lo_mu); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__5);
   __Pyx_GIVEREF(__pyx_tuple__5);
 
-  /* "pymsg_common.pyx":58
+  /* "pymsg_common.pyx":61
  *         raise ValueError('out-of-bounds (lo) mu')
  *     elif stat == STAT_OUT_OF_BOUNDS_MU_HI:
  *         raise ValueError('out-of-bounds (hi) mu')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_UNAVAILABLE_DATA:
  *         raise LookupError('unavailable data')
  */
-  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_hi_mu); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_u_out_of_bounds_hi_mu); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
 
-  /* "pymsg_common.pyx":60
+  /* "pymsg_common.pyx":63
  *         raise ValueError('out-of-bounds (hi) mu')
  *     elif stat == STAT_UNAVAILABLE_DATA:
  *         raise LookupError('unavailable data')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_INVALID_ARGUMENT:
  *         raise ValueError('invalid argument')
  */
-  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_u_unavailable_data); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_u_unavailable_data); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__7);
   __Pyx_GIVEREF(__pyx_tuple__7);
 
-  /* "pymsg_common.pyx":62
+  /* "pymsg_common.pyx":65
  *         raise LookupError('unavailable data')
  *     elif stat == STAT_INVALID_ARGUMENT:
  *         raise ValueError('invalid argument')             # <<<<<<<<<<<<<<
- *     elif stat == STAT_INVALID_TYPE:
- *         raise TypeError('invalid type')
- */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_invalid_argument); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 62, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
-
-  /* "pymsg_common.pyx":64
- *         raise ValueError('invalid argument')
- *     elif stat == STAT_INVALID_TYPE:
- *         raise TypeError('invalid type')             # <<<<<<<<<<<<<<
  *     elif stat == STAT_FILE_NOT_FOUND:
  *         raise FileNotFoundError('file not found')
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_u_invalid_type); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_invalid_argument); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__8);
+  __Pyx_GIVEREF(__pyx_tuple__8);
+
+  /* "pymsg_common.pyx":67
+ *         raise ValueError('invalid argument')
+ *     elif stat == STAT_FILE_NOT_FOUND:
+ *         raise FileNotFoundError('file not found')             # <<<<<<<<<<<<<<
+ *     elif stat == STAT_INVALID_FILE_TYPE:
+ *         raise TypeError('invalid file type')
+ */
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_u_file_not_found); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 67, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__9);
   __Pyx_GIVEREF(__pyx_tuple__9);
 
-  /* "pymsg_common.pyx":66
- *         raise TypeError('invalid type')
- *     elif stat == STAT_FILE_NOT_FOUND:
- *         raise FileNotFoundError('file not found')             # <<<<<<<<<<<<<<
- *     else:
- *         raise Exception(f'error with unknown stat code: {stat}')
+  /* "pymsg_common.pyx":69
+ *         raise FileNotFoundError('file not found')
+ *     elif stat == STAT_INVALID_FILE_TYPE:
+ *         raise TypeError('invalid file type')             # <<<<<<<<<<<<<<
+ *     elif stat == STAT_INVALID_FILE_REVISION:
+ *         raise TypeError('invalid file revision')
  */
-  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_u_file_not_found); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 66, __pyx_L1_error)
+  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_u_invalid_file_type); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
 
-  /* "pymsg_common.pyx":41
+  /* "pymsg_common.pyx":71
+ *         raise TypeError('invalid file type')
+ *     elif stat == STAT_INVALID_FILE_REVISION:
+ *         raise TypeError('invalid file revision')             # <<<<<<<<<<<<<<
+ *     else:
+ *         raise Exception(f'error with unknown stat code: {stat}')
+ */
+  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_u_invalid_file_revision); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__11);
+  __Pyx_GIVEREF(__pyx_tuple__11);
+
+  /* "pymsg_common.pyx":44
  * # Routines
  * 
  * def handle_error(stat):             # <<<<<<<<<<<<<<
  * 
  *     # Take action based on the stat value
  */
-  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_n_s_stat); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 41, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__11);
-  __Pyx_GIVEREF(__pyx_tuple__11);
-  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_handle_error, 41, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_n_s_stat); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__12);
+  __Pyx_GIVEREF(__pyx_tuple__12);
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_townsend_devel_msg_src_cy, __pyx_n_s_handle_error, 44, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -2146,16 +2227,37 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "pymsg_common.pyx":41
+  /* "pymsg_common.pyx":44
  * # Routines
  * 
  * def handle_error(stat):             # <<<<<<<<<<<<<<
  * 
  *     # Take action based on the stat value
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12pymsg_common_1handle_error, NULL, __pyx_n_s_pymsg_common); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12pymsg_common_1handle_error, NULL, __pyx_n_s_pymsg_common); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_handle_error, __pyx_t_1) < 0) __PYX_ERR(0, 41, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_handle_error, __pyx_t_1) < 0) __PYX_ERR(0, 44, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "pymsg_common.pyx":79
+ * cdef char version[17]
+ * 
+ * get_msg_version(version)             # <<<<<<<<<<<<<<
+ * __version__ = version.decode('ascii')
+ * 
+ */
+  get_msg_version(__pyx_v_12pymsg_common_version);
+
+  /* "pymsg_common.pyx":80
+ * 
+ * get_msg_version(version)
+ * __version__ = version.decode('ascii')             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_1 = __Pyx_decode_c_string(__pyx_v_12pymsg_common_version, 0, strlen(__pyx_v_12pymsg_common_version), NULL, NULL, PyUnicode_DecodeASCII); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 80, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_version, __pyx_t_1) < 0) __PYX_ERR(0, 80, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "pymsg_common.pyx":1
@@ -2703,6 +2805,39 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObjec
     return result;
 }
 #endif
+
+/* decode_c_string */
+static CYTHON_INLINE PyObject* __Pyx_decode_c_string(
+         const char* cstring, Py_ssize_t start, Py_ssize_t stop,
+         const char* encoding, const char* errors,
+         PyObject* (*decode_func)(const char *s, Py_ssize_t size, const char *errors)) {
+    Py_ssize_t length;
+    if (unlikely((start < 0) | (stop < 0))) {
+        size_t slen = strlen(cstring);
+        if (unlikely(slen > (size_t) PY_SSIZE_T_MAX)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "c-string too long to convert to Python");
+            return NULL;
+        }
+        length = (Py_ssize_t) slen;
+        if (start < 0) {
+            start += length;
+            if (start < 0)
+                start = 0;
+        }
+        if (stop < 0)
+            stop += length;
+    }
+    if (unlikely(stop <= start))
+        return __Pyx_NewRef(__pyx_empty_unicode);
+    length = stop - start;
+    cstring += start;
+    if (decode_func) {
+        return decode_func(cstring, length, errors);
+    } else {
+        return PyUnicode_Decode(cstring, length, encoding, errors);
+    }
+}
 
 /* CLineInTraceback */
 #ifndef CYTHON_CLINE_IN_TRACEBACK
