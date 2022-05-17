@@ -87,20 +87,20 @@ ifeq ($(shell uname -s),Darwin)
   LIB_SUFFIX = .dylib
   LIB_LDFLAGS = -shared -install_name ${MSG_DIR}/lib/$@
   EXEC_LDFLAGS = ${FITS_LDFLAGS}
-  PYM_SUFFIX = $(shell python3-config --extension-suffix)
-  PYM_LDFLAGS = -shared -install_name ${MSG_DIR}/python/$@ -undefined dynamic_lookup 
+  PYC_SUFFIX = $(shell python3-config --extension-suffix)
+  PYC_LDFLAGS = -shared -install_name ${MSG_DIR}/python/$@ -undefined dynamic_lookup 
 else			   
   LIB_SUFFIX = .so
   LIB_LDFLAGS = -shared -Wl,-rpath -Wl,${MSG_DIR}/lib
   EXEC_LDFLAGS = -Wl,-rpath -Wl,${MSG_DIR}/lib ${FITS_LDFLAGS}
-  PYM_SUFFIX = $(shell python3-config --extension-suffix)
-  PYM_LDFLAGS = ${LIB_LDFLAGS}
+  PYC_SUFFIX = $(shell python3-config --extension-suffix)
+  PYC_LDFLAGS = ${LIB_LDFLAGS}
 endif
 
 # Targets-related variables
 
 LIB_TARGETS_ = $(addsuffix ${LIB_SUFFIX},${LIB_TARGETS})
-PYM_TARGETS_ = $(addsuffix ${PYM_SUFFIX},${PYM_TARGETS})
+PYC_TARGETS_ = $(addsuffix ${PYC_SUFFIX},${PYC_TARGETS})
 
 DEP_TARGETS = $(patsubst %,.%.d,${LIB_TARGETS} ${EXEC_TARGETS})
 
@@ -117,11 +117,11 @@ vpath %.h ../src/include
 
 # Explicit rules
 
-.PHONY: all install lib-install pym-install exec-install headers-install clean almostclean
+.PHONY: all install lib-install pyc-install exec-install headers-install clean almostclean
 
-all : ${LIB_TARGETS_} ${PYM_TARGETS_} ${EXEC_TARGETS}
+all : ${LIB_TARGETS_} ${PYC_TARGETS_} ${EXEC_TARGETS}
 
-install : lib-install pym-install exec-install headers-install
+install : lib-install pyc-install exec-install headers-install
 
 lib-install : ${LIB_TARGETS_}
 	@for t in $^; do \
@@ -129,10 +129,10 @@ lib-install : ${LIB_TARGETS_}
             cp $${t} ${LIBDIR}; \
         done
 
-pym-install : ${PYM_TARGETS_}
+pyc-install : ${PYC_TARGETS_}
 	@for t in $^; do \
-            echo CP $${t} ${PYMDIR}; \
-            cp $${t} ${PYMDIR}; \
+            echo CP $${t} ${PYCDIR}; \
+            cp $${t} ${PYCDIR}; \
         done
 
 exec-install : ${EXEC_TARGETS}
@@ -151,15 +151,15 @@ clean : almostclean
 	rm -f .*.d .*.dpp
 
 almostclean :
-	rm -f ${LIB_TARGETS_} ${PYM_TARGETS_} ${EXEC_TARGETS} *.o *.mod *.smod *.f90 *.c
+	rm -f ${LIB_TARGETS_} ${PYC_TARGETS_} ${EXEC_TARGETS} *.o *.mod *.smod *.f90 *.c
 
 ${LIB_TARGETS_} :
 	@echo LD_LIB $@
 	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} ${LIB_LDFLAGS}
 
-${PYM_TARGETS_} :
-	@echo LD_PYM $@
-	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS} ${PYM_LDFLAGS}
+${PYC_TARGETS_} :
+	@echo LD_PYC $@
+	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS} ${PYC_LDFLAGS}
 
 ${EXEC_TARGETS} :
 	@echo LD $@
@@ -211,7 +211,7 @@ endif
 
 ${LIB_TARGETS_} : %${LIB_SUFFIX} : $${$$*_OBJS} $$(addsuffix ${LIB_SUFFIX},$${$$*_LIBS})
 
-${PYM_TARGETS_} : %${PYM_SUFFIX} : $${$$*_OBJS} $$(addsuffix ${LIB_SUFFIX},$${$$*_LIBS})
+${PYC_TARGETS_} : %${PYC_SUFFIX} : $${$$*_OBJS} $$(addsuffix ${LIB_SUFFIX},$${$$*_LIBS})
 
 ${EXEC_TARGETS} : $$($$@_OBJS) $$(addsuffix ${LIB_SUFFIX},$${$$@_LIBS})
 

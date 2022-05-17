@@ -7,5 +7,3 @@ SpecGrid
 
 .. autoclass:: SpecGrid
    :members:
-
-   .. automethod:: __init__(filename)

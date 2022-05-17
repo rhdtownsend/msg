@@ -1,7 +1,7 @@
-#cython: language_level=3
+#python: language_level=3
 #
-# Module  : pymsg_specgrid
-# Purpose : Cython interface to libcmsg (specgrid part)
+# Module  : pymsg.specgrid
+# Purpose : MSG Python interface (specgrid part)
 #
 # Copyright 2021-2022 Rich Townsend & The MSG Team
 #
@@ -18,50 +18,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-cimport numpy as cnp
-cimport cython
-
-from libcpp cimport bool
-
-from pymsg.pymsg_common import *
-
-# C definitions
-
-cdef extern from "cmsg.h":
-
-    void load_specgrid(const char *specgrid_filename, void **specgrid, int *stat)
-    void unload_specgrid(void *specgrid)
-
-    void get_specgrid_rank(void *specgrid, int *rank)
-    void get_specgrid_lam_min(void *specgrid, double *lam_min)
-    void get_specgrid_lam_max(void *specgrid, double *lam_max)
-    void get_specgrid_cache_count(void *specgrid, int *cache_count)
-    void get_specgrid_cache_limit(void *specgrid, int *cache_limit)
-    void get_specgrid_cache_lam_min(void *specgrid, double *cache_lam_min)
-    void get_specgrid_cache_lam_max(void *specgrid, double *cache_lam_max)
-    void get_specgrid_axis_x_min(void *specgrid, int i, double *axis_x_min)
-    void get_specgrid_axis_x_max(void *specgrid, int i, double *axis_x_max)
-    void get_specgrid_axis_label(void *specgrid, int i, char *axis_label)
-
-    void set_specgrid_cache_limit(void *specgrid, int cache_limit, int *stat)
-    void set_specgrid_cache_lam_min(void *specgrid, double cache_lam_min, int *stat)
-    void set_specgrid_cache_lam_max(void *specgrid, double cache_lam_max, int *stat)
-
-    void interp_specgrid_intensity(void *specgrid, double x_vec[], double mu,
-                                   int n, double lam[], double I[], int *stat,
-                                   bool deriv_vec[])
-    void interp_specgrid_E_moment(void *specgrid, double x_vec[], int k, int n,
-                                  double lam[], double E[], int *stat, bool deriv_vec[])
-    void interp_specgrid_D_moment(void *specgrid, double x_vec[], int l, int n,
-                                  double lam[], double D[], int *stat, bool deriv_vec[])
-    void interp_specgrid_flux(void *specgrid, double x_vec[], int n, double lam[],
-                              double F[], int *stat, bool deriv_vec[])
-    
+import pymsg.pycmsg as pyc
 
 # Class definition
 
-@cython.binding(True)
-cdef class SpecGrid:
+class SpecGrid:
     r"""The SpecGrid class represents a grid of spectroscopic intensity data.
 
     This grid may be used to interpolate the intensity (or related
@@ -70,146 +31,128 @@ cdef class SpecGrid:
 
     """
 
-    cdef void *specgrid
-    
-    cdef readonly int rank
-    """int: Number of dimensions in grid."""
-    cdef readonly list axis_labels
-    """list: Atmospheric parameter axis labels."""
-    cdef readonly dict axis_min
-    """dict: Atmospheric parameter axis minima."""
-    cdef readonly dict axis_max
-    """dict: Atmospheric parameter axis maxima."""
-    
-    def __init__(self, str filename):
+    def __init__(self, filename):
         """SpecGrid constructor.
 
         Args:
             filename (string): Filename of grid to load.
 
         Returns:
-            pymsg.Specgrid: Constructed object.
+            pymsg.SpecGrid: Constructed object.
 
         Raises:
             FileNotFound: If the the file cannot be found.
             TypeError: If the file contains an incorrect datatype.
         """
 
-        cdef int stat
+        self._specgrid = pyc._load_specgrid(filename)
 
-        load_specgrid(filename.encode('ascii'), &self.specgrid, &stat)
-        handle_error(stat)
+        self._rank = pyc._get_specgrid_rank(self._specgrid)
 
-        get_specgrid_rank(self.specgrid, &self.rank)
+        self._axis_labels = []
+        self._axis_x_min = {}
+        self._axis_x_max = {}
 
-        self.axis_labels = []
-        self.axis_min = {}
-        self.axis_max = {}
+        for i in range(self._rank):
 
-        cdef char label[17]
-        cdef double x_min
-        cdef double x_max
+            axis_label = pyc._get_specgrid_axis_label(self._specgrid, i)
 
-        for j in range(self.rank):
-
-            get_specgrid_axis_label(self.specgrid, j, label)
-            get_specgrid_axis_x_min(self.specgrid, j, &x_min)
-            get_specgrid_axis_x_max(self.specgrid, j, &x_max)
-
-            axis_label = label.decode('ascii')
-
-            self.axis_labels += [axis_label]
-            self.axis_min[axis_label] = x_min
-            self.axis_max[axis_label] = x_max
+            self._axis_labels += [axis_label]
+            self._axis_x_min[axis_label] = pyc._get_specgrid_axis_x_min(self._specgrid, i)
+            self._axis_x_max[axis_label] = pyc._get_specgrid_axis_x_max(self._specgrid, i)
 
         
     def __dealloc__(self):
 
-        unload_specgrid(self.specgrid)
+        pyc._unload_specgrid(self._specgrid)
+
+        self._specgrid = None
 
 
     def _vector_args(self, x, deriv):
 
-        x_vec = np.array([x[key] for key in self.axis_labels])
+        x_vec = np.array([x[key] for key in self._axis_labels])
 
         if deriv is not None:
-            deriv_vec = np.array([key in deriv for key in self.axis_labels],
-                              dtype=np.uint8)
+            deriv_vec = np.array([key in deriv for key in self._axis_labels],
+                                 dtype=np.uint8)
         else:
             deriv_vec = np.array([False]*self.rank, dtype=np.uint8)
 
         return x_vec, deriv_vec
 
+    
+    @property
+    def rank(self):
+        """int: Number of dimensions in grid."""
+        return self._rank
 
+    
+    @property
+    def axis_labels(self):
+        """list: Atmospheric parameter axis labels."""
+        return self._axis_labels
+
+    
+    @property
+    def axis_x_min(self):
+        """dict: Atmospheric parameter axis minima."""
+        return self._axis_x_min
+
+    
+    @property
+    def axis_x_max(self):
+        """dict: Atmospheric parameter axis maxima."""
+        return self._axis_x_max
+
+    
     @property
     def lam_min(self):
         """double: Minimum wavelength of grid."""
-        cdef double lam_min
-        get_specgrid_lam_min(self.specgrid, &lam_min)
-        return lam_min
+        return pyc._get_specgrid_lam_min(self._specgrid)
 
-
+    
     @property
     def lam_max(self):
         """double: Maximum wavelength of grid."""
-        cdef double lam_max
-        get_specgrid_cache_lam_max(self.specgrid, &lam_max)
-        return lam_max
+        return pyc._get_specgrid_cache_lam_max(self._specgrid)
 
 
     @property
     def cache_lam_min(self):
         """double: Minimum wavelength of grid cache."""
-        cdef double lam_min
-        get_specgrid_cache_lam_min(self.specgrid, &lam_min)
-        return lam_min
-
+        return pyc._get_specgrid_cache_lam_min(self._specgrid)
     @cache_lam_min.setter
-    def cache_lam_min(self, double cache_lam_min):
-        cdef int stat
-        set_specgrid_cache_lam_min(self.specgrid, cache_lam_min, &stat)
-        handle_error(stat)
+    def cache_lam_min(self, cache_lam_min):
+        pyc._set_specgrid_cache_lam_min(self._specgrid, cache_lam_min)
 
 
     @property
     def cache_lam_max(self):
         """double: Maximum wavelength of grid cache."""
-        cdef double lam_max
-        get_specgrid_cache_lam_max(self.specgrid, &lam_max)
-        return lam_max
-
+        return pyc._get_specgrid_cache_lam_max(self._specgrid)
     @cache_lam_max.setter
-    def cache_lam_max(self, double cache_lam_max):
-        cdef int stat
-        set_specgrid_cache_lam_max(self.specgrid, cache_lam_max, &stat)
-        handle_error(stat)
+    def cache_lam_max(self, cache_lam_max):
+        pyc.set_specgrid_cache_lam_max(self._specgrid, cache_lam_max)
         
 
     @property
     def cache_count(self):
         """int: Number of nodes currently held in grid cache."""
-        cdef int count
-        get_specgrid_cache_count(self.specgrid, &count)
-        return count
+        return pyc._get_specgrid_cache_count(self._specgrid)
 
 
     @property
     def cache_limit(self):
         """double: Maximum number of nodes to hold in grid cache. Set to 0 to disable 
            caching."""
-        cdef int limit
-        get_specgrid_cache_limit(self.specgrid, &limit)
-        return limit
-
+        return pyc._get_specgrid_cache_limit(self._specgrid)
     @cache_limit.setter
-    def cache_limit(self, int cache_limit):
-        cdef int stat
-        set_specgrid_cache_limit(self.specgrid, limit, &stat)
-        handle_error(stat)
+    def cache_limit(self, cache_limit):
+        pyc._set_specgrid_cache_limit(self._specgrid, limit)
 
 
-    def intensity(self, dict x, double mu, double[:] lam,
-                  dict deriv=None):
+    def intensity(self, x, mu, lam, deriv=None):
         r"""Evaluate the spectroscopic intensity.
 
         Args:
@@ -235,25 +178,13 @@ cdef class SpecGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        cdef double[:] I
-        cdef int stat
-        cdef double[:] x_vec
-        cdef bool[:] deriv_vec
-
-        n = len(lam)
-
-        I = np.empty(n-1, dtype=np.double)
-
         x_vec, deriv_vec = self._vector_args(x, deriv)
 
-        interp_specgrid_intensity(self.specgrid, &x_vec[0], mu, n, &lam[0],
-                                  &I[0], &stat, &deriv_vec[0])
-        handle_error(stat)
-
-        return np.asarray(I)
+        return pyc._interp_specgrid_intensity(self._specgrid, x_vec, mu, lam,
+                                              deriv_vec)
 
     
-    def E_moment(self, dict x, int k, double[:] lam, dict deriv=None):
+    def E_moment(self, x, k, lam, deriv=None):
         r"""Evaluate the spectroscopic intensity E-moment.
 
         Args:
@@ -278,25 +209,13 @@ cdef class SpecGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        cdef double[:] E
-        cdef int stat
-        cdef double[:] x_vec
-        cdef bool[:] deriv_vec
-
-        n = len(lam)
-
-        E = np.empty(n-1, dtype=np.double)
-
         x_vec, deriv_vec = self._vector_args(x, deriv)
 
-        interp_specgrid_E_moment(self.specgrid, &x_vec[0], k, n, &lam[0], &E[0],
-                                 &stat, &deriv_vec[0])
-        handle_error(stat)
-
-        return np.asarray(E)
+        return pyc._interp_specgrid_E_moment(self._specgrid, x_vec, k, lam,
+                                             deriv_vec)
 
     
-    def D_moment(self, dict x, int l, double[:] lam, dict deriv=None):
+    def D_moment(self, x, l, lam, deriv=None):
         r"""Evaluate the spectroscopic intensity D-moment.
 
         Args:
@@ -321,25 +240,13 @@ cdef class SpecGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        cdef double[:] D
-        cdef int stat
-        cdef double[:] x_vec
-        cdef bool[:] deriv_vec
-
-        n = len(lam)
-
-        D = np.empty(n-1, dtype=np.double)
-
         x_vec, deriv_vec = self._vector_args(x, deriv)
 
-        interp_specgrid_D_moment(self.specgrid, &x_vec[0], l, n, &lam[0], &D[0],
-                                 &stat, &deriv_vec[0])
-        handle_error(stat)
-
-        return np.asarray(D)
+        return pyc._interp_specgrid_D_moment(self._specgrid, x_vec, l, lam,
+                                             deriv_vec)
 
     
-    def flux(self, dict x, double[:] lam, dict deriv=None):
+    def flux(self, x, lam, deriv=None):
         r"""Evaluate the spectroscopic flux.
 
         Args:
@@ -363,19 +270,9 @@ cdef class SpecGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        cdef double[:] F
-        cdef int stat
-        cdef double[:] x_vec
-        cdef bool[:] deriv_vec
-
-        n = len(lam)
-
-        F = np.empty(n-1, dtype=np.double)
-
         x_vec, deriv_vec = self._vector_args(x, deriv)
 
-        interp_specgrid_flux(self.specgrid, &x_vec[0], n, &lam[0], &F[0], &stat,
-                             &deriv_vec[0])
-        handle_error(stat)
-        
-        return np.asarray(F)
+        print('x_vec, deriv_vec', x_vec, deriv_vec)
+
+        return pyc._interp_specgrid_flux(self._specgrid, x_vec, lam,
+                                         deriv_vec)

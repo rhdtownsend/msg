@@ -20,6 +20,10 @@ Grids), a library for synthesizing astrophysical spectra and
 photometric colors via interpolation in pre-calculated grids.
 """
 
-from pymsg.pymsg_common import __version__
-from pymsg.pymsg_specgrid import SpecGrid
-from pymsg.pymsg_photgrid import PhotGrid
+from .specgrid import SpecGrid
+from .photgrid import PhotGrid
+
+from .pycmsg import _get_msg_version
+
+__version__ = _get_msg_version()
+

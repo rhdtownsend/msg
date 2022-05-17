@@ -5,14 +5,14 @@
 
 BINDIR=${CURDIR}/bin
 LIBDIR=${CURDIR}/lib
-PYMDIR=${CURDIR}/python/pymsg
+PYCDIR=${CURDIR}/python/pymsg
 INCDIR=${CURDIR}/include
 
 # Rules
 
 all :
 	@mkdir -p ${BINDIR} ${LIBDIR} ${INCDIR}
-	@${MAKE} --no-print-directory BINDIR=${BINDIR} LIBDIR=${LIBDIR} PYMDIR=${PYMDIR} INCDIR=${INCDIR} -C build install
+	@${MAKE} --no-print-directory BINDIR=${BINDIR} LIBDIR=${LIBDIR} PYCDIR=${PYCDIR} INCDIR=${INCDIR} -C build install
 
 test :
 	@${MAKE} --no-print-directory BINDIR=${BINDIR} -C test $@

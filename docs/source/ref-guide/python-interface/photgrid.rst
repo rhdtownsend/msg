@@ -7,5 +7,3 @@ PhotGrid
 
 .. autoclass:: PhotGrid
    :members:
-
-   .. automethod:: __init__(filename)
