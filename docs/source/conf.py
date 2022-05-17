@@ -16,9 +16,6 @@ import re
 
 sys.path.insert(0, os.path.abspath('exts'))
 
-MSG_DIR = os.environ['MSG_DIR']
-sys.path.insert(0, os.path.join(MSG_DIR, 'python'))
-
 import sphinx_rtd_theme
 
 
@@ -178,7 +175,8 @@ intersphinx_mapping = {
 
 # Set up autodoc
 autoclass_content = 'class'
-autodoc_member_order = 'groupwise'
+autodoc_member_order = 'bysource'
+autodoc_mock_imports = ['pycmsg']
 
 # Set up napoleon
 napoleon_google_docstring = True
