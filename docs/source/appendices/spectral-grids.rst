@@ -94,7 +94,6 @@ The ranges of the atmospheric parameters are as follows:
 * metallicity :math:`[\FeH] \in [-4.0, 1.0]\,\text{dex}`
 * alpha enhancement :math:`[\aFe] \in [-0.2,1.2]\,\text{dex}`
 
-============
 Custom Grids
 ============
 
