@@ -1,0 +1,8 @@
+# Debugging stuff
+*.dSYM
+
+# Walkthrough executables
+*-walkthrough
+
+# Data files
+spectrum.dat
