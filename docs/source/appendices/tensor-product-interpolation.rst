@@ -63,10 +63,10 @@ functions are
 
 .. math::
 
-   c_{1} = 2 u^3 - 3 u^2 + 1 \qquad
-   c_{2} = u^3 - u^2 \qquad
-   c_{3} = -2 u^3 + 3 u^2 \qquad
-   c_{4} = u^3 - 2 u^2 + u
+   c_{1}(u) = 2 u^3 - 3 u^2 + 1, \quad
+   c_{2}(u) = u^3 - u^2, \quad
+   c_{3}(u) = -2 u^3 + 3 u^2, \quad
+   c_{4}(u) = u^3 - 2 u^2 + u
 
 (these can be recognized as the basis functions for :wiki:`cubic Hermite splines <Cubic_Hermite_spline>`). This new definition is
 :math:`C^{1}` continuous, and reproduces :math:`f(x)` *and* its first
