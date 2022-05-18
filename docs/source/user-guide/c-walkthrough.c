@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 
   load_specgrid("sg-demo.h5", &specgrid, NULL);
 
-  // Set atmospheric parameters to correspond to Sirius
+  // Set atmospheric parameters to correspond to Sirius A
 
   for(int i=0; i < 2; i++) {
 

@@ -41,7 +41,7 @@ program fortran_walkthrough
 
    call load_specgrid('sg-demo.h5', specgrid)
 
-   ! Set atmospheric parameters to correspond to Sirius
+   ! Set atmospheric parameters to correspond to Sirius A
 
    do i = 1, 2
 
@@ -92,7 +92,7 @@ program fortran_walkthrough
    call photgrid_V%interp_flux(x_vec, F_V)
 
    ! Evaluate apparent magnitudes (the dilution factor R2_d2 is
-   ! R**2/d**2, where R is Sirius' radius and d its distance)
+   ! R**2/d**2, where R is Sirius A's radius and d its distance)
 
    R2_d2 = 2.1366E-16_RD
 
