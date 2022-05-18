@@ -4,18 +4,18 @@
 How MSG Works
 *************
 
-This chapter provides a walkthrough of using the MSG Python interface
-to evaluate flux and intensity spectra for a model of Sirius
-(:math:`\alpha` Canis Majoris). The code fragments are presented as a
-sequence of Jupyter notebook cells, but pasting all of the fragments
-into a Python script should work also.
+This chapter expands on the :ref:`Python <python-walkthrough>`,
+:ref:`Fortran <fortran-walkthrough>` and :ref:`C <c-walkthrough>`
+walkthrough chapters, by delving into the :dict:`nitty-gritty` of how
+MSG goes about evaluating stellar spectra and photometric colors.
 
 Interpolation
 =============
 
 To evaluate a stellar spectrum, MSG interpolates in grids of
-pre-calculated data. Focusing on specific intensity evaluation, this
-involves constructing a (preferably continuous and smooth) function
+pre-calculated spectroscopic data. Focusing on specific intensity
+evaluation, this involves constructing a (preferably continuous and
+smooth) function
 
 .. math::
 
@@ -30,7 +30,7 @@ etc.).
 Direction Cosine
 ----------------
 
-The :math:`mu` dependence of the specific intensity is represented
+The :math:`\mu` dependence of the specific intensity is represented
 using limb-darkening laws. The simplest and most well known is the linear law
 
 .. math::
@@ -62,7 +62,8 @@ emergent flux
 
    F(\ldots) = \int_{0}^{1} I(\mu; \ldots) \, \mu \, \diff\mu
 
-can be evaluated analytically, and likewise the :ads_citet:`eddington:1926` intensity moments
+can be evaluated analytically, and more generally any of the
+:ads_citet:`eddington:1926` intensity moments
 
 .. math::
 
@@ -71,20 +72,21 @@ can be evaluated analytically, and likewise the :ads_citet:`eddington:1926` inte
 MSG supports the following limb-darkening laws:
 
 `CONST`
-  constant law, where :math:`I` has no dependence on
+  Constant law, where :math:`I` has no dependence on
   :math:`\mu` whatsoever. This is discussed further below.
 
 `LINEAR`
-  the linear law given in equation :math:numref:`eq:linear-law` above.
+  Linear law given in equation :math:numref:`eq:linear-law` above.
 
 `SQRT`
-  the square-root law introduced by :ads_citet:`diaz-cordoves:1992`.
+  Square-root law introduced by :ads_citet:`diaz-cordoves:1992`.
 
 `QUAD`
-  the quadratic law introduced by :ads_citet:`wade:1985`.
+  Quadratic law introduced by :ads_citet:`wade:1985`.
 
 `CLARET`
-  the four-coefficient law given in equation :math:numref:`eq:claret-law` above.
+  Four-coefficient law introduced by :ads_citet:`claret:2000`
+  and given in equation :math:numref:`eq:claret-law` above.
 
 The choice of law is made during grid construction; the coefficients
 appearing in the limb-darkening laws (e.g., :math:`a` and
@@ -106,13 +108,13 @@ as a piecewise-constant function on a wavelength grid :math:`\lambda =
    I(\lambda; \ldots) = I_{i}(\ldots) \qquad \lambda_{i} \leq \lambda < \lambda_{i+1}.
 
 (as before, the ellipses represent the omitted parameters). Mapping
-the intensity data :math:`I_{k}` onto a new grid :math:`\lambda' =
+intensity data onto a new grid :math:`\lambda' =
 \{\lambda'_{1},\lambda'_{2},\ldots\,\lambda'_{M'}\}` is performed
 conservatively, according to the expression
 
 .. math::
 
-   I'_{j}(\ldots) = \frac{\int_{\lambda'_{j}}^{\lambda'_{j+1}} I(\lambda; \ldots) \diff{\lambda}}{\lambda'_{j+1} - \lambda_{j}}.
+   I'_{j}(\ldots) = \frac{\int_{\lambda'_{j}}^{\lambda'_{j+1}} I(\lambda; \ldots) \diff{\lambda}}{\lambda'_{j+1} - \lambda'_{j}}.
 
 Beyond its simpicity, the advantage of this approach (as compared to
 higher-order interpolations) is that the equivalent width of line
@@ -124,7 +126,7 @@ Atmosphere Parameters
 The dependence of the specific intensity on atmosphere parameters
 (:math:`x, y, z, \ldots`) is represented using cubic tensor product
 interpolation. A (relatively) gentle introduction to tensor product
-interpolation is introduced is provided in an :ref:`Appendix
+interpolation is provided in an :ref:`Appendix
 <tensor-product-interpolation>`. The short version is that intensity,
 flux, etc. are represented as piecewise-cubic functions `in each
 atmospheric parameter`, constructed to be continuous and smooth at the
@@ -137,29 +139,49 @@ an interpolation tries to access such missing data, MSG either
 switches to a lower-order scheme, or (if there simply aren't
 sufficient data to interpolate) returns with an error.
 
+.. _photometric-colors:
+
 Photometric Colors
 ==================
+
+To evaluate photometric colors, MSG convolves a stellar spectrum with
+appropriate photometric response functions (each representing the
+combined sensitivity of the optical pathway, filter and the
+detector). For a given response function, this convolution can be
+performed before or after the interpolations discussed above:
+
+* the 'before' option performs the convolution as a pre-processing
+  step to create a photometric grid from a spectroscopic grid (see the
+  :ref:`creating-grids` section). This is computationally more
+  efficient, but requires that the photometric grid be stored on disk
+  separately from the spectroscopic grid.
+
+* the 'after' option performs the convolution on-the-fly after each
+  spectrum is interpolated. This is computationally less efficient,
+  but incurs no storage requirements beyond the spectroscopic grid.
 
 Disk Storage
 ============
 
-MSG grids are stored on disk in `HDF5
+MSG spectroscopic and photometric grids are stored on disk in `HDF5
 <https://www.hdfgroup.org/solutions/hdf5/>`__ files with a bespoke
 schema. Because HDF5 is a portable binary format with support for
 on-the-fly compression/decompression, it is ideally suited for the
 typically large storage requirements of spectral grids.
 
+.. _memory-management:
+
 Memory Management
 =================
 
 It's often the case that the data stored in grid files greatly exceed
-the available memory (RAM) capacity. MSG handles such situations by
-loading data into memory only when they are required. These data are
-retained in memory until a user-defined capacity limit reached (see
-the :py:attr:`SpecGrid.cache_limit` and
+the available memory (RAM) capacity of one's computer. MSG handles
+such situations by loading data into memory only when they are
+required. These data are retained in memory until a user-defined
+capacity limit reached (see the :py:attr:`SpecGrid.cache_limit` and
 :py:attr:`PhotGrid.cache_limit` attributes in the
 :ref:`python-interface`, and corresponding functionality in the
 :ref:`Fortran <fortran-interface>` and :ref:`C <c-interface>`
-interfaces); then, the least-recently-used data are flushed to make
-room for new data.
+interfaces); then, data are evicted from the memory cache via a
+:wiki:`least-recently-used` algorithm.
 

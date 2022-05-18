@@ -126,6 +126,8 @@ Modifying Spectra
 Individal spectra produced by one of the tools above can be subsetted
 and/or rebinned using the :command:`specint_to_specint` tool.
 
+.. _creating-grids:
+
 Creating Grids
 --------------
 
@@ -134,7 +136,7 @@ created using the :command:`make_specgrid` tool. First, prepare a
 manifest file --- a simple text file that lists all the spectrum files
 that should be part of the grid. Then, run the command
 
-.. shell:
+.. prompt:: bash
 
    $MSG_DIR/bin/make_specgrid <manifest_file> <specgrid_file> [<allow_dupes>]
 
@@ -147,17 +149,18 @@ in the manifest.
 Once a spectroscopic grid is created, corresponding photometric grids
 (with the same topology) can be created using the command
 
-.. shell:
+.. prompt:: bash
 
    $MSG_DIR/bin/specgrid_to_photgrid <specgrid_file> <passband_file> <photgrid_file>
 
 Here, :file:`<specgrid_file>` is the name of the input spectroscopic
-grid file, :file:`<passband_file>` is the name of the passband file to convolve with, and :file:`<specgrid_file>` is the name of the output photometric
-grid file.
+grid file, :file:`<passband_file>` is the name of the passband file to
+convolve with, and :file:`<specgrid_file>` is the name of the output
+photometric grid file.
 
 Note that it's not always necessary to create a photometric grid, as
-MSG can convolve with passbands on the fly (see, e.g., the
-:ref:`python-walkthrough` chapter).
+MSG can convolve with passbands on the fly (as discussed in the
+:ref:`photometric-colors` section).
       
 .. |br| raw:: html
 

@@ -102,6 +102,7 @@ html_logo = 'msg-logo.png'
 # Set up Extlinks
 extlinks = {
     'wiki': ('https://en.wikipedia.org/wiki/%s', ''),
+    'dict': ('https://en.wiktionary.org/wiki/%s', ''),
     'ads': ('https://ui.adsabs.harvard.edu/abs/%s/abstract', ''),
     'netlib': ('https://www.netlib.org/%s', ''),
     'git': ('https://github.com/%s', ''),
