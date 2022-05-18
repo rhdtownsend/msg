@@ -27,65 +27,64 @@ bibliography: paper.bib
 
 While the spectrum of the light emitted by a star can be calculated by
 simulating the flow of radiation through each layer of the star's
-atmosphere, this process is exceedingly computationally expensive.
-Therefore, a standard approach is to pre-calculate spectra over a
-large grid of atmospheric parameters, and then interpolate within this
-grid.
+atmosphere, this process is computationally expensive.  Therefore, it
+is often far more efficient to pre-calculate spectra over a grid of
+atmospheric parameters, and then interpolate within this grid.  `MSG`
+(short for Multidimensional Spectral Grids) is a software package that
+implements this interpolation capability.
 
 # Statement of Need
 
-`MSG` (short for Multidimensional Spectral Grids) is a software
-package for interpolating spectra in pre-calculated grids. There
-already exists a small ecosystem of packages providing spectral
-interpolation as part of their functionality --- see, for instance,
-iSPEC [@Blanco-Cuaresma:2014] and FERRE
-[@Allende-Prieto:2015]. However, these offer only a subset of the
-desirable features of a modern interpolation package:
+There are a wide variety of stellar spetral grids published in the
+astronomical literature --- examples include @Lanz:2003, @Lanz:2007,
+@Kirby:2011, @de-Laverny:2012, @Husser:2013, @Allende-Prieto:2018,
+@Chiavassa:2018 and @Zsargo:2020. However, the ecosystem of software
+packages that offer users the ability to interpolate in these grids is
+much more limited. iSPEC [@Blanco-Cuaresma:2014] and FERRE
+[@Allende-Prieto:2015] stand out in this category, but their principal
+focus is spectral analysis (determining stellar atmosphere parameters
+by fitting observed spectra) rather than interpolation; and, as
+monolithic packages they are not well suited to modular incoporation
+within other projects. These considerations motivate us to develop
+MSG.
 
-* Support for grids with an arbitrary number of dimensions.
+# Capabilities
 
-* Support for grids with irregularities (missing data, non-uniform grid spacing, etc).
+MSG is implemented as a software library with Python, Fortran 2008 and
+C bindings. These APIs expose OpenMP-optimized Fortran code that
+performs energy-conservative interpoation in wavelength $\lambda$,
+parametric interpolation in direction cosine $\mu$ via limb-darkening
+laws, and $C^{1}$-continuous cubic tensor-product interpolation in an
+arbitrary number of atmospheric parameters (effective temperature
+$T_{\mathrm{eff}}$, surface gravity $g$, metallicity [Fe/H],
+etc.). Although the topology of grid points must remain Cartesian,
+their distribution along each separate dimension need not be
+uniform. Attempts to interpolate in regions with missing data (e.g.,
+ragged grid boundaries and/or holes) are handled gracefully via
+exceptions (Python) or returned status codes (Fortran and C).
 
-* Support for grids whose size can exceed available RAM.
+To minimize disk space requirements, MSG grids are stored in HDF5
+container files with a flexible and extensible schema. Tools are
+provided that can create these files from existing grids in other
+formats. Rather than reading an entire grid into memory during program
+start-up (which is slow and may not even be possible, given that some
+grids can be hundreds of gigabytes in size), MSG loads data into a
+cache only when needed; and once the cache occupancy reaches a
+user-specified limit, data are evicted using a least-recently-used
+algorithm.
 
-* Smooth ($C^1$-continuous) interpolation in each dimension (see @Meszaros:2013 for a
-  discussion of why this is important).
-
-* Parallel execution to take advantage of multiple processor cores.
-
-* Stand-alone architecture with interfaces in languages commonly adopted in
-  the Astronomy community.
-
-MSG provides all of these features in a library with Python, Fortran
-2008 and C APIs. Internally, interpolations are handled by
-OpenMP-optimized Fortran code that implements Hermite-cubic
-tensor-product interpolation in an arbitrary number of
-dimensions. Grid data are stored on disk in HDF5-format containers,
-and loaded on demand into a memory cache whose size is
-user-configurable.
-
-In addition to flux spectra, MSG can interpolate angle-dependent
-specific intensities (if the underlying grid contains these data) and
-associated quantities such as moments of the radiation field. It can
-also convolve spectra with filter/instrument response functions, to
-provide corresponding photometric colors. Therefore, it is a
+In addition to intensity and flux spectra, MSG can evaluate associated
+quantities such as moments of the radiation field. It can also
+convolve spectra on-the-fly with filter/instrument response functions,
+to provide corresponding photometric colors. Therefore, it is a
 straightforward and complete solution to synthesizing observables
-(spectra, colors, etc.) for stellar models; MSG is the ideal seasoning
-to add flavor to stellar astrophysics research.
-
-# Figures
-
-Figures can be included like this:
-![Caption for example figure.\label{fig:example}](figure.png)
-and referenced from text using \autoref{fig:example}.
-
-Figure sizes can be customized by adding an optional second parameter:
-![Caption for example figure.](figure.png){ width=20% }
+(spectra, colors, etc.) for stellar models, and serves as an ideal
+seasoning to add flavor to stellar astrophysics research.
 
 # Acknowledgements
 
 We are grateful to the late Keith Smith for laying the original
 foundations for MSG, and likewise acknowledge support from NSF grant
-ACI-1663696 and NASA grant 80NSSC20K0515, and .
+ACI-1663696 and NASA grant 80NSSC20K0515.
 
 # References
