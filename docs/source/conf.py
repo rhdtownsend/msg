@@ -177,7 +177,7 @@ intersphinx_mapping = {
 # Set up autodoc
 autoclass_content = 'class'
 autodoc_member_order = 'bysource'
-autodoc_mock_imports = ['pycmsg', 'numpy']
+autodoc_mock_imports = ['pymsg.pycmsg', 'numpy']
 
 # Set up napoleon
 napoleon_google_docstring = True
