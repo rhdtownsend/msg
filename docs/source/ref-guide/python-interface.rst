@@ -5,9 +5,9 @@ Python Interface
 ****************
 
 The Python interface is provided through the :py:mod:`pymsg` module,
-which defines the :py:class:`pymsg.SpecGrid` and :py:class:`pymsg.PhotGrid`
-classes. It is implemented in `Cython <https://cython.org/>`__ using
-calls to the :ref:`c-interface`.
+which defines the :py:class:`pymsg.SpecGrid` and
+:py:class:`pymsg.PhotGrid` classes. It is implemented by `Cython
+<https://cython.org/>`__-wrapped calls to the :ref:`c-interface`.
 
 API Specification
 =================
