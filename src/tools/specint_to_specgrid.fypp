@@ -1,4 +1,4 @@
-! Module   : make_specgrid
+! Module   : specint_to_specgrid
 ! Purpose  : Create specgrid files from specint files
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-program make_specgrid
+program specint_to_specgrid
 
    ! Uses
 
@@ -57,7 +57,7 @@ program make_specgrid
    
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 2 .OR. n_arg() == 3, 'Syntax: make_specgrid manifest_file_name specgrid_file_name [allow_dupes]')
+   @:ASSERT(n_arg() == 2 .OR. n_arg() == 3, 'Syntax: specint_to_specgrid manifest_file_name specgrid_file_name [allow_dupes]')
 
    call get_arg(1, manifest_file_name)
    call get_arg(2, specgrid_file_name)
@@ -349,4 +349,4 @@ contains
 
    end subroutine build_grid
 
-end program make_specgrid
+end program specint_to_specgrid

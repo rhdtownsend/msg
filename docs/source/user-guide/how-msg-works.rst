@@ -6,11 +6,11 @@ How MSG Works
 
 This chapter expands on the :ref:`Python <python-walkthrough>`,
 :ref:`Fortran <fortran-walkthrough>` and :ref:`C <c-walkthrough>`
-walkthrough chapters, by delving into the :dict:`nitty-gritty` of how
-MSG goes about evaluating stellar spectra and photometric colors.
+walkthrough chapters, by describing in detail how MSG evaluates
+stellar spectra and photometric colors.
 
-Interpolation
-=============
+Evaluating a Spectrum
+=====================
 
 To evaluate a stellar spectrum, MSG interpolates in grids of
 pre-calculated spectroscopic data. Focusing on specific intensity
@@ -27,8 +27,10 @@ set of :math:`N` parameters :math:`x, y, z, \ldots` (which can
 correspond to quantities such as effective temperature :math:`T_{\rm eff}`, gravity :math:`g`,
 etc.).
 
-Direction Cosine
-----------------
+.. _limb-darkening-laws:
+
+Limb-Darkening Laws
+-------------------
 
 The :math:`\mu` dependence of the specific intensity is represented
 using limb-darkening laws. The simplest and most well known is the linear law
@@ -49,20 +51,20 @@ devised by :ads_citet:`claret:2000` is
 .. math::
    :label: eq:claret-law
 
-   \frac{I(\mu; \ldots)}{I(1, \ldots)} = 1 - \sum_{k=1}^{4} a_{k}(\ldots) \left[1 - \mu^{k/2}\right]
+   \frac{I(\mu; \ldots)}{I(1, \ldots)} = 1 - \sum_{k=1}^{4} a_{k}(\ldots) \left[1 - \mu^{k/2}\right],
 
 where there are now four limb-darkening coefficients :math:`a_{k}(\ldots)`.
 
 The advantage of using limb-darkening laws is the ease with which
-other significant quantities can be calculated. For instance, the
-emergent flux
+other useful quantities can be calculated. For instance, the emergent
+flux
 
 .. math::
    :label: eq:flux
 
    F(\ldots) = \int_{0}^{1} I(\mu; \ldots) \, \mu \, \diff\mu
 
-can be evaluated analytically, and more generally any of the
+can be evaluated analytically, as can any of the
 :ads_citet:`eddington:1926` intensity moments
 
 .. math::
@@ -88,18 +90,20 @@ MSG supports the following limb-darkening laws:
   Four-coefficient law introduced by :ads_citet:`claret:2000`
   and given in equation :math:numref:`eq:claret-law` above.
 
-The choice of law is made during grid construction; the coefficients
+The choice of law is made during grid construction (see the
+:ref:`custom-grids` appendix for more details). The coefficients
 appearing in the limb-darkening laws (e.g., :math:`a` and
-:math:`a_{k}`) are determined from least-squares fits to tabulations
-of the specific intensity. In cases where these tabluations include
-flux but not specific intensity data, the `CONST` law is used; the
-angle-independent specific intensity is determined so that it produces
-the correct flux when evaluated using equation :math:numref:`eq:flux`.
+:math:`a_{k}`) are typically determined from least-squares fits to
+tabulations of the specific intensity. In cases where these
+tabulations include flux but not specific intensity data, the `CONST`
+law is used; the angle-independent specific intensity is determined so
+that it produces the correct flux when evaluated using equation
+:math:numref:`eq:flux`.
 
-Wavelength
-----------
+Interpolation in Wavelength
+---------------------------
 
-The :math:`\lambda` dependence of the specific intensity is represeted
+The :math:`\lambda` dependence of the specific intensity is represented
 as a piecewise-constant function on a wavelength grid :math:`\lambda =
 \{\lambda_{1},\lambda_{2},\ldots,\lambda_{M}\}`:
 
@@ -116,12 +120,12 @@ conservatively, according to the expression
 
    I'_{j}(\ldots) = \frac{\int_{\lambda'_{j}}^{\lambda'_{j+1}} I(\lambda; \ldots) \diff{\lambda}}{\lambda'_{j+1} - \lambda'_{j}}.
 
-Beyond its simpicity, the advantage of this approach (as compared to
+Beyond its simplicity, the advantage of this approach (as compared to
 higher-order interpolations) is that the equivalent width of line
 profiles is preserved.
 
-Atmosphere Parameters
----------------------
+Interpolation in Atmosphere Parameters
+--------------------------------------
 
 The dependence of the specific intensity on atmosphere parameters
 (:math:`x, y, z, \ldots`) is represented using cubic tensor product
@@ -141,8 +145,8 @@ sufficient data to interpolate) returns with an error.
 
 .. _photometric-colors:
 
-Photometric Colors
-==================
+Evaluating Photometric Colors
+=============================
 
 To evaluate photometric colors, MSG convolves a stellar spectrum with
 appropriate photometric response functions (each representing the

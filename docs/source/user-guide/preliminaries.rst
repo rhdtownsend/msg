@@ -8,20 +8,20 @@ Why use MSG?
 Synthesizing stellar spectra from first principles is a complicated
 endeavor, requiring a detailed understanding of radiative transfer and
 atomic physics, together with significant computational
-resources. Therefore, in most circumastances its better to use one of
+resources. Therefore, in most circumstances its better to use one of
 the many pre-calculated grids of spectra published in the
 astrophysical literature (see, e.g., :ads_citealp:`lanz:2003`;
 :ads_citealp:`lanz:2007`; :ads_citealp:`kirby:2011`;
 :ads_citealp:`de-laverny:2012`; :ads_citealp:`husser:2013`;
-:ads_citealp:`allende:2018`; :ads_citealp:`ciavassa:2018`;
+:ads_citealp:`allende:2018`; :ads_citealp:`chiavassa:2018`;
 :ads_citealp:`zsargo:2020`). However, even with these grids a
 significant obstacle remains: when atmospheric parameters fall between
 the grid nodes, some kind of interpolation is necessary in order to
 evaluate a spectrum.
 
-MSG is desgined to solve this problem. It's not the first software
+MSG is designed to solve this problem. It's not the first software
 package devoted to stellar spectral interpolation (see, e.g.,
-:ads_citet:`blanco-cuaresma:2014`; :ads_citealt:`allende:2015`);
+:ads_citealp:`blanco-cuaresma:2014`; :ads_citealp:`allende:2015`);
 however, it is intended as a general-purpose tool that's not tied to any
 specific grid, and therefore its design has been guided by the
 following key criteria:

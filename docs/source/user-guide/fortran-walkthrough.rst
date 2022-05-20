@@ -4,7 +4,7 @@
 Fortran Walkthrough
 *******************
 
-This chapter rerpises the steps of the :ref:`python-walkthrough` --- evaluating
+This chapter reprises the steps of the :ref:`python-walkthrough` --- evaluating
 spectra and photometric colors for Sirius A --- but now using the MSG
 Fortran interface.
 
@@ -25,7 +25,8 @@ A few brief comments on the code:
   for double precision real variables.
 
 * The :code:`use fmsg_m` statement provides access to the MSG Fortran
-  interface.
+  interface. Primarily, this interface serves to define the
+  :f:type:`~fmsg_m/specgrid_t` and :f:type:`~fmsg_m/photgrid_t` datatypes.
 
 * Because Fortran doesn't have :py:class:`dict` datatypes, the atmosphere
   parameters must be passed to MSG as a plain array (here, stored in

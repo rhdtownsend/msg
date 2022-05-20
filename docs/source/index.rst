@@ -37,6 +37,7 @@ version 3.
    :caption: Appendices
    :name: appendices
 
-   appendices/tensor-product-interpolation.rst
-   appendices/spectral-grids.rst
+   appendices/grid-files.rst
    appendices/passband-files.rst
+   appendices/grid-tools.rst
+   appendices/tensor-product-interpolation.rst

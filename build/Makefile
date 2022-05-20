@@ -41,7 +41,7 @@ endif
 
 ifeq (${TOOLS},yes)
   EXEC_TARGETS := ${EXEC_TARGETS} synspec_to_specint ferre_to_specint \
-                  specint_to_specint specgrid_to_photgrid make_specgrid \
+                  specint_to_specint specgrid_to_photgrid specint_to_specgrid \
                   make_bb_photgrid make_passband
   ifneq (${FITS_LDFLAGS},)
     EXEC_TARGETS := ${EXEC_TARGETS} goettingen_to_specint
@@ -64,7 +64,7 @@ libmsg_OBJS = msg_m.o axis_m.o vgrid_m.o ncubic_m.o \
               range_m.o range_sm.o comp_range_m.o lin_range_m.o log_range_m.o tab_range_m.o \
               specgrid_m.o speccache_m.o specsource_m.o hdf5_specsource_m.o specint_m.o specint_sm.o limb_specint_m.o proxy_specint_m.o \
               photgrid_m.o photcache_m.o photsource_m.o hdf5_photsource_m.o spec_photsource_m.o mem_photsource_m.o photint_m.o photint_sm.o limb_photint_m.o \
-              passband_m.o cubint_m.o stat_m.o fit_m.o limb_m.o math_m.o
+              passband_m.o cubint_m.o stat_m.o file_m.o fit_m.o limb_m.o math_m.o
 libmsg_LIBS = libforum
 libmsg_DEPS = forum_m
 
@@ -103,9 +103,9 @@ specgrid_to_photgrid_OBJS = specgrid_to_photgrid.o
 specgrid_to_photgrid_LIBS = libforum libmsg
 specgrid_to_photgrid_DEPS = forum_m msg_m
 
-make_specgrid_OBJS = make_specgrid.o
-make_specgrid_LIBS = libforum libmsg
-make_specgrid_DEPS = forum_m msg_m
+specint_to_specgrid_OBJS = specint_to_specgrid.o
+specint_to_specgrid_LIBS = libforum libmsg
+specint_to_specgrid_DEPS = forum_m msg_m
 
 make_photgrid_OBJS = make_photgrid.o
 make_photgrid_LIBS = libforum libmsg

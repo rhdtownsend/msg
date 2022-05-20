@@ -4,7 +4,7 @@
 C Walkthrough
 *******************
 
-This chapter rerpises the steps of the :ref:`python-walkthrough` --- evaluating
+This chapter reprises the steps of the :ref:`python-walkthrough` --- evaluating
 spectra and photometric colors for Sirius A --- but now using the MSG
 C interface.
 
@@ -28,7 +28,7 @@ A few brief comments on the code:
   sure the correct values are stored in each array element.
 
 * Many of the calls to MSG routines (e.g., :c:func:`load_specgrid`,
-  c:func:`interp_specgrid_flux`) contain :code:`NULL` trailing
+  :c:func:`interp_specgrid_flux`) contain :code:`NULL` trailing
   arguments; these correspond to omitted optional arguments.
 
 Compiling
