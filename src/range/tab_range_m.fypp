@@ -24,6 +24,7 @@ module tab_range_m
 
    use forum_m
 
+   use file_m
    use range_m
    use stat_m
 
@@ -212,20 +213,14 @@ contains
       type(hdf5io_t), intent(inout)   :: hdf5io
       integer, intent(out), optional  :: stat
 
-      character(TYPE_LEN) :: type
-      integer             :: revision
+      integer :: revision
 
       ! Read the range
 
-      call hdf5io%read_attr('TYPE', type)
-      if (type /= 'tab_range_t') then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_FILE_TYPE
-            return
-         else
-            @:ABORT('invalid file type')
-         endif
-      endif
+      call check_type(hdf5io, 'tab_range_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       call hdf5io%read_attr('REVISION', revision)
 
@@ -234,10 +229,10 @@ contains
          call read_rev1_(self, hdf5io, stat)
       case default
          if (PRESENT(stat)) then
-            stat = STAT_INVALID_FILE_REVISION
+            stat = STAT_INVALID_GROUP_REVISION
             return
          else
-            @:ABORT('invalid file revision')
+            @:ABORT('invalid group revision')
          end if
       end select
 

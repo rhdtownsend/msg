@@ -43,7 +43,8 @@ module stat_m
       enumerator :: STAT_INVALID_ARGUMENT
       enumerator :: STAT_FILE_NOT_FOUND
       enumerator :: STAT_INVALID_FILE_TYPE
-      enumerator :: STAT_INVALID_FILE_REVISION
+      enumerator :: STAT_INVALID_GROUP_TYPE
+      enumerator :: STAT_INVALID_GROUP_REVISION
    end enum
 
    ! Access specifiers
@@ -63,6 +64,7 @@ module stat_m
    public :: STAT_INVALID_ARGUMENT
    public :: STAT_FILE_NOT_FOUND
    public :: STAT_INVALID_FILE_TYPE
-   public :: STAT_INVALID_FILE_REVISION
+   public :: STAT_INVALID_GROUP_TYPE
+   public :: STAT_INVALID_GROUP_REVISION
 
 end module stat_m

@@ -2,14 +2,13 @@
 MSG
 ###
 
-MSG (`Multidimensional Spectral Grids`) is an open-source/open-data
-project for evaluating radiant properties of stellar atmospheres.  It
-comprises a set of pre-calculated data products and a software
-library, that together provide the capability to synthesize stellar
-spectra and related quantities over a wide range of input parameters.
-It is desgined to offer high performance, accuracy and flexibility,
-while remaining easy to install and use; therefore, `MSG is the ideal
-condiment to add flavor to your science!`
+Multidimensional Spectral Grids (MSG) is an open-source software
+package that synthesizes stellar spectra and photometric colors via
+interpolation in pre-calculated grids. MSG is free software: you can
+redistribute it and/or modify it under the terms of the `GNU General
+Public License <http://www.gnu.org/licenses/gpl-3.0.html>`__ as
+published by the `Free Software Foundation <https://www.fsf.org/>`__,
+version 3.
 
 .. toctree::
    :caption: User Guide

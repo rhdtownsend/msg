@@ -46,7 +46,8 @@ module fmsg_m
    public :: STAT_INVALID_ARGUMENT
    public :: STAT_FILE_NOT_FOUND
    public :: STAT_INVALID_FILE_TYPE
-   public :: STAT_INVALID_FILE_REVISION
+   public :: STAT_INVALID_GROUP_TYPE
+   public :: STAT_INVALID_GROUP_REVISION
    public :: axis_t
    public :: photgrid_t
    public :: specgrid_t

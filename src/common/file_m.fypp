@@ -1,0 +1,86 @@
+! Module  : file_m
+! Purpose : file-oriented support routines
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module file_m
+
+   ! Uses
+
+   use forum_m
+
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: check_type
+
+   ! Procedures
+
+contains
+
+   subroutine check_type(hdf5io, type, stat)
+
+      type(hdf5io_t), intent(inout)  :: hdf5io
+      character(*), intent(in)       :: type
+      integer, intent(out), optional :: stat
+
+      character(TYPE_LEN) :: type_
+      
+      ! Check the type attribute stored in the HDF5 group
+
+      if (hdf5io%attr_exists('TYPE')) then
+
+         call hdf5io%read_attr('TYPE', type_)
+         if (type_ /= type) then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_GROUP_TYPE
+               return
+            else
+               @:ABORT('invalid group type')
+            end if
+         end if
+
+      else
+
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_GROUP_TYPE
+            return
+         else
+            @:ABORT('invalid file type')
+         end if
+
+      end if
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine check_type
+
+end module file_m
+

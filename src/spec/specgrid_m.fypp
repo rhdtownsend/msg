@@ -25,7 +25,7 @@ module specgrid_m
    use forum_m
 
    use axis_m
-   use vgrid_m
+   use file_m
    use passband_m
    use photgrid_m
    use speccache_m
@@ -34,6 +34,7 @@ module specgrid_m
    use hdf5_specsource_m
    use spec_photsource_m
    use stat_m
+   use vgrid_m
 
    use ISO_FORTRAN_ENV
 
@@ -429,20 +430,14 @@ contains
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
-      character(TYPE_LEN) :: type
-      integer             :: revision
+      integer :: revision
 
       ! Read the specgrid
 
-      call hdf5io%read_attr('TYPE', type)
-      if (type /= 'specgrid_t') then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_FILE_TYPE
-            return
-         else
-            @:ABORT('invalid file type')
-         endif
-      endif
+      call check_type(hdf5io, 'specgrid_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       call hdf5io%read_attr('REVISION', revision)
 
@@ -451,10 +446,10 @@ contains
          call read_rev1_(self, hdf5io, stat)
       case default
          if (PRESENT(stat)) then
-            stat = STAT_INVALID_FILE_REVISION
+            stat = STAT_INVALID_GROUP_REVISION
             return
          else
-            @:ABORT('invalid file revision')
+            @:ABORT('invalid group revision')
          end if
       end select
 

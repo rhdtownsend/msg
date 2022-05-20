@@ -24,6 +24,7 @@ module limb_specint_m
 
    use forum_m
 
+   use file_m
    use limb_m
    use math_m
    use passband_m
@@ -544,20 +545,14 @@ contains
       type(hdf5io_t), intent(inout)      :: hdf5io
       integer, intent(out), optional     :: stat
 
-      character(TYPE_LEN) :: type
-      integer             :: revision
+      integer :: revision
 
       ! Read the limb_specint_t
 
-      call hdf5io%read_attr('TYPE', type)
-      if (type /= 'limb_specint_t') then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_FILE_TYPE
-            return
-         else
-            @:ABORT('invalid file type')
-         endif
-      endif
+      call check_type(hdf5io, 'limb_specint_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       call hdf5io%read_attr('REVISION', revision)
 
@@ -566,10 +561,10 @@ contains
          call read_rev1_(self, hdf5io, stat)
       case default
          if (PRESENT(stat)) then
-            stat = STAT_INVALID_FILE_REVISION
+            stat = STAT_INVALID_GROUP_REVISION
             return
          else
-            @:ABORT('invalid file revision')
+            @:ABORT('invalid group revision')
          end if
       end select
 
@@ -588,6 +583,7 @@ contains
          logical                     :: precise
          real(RD), allocatable       :: c(:,:)
          type(hdf5io_t)              :: hdf5io_range
+         character(TYPE_LEN)         :: type
          class(range_t), allocatable :: range
          type(hdf5io_t)              :: hdf5io_limb
          type(limb_t)                :: limb

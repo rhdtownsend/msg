@@ -101,7 +101,8 @@ cdef extern from "cmsg.h":
        STAT_INVALID_ARGUMENT,
        STAT_FILE_NOT_FOUND,
        STAT_INVALID_FILE_TYPE,
-       STAT_INVALID_FILE_REVISION
+       STAT_INVALID_GROUP_TYPE,
+       STAT_INVALID_GROUP_REVISION
 
        
 # Wrappers
@@ -469,9 +470,11 @@ def _handle_error(stat):
     elif stat == STAT_FILE_NOT_FOUND:
         raise FileNotFoundError('file not found')
     elif stat == STAT_INVALID_FILE_TYPE:
-        raise TypeError('invalid file type')
-    elif stat == STAT_INVALID_FILE_REVISION:
-        raise TypeError('invalid file revision')
+        raise IOError('invalid file type')
+    elif stat == STAT_INVALID_GROUP_TYPE:
+        raise IOError('invalid group type')
+    elif stat == STAT_INVALID_GROUP_REVISION:
+        raise IOError('invalid group revision')
     else:
         raise Exception(f'error with unknown stat code: {stat}')
 

@@ -61,7 +61,7 @@ program synspec_to_specint
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() >= 8 .AND. MOD(n_arg(), 2)==0, 'Syntax: synspec_to_specint synspec_file_name n_mu mu_0 lam_min lam_max R law_str specint_file_name [label value] [label value]...')
+   @:ASSERT(n_arg() >= 8 .AND. MOD(n_arg(), 2)==0, 'Syntax: synspec_to_specint synspec_file_name n_mu mu_0 lam_min lam_max R law_str specint_file_name [label value]')
 
    call get_arg(1, synspec_file_name)
    call get_arg(2, n_mu)

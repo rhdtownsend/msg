@@ -52,7 +52,7 @@ program ferre_to_specint
    ! Variables
 
    character(:), allocatable :: ferre_file_name
-   character(:), allocatable :: ferre_filetype
+   character(:), allocatable :: ferre_file_type
    character(:), allocatable :: specint_prefix
 
    integer               :: unit
@@ -65,10 +65,10 @@ program ferre_to_specint
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: ferre_to_specint ferre_file_name ferre_filetype specint_prefix')
+   @:ASSERT(n_arg() == 3, 'Syntax: ferre_to_specint ferre_file_name ferre_file_type specint_prefix')
 
    call get_arg(1, ferre_file_name)
-   call get_arg(2, ferre_filetype)
+   call get_arg(2, ferre_file_type)
    call get_arg(3, specint_prefix)
 
    ! Open the FERRE file
@@ -97,11 +97,11 @@ program ferre_to_specint
       write(specint_file_name, 100) specint_prefix, l, '.h5'
 100   format(A,I8.8,A)
 
-      select case (ferre_filetype)
+      select case (ferre_file_type)
       case ('CAP18')
          call process_data_cap18(fh, H_lambda, vi, specint_file_name)
       case default
-         @:ABORT('invalid ferre_filetype')
+         @:ABORT('invalid ferre_file_type')
       end select
 
       ! Update vi
