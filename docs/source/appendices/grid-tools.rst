@@ -30,52 +30,52 @@ HDF5 `specint` file. This tool accepts the following command-line arguments:
 
 .. program:: synspec_to_specint
 
-.. option:: synspec_file_name
+.. option:: <synspec_file_name>
 
    Name of input file.	      
 
-.. option:: n_mu
+.. option:: <n_mu>
 
    Number of :math:`\mu` values in input file (as specified
    in the :file:`fort.55` SYNSPEC control file).
 
-.. option:: mu_0
+.. option:: <mu_0>
 
    Minimum :math:`\mu` value in input file (as specified in the
    :file:`fort.55` SYNSPEC control file).
 
-.. option:: lam_min
+.. option:: <lam_min>
 
    Minimum wavelength in output file.
 
-.. option:: lam_max
+.. option:: <lam_max>
 
    Maximum wavelength in output file.
 
-.. option:: R
+.. option:: <R>
 
    Resolution :math:`\mathcal{R}=\Delta \lambda/\lambda` in output file.
 
-.. option:: law_str
+.. option:: <law_str>
      
    Limb-darkening law in output file (see the
    :ref:`limb-darkening-laws` section for a list of options).
 
-.. option:: specint_file_name
+.. option:: <specint_file_name>
 
    Name of output file.
 
-.. option:: label (optional)
+.. option:: <label> (optional)
 
    Label of atmosphere parameter (must be accompanied by a
-   corresponding :option:`value` argument).
+   corresponding :option:`<value>` argument).
 
-.. option:: value (optional)
+.. option:: <value> (optional)
 
    Lalue of atmosphere parameter (must be accompanied by a
-   corresponding :option:`label` argument).
+   corresponding :option:`<label>` argument).
 
-Note that :option:`label` and :option:`value` parameters must be
+Note that :option:`<label>` and :option:`<value>` parameters must be
 paired; and that there can be multiple of these pairs.
 
 FERRE
@@ -89,18 +89,18 @@ arguments:
 
 .. program:: ferre_to_specint
 
-.. option:: ferre_file_name
+.. option:: <ferre_file_name>
 
    Name of input file.
 
-.. option:: ferre_file_type
+.. option:: <ferre_file_type>
 
    Type of input file. This determines the mapping between atmospheric
    parameters given in the input file, and atmospheric parameters
    written to the output file. Supported options are: 'CAP18' (for the
    :ads_citealp:`allende:2018` grids).
 
-.. option:: specint_file_name
+.. option:: <specint_file_name>
 
    Name of output file.
 
@@ -114,11 +114,11 @@ file. This tool accepts the following command-line arguments:
 
 .. program:: goettingen_to_specint
 
-.. option:: fits_file_name
+.. option:: <fits_file_name>
 
    Name of input file.
 
-.. option:: wave_type
+.. option:: <wave_type>
 
    Type of wavelength abscissa. This determines the number and
    distribution of points to assume for the input file. Supported
@@ -128,7 +128,7 @@ file. This tool accepts the following command-line arguments:
    1\,\angstrom`) and 'MedRes-R10000' (medium resolution,
    :math:`\mathcal{R}=10\,000`).  grids),
 
-.. option:: specint_file_name
+.. option:: <specint_file_name>
 
    Name of output file.
 
@@ -143,11 +143,11 @@ command-line arguments:
 
 .. program:: specint_to_specint
 
-.. option:: specint_file_name_in
+.. option:: <specint_file_name_in>
 
    Name of input file.
 
-.. option:: specint_file_name
+.. option:: <specint_file_name>
 
    Name of output file.
 
@@ -169,7 +169,7 @@ command-line arguments:
 
 .. option:: just=<L|R> (optional)
 
-   Justify the new wavelength abscissa to the left (L) or right (R).
+   Justify the new wavelength abscissa to the left ('L') or right ('R').
 
    
 .. _creating-spec-grids:
@@ -184,18 +184,18 @@ command-line arguments:
 
 .. program:: specint_to_specgrid
 
-.. option:: manifest_file_name
+.. option:: <manifest_file_name>
 
    Name of input manifest file (see below).
 
-.. option:: specgrid_file_name
+.. option:: <specgrid_file_name>
 
    Name of output file.
 
-.. option:: allow_dupes (optional)
+.. option:: <allow_dupes> (optional)
 
    Flag governing handling of duplicate grid nodes in the manifest
-   file; set to T to allow duplicates.
+   file; set to 'T' to allow duplicates.
 
 The manifest file is a simple text file that lists all the HDF5
 `specint` files that should be included in the grid. 
@@ -206,20 +206,27 @@ The manifest file is a simple text file that lists all the HDF5
 Creating Photometric Grids
 --------------------------
 
-Once a spectroscopic grid is created, corresponding photometric grids
-(with the same topology) can be created using the command
+Once a `specint` file has been created, a corresponding HDF5
+`photgrid` (photometric grid) file can be built using the
+`specgrid_to_photgrid` tool. This tool accepts the following
+command-line arguments:
 
-.. prompt:: bash
+.. program:: specgrid_to_photgrid
 
-   $MSG_DIR/bin/specgrid_to_photgrid <specgrid_file> <passband_file> <photgrid_file>
+.. option:: <specgrid_file_name>
 
-Here, :file:`<specgrid_file>` is the name of the input spectroscopic
-grid file, :file:`<passband_file>` is the name of the passband file to
-convolve with, and :file:`<specgrid_file>` is the name of the output
-photometric grid file.
+   Name of input file.
 
-Note that it's not always necessary to create a photometric grid, as
-MSG can convolve with passbands on the fly (as discussed in the
+.. option:: <passband_file_name>
+
+   Name of passband file.
+
+.. option:: <photgrid_file_name>
+
+   Name of output file.
+
+Note that it's not always necessary to create `photgrid` files, as MSG
+can convolve with passbands on the fly (as discussed in the
 :ref:`photometric-colors` section).
  
       
