@@ -26,6 +26,7 @@ program synspec_to_specint
    use msg_m
 
    use ISO_FORTRAN_ENV
+   use IEEE_ARITHMETIC
 
    ! No implicit typing
 
@@ -179,6 +180,15 @@ contains
 
          read(unit, *, END=100) lam(n_lam), H
          read(unit,*) I(:,n_lam)
+
+         ! Check for NaNs
+
+         if (ANY(IEEE_IS_NAN(I(:,n_lam)))) then
+            n_lam = n_lam - 1
+            cycle read_loop
+         end if
+
+         ! Reverse order
 
          I(:,n_lam) = I(n_mu:1:-1,n_lam)
 
