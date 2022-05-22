@@ -26,7 +26,7 @@ SYNSPEC
 The :command:`synspec_to_specint` tool extracts an single intensity
 spectrum from a :file:`fort.18` data file produced by the SYNSPEC
 spectral synthesis package :ads_citep:`lanz:2003`, and writes it to an
-HDF5 `specint` file. This tool accepts the following command-line arguments:
+`specint` file. This tool accepts the following command-line arguments:
 
 .. program:: synspec_to_specint
 
@@ -54,7 +54,7 @@ HDF5 `specint` file. This tool accepts the following command-line arguments:
 
 .. option:: <R>
 
-   Resolution :math:`\mathcal{R}=\Delta \lambda/\lambda` in output file.
+   Resolution :math:`\mathcal{R}=\lambda/\Delta\lambda` in output file.
 
 .. option:: <law_str>
      
@@ -84,7 +84,7 @@ FERRE
 The :command:`ferre_to_specint` tool extracts a series of flux spectra
 from a data file in FERRE format (see the `FERRE User Guide
 <http://www.as.utexas.edu/~hebe/ferre/ferre.pdf>`__), and writes them
-to HDF5 `specint` files. This tool accepts the following command-line
+to `specint` files. This tool accepts the following command-line
 arguments:
 
 .. program:: ferre_to_specint
@@ -109,7 +109,7 @@ Goettingen
 
 The :command:`goettingen_to_specint` tool extracts a flux spectrum
 from a data file in FITS format (with the schema described by
-:ads_citealp:`husser:2013`), and writes it to an HDF5 `specint`
+:ads_citealp:`husser:2013`), and writes it to a `specint`
 file. This tool accepts the following command-line arguments:
 
 .. program:: goettingen_to_specint
@@ -197,8 +197,8 @@ command-line arguments:
    Flag governing handling of duplicate grid nodes in the manifest
    file; set to 'T' to allow duplicates.
 
-The manifest file is a simple text file that lists all the HDF5
-`specint` files that should be included in the grid. 
+The manifest file is a simple text file that lists all the `specint`
+files that should be included in the grid.
 
 
 .. _creating-phot-grids:
@@ -206,7 +206,7 @@ The manifest file is a simple text file that lists all the HDF5
 Creating Photometric Grids
 --------------------------
 
-Once a `specint` file has been created, a corresponding HDF5
+Given a `specgrid` file, a corresponding HDF5
 `photgrid` (photometric grid) file can be built using the
 `specgrid_to_photgrid` tool. This tool accepts the following
 command-line arguments:
