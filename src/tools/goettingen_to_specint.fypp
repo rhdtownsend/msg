@@ -213,8 +213,12 @@ contains
          call FTGKYd(unit, 'PHXALPHA', alpha, comment, status)
          @:ASSERT(status == 0,'error reading ALPHA keyword')
 
-         head_labels = ['logT ', 'logg ', 'M_H  ', 'alpha']
-         head_values = [LOG10(Teff), logg, M_H, alpha]
+         head_labels = [    &
+              'Teff      ', &
+              'log(g)    ', &
+              '[Fe/H]    ', &
+              '[alpha/Fe]']
+         head_values = [Teff, logg, M_H, alpha]
 
       end if
 

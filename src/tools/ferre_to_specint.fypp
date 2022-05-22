@@ -248,16 +248,15 @@ contains
 
          select case (fh%label(j))
          case ('METALS')
-            labels(j) = 'Fe_H'
+            labels(j) = '[Fe/H]'
          case ('TEFF')
-            labels(j) = 'logT'
-            values(j) = LOG10(values(j))
+            labels(j) = 'Teff'
          case ('LOGG')
-            labels(j) = 'logg'
+            labels(j) = 'log(g)'
          case ('O Mg Si S Ca Ti')
-            labels(j) = 'alpha_Fe'
+            labels(j) = '[alpha/Fe]'
          case ('LOG10VDOP')
-            labels(j) = 'logxi'
+            labels(j) = 'log(xi)'
          case default
             @:ABORT('unexpected label in header')
          end select
