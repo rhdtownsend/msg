@@ -489,15 +489,15 @@ contains
 
          call hdf5io_specsource%final()
 
-         group_names_len = LEN(group_name) + 1 + LEN(specint_group_name_(HUGE(0)))
+         group_names_len = LEN_TRIM(group_name) + 1 + LEN_TRIM(specint_group_name_(HUGE(0)))
 
-         allocate(character(LEN(file_name))::file_names(n))
+         allocate(character(LEN_TRIM(file_name))::file_names(n))
          allocate(character(group_names_len)::group_names(n))
 
          name_loop : do i = 1, n
 
-            file_names(i) = file_name
-            group_names(i) = group_name//'/'//specint_group_name_(i)
+            file_names(i) = TRIM(file_name)
+            group_names(i) = TRIM(group_name)//'/'//TRIM(specint_group_name_(i))
 
          end do name_loop
 
@@ -564,7 +564,7 @@ contains
             if (stat /= STAT_OK) exit write_loop
          end if
 
-         hdf5io_specint = hdf5io_t(hdf5io_specsource, specint_group_name_(i))
+         hdf5io_specint = hdf5io_t(hdf5io_specsource, TRIM(specint_group_name_(i)))
 
          call specint%write(hdf5io_specint, stat)
 

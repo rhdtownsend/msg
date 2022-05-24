@@ -252,6 +252,8 @@ contains
 
       integer                       :: j
       class(specint_t), allocatable :: specint_full
+      real(RD)                      :: lam_min
+      real(RD)                      :: lam_max
          
       ! Fetch the i'th specint
 
@@ -308,10 +310,21 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            call specint_full%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
+            call specint_full%get_lam_min(lam_min)
+            call specint_full%get_lam_min(lam_max)
+
+            if (lam_min < self%lam_min .OR. lam_max > self%lam_max) then
+
+               call specint_full%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               end if
+
+            else
+
+               self%specint_elements(i)%specint = specint_full
+
+            endif
             
          end if
 
@@ -328,9 +341,20 @@ contains
             if (stat /= STAT_OK) return
          end if
 
-         call specint_full%subset(self%lam_min, self%lam_max, specint, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
+         call specint_full%get_lam_min(lam_min)
+         call specint_full%get_lam_min(lam_max)
+
+         if (lam_min < self%lam_min .OR. lam_max > self%lam_max) then
+
+            call specint_full%subset(self%lam_min, self%lam_max, specint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+         else
+
+            specint = specint_full
+
          end if
 
       end if
