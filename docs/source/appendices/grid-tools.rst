@@ -15,7 +15,7 @@ Extracting Spectra
 ------------------
 
 MSG spectroscopic grids are built from a set of HDF5 `specint`
-(spectroscopic intensity) files containing individual spectra at the
+(spectroscopic intensity) files representing individual spectra at the
 grid nodes. These files are themselves extracted from pre-calculated
 grids, with a variety of supported formats as discussed in each of the
 following sections.
@@ -36,17 +36,17 @@ spectral synthesis package :ads_citep:`lanz:2003`, and writes it to an
 
 .. option:: <n_mu>
 
-   Number of :math:`\mu` values in input file (as specified
-   in the :file:`fort.55` SYNSPEC control file).
+   Number of :math:`\mu` values in input file (as specified by the
+   ``nmu`` parameter in the :file:`fort.55` SYNSPEC control file).
 
 .. option:: <mu_0>
 
-   Minimum :math:`\mu` value in input file (as specified in the
-   :file:`fort.55` SYNSPEC control file).
+   Minimum :math:`\mu` value in input file (as specified by the
+   ``ang0`` parameter in the :file:`fort.55` SYNSPEC control file).
 
 .. option:: <lam_min>
 
-   Minimum wavelength in output file.
+   Minimum wavelength of output file.
 
 .. option:: <lam_max>
 
