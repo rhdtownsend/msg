@@ -3,18 +3,18 @@
 SpecGrid Functions
 ~~~~~~~~~~~~~~~~~~
 
-.. c:function:: void load_specgrid(const char *specgrid_file_name, SpecGrid *specgrid, int *stat)
+.. c:function:: void load_specgrid(const char *specgrid_file_name, SpecGrid *specgrid, Stat *stat)
 
-   Load a spectroscopic grid from file.
+   Create a new :c:type:`SpecGrid` by loading data from a `specgrid` file.
 
-   :param specgrid_file_name: Name of the file.
-   :param specgrid: Returned grid object.
+   :param specgrid_file_name: Name of the `specgrid` file.
+   :param specgrid: Returned grid.
    :param stat: Returned status code.
 
 		
 .. c:function:: void unload_specgrid(SpecGrid specgrid)
 
-   Unload a spectroscopic grid, freeing up memory.
+   Unload a :c:type:`specgrid` grid, freeing up memory.
 
    :param specgrid: Grid to unload.
 
@@ -102,7 +102,7 @@ SpecGrid Functions
    :param axis_label: Buffer to store axis label buffer (at least 17 bytes, to accomodate label plus null terminator).
 
 
-.. c:function:: void set_specgrid_cache_lam_min(SpecGrid specgrid, double cache_lam_min, int *stat)
+.. c:function:: void set_specgrid_cache_lam_min(SpecGrid specgrid, double cache_lam_min, Stat *stat)
 
    Set the minimum wavelength of the grid cache.
 
@@ -111,7 +111,7 @@ SpecGrid Functions
    :param stat: Returned status code (set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void set_specgrid_cache_lam_max(SpecGrid specgrid, double cache_lam_max, int *stat)
+.. c:function:: void set_specgrid_cache_lam_max(SpecGrid specgrid, double cache_lam_max, Stat *stat)
 
    Set the maximum wavelength of the grid cache.
 
@@ -120,7 +120,7 @@ SpecGrid Functions
    :param stat: Returned status code (set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void set_specgrid_cache_limit(SpecGrid specgrid, int cache_limit, int *stat)
+.. c:function:: void set_specgrid_cache_limit(SpecGrid specgrid, int cache_limit, Stat *stat)
 
    Set the maximum number of notes to hold in the grid cache. Set to 0 to
    disable caching.
@@ -130,7 +130,7 @@ SpecGrid Functions
    :param stat: Returned status code (set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], int *stat, bool vderiv[])
+.. c:function:: void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], Stat *stat, bool vderiv[])
 
    Interpolate the spectroscopic intensity.
 
@@ -144,7 +144,7 @@ SpecGrid Functions
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_E_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], int *stat, bool deriv_vec[])
+.. c:function:: void interp_specgrid_E_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], Stat *stat, bool deriv_vec[])
 
    Interpolate the spectroscopic intensity E-moment.
 
@@ -158,7 +158,7 @@ SpecGrid Functions
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_D_moment(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], int *stat, bool deriv_vec[])
+.. c:function:: void interp_specgrid_D_moment(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], Stat *stat, bool deriv_vec[])
 
    Interpolate the spectroscopic intensity D-moment.
 
@@ -172,7 +172,7 @@ SpecGrid Functions
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_flux(SpecGrid specgrid, double x_vec[], int n, double lam[], double F[], int *stat, bool deriv_vec[])
+.. c:function:: void interp_specgrid_flux(SpecGrid specgrid, double x_vec[], int n, double lam[], double F[], Stat *stat, bool deriv_vec[])
 		
    Interpolate the spectroscopic flux.
 

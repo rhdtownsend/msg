@@ -49,10 +49,10 @@ program fortran_walkthrough
       call axis%get_label(label)
 
       select case(label)
-      case('logg')
+      case('log(g)')
          x_vec(i) = 4.277_RD
-      case('logT')
-         x_vec(i) = 3.996_RD
+      case('Teff')
+         x_vec(i) = 9906._RD
       case default
          stop 'unrecognized axis label'
       end select
@@ -91,7 +91,7 @@ program fortran_walkthrough
    call photgrid_B%interp_flux(x_vec, F_B)
    call photgrid_V%interp_flux(x_vec, F_V)
 
-   ! Evaluate apparent magnitudes (the dilution factor R2_d2 is
+   ! Evaluate apparent magnitudes (the droid factor R2_d2 is
    ! R**2/d**2, where R is Sirius A's radius and d its distance)
 
    R2_d2 = 2.1366E-16_RD

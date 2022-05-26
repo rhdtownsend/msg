@@ -22,16 +22,11 @@ components:
 
 On Linux and MacOS platforms, these components are bundled together in
 the MESA Software Development Kit (SDK), which can be downloaded from
-the `MESA SDK <mesa-sdk_>`__ homepage. Using this SDK is strongly
+the `MESA SDK <mesa-sdk_>`__ homepage. Using this SDK is `strongly`
 recommended.
 
 Building MSG
 ============
-
-.. _install-download:
-
-Download
---------
 
 Download the `MSG source code <github-tarball_>`__, and unpack it
 from the command line using the :command:`tar` utility:
@@ -50,12 +45,7 @@ newly created source directory; this can be achieved e.g. using the
 
    export MSG_DIR=$(realpath msg-|release|)
 
-.. _install-compile:
-
-Compile
--------
-
-Compile MSG using the :command:`make` utility:
+Finally, compile MSG using the :command:`make` utility:
 
 .. prompt:: bash
 

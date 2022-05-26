@@ -20,11 +20,10 @@ the grid nodes, some kind of interpolation is necessary in order to
 evaluate a spectrum.
 
 MSG is designed to solve this problem. It's not the first software
-package devoted to stellar spectral interpolation (see, e.g.,
+package that offers stellar spectral interpolation (see, e.g.,
 :ads_citealp:`blanco-cuaresma:2014`; :ads_citealp:`allende:2015`);
-however, it is intended as a general-purpose tool that's not tied to any
-specific grid, and therefore its design has been guided by the
-following key criteria:
+however, with spectral interpolation as its `sole` focus, it offers a
+combination of features unmatched by other packages:
 
 * scalability --- MSG handles grids that are much larger
   (on disk) than available computer memory.
@@ -32,9 +31,9 @@ following key criteria:
 * extensibility --- MSG handles grids with an arbitrary
   number of dimensions.
 
-* portability --- MSG is platform-agnostic and provide
-  APIs for the programming languages commonly used in Astronomy
-  (Fortran, C, Python).
+* portability --- MSG is platform-agnostic and provide APIs for the
+  programming languages (Fortran, C, Python) most commonly used in
+  Astronomy.
 
 * performance --- MSG provides smooth and accurate
   interpolates with minimal computational cost.
@@ -42,7 +41,7 @@ following key criteria:
 * robustness --- MSG gracefully handles missing data
   caused by holes and/or ragged boundaries in the grid.
 
-Together, these criteria mean that MSG is flexible and powerful while
+Together, these features mean that MSG is flexible and powerful while
 remaining straightforward to use: it's the perfect condiment to add
 :wiki:`flavor <Monosodium_glutamate>` to your science!.
 

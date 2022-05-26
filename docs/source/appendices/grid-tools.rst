@@ -14,7 +14,7 @@ built, they can be found in the :file:`$MSG_DIR/bin` directory.
 Extracting Spectra
 ------------------
 
-MSG spectroscopic grids are built from a set of HDF5 `specint`
+MSG's HDF5 `specgrid` files are built from a set of `specint`
 (spectroscopic intensity) files representing individual spectra at the
 grid nodes. These files are themselves extracted from pre-calculated
 grids, with a variety of supported formats as discussed in each of the
@@ -100,9 +100,12 @@ arguments:
    written to the output file. Supported options are: 'CAP18' (for the
    :ads_citealp:`allende:2018` grids).
 
-.. option:: <specint_file_name>
+.. option:: <specint_prefix>
 
-   Name of output file.
+   Prefix of output files; `specint` files will have the name
+   :file:`<specint_prefix>-NNNNNNNN.h5`, wehre :file:`NNNNNNNN` is the
+   zero-padded index of the spectrum (starting at 1).
+
 
 Goettingen
 ~~~~~~~~~~
@@ -136,8 +139,8 @@ file. This tool accepts the following command-line arguments:
 Modifying Spectra
 -----------------
 
-The spectra contained in HDF5 `specint` files (as produced by one of
-the tools above) can be subsetted and/or rebinned using the
+The spectra contained in `specint` files (as produced by one of the
+tools above) can be subsetted and/or rebinned using the
 :command:`specint_to_specint` tool. This tool accepts the following
 command-line arguments:
 
@@ -172,15 +175,14 @@ command-line arguments:
    Justify the new wavelength abscissa to the left ('L') or right ('R').
 
    
-.. _creating-spec-grids:
+.. _creating-specgrids:
 
 Creating Spectroscopic Grids
 ----------------------------
 
-With a set of spectrum files extracted, an HDF5 `specgrid`
-(spectroscopic grid) file can be created using the
-:command:`specint_to_specgrid` tool. This tool accepts the following
-command-line arguments:
+With a set of `specint` files extracted, a `specgrid` file can be
+created using the :command:`specint_to_specgrid` tool. This tool
+accepts the following command-line arguments:
 
 .. program:: specint_to_specgrid
 
@@ -201,14 +203,13 @@ The manifest file is a simple text file that lists all the `specint`
 files that should be included in the grid.
 
 
-.. _creating-phot-grids:
+.. _creating-photgrids:
 
 Creating Photometric Grids
 --------------------------
 
-Given a `specgrid` file, a corresponding HDF5
-`photgrid` (photometric grid) file can be built using the
-`specgrid_to_photgrid` tool. This tool accepts the following
+Given a `specgrid` file, a corresponding `photgrid` file can be built
+using the `specgrid_to_photgrid` tool. This tool accepts the following
 command-line arguments:
 
 .. program:: specgrid_to_photgrid

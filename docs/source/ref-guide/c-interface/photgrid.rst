@@ -5,20 +5,19 @@ PhotGrid Functions
 
 .. c:function:: void load_photgrid(const char *photgrid_file_name, PhotGrid *photgrid, int *stat)
 
-   Load a photometric grid from file.
+   Create a new :c:type:`PhotGrid` by loading data from a `photgrid` file.
 
-   :param photgrid_file_name: Name of the file.
+   :param photgrid_file_name: Name of the `photgrid` file.
    :param photgrid: Returned grid object.
    :param stat: Returned status code.
 
 		
 .. c:function:: void load_photgrid_from_specgrid(const char *specgrid_file_name, const char *passband_file_name, PhotGrid *photgrid, int *stat)
 
-   Load a spectroscopic grid from file, together with a
-   passband, and combine dynamically to create a photometric
-   grid.
+   Create a new :c:type:`PhotGrid` by loading data from a `specgrid` file,
+   and convolving on-the-fly with a passband response function also loaded from file.
 
-   :param specgrid_file_name: Name of the grid file.
+   :param specgrid_file_name: Name of the `specgrid` file.
    :param passband_file_name: Name of the passband file.
    :param photgrid: Returned grid object.
    :param stat: Returned status code.

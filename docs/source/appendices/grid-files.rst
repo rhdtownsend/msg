@@ -18,7 +18,7 @@ OSTAR2002 Grids
 ===============
 
 The OSTAR2002 grids are based on the line-blanketed O-star model
-atmospheres published in :ads_citep:`lanz:2003`. They contain
+atmospheres published in :ads_citet:`lanz:2003`. They contain
 intensity spectra calculated by the MSG Team using SYNSPEC, and are as
 follows:
 
@@ -31,21 +31,21 @@ follows:
      - :math:`\lambda` Range
      - Atmospheric Parameters
    * - :grids:`sg-OSTAR2002-low.h5 <OSTAR2002/sg-OSTAR2002-low.h5>` (50MB)
-     - :math:`R=1\,000`
-     - :math:`[8\,80, 50\,000]\,\angstrom`
+     - :math:`\mathcal{R}=1000`
+     - :math:`[880\,\angstrom, 5.0\,\um]`
      - ``Teff``, ``log(g)``, ``Z/Zo``
    * - :grids:`sg-OSTAR2002-medium.h5 <OSTAR2002/sg-OSTAR2002-medium.h5>` (447MB)
-     - :math:`R=10\,000`
-     - :math:`[8\,80, 50\,000]\,\angstrom`
+     - :math:`\mathcal{R}=10000`
+     - :math:`[880\,\angstrom, 5.0\,\um]`
      - ``Teff``, ``log(g)``, ``Z/Zo``
    * - :grids:`sg-OSTAR2002-high.h5 <OSTAR2002/sg-OSTAR2002-high.h5>` (4.2GB)
-     - :math:`R=100\,000`
-     - :math:`[8\,80, 50\,000]\,\angstrom`
+     - :math:`\mathcal{R}=100000`
+     - :math:`[880\,\angstrom, 5.0\,\um]`
      - ``Teff``, ``log(g)``, ``Z/Zo``
 
 The definitions and ranges of the atmospheric parameters are as follows:
 
-* effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [27\,500, 55\,000]`
+* effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [27500, 55000]`
 * surface gravity ``log(g)`` :math:`= \log_{10} (g/\cm\,\second^{-2}) \in [3.0, 4.75]`
 * metallicity ``Z/Zo`` :math:`= Z/Z_{\odot} \in [0.02, 2]`
 
@@ -56,7 +56,7 @@ BSTAR2006 Grids
 ===============
 
 The BSTAR2006 grids are based on the line-blanketed B-star model
-atmospheres published in :ads_citep:`lanz:2007`. They contain
+atmospheres published in :ads_citet:`lanz:2007`. They contain
 intensity spectra calculated by the MSG Team using SYNSPEC, and are as
 follows:
 
@@ -69,22 +69,22 @@ follows:
      - :math:`\lambda` Range
      - Atmospheric Parameters
    * - :grids:`sg-BSTAR2006-low.h5 <BSTAR2006/sg-BSTAR2006-low.h5>` (77MB)
-     - :math:`R=1\,000`
-     - :math:`[8\,80, 50\,000]\,\angstrom`
+     - :math:`\mathcal{R}=1000`
+     - :math:`[880\,\angstrom, 5\,\um]`
      - ``Teff``, ``log(g)``, ``Z/Zo``, ``xi``
    * - :grids:`sg-BSTAR2006-medium.h5 <BSTAR2006/sg-BSTAR2006-medium.h5>` (693MB)
-     - :math:`R=10\,000`
-     - :math:`[8\,80, 50\,000]\,\angstrom`
+     - :math:`\mathcal{R}=10000`
+     - :math:`[880\,\angstrom, 5\,\um]`
      - ``Teff``, ``log(g)``, ``Z/Zo``, ``xi``
    * - :grids:`sg-BSTAR2006-high.h5 <BSTAR2006/sg-BSTAR2006-high.h5>` (6.5GB)
-     - :math:`R=100\,000`
-     - :math:`[8\,80, 50\,000]\,\angstrom`
+     - :math:`\mathcal{R}=100000`
+     - :math:`[880\,\angstrom, 5\,\um]`
      - ``Teff``, ``log(g)``, ``Z/Zo``, ``xi``
 
 The definitions and ranges of the atmospheric parameters are as
 follows:
 
-* effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [15\,000, 30\,000]`
+* effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [15000, 30000]`
 * surface gravity ``log(g)`` :math:`= \log_{10} (g/\cm\,\second^{-2}) \in [1.753.00, 4.75]`
 * metallicity ``Z/Zo`` :math:`= Z/Z_{\odot} \in [0, 2]`
 
@@ -107,26 +107,26 @@ are as follows:
      - Resolution
      - :math:`\lambda` Range
      - Atmospheric Parameters
-   * - :grids:`sg-CAP18-large.h5 <CAP18/sg-CAP18-large.h5>` (72GB)
-     - :math:`R=10\,000`
-     - :math:`[1\,300, 65\,000]\,\angstrom`
+   * - :grids:`sg-CAP18-large.h5 <CAP18/sg-CAP18-large.h5>` (73GB)
+     - :math:`\mathcal{R}=10000`
+     - :math:`[1300\,\angstrom, 6.5\,\um]`
      - ``Teff``, ``log(g)``, ``[Fe/H]``, ``[alpha/Fe]``, ``log(xi)``
-   * - :grids:`sg-CAP18-coarse.h5 <CAP18/sg-CAP18-coarse.h5>` (340MB)
-     - :math:`\mathcal{R}=10\,000`
-     - :math:`[1\,300, 65\,000]\,\angstrom`
+   * - :grids:`sg-CAP18-coarse.h5 <CAP18/sg-CAP18-coarse.h5>` (339MB)
+     - :math:`\mathcal{R}=10000`
+     - :math:`[1300\,\angstrom, 6.5\,\um]`
      - ``Teff``, ``log(g)``, ``[Fe/H]``
    * - :grids:`sg-CAP18-high.h5 <CAP18/sg-CAP18-high.h5>` (2.9GB)
-     - :math:`\mathcal{R}=100\,000`
-     - :math:`[1\,300, 65\,000]\,\angstrom`
+     - :math:`\mathcal{R}=100000`
+     - :math:`[1300\,\angstrom, 6.5\,\um]`
      - ``Teff``, ``log(g)``, ``[Fe/H]``
    * - :grids:`sg-CAP18-ultra.h5 <CAP18/sg-CAP18-ultra.h5>` (5.2GB)
-     - :math:`\mathcal{R}=300\,000`
-     - :math:`[1\,300, 65\,000]\,\angstrom`
+     - :math:`\mathcal{R}=300000`
+     - :math:`[1300\,\angstrom, 6.5\,\um]`
      - ``Teff``, ``log(g)``, ``[Fe/H]``
 
 The definitions and ranges of the atmospheric parameters are as follows:
 
-* effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [27\,500, 55\,000]`
+* effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [27500, 55000]`
 * surface gravity ``log(g)`` :math:`= \log_{10} (g/\cm\,\second^{-2}) \in [3.0, 4.5]`
 * metallicity ``[Fe/H]`` :math:`= \log_{10}[ (\mathrm{Fe}/\mathrm{H}) / (\mathrm{Fe}/\mathrm{H})_{\odot} ] \in [-5.0, 0.5]`
 * alpha enhancement ``[alpha/Fe]`` :math:`= \log_{10}[ (\alpha/\mathrm{Fe}) / (\alpha/\mathrm{Fe})_{\odot} ] \in [-5.0, 0.5]`
@@ -153,15 +153,15 @@ flux spectra only (no intensity data), and are as follows:
      - Atmospheric Parameters
    * - :grids:`sg-Goettingen-HiRes.h5 <Goettingen/sg-Goettingen-HiRes.h5>` (116GB)
      - variable
-     - :math:`[500, 55\,000]\,\angstrom`
+     - :math:`[500\,\angstrom, 5.5\um]`
      - ``Teff``, ``log(g)``, ``[Fe/H]``, ``[alpha/Fe]``
-   * - :grids:`sg-Goettingen-MedRes-A.h5 <Goettingen/sg-Goettingen-MedRes-A.h5>` (5.9GB)
+   * - :grids:`sg-Goettingen-MedRes-A.h5 <Goettingen/sg-Goettingen-MedRes-A.h5>` (6.0GB)
      - :math:`\Delta \lambda = 1\,\angstrom` |br| (:math:`10\times` oversampled)
-     - :math:`[3\,000, 10\,000]\,\angstrom`
+     - :math:`[3000\,\angstrom, 1.0\um]`
      - ``Teff``, ``log(g)``, ``[Fe/H]``, ``[alpha/Fe]``
-   * - :grids:`sg-Goettingen-MedRes-R.h5 <Goettingen/sg-Goettingen-MedRes-R.h5>` (17GB)
-     - :math:`R=10,000` |br| (:math:`10\times` oversampled)
-     - :math:`[3\,000, 25\,000]\,\angstrom`
+   * - :grids:`sg-Goettingen-MedRes-R.h5 <Goettingen/sg-Goettingen-MedRes-R.h5>` (18GB)
+     - :math:`\mathcal{R}=10,000` |br| (:math:`10\times` oversampled)
+     - :math:`[3000\,\angstrom, 2.5\,\um]`
      - ``Teff``, ``log(g)``, ``[Fe/H]``, ``[alpha/Fe]``
 
 The definitions and ranges of the atmospheric parameters are as follows:

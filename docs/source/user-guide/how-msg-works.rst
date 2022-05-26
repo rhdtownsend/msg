@@ -6,16 +6,15 @@ How MSG Works
 
 This chapter expands on the :ref:`Python <python-walkthrough>`,
 :ref:`Fortran <fortran-walkthrough>` and :ref:`C <c-walkthrough>`
-walkthrough chapters, by describing in detail how MSG evaluates
-stellar spectra and photometric colors.
+walkthroughs, by describing in detail how MSG evaluates stellar
+spectra and photometric colors.
 
 Evaluating a Spectrum
 =====================
 
-To evaluate a stellar spectrum, MSG interpolates in grids of
-pre-calculated spectroscopic data. Focusing on specific intensity
-evaluation, this involves constructing a (preferably continuous and
-smooth) function
+To evaluate a spectrum, MSG interpolates in a grid of pre-calculated
+spectroscopic data. Focusing on specific intensity evaluation, this
+involves constructing a (preferably continuous and smooth) function
 
 .. math::
 
@@ -91,7 +90,7 @@ MSG supports the following limb-darkening laws:
   and given in equation :math:numref:`eq:claret-law` above.
 
 The choice of law is made during grid construction (see the
-:ref:`custom-grids` appendix for more details). The coefficients
+:ref:`grid-tools` appendix for more details). The coefficients
 appearing in the limb-darkening laws (e.g., :math:`a` and
 :math:`a_{k}`) are typically determined from least-squares fits to
 tabulations of the specific intensity. In cases where these
@@ -104,7 +103,7 @@ Interpolation in Wavelength
 ---------------------------
 
 The :math:`\lambda` dependence of the specific intensity is represented
-as a piecewise-constant function on a wavelength grid :math:`\lambda =
+as a piecewise-constant function on a wavelength abscissa :math:`\lambda =
 \{\lambda_{1},\lambda_{2},\ldots,\lambda_{M}\}`:
 
 .. math::
@@ -112,13 +111,13 @@ as a piecewise-constant function on a wavelength grid :math:`\lambda =
    I(\lambda; \ldots) = I_{i}(\ldots) \qquad \lambda_{i} \leq \lambda < \lambda_{i+1}.
 
 (as before, the ellipses represent the omitted parameters). Mapping
-intensity data onto a new grid :math:`\lambda' =
+intensity data onto a new abscissa :math:`\lambda' =
 \{\lambda'_{1},\lambda'_{2},\ldots\,\lambda'_{M'}\}` is performed
 conservatively, according to the expression
 
 .. math::
 
-   I'_{j}(\ldots) = \frac{\int_{\lambda'_{j}}^{\lambda'_{j+1}} I(\lambda; \ldots) \diff{\lambda}}{\lambda'_{j+1} - \lambda'_{j}}.
+   I'_{i}(\ldots) = \frac{\int_{\lambda'_{i}}^{\lambda'_{i+1}} I(\lambda; \ldots) \diff{\lambda}}{\lambda'_{i+1} - \lambda'_{i}}.
 
 Beyond its simplicity, the advantage of this approach (as compared to
 higher-order interpolations) is that the equivalent width of line
@@ -129,19 +128,48 @@ Interpolation in Atmosphere Parameters
 
 The dependence of the specific intensity on atmosphere parameters
 (:math:`x, y, z, \ldots`) is represented using cubic tensor product
-interpolation. A (relatively) gentle introduction to tensor product
-interpolation is provided in an :ref:`Appendix
+interpolation. The appendices provide a :ref:`(relatively) gentle
+introduction to tensor product interpolation
 <tensor-product-interpolation>`. The short version is that intensity,
 flux, etc. are represented as piecewise-cubic functions `in each
-atmospheric parameter`, constructed to be continuous and smooth at the
+atmosphere parameter`, constructed to be continuous and smooth at the
 join between each piecewise region.
 
 Grids often contain holes and/or ragged boundaries (the latter
 typically arising near the edge of the region of the :math:`T_{\rm
-eff}-\log g` plane corresponding to super-Eddington luminosity). When
-an interpolation tries to access such missing data, MSG either
-switches to a lower-order scheme, or (if there simply aren't
-sufficient data to interpolate) returns with an error.
+eff}-\log_{10}(g)` plane corresponding to super-Eddington
+luminosity). When an interpolation tries to access such missing data,
+MSG either switches to a lower-order scheme, or (if there simply
+aren't sufficient data to interpolate) returns with an error (see the
+:ref:`exception-handling` section below).
+
+Disk Storage
+============
+
+MSG spectroscopic and photometric grid data are stored on disk in
+`HDF5 <https://www.hdfgroup.org/solutions/hdf5/>`__ files with a
+bespoke schema. Throughout this documentation, these files are known
+as `specgrid` and `photgrid` files, respectively.
+
+.. _memory-management:
+
+Memory Management
+=================
+
+It's often the case that the data stored in `specgrid` and `photgrid`
+files greatly exceed the available computer memory (RAM). MSG handles
+such situations by loading data into memory only when they are
+required. These data are retained in memory until a user-defined
+capacity limit reached (see the :py:attr:`SpecGrid.cache_limit
+<pymsg.SpecGrid.cache_limit>` and :py:attr:`PhotGrid.cache_limit
+<pymsg.PhotGrid.cache_limit>` properties in the
+:ref:`python-interface`, and corresponding functionality in the
+:ref:`Fortran <fortran-interface>` and :ref:`C <c-interface>`
+interfaces); then, data are evicted from the memory cache via a
+:wiki:`least recently used
+<Cache_replacement_policies#Least_recently_used_(LRU)>`
+algorithm.
+
 
 .. _photometric-colors:
 
@@ -149,43 +177,43 @@ Evaluating Photometric Colors
 =============================
 
 To evaluate photometric colors, MSG convolves a stellar spectrum with
-appropriate photometric response functions (each representing the
+appropriate passband response functions (each representing the
 combined sensitivity of the optical pathway, filter and the
 detector). For a given response function, this convolution can be
 performed before or after the interpolations discussed above:
 
 * the 'before' option performs the convolution as a pre-processing
-  step to create a photometric grid from a spectroscopic grid (see the
-  :ref:`creating-grids` section). This is computationally more
-  efficient, but requires that the photometric grid be stored on disk
-  separately from the spectroscopic grid.
+  step to create a `photgrid` file from a `specgrid` file (as
+  discussed in the :ref:`creating-photgrids` section). This is
+  computationally more efficient, but requires a separate `photgrid`
+  file for each passband.
 
 * the 'after' option performs the convolution on-the-fly after each
   spectrum is interpolated. This is computationally less efficient,
-  but incurs no storage requirements beyond the spectroscopic grid.
+  but incurs no storage requirements beyond the `specgrid` file.
 
-Disk Storage
-============
+.. _exception-handling:
+  
+Exception Handling
+==================
 
-MSG spectroscopic and photometric grids are stored on disk in `HDF5
-<https://www.hdfgroup.org/solutions/hdf5/>`__ files with a bespoke
-schema. Because HDF5 is a portable binary format with support for
-on-the-fly compression/decompression, it is ideally suited for the
-typically large storage requirements of spectral grids.
+When a call to an MSG routine encounters a problem, the course of
+action depends on which langauge is being used:
 
-.. _memory-management:
+* In Python, an exception is thrown with a (reasonably) relevant
+  subtype and error message.
 
-Memory Management
-=================
+* In Fortran, if the optional integer :f:var:`stat` argument is passed
+  during the call, then on return :f:var:`stat` is set to an value
+  indicating the nature of the problem (see the :ref:`fortran-params`
+  chapter for the list of possible values). If the :f:var:`stat`
+  argument is not passed, then execution halts with an error message
+  printed to standard out.
 
-It's often the case that the data stored in grid files greatly exceed
-the available memory (RAM) capacity of one's computer. MSG handles
-such situations by loading data into memory only when they are
-required. These data are retained in memory until a user-defined
-capacity limit reached (see the :py:attr:`SpecGrid.cache_limit` and
-:py:attr:`PhotGrid.cache_limit` attributes in the
-:ref:`python-interface`, and corresponding functionality in the
-:ref:`Fortran <fortran-interface>` and :ref:`C <c-interface>`
-interfaces); then, data are evicted from the memory cache via a
-:wiki:`least-recently-used` algorithm.
+* In C, if the integer pointer :c:var:`stat` is passed non-null during
+  the call, then on return the target of :c:var:`stat` is set to a
+  value indicating the nature of the problem (see the :ref:`c-enums`
+  chapter for the list of possible values). If the :c:var:`stat`
+  argument is passed null, then execution halts with an error message
+  printed to standard out.
 

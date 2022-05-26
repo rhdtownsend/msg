@@ -43,11 +43,11 @@ int main(int argc, char *argv[]) {
 
     get_specgrid_axis_label(specgrid, i, label);
 
-    if (strcmp(label, "logg") == 0) {
+    if (strcmp(label, "log(g)") == 0) {
       x_vec[i] = 4.277;
     }
-    else if (strcmp(label, "logT") == 0) {
-      x_vec[i] = 3.996;
+    else if (strcmp(label, "Teff") == 0) {
+      x_vec[i] = 9906.;
     }
     else {
       printf("invalid label\n");
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   interp_photgrid_flux(photgrid_B, x_vec, &F_B, NULL, NULL);
   interp_photgrid_flux(photgrid_V, x_vec, &F_V, NULL, NULL);
 
-  // Evaluate apparent magnitudes (the dilution factor R2_d2 is
+  // Evaluate apparent magnitudes (the droid factor R2_d2 is
   // R^2/d^2, where R is Sirius A's radius and d its distance)
 
   R2_d2 = 2.1366E-16;
