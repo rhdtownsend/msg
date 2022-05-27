@@ -1,0 +1,288 @@
+! Module  : utest_photgrid_m
+! Purpose : Testing routines for utest_photgrid
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module utest_photgrid_m
+
+   ! Uses
+   
+   use forum_m
+   use fmsg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: test
+
+
+contains
+
+   subroutine test ()
+
+      print *, '  exceptions'
+
+      call test_stat_()
+
+      print *, '  attributes'
+
+      call test_attr_()
+
+   end subroutine test
+
+   !****
+
+   subroutine test_stat_()
+
+      integer, parameter :: n = 6
+
+      type(photgrid_t) :: pg
+      integer          :: stat(n)
+      integer          :: stat_chk(n)
+      real(RD)         :: x_vec(2,n)
+      real(RD)         :: mu(n)
+
+      call load_photgrid_from_specgrid('sg-demo.h5', 'pb-generic-Johnson.V-Vega.h5', pg)
+      
+      call stat_arrange_()
+      call stat_act_()
+      call stat_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine stat_arrange_()
+
+         integer  :: j
+
+         ! Set up default (good) params
+
+         do j = 1, n
+            call set_xvec(pg, ['Teff  ', 'log(g)'], [10000._RD, 4.00_RD], x_vec(:,j))
+            mu(j) = 0.5_RD
+         end do
+
+         ! Now modify to create exceptional cases
+
+         !
+
+         stat(1) = STAT_OK
+
+         !
+
+         call set_xvec(pg, ['Teff  ', 'log(g)'], [2000._RD, 4.00_RD], x_vec(:,2))
+         stat(2) = STAT_OUT_OF_BOUNDS_AXIS_LO
+
+         !
+
+         call set_xvec(pg, ['Teff  ', 'log(g)'], [10000._RD, 6.00_RD], x_vec(:,3))
+         stat(3) = STAT_OUT_OF_BOUNDS_AXIS_HI
+
+         !
+
+         mu(4) = -0.1_RD
+         stat(4) = STAT_OUT_OF_BOUNDS_MU_LO
+
+         !
+
+         mu(5) = 1.1_RD
+         stat(5) = STAT_OUT_OF_BOUNDS_MU_HI
+
+         !
+
+         call set_xvec(pg, ['Teff  ', 'log(g)'], [40000._RD, 2.00_RD], x_vec(:,6))
+         stat(6) = STAT_UNAVAILABLE_DATA
+
+         ! Finish
+
+         return
+
+      end subroutine stat_arrange_
+
+      !****
+
+      subroutine stat_act_()
+
+         integer  :: j
+         real(RD) :: I
+
+         do j = 1, n
+
+            call pg%interp_intensity(x_vec(:,j), mu(j), I, stat_chk(j))
+
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine stat_act_
+
+      !****
+
+      subroutine stat_assert_()
+
+         integer :: j
+
+         do j = 1, n
+            if (stat_chk(j) /= stat(j)) then
+               print *,'    FAIL:', stat(j), stat_chk(j)
+            else
+               print *,'    PASS:', stat(j)
+            end if
+         end do
+               
+         ! Finish
+
+         return
+
+      end subroutine stat_assert_
+
+   end subroutine test_stat_
+
+   !****
+
+   subroutine test_attr_()
+
+      type(photgrid_t) :: pg
+
+      integer  :: rank
+      integer  :: rank_chk
+      integer  :: cache_limit
+      integer  :: cache_limit_chk
+ 
+      call load_photgrid_from_specgrid('sg-demo.h5', 'pb-generic-Johnson.V-Vega.h5', pg)
+      
+      call attr_arrange_()
+      call attr_act_()
+      call attr_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine attr_arrange_()
+
+         ! Set up the demo grid attributes
+
+         rank = 2
+
+         cache_limit = 476
+
+         ! Finish
+
+      end subroutine attr_arrange_
+
+      !****
+
+      subroutine attr_act_()
+
+         ! Get attributes
+
+         call pg%get_rank(rank_chk)
+
+         call pg%get_cache_limit(cache_limit_chk)
+
+         ! Finish
+
+         return
+
+      end subroutine attr_act_
+
+      !****
+
+      subroutine attr_assert_()
+
+         if (rank_chk == rank) then
+            print *,'    PASS: ', 'rank'
+         else
+            print *,'    FAIL: ', 'rank', rank, rank_chk
+         end if
+            
+         if (cache_limit == cache_limit_chk) then
+            print *,'    PASS: ', 'cache_limit'
+         else
+            print *,'    FAIL: ', 'cache_limit', cache_limit, cache_limit_chk
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine attr_assert_
+
+   end subroutine test_attr_
+
+   !****
+
+   subroutine set_xvec(pg, labels, values, x_vec)
+
+      type(photgrid_t), intent(inout) :: pg
+      character(*), intent(in)        :: labels(:)
+      real(RD), intent(in)            :: values(:)
+      real(RD), intent(out)           :: x_vec(:)
+
+      type(axis_t)         :: ax
+      character(LABEL_LEN) :: axis_label
+      integer              :: n
+      integer              :: j
+      integer              :: k
+
+      @:CHECK_BOUNDS(SIZE(values), SIZE(labels))
+      @:CHECK_BOUNDS(SIZE(x_vec), SIZE(labels))
+
+      ! Set x_vec based on a set of labels and values
+
+      call pg%get_rank(n)
+
+      @:CHECK_BOUNDS(n, SIZE(labels))
+
+      do j = 1, n
+
+         call pg%get_axis(j, ax)
+         call ax%get_label(axis_label)
+
+         do k = 1, n
+            if (labels(k) == axis_label) then
+               x_vec(j) = values(k)
+               exit
+            end if
+         end do
+
+         @:ASSERT(k <= n, 'no matching axis label found')
+
+      end do
+
+      ! Finish
+
+      return
+
+   end subroutine set_xvec
+
+end module utest_photgrid_m

@@ -1,0 +1,528 @@
+! Module  : utest_ncubic_m
+! Purpose : Test implementations for utest_ncubic
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module utest_ncubic_m
+
+  ! Uses
+
+  use forum_m
+
+  use ncubic_m
+
+  use ISO_FORTRAN_ENV
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Access specifiers
+
+  private
+
+  public :: test
+
+contains
+ 
+   subroutine test()
+
+      call test_derivs_()
+      call test_interp_()
+
+   end subroutine test
+
+   !****
+
+   subroutine test_derivs_()
+
+      integer, parameter :: n_x = 8
+      integer, parameter :: n_y = 10
+      integer, parameter :: n_z = 12
+      
+      real(RD) :: x(n_x)
+      real(RD) :: y(n_y)
+      real(RD) :: z(n_z)
+      real(RD) :: f_in(n_x,n_y,n_z)
+      real(RD) :: f(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: df_dx(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: df_dy(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: df_dz(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: d2f_dxdy(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: d2f_dxdz(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: d2f_dydz(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: d3f_dxdydz(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: f_chk(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: df_dx_chk(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: df_dy_chk(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: df_dz_chk(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: d2f_dxdy_chk(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: d2f_dxdz_chk(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: d2f_dydz_chk(2,2,2,n_x-3,n_y-3,n_z-3)
+      real(RD) :: d3f_dxdydz_chk(2,2,2,n_x-3,n_y-3,n_z-3)
+
+      print *,'  derivatives kernel'
+
+      call derivs_arrange_()
+      call derivs_act_()
+      call derivs_assert_()
+
+   contains      
+      
+      subroutine derivs_arrange_()
+
+         integer :: i
+         integer :: j
+         integer :: k
+
+         ! Set up the datacube
+
+         x = [(i-1,i=1,n_x)]
+         y = [(j-1,j=1,n_y)]**2
+         z = [(k-1,k=1,n_z)]**3
+
+         do i = 1, n_x
+            do j = 1, n_y
+               do k = 1, n_z
+                  call eval_triquadratic_(x(i), y(j), z(k), f_in(i,j,k))
+               end do
+            end do
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine derivs_arrange_
+
+      !****
+  
+      subroutine derivs_act_()
+
+         logical  :: mask(4**3)
+         integer  :: i
+         integer  :: j
+         integer  :: k
+         real(RD) :: vdelta(3,3)
+         real(RD) :: K_D(4**3,4**3)
+         real(RD) :: D(4**3)
+         integer  :: l
+         integer  :: bits_l
+         integer  :: bits_r
+         integer  :: i_
+         integer  :: j_
+         integer  :: k_
+
+         ! Loop through the inner (non-edge) cells of the datacube,
+         ! evaluating the function & derivatives
+
+         mask = .TRUE.
+
+         do i = 2, n_x-2
+            do j = 2, n_y-2
+               do k = 2, n_z-2
+
+                  ! Evaluate the kernel
+
+                  vdelta(:,1) = x(i:i+2) - x(i-1:i+1)
+                  vdelta(:,2) = y(j:j+2) - y(j-1:j+1)
+                  vdelta(:,3) = z(k:k+2) - z(k-1:k+1)
+
+                  call eval_deriv_kernel(3, mask, vdelta, K_D)
+
+                  ! Evaluate function and derivatives
+
+                  D = MATMUL(K_D, PACK(f_in(i-1:i+2,j-1:j+2,k-1:k+2), .TRUE.))
+
+                  ! Unpack derivatives
+
+                  do l = 1, 4**3
+
+                     ! Extract bitfields from l. Right bits (bits_l)
+                     ! encode position, left bits (bits_r) encode derivatives
+         
+                     bits_l = IBITS(l-1, 3, 3)
+                     bits_r = IBITS(l-1, 0, 3)
+
+                     if (BTEST(bits_r, 0)) then
+                        i_ = 2
+                     else
+                        i_ = 1
+                     end if
+
+                     if (BTEST(bits_r, 1)) then
+                        j_ = 2
+                     else
+                        j_ = 1
+                     end if
+
+                     if (BTEST(bits_r, 2)) then
+                        k_ = 2
+                     else
+                        k_ = 1
+                     end if
+                     
+                     select case(bits_l)
+                     case(0)
+                        f(i_,j_,k_,i-1,j-1,k-1) = D(l)
+                     case(1)
+                        df_dx(i_,j_,k_,i-1,j-1,k-1) = D(l)
+                     case(2)
+                        df_dy(i_,j_,k_,i-1,j-1,k-1) = D(l)
+                     case(3)
+                        d2f_dxdy(i_,j_,k_,i-1,j-1,k-1) = D(l)
+                     case(4)
+                        df_dz(i_,j_,k_,i-1,j-1,k-1) = D(l)
+                     case(5)
+                        d2f_dxdz(i_,j_,k_,i-1,j-1,k-1) = D(l)
+                     case(6)
+                        d2f_dydz(i_,j_,k_,i-1,j-1,k-1) = D(l)
+                     case(7)
+                        d3f_dxdydz(i_,j_,k_,i-1,j-1,k-1) = D(l)
+                     case default
+                        @:ABORT('invalid bits_l')
+                     end select
+
+                  end do
+
+                  ! Set up check values
+
+                  do i_ = 1, 2
+                     do j_ = 1, 2
+                        do k_ = 1, 2
+                           call eval_triquadratic_(x(i+i_-1), y(j+j_-1), z(k+k_-1), &
+                                f_chk(i_,j_,k_,i-1,j-1,k-1),        &
+                                df_dx_chk(i_,j_,k_,i-1,j-1,k-1),    &
+                                df_dy_chk(i_,j_,k_,i-1,j-1,k-1),    &
+                                df_dz_chk(i_,j_,k_,i-1,j-1,k-1),    &
+                                d2f_dxdy_chk(i_,j_,k_,i-1,j-1,k-1), &
+                                d2f_dxdz_chk(i_,j_,k_,i-1,j-1,k-1), &
+                                d2f_dydz_chk(i_,j_,k_,i-1,j-1,k-1), &
+                                d3f_dxdydz_chk(i_,j_,k_,i-1,j-1,k-1))
+                        end do
+                     end do
+                  end do
+
+               end do
+            end do
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine derivs_act_
+
+      !****
+      
+      subroutine derivs_assert_()
+
+         real(RD), parameter :: tol = 1.5E-13_RD
+
+         real(RD), allocatable :: f_err(:,:,:,:,:,:)
+         real(RD), allocatable :: df_dx_err(:,:,:,:,:,:)
+         real(RD), allocatable :: df_dy_err(:,:,:,:,:,:)
+         real(RD), allocatable :: df_dz_err(:,:,:,:,:,:)
+         real(RD), allocatable :: d2f_dxdy_err(:,:,:,:,:,:)
+         real(RD), allocatable :: d2f_dxdz_err(:,:,:,:,:,:)
+         real(RD), allocatable :: d2f_dydz_err(:,:,:,:,:,:)
+         real(RD), allocatable :: d3f_dxdydz_err(:,:,:,:,:,:)
+
+         f_err = (f - f_chk)/f_chk
+
+         df_dx_err = (df_dx - df_dx_chk)/df_dx_chk
+         df_dy_err = (df_dy - df_dy_chk)/df_dy_chk
+         df_dz_err = (df_dz - df_dz_chk)/df_dz_chk
+
+         d2f_dxdy_err = (d2f_dxdy - d2f_dxdy_chk)/d2f_dxdy_chk
+         d2f_dxdz_err = (d2f_dxdz - d2f_dxdz_chk)/d2f_dxdz_chk
+         d2f_dydz_err = (d2f_dydz - d2f_dydz_chk)/d2f_dydz_chk
+
+         d3f_dxdydz_err = (d3f_dxdydz - d3f_dxdydz_chk)/d3f_dxdydz_chk
+         
+         if (ALL(ABS(f_err) < tol)) then
+            print *,'    PASS f'
+         else
+            print *,'    FAIL f:', MAXVAL(ABS(f_err)), '>', tol
+         end if
+
+         if (ALL(ABS(df_dx_err) < tol)) then
+            print *,'    PASS df_dx'
+         else
+            print *,'    FAIL df_dx:', MAXVAL(ABS(df_dx_err)), '>', tol
+         end if
+
+         if (ALL(ABS(df_dy_err) < tol)) then
+            print *,'    PASS df_dy'
+         else
+            print *,'    FAIL df_dy:', MAXVAL(ABS(df_dy_err)), '>', tol
+         end if
+
+         if (ALL(ABS(df_dz_err) < tol)) then
+            print *,'    PASS df_dz'
+         else
+            print *,'    FAIL df_dz:', MAXVAL(ABS(df_dz_err)), '>', tol
+         end if
+
+         if (ALL(ABS(d2f_dxdy_err) < tol)) then
+            print *,'    PASS d2f_dxdy'
+         else
+            print *,'    FAIL d2f_dxdy:', MAXVAL(ABS(d2f_dxdy_err)), '>', tol
+         end if
+
+         if (ALL(ABS(d2f_dxdz_err) < tol)) then
+            print *,'    PASS d2f_dxdz'
+         else
+            print *,'    FAIL d2f_dxdz:', MAXVAL(ABS(d2f_dxdz_err)), '>', tol
+         end if
+
+         if (ALL(ABS(d2f_dydz_err) < tol)) then
+            print *,'    PASS d2f_dydz'
+         else
+            print *,'    FAIL d2f_dydz:', MAXVAL(ABS(d2f_dydz_err)), '>', tol
+         end if
+
+         if (ALL(ABS(d3f_dxdydz_err) < tol)) then
+            print *,'    PASS d3f_dxdydz'
+         else
+            print *,'    FAIL d3f_dzdydz:', MAXVAL(ABS(d3f_dxdydz_err)), '>', tol
+         end if
+
+      end subroutine derivs_assert_
+
+   end subroutine test_derivs_
+
+   !****
+
+   subroutine test_interp_()
+
+      integer, parameter :: n_x = 8
+      integer, parameter :: n_y = 10
+      integer, parameter :: n_z = 12
+      integer, parameter :: n_over = 3
+      integer, parameter :: n_x_int = n_over*(n_x-3) + 1
+      integer, parameter :: n_y_int = n_over*(n_y-3) + 1
+      integer, parameter :: n_z_int = n_over*(n_z-3) + 1
+      
+      real(RD) :: x(n_x)
+      real(RD) :: y(n_y)
+      real(RD) :: z(n_z)
+      real(RD) :: x_int(n_x_int)
+      real(RD) :: y_int(n_y_int)
+      real(RD) :: z_int(n_z_int)
+      real(RD) :: f_in(n_x,n_y,n_z)
+      real(RD) :: f(n_x_int,n_y_int,n_z_int)
+      real(RD) :: f_chk(n_x_int,n_y_int,n_z_int)
+
+      print *,'  interpolation kernel'
+
+      call interp_arrange_()
+      call interp_act_()
+      call interp_assert_()
+
+   contains      
+      
+      subroutine interp_arrange_()
+
+         integer :: i
+         integer :: j
+         integer :: k
+         integer :: m
+
+         ! Set up the datacube
+
+         x = [(i-1,i=1,n_x)]
+         y = [(j-1,j=1,n_y)]**2
+         z = [(k-1,k=1,n_z)]**3
+
+         do i = 1, n_x
+            do j = 1, n_y
+               do k = 1, n_z
+                  call eval_triquadratic_(x(i), y(j), z(k), f_in(i,j,k))
+               end do
+            end do
+         end do
+
+         ! Set up the interpolation abscissae
+
+         do i = 1, n_x-3
+            do m = 1, n_over
+               x_int(n_over*(i-1)+m) = x(i+1) + (x(i+2) - x(i+1))*(m-1)/n_over
+            end do
+         end do
+
+         do j = 1, n_y-3
+            do m = 1, n_over
+               y_int(n_over*(j-1)+m) = y(j+1) + (y(j+2) - y(j+1))*(m-1)/n_over
+            end do
+         end do
+
+         do k = 1, n_z-3
+            do m = 1, n_over
+               z_int(n_over*(k-1)+m) = z(k+1) + (z(k+2) - z(k+1))*(m-1)/n_over
+            end do
+         end do
+         
+         x_int(n_x_int) = x(n_x-1)
+         y_int(n_y_int) = y(n_y-1)
+         z_int(n_z_int) = z(n_z-1)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_arrange_
+
+      !****
+  
+      subroutine interp_act_()
+
+         logical  :: mask(4**3)
+         integer  :: i
+         integer  :: j
+         integer  :: k
+         integer  :: i_
+         integer  :: j_
+         integer  :: k_
+         real(RD) :: vdelta(3,3)
+         real(RD) :: vu(3)
+         real(RD) :: K_D(4**3,4**3)
+         real(RD) :: K_I(4**3)
+         real(RD) :: D(4**3)
+
+         ! Evaluate Loop through the inner (non-edge) cells of the datacube,
+         ! evaluating the function & derivatives
+
+         mask = .TRUE.
+
+         do i_ = 1, n_x_int
+
+            call locate(x, x_int(i_), i)
+            if (x_int(i_) == x(i) .AND. i == n_x-1) i = i - 1
+
+            do j_ = 1, n_y_int
+
+               call locate(y, y_int(j_), j)
+               if (y_int(j_) == y(j) .AND. j == n_y-1) j = j - 1
+
+               do k_ = 1, n_z_int
+
+                  call locate(z, z_int(k_), k)
+                  if (z_int(k_) == z(k) .AND. k == n_z-1) k = k - 1
+
+                  ! Evaluate the kernels
+
+                  vu(1) = (x_int(i_) - x(i))/(x(i+1) - x(i))
+                  vu(2) = (y_int(j_) - y(j))/(y(j+1) - y(j))
+                  vu(3) = (z_int(k_) - z(k))/(z(k+1) - z(k))
+
+                  vdelta(:,1) = x(i:i+2) - x(i-1:i+1)
+                  vdelta(:,2) = y(j:j+2) - y(j-1:j+1)
+                  vdelta(:,3) = z(k:k+2) - z(k-1:k+1)
+
+                  call eval_deriv_kernel(3, mask, vdelta, K_D)
+                  call eval_interp_kernel(3, vu, vdelta, K_I)
+
+                  ! Evaluate the interpolated function
+
+                  D = MATMUL(K_D, PACK(f_in(i-1:i+2,j-1:j+2,k-1:k+2), .TRUE.))
+
+                  f(i_,j_,k_) = DOT_PRODUCT(K_I, D)
+
+                  ! Evaluate the check function
+
+                  call eval_triquadratic_(x_int(i_), y_int(j_), z_int(k_), f_chk(i_,j_,k_))
+
+               end do
+            end do
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine interp_act_
+
+      !****
+      
+      subroutine interp_assert_()
+
+         real(RD), parameter :: tol = 1.5E-13_RD
+
+         real(RD), allocatable :: f_err(:,:,:)
+
+         f_err = (f - f_chk)/f_chk
+
+         if (ALL(ABS(f_err) < tol)) then
+            print *,'    PASS f'
+         else
+            print *,'    FAIL f:', MAXVAL(ABS(f_err)), '>', tol
+         end if
+
+      end subroutine interp_assert_
+
+   end subroutine test_interp_
+
+   ! !****
+
+   subroutine eval_triquadratic_(x, y, z, f, df_dx, df_dy, df_dz, d2f_dxdy, d2f_dxdz, d2f_dydz, d3f_dxdydz)
+
+      real(RD), intent(in)            :: x
+      real(RD), intent(in)            :: y
+      real(RD), intent(in)            :: z
+      real(RD), intent(out)           :: f
+      real(RD), intent(out), optional :: df_dx
+      real(RD), intent(out), optional :: df_dy
+      real(RD), intent(out), optional :: df_dz
+      real(RD), intent(out), optional :: d2f_dxdy
+      real(RD), intent(out), optional :: d2f_dxdz
+      real(RD), intent(out), optional :: d2f_dydz
+      real(RD), intent(out), optional :: d3f_dxdydz
+
+      f = x**2*z + x*y**2*z + 2*y*z**2 + 4
+
+      if (PRESENT(df_dx)) then
+         df_dx = 2*x*z + y**2*z
+      endif
+
+      if (PRESENT(df_dy)) then
+         df_dy = 2*x*y*z + 2*z**2
+      endif
+
+      if (PRESENT(df_dz)) then
+         df_dz = x**2 + x*y**2 + 4*y*z
+      endif
+
+      if (PRESENT(d2f_dxdy)) then
+         d2f_dxdy = 2*y*z
+      endif
+
+      if (PRESENT(d2f_dxdz)) then
+         d2f_dxdz = 2*x + y**2
+      endif
+
+      if (PRESENT(d2f_dydz)) then
+         d2f_dydz = 2*x*y + 4*z
+      endif
+
+      if (PRESENT(d3f_dxdydz)) then
+         d3f_dxdydz = 2*y
+      endif
+
+   end subroutine eval_triquadratic_
+
+end module utest_ncubic_m

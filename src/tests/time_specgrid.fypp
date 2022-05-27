@@ -25,7 +25,7 @@ program time_specgrid
 
    allocate(F(n))
 
-   call load_specgrid('sg.h5', specgrid)
+   call load_specgrid('sg-demo.h5', specgrid)
 
    call specgrid%get_rank(rank)
 

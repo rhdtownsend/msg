@@ -36,7 +36,9 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq (${TESTS},yes)
-  EXEC_TARGETS := ${EXEC_TARGETS} test_specgrid time_specgrid test_photgrid test_spec_photgrid
+  UTEST_TARGETS := utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid time_specgrid
+#  TEST_TARGETS := test_specgrid test_photgrid test_spec_photgrid
+  EXEC_TARGETS := ${EXEC_TARGETS} ${UTEST_TARGETS} ${TEST_TARGETS}
 endif
 
 ifeq (${TOOLS},yes)
@@ -118,6 +120,30 @@ make_bb_photgrid_DEPS = forum_m msg_m
 make_passband_OBJS = make_passband.o
 make_passband_LIBS = libforum libmsg
 make_passband_DEPS = forum_m msg_m
+
+utest_fit_OBJS = utest_fit.o utest_fit_m.o
+utest_fit_LIBS = libforum libmsg
+utest_fit_DEPS = forum_m fit_m
+
+utest_math_OBJS = utest_math.o utest_math_m.o
+utest_math_LIBS = libforum libmsg
+utest_math_DEPS = forum_m math_m
+
+utest_cubint_OBJS = utest_cubint.o utest_cubint_m.o
+utest_cubint_LIBS = libforum libmsg
+utest_cubint_DEPS = forum_m cubint_m
+
+utest_ncubic_OBJS = utest_ncubic.o utest_ncubic_m.o
+utest_ncubic_LIBS = libforum libmsg
+utest_ncubic_DEPS = forum_m ncubic_m
+
+utest_specgrid_OBJS = utest_specgrid.o utest_specgrid_m.o
+utest_specgrid_LIBS = libforum libmsg libfmsg
+utest_specgrid_DEPS = forum_m fmsg_m
+
+utest_photgrid_OBJS = utest_photgrid.o utest_photgrid_m.o
+utest_photgrid_LIBS = libforum libmsg libfmsg
+utest_photgrid_DEPS = forum_m fmsg_m
 
 test_specgrid_OBJS = test_specgrid.o
 test_specgrid_LIBS = libforum libmsg libfmsg

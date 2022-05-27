@@ -1,10 +1,28 @@
+! Module  : utest_cubint_m
+! Purpose : Testing routines for utest_cubint_m
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #:include 'forum.inc'
 
-module test_cubint_m
+module utest_cubint_m
 
   ! Uses
 
   use forum_m
+
   use cubint_m
 
   use ISO_FORTRAN_ENV
@@ -164,4 +182,4 @@ contains
 
    end subroutine eval_cubic_
 
-end module test_cubint_m
+end module utest_cubint_m
