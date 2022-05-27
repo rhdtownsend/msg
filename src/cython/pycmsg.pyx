@@ -27,67 +27,11 @@ from libcpp cimport bool
 
 cdef extern from "cmsg.h":
 
-    # specgrid
-
-    void load_specgrid(const char *specgrid_filename, void **specgrid, int *stat)
-    void unload_specgrid(void *specgrid)
-
-    void get_specgrid_rank(void *specgrid, int *rank)
-    void get_specgrid_lam_min(void *specgrid, double *lam_min)
-    void get_specgrid_lam_max(void *specgrid, double *lam_max)
-    void get_specgrid_cache_count(void *specgrid, int *cache_count)
-    void get_specgrid_cache_limit(void *specgrid, int *cache_limit)
-    void get_specgrid_cache_lam_min(void *specgrid, double *cache_lam_min)
-    void get_specgrid_cache_lam_max(void *specgrid, double *cache_lam_max)
-    void get_specgrid_axis_x_min(void *specgrid, int i, double *axis_x_min)
-    void get_specgrid_axis_x_max(void *specgrid, int i, double *axis_x_max)
-    void get_specgrid_axis_label(void *specgrid, int i, char *axis_label)
-
-    void set_specgrid_cache_limit(void *specgrid, int cache_limit, int *stat)
-    void set_specgrid_cache_lam_min(void *specgrid, double cache_lam_min, int *stat)
-    void set_specgrid_cache_lam_max(void *specgrid, double cache_lam_max, int *stat)
-
-    void interp_specgrid_intensity(void *specgrid, double x_vec[], double mu,
-                                   int n, double lam[], double I[], int *stat,
-                                   bool deriv_vec[])
-    void interp_specgrid_E_moment(void *specgrid, double x_vec[], int k, int n,
-                                  double lam[], double E[], int *stat, bool deriv_vec[])
-    void interp_specgrid_D_moment(void *specgrid, double x_vec[], int l, int n,
-                                  double lam[], double D[], int *stat, bool deriv_vec[])
-    void interp_specgrid_flux(void *specgrid, double x_vec[], int n, double lam[],
-                              double F[], int *stat, bool deriv_vec[])
-    
-    # photgrid
-
-    void load_photgrid(const char *photgrid_file_name, void **photgrid, int *stat)
-    void load_photgrid_from_specgrid(const char *specgrid_file_name,
-                                     const char *passband_filename, void **photgrid, int *stat)
-    void unload_photgrid(void *photgrid)
-
-    void get_photgrid_rank(void *photgrid, int *rank)
-    void get_photgrid_cache_count(void *photgrid, int *cache_count)
-    void get_photgrid_cache_limit(void *photgrid, int *cache_limit)
-    void get_photgrid_axis_x_min(void *photgrid, int i, double *axis_x_min)
-    void get_photgrid_axis_x_max(void *photgrid, int i, double *axis_x_max)
-    void get_photgrid_axis_label(void *photgrid, int i, char *axis_label)
-
-    void set_photgrid_cache_limit(void *photgrid, int cache_limit, int *stat)
-
-    void interp_photgrid_intensity(void *photgrid, double x_vec[], double mu,
-                                   double *I, int *stat, bool deriv_vec[])
-    void interp_photgrid_E_moment(void *photgrid, double x_vec[], int k, double *E,
-                                  int *stat, bool deriv_vec[])
-    void interp_photgrid_D_moment(void *photgrid, double x_vec[], int l, double *D,
-                                  int *stat, bool deriv_vec[])
-    void interp_photgrid_flux(void *photgrid, double x_vec[], double *F, int *stat,
-                              bool deriv_vec[])
-
-
     # shared
 
     cdef void get_msg_version(char *version);
 
-    cdef enum:
+    ctypedef enum Stat:
        STAT_OK,
        STAT_OUT_OF_BOUNDS_RANGE_LO,
        STAT_OUT_OF_BOUNDS_RANGE_HI,
@@ -104,7 +48,62 @@ cdef extern from "cmsg.h":
        STAT_INVALID_GROUP_TYPE,
        STAT_INVALID_GROUP_REVISION
 
-       
+    # specgrid
+
+    void load_specgrid(const char *specgrid_filename, void **specgrid, Stat *stat)
+    void unload_specgrid(void *specgrid)
+
+    void get_specgrid_rank(void *specgrid, int *rank)
+    void get_specgrid_lam_min(void *specgrid, double *lam_min)
+    void get_specgrid_lam_max(void *specgrid, double *lam_max)
+    void get_specgrid_cache_count(void *specgrid, int *cache_count)
+    void get_specgrid_cache_limit(void *specgrid, int *cache_limit)
+    void get_specgrid_cache_lam_min(void *specgrid, double *cache_lam_min)
+    void get_specgrid_cache_lam_max(void *specgrid, double *cache_lam_max)
+    void get_specgrid_axis_x_min(void *specgrid, int i, double *axis_x_min)
+    void get_specgrid_axis_x_max(void *specgrid, int i, double *axis_x_max)
+    void get_specgrid_axis_label(void *specgrid, int i, char *axis_label)
+
+    void set_specgrid_cache_limit(void *specgrid, int cache_limit, Stat *stat)
+    void set_specgrid_cache_lam_min(void *specgrid, double cache_lam_min, Stat *stat)
+    void set_specgrid_cache_lam_max(void *specgrid, double cache_lam_max, Stat *stat)
+
+    void interp_specgrid_intensity(void *specgrid, double x_vec[], double mu,
+                                   int n, double lam[], double I[], Stat *stat,
+                                   bool deriv_vec[])
+    void interp_specgrid_E_moment(void *specgrid, double x_vec[], int k, int n,
+                                  double lam[], double E[], Stat *stat, bool deriv_vec[])
+    void interp_specgrid_D_moment(void *specgrid, double x_vec[], int l, int n,
+                                  double lam[], double D[], Stat *stat, bool deriv_vec[])
+    void interp_specgrid_flux(void *specgrid, double x_vec[], int n, double lam[],
+                              double F[], Stat *stat, bool deriv_vec[])
+    
+    # photgrid
+
+    void load_photgrid(const char *photgrid_file_name, void **photgrid, Stat *stat)
+    void load_photgrid_from_specgrid(const char *specgrid_file_name,
+                                     const char *passband_filename, void **photgrid, Stat *stat)
+    void unload_photgrid(void *photgrid)
+
+    void get_photgrid_rank(void *photgrid, int *rank)
+    void get_photgrid_cache_count(void *photgrid, int *cache_count)
+    void get_photgrid_cache_limit(void *photgrid, int *cache_limit)
+    void get_photgrid_axis_x_min(void *photgrid, int i, double *axis_x_min)
+    void get_photgrid_axis_x_max(void *photgrid, int i, double *axis_x_max)
+    void get_photgrid_axis_label(void *photgrid, int i, char *axis_label)
+
+    void set_photgrid_cache_limit(void *photgrid, int cache_limit, Stat *stat)
+
+    void interp_photgrid_intensity(void *photgrid, double x_vec[], double mu,
+                                   double *I, Stat *stat, bool deriv_vec[])
+    void interp_photgrid_E_moment(void *photgrid, double x_vec[], int k, double *E,
+                                  Stat *stat, bool deriv_vec[])
+    void interp_photgrid_D_moment(void *photgrid, double x_vec[], int l, double *D,
+                                  Stat *stat, bool deriv_vec[])
+    void interp_photgrid_flux(void *photgrid, double x_vec[], double *F, Stat *stat,
+                              bool deriv_vec[])
+
+
 # Wrappers
 
 # specgrid
@@ -112,7 +111,7 @@ cdef extern from "cmsg.h":
 def _load_specgrid(str specgrid_filename):
 
     cdef void *specgrid
-    cdef int stat
+    cdef Stat stat
 
     load_specgrid(specgrid_filename.encode('ascii'), &specgrid, &stat)
     _handle_error(stat)
@@ -217,7 +216,7 @@ def _get_specgrid_axis_label(uintptr_t specgrid, int i):
 
 def _set_specgrid_cache_limit(uintptr_t specgrid, int cache_limit):
 
-    cdef int stat
+    cdef Stat stat
 
     set_specgrid_cache_limit(<void *>specgrid, cache_limit, &stat)
     _handle_error(stat)
@@ -225,7 +224,7 @@ def _set_specgrid_cache_limit(uintptr_t specgrid, int cache_limit):
     
 def _set_specgrid_cache_lam_min(uintptr_t specgrid, double cache_lam_min):
 
-    cdef int stat
+    cdef Stat stat
 
     set_specgrid_cache_lam_min(<void *>specgrid, cache_lam_min, &stat)
     _handle_error(stat)
@@ -233,7 +232,7 @@ def _set_specgrid_cache_lam_min(uintptr_t specgrid, double cache_lam_min):
 
 def _set_specgrid_cache_lam_max(uintptr_t specgrid, double cache_lam_max):
 
-    cdef int stat
+    cdef Stat stat
 
     set_specgrid_cache_lam_max(<void *>specgrid, cache_lam_max, &stat)
     _handle_error(stat)
@@ -242,7 +241,7 @@ def _set_specgrid_cache_lam_max(uintptr_t specgrid, double cache_lam_max):
 def _interp_specgrid_intensity(uintptr_t specgrid, double[:] x_vec, double mu, double[:] lam, bool[:] deriv_vec):
 
     cdef double[:] I
-    cdef int stat
+    cdef Stat stat
 
     n = len(lam)
 
@@ -257,7 +256,7 @@ def _interp_specgrid_intensity(uintptr_t specgrid, double[:] x_vec, double mu, d
 def _interp_specgrid_E_moment(uintptr_t specgrid, double[:] x_vec, int k, double[:] lam, bool[:] deriv_vec):
 
     cdef double[:] E
-    cdef int stat
+    cdef Stat stat
 
     n = len(lam)
 
@@ -272,7 +271,7 @@ def _interp_specgrid_E_moment(uintptr_t specgrid, double[:] x_vec, int k, double
 def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double[:] lam, bool[:] deriv_vec):
 
     cdef double[:] D
-    cdef int stat
+    cdef Stat stat
 
     n = len(lam)
 
@@ -287,7 +286,7 @@ def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double
 def _interp_specgrid_flux(uintptr_t specgrid, double[:] x_vec, double[:] lam, bool[:] deriv_vec):
 
     cdef double[:] F
-    cdef int stat
+    cdef Stat stat
 
     n = len(lam)
 
@@ -304,7 +303,7 @@ def _interp_specgrid_flux(uintptr_t specgrid, double[:] x_vec, double[:] lam, bo
 def _load_photgrid(str photgrid_filename):
 
     cdef void *photgrid
-    cdef int stat
+    cdef Stat stat
 
     load_photgrid(photgrid_filename.encode('ascii'), &photgrid, &stat)
     _handle_error(stat)
@@ -315,7 +314,7 @@ def _load_photgrid(str photgrid_filename):
 def _load_photgrid_from_specgrid(str specgrid_filename, str passband_filename):
 
     cdef void *photgrid
-    cdef int stat
+    cdef Stat stat
 
     load_photgrid_from_specgrid(specgrid_filename.encode('ascii'), passband_filename.encode('ascii'), &photgrid, &stat)
     _handle_error(stat)
@@ -384,7 +383,7 @@ def _get_photgrid_axis_label(uintptr_t photgrid, int i):
 
 def _set_photgrid_cache_limit(uintptr_t photgrid, int cache_limit):
 
-    cdef int stat
+    cdef Stat stat
 
     set_photgrid_cache_limit(<void *>photgrid, cache_limit, &stat)
     _handle_error(stat)
@@ -393,7 +392,7 @@ def _set_photgrid_cache_limit(uintptr_t photgrid, int cache_limit):
 def _interp_photgrid_intensity(uintptr_t photgrid, double[:] x_vec, double mu, bool[:] deriv_vec):
 
     cdef double I
-    cdef int stat
+    cdef Stat stat
 
     interp_photgrid_intensity(<void *>photgrid, &x_vec[0], mu, &I, &stat, &deriv_vec[0])
     _handle_error(stat)
@@ -404,7 +403,7 @@ def _interp_photgrid_intensity(uintptr_t photgrid, double[:] x_vec, double mu, b
 def _interp_photgrid_E_moment(uintptr_t photgrid, double[:] x_vec, int k, bool[:] deriv_vec):
 
     cdef double E
-    cdef int stat
+    cdef Stat stat
 
     interp_photgrid_E_moment(<void *>photgrid, &x_vec[0], k, &E, &stat, &deriv_vec[0])
     _handle_error(stat)
@@ -415,7 +414,7 @@ def _interp_photgrid_E_moment(uintptr_t photgrid, double[:] x_vec, int k, bool[:
 def _interp_photgrid_D_moment(uintptr_t photgrid, double[:] x_vec, int l, bool[:] deriv_vec):
 
     cdef double D
-    cdef int stat
+    cdef Stat stat
 
     interp_photgrid_D_moment(<void *>photgrid, &x_vec[0], l, &D, &stat, &deriv_vec[0])
     _handle_error(stat)
@@ -426,7 +425,7 @@ def _interp_photgrid_D_moment(uintptr_t photgrid, double[:] x_vec, int l, bool[:
 def _interp_photgrid_flux(uintptr_t photgrid, double[:] x_vec, bool[:] deriv_vec):
 
     cdef double F
-    cdef int stat
+    cdef Stat stat
 
     interp_photgrid_flux(<void *>photgrid, &x_vec[0], &F, &stat, &deriv_vec[0])
     _handle_error(stat)
