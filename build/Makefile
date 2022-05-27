@@ -7,7 +7,7 @@
 PYTHON ?= yes
 
 # Build test programs
-TESTS ?= yes
+TESTS ?= no
 
 # Build tool executables
 TOOLS ?= no
@@ -22,8 +22,8 @@ OMP ?= yes
 FPE ?= yes
 
 # Link string for FITS library
-# (leave blank if not available)
-FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
+# (leave undefined if not available)
+#FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
 
 # Targets
 
@@ -36,9 +36,9 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq (${TESTS},yes)
-  UTEST_TARGETS := utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid time_specgrid
-#  TEST_TARGETS := test_specgrid test_photgrid test_spec_photgrid
-  EXEC_TARGETS := ${EXEC_TARGETS} ${UTEST_TARGETS} ${TEST_TARGETS}
+  UTEST_TARGETS := utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid
+  TIME_TARGETS := time_specgrid
+  EXEC_TARGETS := ${EXEC_TARGETS} ${UTEST_TARGETS} ${TIME_TARGETS}
 endif
 
 ifeq (${TOOLS},yes)
@@ -172,13 +172,4 @@ include Make.inc
 
 # Additional dependencies
 
-pycmsg_specgrid.c : pycmsg_common.pyx
-pycmsg_photgrid.c : pycmsg_common.pyx
-
-pycmsg_specgrid.o : cmsg.h
-pycmsg_photgrid.o : cmsg.h
-
-
-
-
-
+pycmsg.o : cmsg.h
