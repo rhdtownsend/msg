@@ -41,12 +41,7 @@ contains
 
    subroutine test ()
 
-      print *, '  exceptions'
-
       call test_stat_()
-
-      print *, '  attributes'
-
       call test_attr_()
 
    end subroutine test
@@ -62,6 +57,8 @@ contains
       integer          :: stat_chk(n)
       real(RD)         :: x_vec(2,n)
       real(RD)         :: mu(n)
+
+      print *, '  exceptions'
 
       call load_photgrid_from_specgrid('sg-demo.h5', 'pb-generic-Johnson.V-Vega.h5', pg)
       
@@ -90,32 +87,32 @@ contains
 
          !
 
-         stat(1) = STAT_OK
+         stat_chk(1) = STAT_OK
 
          !
 
          call set_xvec(pg, ['Teff  ', 'log(g)'], [2000._RD, 4.00_RD], x_vec(:,2))
-         stat(2) = STAT_OUT_OF_BOUNDS_AXIS_LO
+         stat_chk(2) = STAT_OUT_OF_BOUNDS_AXIS_LO
 
          !
 
          call set_xvec(pg, ['Teff  ', 'log(g)'], [10000._RD, 6.00_RD], x_vec(:,3))
-         stat(3) = STAT_OUT_OF_BOUNDS_AXIS_HI
+         stat_chk(3) = STAT_OUT_OF_BOUNDS_AXIS_HI
 
          !
 
          mu(4) = -0.1_RD
-         stat(4) = STAT_OUT_OF_BOUNDS_MU_LO
+         stat_chk(4) = STAT_OUT_OF_BOUNDS_MU_LO
 
          !
 
          mu(5) = 1.1_RD
-         stat(5) = STAT_OUT_OF_BOUNDS_MU_HI
+         stat_chk(5) = STAT_OUT_OF_BOUNDS_MU_HI
 
          !
 
          call set_xvec(pg, ['Teff  ', 'log(g)'], [40000._RD, 2.00_RD], x_vec(:,6))
-         stat(6) = STAT_UNAVAILABLE_DATA
+         stat_chk(6) = STAT_UNAVAILABLE_DATA
 
          ! Finish
 
@@ -132,7 +129,7 @@ contains
 
          do j = 1, n
 
-            call pg%interp_intensity(x_vec(:,j), mu(j), I, stat_chk(j))
+            call pg%interp_intensity(x_vec(:,j), mu(j), I, stat(j))
 
          end do
 
@@ -149,7 +146,7 @@ contains
          integer :: j
 
          do j = 1, n
-            if (stat_chk(j) /= stat(j)) then
+            if (stat(j) /= stat_chk(j)) then
                print *,'    FAIL:', stat(j), stat_chk(j)
             else
                print *,'    PASS:', stat(j)
@@ -175,6 +172,8 @@ contains
       integer  :: cache_limit
       integer  :: cache_limit_chk
  
+      print *, '  attributes'
+
       call load_photgrid_from_specgrid('sg-demo.h5', 'pb-generic-Johnson.V-Vega.h5', pg)
       
       call attr_arrange_()
@@ -191,9 +190,9 @@ contains
 
          ! Set up the demo grid attributes
 
-         rank = 2
+         rank_chk = 2
 
-         cache_limit = 476
+         cache_limit_chk = 476
 
          ! Finish
 
@@ -205,9 +204,9 @@ contains
 
          ! Get attributes
 
-         call pg%get_rank(rank_chk)
+         call pg%get_rank(rank)
 
-         call pg%get_cache_limit(cache_limit_chk)
+         call pg%get_cache_limit(cache_limit)
 
          ! Finish
 
@@ -219,7 +218,7 @@ contains
 
       subroutine attr_assert_()
 
-         if (rank_chk == rank) then
+         if (rank == rank_chk) then
             print *,'    PASS: ', 'rank'
          else
             print *,'    FAIL: ', 'rank', rank, rank_chk

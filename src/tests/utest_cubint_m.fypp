@@ -55,6 +55,7 @@ contains
 
       real(RD)       :: x(n_x)
       real(RD)       :: f(n_x)
+      real(RD)       :: df_dx(n_x)
       real(RD)       :: x_int(n_x_int)
       real(RD)       :: f_int(n_x_int)
       real(RD)       :: df_dx_int(n_x_int)
@@ -76,8 +77,10 @@ contains
 
       subroutine cubint_arrange_()
 
-         integer  :: i
-         real(RD) :: df_dx(n_x)
+         integer :: i
+         integer :: m
+
+         ! Set up the function
 
          do i = 1, n_x
 
@@ -87,7 +90,15 @@ contains
 
          end do
 
-         ci = cubint_t(x, f, df_dx)
+         ! Set up the interpolation abscissa
+
+         do i = 1, n_x-1
+            do m = 1, n_over
+               x_int(n_over*(i-1)+m) = x(i) + (x(i+1) - x(i))*(m-1)/n_over
+            end do
+         end do
+
+         x_int(n_x_int) = x(n_x)
 
          ! Finish
 
@@ -102,19 +113,19 @@ contains
          integer :: i
          integer :: m
 
-         do i = 1, n_x-1
-            do m = 1, n_over
-               x_int(n_over*(i-1)+m) = x(i) + (x(i+1) - x(i))*(m-1)/n_over
-            end do
-         end do
+         ! Set up the cubic interpolant
 
-         x_int(n_x_int) = x(n_x)
+         ci = cubint_t(x, f, df_dx)
 
          do i = 1, n_x_int
+
+            ! Interpolate
 
             f_int(i) = ci%func(x_int(i))
             df_dx_int(i) = ci%deriv(x_int(i))
             int_f_int(i) = ci%integ(x_int(i))
+
+            ! Evaluate
 
             call eval_cubic_(x_int(i), f_chk(i), df_dx_chk(i), int_f_chk(i))
 
