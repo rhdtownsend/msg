@@ -37,9 +37,9 @@ program time_specgrid
       call axis%get_label(label)
 
       select case(label)
-      case('logT')
-         vx(j) = LOG10(5777._RD)
-      case('logg')
+      case('Teff')
+         vx(j) = 5777._RD
+      case('log(g)')
          vx(j) = 4.0_RD
       case default
          stop 'invalid axis'
