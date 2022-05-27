@@ -26,17 +26,18 @@ class PhotGrid:
     r"""The PhotGrid class represents a grid of photometric intensity data.
 
     This grid may be used to interpolate the intensity (or related
-    quantities) for a set of atmospheric parameter values.
+    quantities) for a set of atmosphere parameter values.
 
     """
     
-    def __init__(self, filename, passband_filename=None):
-        """PhotGrid constructor.
+    def __init__(self, file_name, passband_file_name=None):
+        """PhotGrid constructor (via loading data from a `photgrid` file, or
+           from a `specgrid` file together with a passband file).
 
         Args:
-            filename (string): Full pathname of grid file to load.
-            passband (string): Full pathname of passband (for dynamic 
-               loading from a specgrid).
+            file_name (string): Name of grid file.
+            passband_file_name (string): Name of passband file (if 
+               file_name corresponds to a specgrid file)
 
         Returns:
             pymsg.PhotGrid: Constructed object.
@@ -44,12 +45,13 @@ class PhotGrid:
         Raises:
             FileNotFound: If either file cannot be found.
             TypeError: If either file contains an incorrect datatype.
+
         """
 
-        if passband_filename is not None:
-            self._photgrid = pyc._load_photgrid_from_specgrid(filename, passband_filename)
+        if passband_file_name is not None:
+            self._photgrid = pyc._load_photgrid_from_specgrid(file_name, passband_file_name)
         else:
-            self._photgrid = pyc._load_photgrid(filename)
+            self._photgrid = pyc._load_photgrid(file_name)
 
         self._rank = pyc._get_photgrid_rank(self._photgrid)
 
@@ -94,19 +96,19 @@ class PhotGrid:
     
     @property
     def axis_labels(self):
-        """list: Atmospheric parameter axis labels."""
+        """list: Atmosphere parameter axis labels."""
         return self._axis_labels
 
     
     @property
     def axis_x_min(self):
-        """dict: Atmospheric parameter axis minima."""
+        """dict: Atmosphere parameter axis minima."""
         return self._axis_x_min
 
     
     @property
     def axis_x_max(self):
-        """dict: Atmospheric parameter axis maxima."""
+        """dict: Atmosphere parameter axis maxima."""
         return self._axis_x_max
 
     
@@ -131,12 +133,12 @@ class PhotGrid:
         point flux.
 
         Args:
-            x (dict): Atmospheric parameters; keys must match 
+            x (dict): Atmosphere parameters; keys must match 
                 `axis_labels` property, values must be double.
             mu (double): Cosine of angle of emergence relative to 
                 surface normal.
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmospheric parameter; 
+                derivative with respect to each atmosphere parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -161,11 +163,11 @@ class PhotGrid:
         the zero-point flux.
 
         Args:
-            x (dict): Atmospheric parameters; keys must match
+            x (dict): Atmosphere parameters; keys must match
                 `axis_labels` property, values must be double.
             k (int): Degree of moment.
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmospheric parameter; 
+                derivative with respect to each atmosphere parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -190,11 +192,11 @@ class PhotGrid:
         the zero-point flux.
 
         Args:
-            x (dict): Atmospheric parameters; keys must match
+            x (dict): Atmosphere parameters; keys must match
                 `axis_labels` property, values must be double.
             l (int): Harmonic degree of moment.
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmospheric parameter; 
+                derivative with respect to each atmosphere parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -219,10 +221,10 @@ class PhotGrid:
         flux.
 
         Args:
-            x (dict): Atmospheric parameters; keys must match
+            x (dict): Atmosphere parameters; keys must match
                 `axis_labels` property, values must be double.
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmospheric parameter; 
+                derivative with respect to each atmosphere parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 

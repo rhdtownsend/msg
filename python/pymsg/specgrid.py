@@ -27,15 +27,15 @@ class SpecGrid:
 
     This grid may be used to interpolate the intensity (or related
     quantities) across a wavelength abscissa and for a set of
-    atmospheric parameter values.
+    atmosphere parameter values.
 
     """
 
-    def __init__(self, filename):
-        """SpecGrid constructor.
+    def __init__(self, file_name):
+        """SpecGrid constructor (via loading data from a `specgrid` file).
 
         Args:
-            filename (string): Filename of grid to load.
+            file_name (string): Name of the file
 
         Returns:
             pymsg.SpecGrid: Constructed object.
@@ -45,7 +45,7 @@ class SpecGrid:
             TypeError: If the file contains an incorrect datatype.
         """
 
-        self._specgrid = pyc._load_specgrid(filename)
+        self._specgrid = pyc._load_specgrid(file_name)
 
         self._rank = pyc._get_specgrid_rank(self._specgrid)
 
@@ -90,19 +90,19 @@ class SpecGrid:
     
     @property
     def axis_labels(self):
-        """list: Atmospheric parameter axis labels."""
+        """list: Atmosphere parameter axis labels."""
         return self._axis_labels
 
     
     @property
     def axis_x_min(self):
-        """dict: Atmospheric parameter axis minima."""
+        """dict: Atmosphere parameter axis minima."""
         return self._axis_x_min
 
     
     @property
     def axis_x_max(self):
-        """dict: Atmospheric parameter axis maxima."""
+        """dict: Atmosphere parameter axis maxima."""
         return self._axis_x_max
 
     
@@ -156,13 +156,13 @@ class SpecGrid:
         r"""Evaluate the spectroscopic intensity.
 
         Args:
-            x (dict): Atmospheric parameters; keys must match 
+            x (dict): Atmosphere parameters; keys must match 
                 `axis_labels` property, values must be double.b
             mu (double): Cosine of angle of emergence relative to 
                 surface normal.
             lam (numpy.ndarray): Wavelength abscissa (Å).
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmospheric parameter; 
+                derivative with respect to each atmosphere parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -188,12 +188,12 @@ class SpecGrid:
         r"""Evaluate the spectroscopic intensity E-moment.
 
         Args:
-            x (dict): Atmospheric parameters; keys must match
+            x (dict): Atmosphere parameters; keys must match
                 `axis_labels` property, values must be double.
             k (int): Degree of moment.
             lam (numpy.ndarray): Wavelength abscissa (Å).
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmospheric parameter; 
+                derivative with respect to each atmosphere parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -219,12 +219,12 @@ class SpecGrid:
         r"""Evaluate the spectroscopic intensity D-moment.
 
         Args:
-            x (dict): Atmospheric parameters; keys must match
+            x (dict): Atmosphere parameters; keys must match
                 `axis_labels` property, values must be double.
             l (int): Harmonic degree of moment.
             lam (numpy.ndarray): Wavelength abscissa (Å).
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmospheric parameter; 
+                derivative with respect to each atmosphere parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -250,11 +250,11 @@ class SpecGrid:
         r"""Evaluate the spectroscopic flux.
 
         Args:
-            x (dict): Atmospheric parameters; keys must match
+            x (dict): Atmosphere parameters; keys must match
                 `axis_labels` property, values must be double.
             lam (numpy.ndarray): Wavelength abscissa (Å)
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmospheric parameter; 
+                derivative with respect to each atmosphere parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 

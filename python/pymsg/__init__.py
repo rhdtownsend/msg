@@ -26,4 +26,3 @@ from .photgrid import PhotGrid
 from .pycmsg import _get_msg_version
 
 __version__ = _get_msg_version()
-
