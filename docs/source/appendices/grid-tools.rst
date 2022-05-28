@@ -135,6 +135,13 @@ file. This tool accepts the following command-line arguments:
 
    Name of output file.
 
+.. note::
+
+   In order for :command:`goettingen_to_specint` to build, you must
+   first uncomment/edit the line in :file:`$MSG_DIR/build/Makefile`
+   that defines the `FITS_LDFLAGS` variable. This variable defines the
+   flags used to link against your system's FITS library.
+
 
 Modifying Spectra
 -----------------
@@ -200,8 +207,53 @@ accepts the following command-line arguments:
    file; set to 'T' to allow duplicates.
 
 The manifest file is a simple text file that lists all the `specint`
-files that should be included in the grid.
+files (one per line) that should be included in the grid.
 
+
+.. _creating-passbands:
+
+Creating Passband Files
+-----------------------
+
+Additional passband files (beyond those already provided in the
+:ref:`passband-files` appendix) can be created using the
+:command:`make_passband` tool. This tool accepts the following
+command-line arguments:
+
+.. program:: make_passband
+
+.. option:: <table_file_name>
+
+   Name of input file (see below).
+
+.. option:: <F_0>
+
+   Normalizing flux :math:`F_{0}` in :math:`\erg\,\cm^{-2}\,\second^{-1}\,\angstrom`.
+
+.. option:: <passband_file_name>
+
+   Name of output file.
+
+The input file is a text file tabulating wavelength :math:`\lambda`
+(in :math:`\angstrom`) and passband response function
+:math:`S'(\lambda)`. This function represents the combined sensitivity
+of the optical pathway, filter and the detector. The `normalized` flux
+in the passband is evaluated as
+
+.. math::
+
+   \langle F \rangle = \frac{1}{F_{0}} \frac{\int_{0}^{\infty} F_{\lambda}(\lambda) S'(\lambda) \diff{\lambda}}{\int_{0}^{\infty} S'(\lambda) \diff{\lambda}},
+
+...meaning that :math:`S'(\lambda)` is interpreted as an energy
+response function (see appendix A of :ads_citealp:`bessell:2012` for a
+discussion of the relationship between :math:`S'` and the
+corresponding photon response function :math:`S`). Given a normalized
+flux, the apparent magnitude at the location where :math:`\langle F \rangle`
+is measured follows as
+
+.. math::
+
+   m = -2.5 \log_{10} \langle F \rangle.
 
 .. _creating-photgrids:
 

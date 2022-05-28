@@ -203,17 +203,16 @@ action depends on which langauge is being used:
 * In Python, an exception is thrown with a (reasonably) relevant
   subtype and error message.
 
-* In Fortran, if the optional integer :f:var:`stat` argument is passed
+* In Fortran, if the optional integer argument :f:var:`stat` is present
   during the call, then on return :f:var:`stat` is set to an value
   indicating the nature of the problem (see the :ref:`fortran-params`
-  chapter for the list of possible values). If the :f:var:`stat`
-  argument is not passed, then execution halts with an error message
-  printed to standard out.
+  chapter for the list of possible values). If :f:var:`stat`
+  is not present, then execution halts with an error message
+  printed to standard output.
 
-* In C, if the integer pointer :c:var:`stat` is passed non-null during
-  the call, then on return the target of :c:var:`stat` is set to a
-  value indicating the nature of the problem (see the :ref:`c-enums`
-  chapter for the list of possible values). If the :c:var:`stat`
-  argument is passed null, then execution halts with an error message
-  printed to standard out.
+* In C, if the pointer argument :c:var:`stat` is non-null during the
+  call, then on return the target of :c:var:`stat` is set to a value
+  indicating the nature of the problem (see the :ref:`c-enums` chapter
+  for the list of possible values). If :c:var:`stat` is null, then
+  execution halts with an error message printed to standard output.
 
