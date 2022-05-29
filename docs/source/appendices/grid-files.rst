@@ -71,15 +71,15 @@ follows:
    * - :grids:`sg-BSTAR2006-low.h5 <BSTAR2006/sg-BSTAR2006-low.h5>` (77MB)
      - :math:`\mathcal{R}=1000`
      - :math:`[880\,\angstrom, 5\,\um]`
-     - ``Teff``, ``log(g)``, ``Z/Zo``, ``xi``
+     - ``Teff``, ``log(g)``, ``Z/Zo``
    * - :grids:`sg-BSTAR2006-medium.h5 <BSTAR2006/sg-BSTAR2006-medium.h5>` (693MB)
      - :math:`\mathcal{R}=10000`
      - :math:`[880\,\angstrom, 5\,\um]`
-     - ``Teff``, ``log(g)``, ``Z/Zo``, ``xi``
+     - ``Teff``, ``log(g)``, ``Z/Zo``
    * - :grids:`sg-BSTAR2006-high.h5 <BSTAR2006/sg-BSTAR2006-high.h5>` (6.5GB)
      - :math:`\mathcal{R}=100000`
      - :math:`[880\,\angstrom, 5\,\um]`
-     - ``Teff``, ``log(g)``, ``Z/Zo``, ``xi``
+     - ``Teff``, ``log(g)``, ``Z/Zo``
 
 The definitions and ranges of the atmospheric parameters are as
 follows:

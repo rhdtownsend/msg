@@ -24,8 +24,8 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = "main"
-release = "main"
+version = "1.0"
+release = "1.0-rc1"
 branch = "main"
 copyright = '2021, Rich Townsend & The MSG Team'
 
@@ -120,9 +120,8 @@ else:
 
 targets = {
     'github-tarball': 'https://api.github.com/repos/rhdtownsend/msg/tarball/{0:s}'.format(tarball),
-    'madstar-tarball': 'http://www.astro.wisc.edu/~townsend/resource/download/software/msg-main.tar.gz',
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
-    'mesa': 'http://mesa.sourceforge.net/',
+    'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=madsdk'
 }
 
 rst_prolog = '\n'.join(['.. _{:s}: {:s}'.format(x, targets[x]) for x in targets])

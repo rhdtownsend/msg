@@ -11,7 +11,7 @@ dyne	{\rm dyn}
 second	{\rm s}
 kelvin	{\rm K}
 radian	{\rm rad}
-steradian	{\rm srad}
+sterad	{\rm sr}
 barye	{\rm Ba}
 diff	\operatorname{d}
 sderiv	{\rm d}#1/{\rm d}#2

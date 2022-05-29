@@ -18,12 +18,14 @@ involves constructing a (preferably continuous and smooth) function
 
 .. math::
 
-   I(\mu; \lambda; x, y, z, \ldots)
+   I_{\lambda}(\mu; \lambda; x, y, z, \ldots)
 
-representing the intensity emerging at direction cosine :math:`\mu`
-and wavelength :math:`\lambda` from an atmosphere characterized by a
-set of :math:`N` parameters :math:`x, y, z, \ldots` (which can
-correspond to quantities such as effective temperature :math:`T_{\rm eff}`, gravity :math:`g`,
+representing the intensity (in units of
+:math:`\erg\,\cm^{-2}\,\second^{-1}\,\angstrom^{-1}\,\sterad^{-1}`)
+emerging at direction cosine :math:`\mu` and wavelength
+:math:`\lambda` from an atmosphere characterized by a set of :math:`N`
+parameters :math:`x, y, z, \ldots` (which can correspond to quantities
+such as effective temperature :math:`T_{\rm eff}`, gravity :math:`g`,
 etc.).
 
 .. _limb-darkening-laws:
@@ -37,9 +39,10 @@ using limb-darkening laws. The simplest and most well known is the linear law
 .. math::
    :label: eq:linear-law
 
-   \frac{I(\mu; \ldots)}{I(1; \ldots)} = 1 - a (\ldots) \left[1 - \mu\right]
+   \frac{I_{\lambda}(\mu; \ldots)}{I_{\lambda}(1; \ldots)} =
+   1 - a (\ldots) \left[1 - \mu\right]
 
-where :math:`I(1; \ldots)` represents the normally emergent
+where :math:`I_{\lambda}(1; \ldots)` represents the normally emergent
 (:math:`\mu=1`) intensity and :math:`a(\ldots)` is the linear
 limb-darkening coefficient (here the ellipses :math:`\ldots` represent
 the other parameters, which have been omitted for brevity). A better
@@ -50,7 +53,7 @@ devised by :ads_citet:`claret:2000` is
 .. math::
    :label: eq:claret-law
 
-   \frac{I(\mu; \ldots)}{I(1, \ldots)} = 1 - \sum_{k=1}^{4} a_{k}(\ldots) \left[1 - \mu^{k/2}\right],
+   \frac{I_{\lambda}(\mu; \ldots)}{I_{\lambda}(1, \ldots)} = 1 - \sum_{k=1}^{4} a_{k}(\ldots) \left[1 - \mu^{k/2}\right],
 
 where there are now four limb-darkening coefficients :math:`a_{k}(\ldots)`.
 
@@ -61,19 +64,20 @@ flux
 .. math::
    :label: eq:flux
 
-   F(\ldots) = \int_{0}^{1} I(\mu; \ldots) \, \mu \, \diff\mu
+   F_{\lambda}(\ldots) = \int_{0}^{1} I_{\lambda}(\mu; \ldots) \, \mu \, \diff\mu
 
 can be evaluated analytically, as can any of the
-:ads_citet:`eddington:1926` intensity moments
+:ads_citet:`eddington:1926` intensity moments (or `E-moments`, as MSG
+terms them):
 
 .. math::
 
-   \mathcal{E}_{i}(\ldots) = \frac{1}{2} \int_{0}^{1} I(\mu; \ldots) \, \mu^{i} \,\diff\mu.
+   \mathcal{E}^{i}_{\lambda}(\ldots) = \frac{1}{2} \int_{0}^{1} I_{\lambda}(\mu; \ldots) \, \mu^{i} \,\diff\mu.
 
 MSG supports the following limb-darkening laws:
 
 `CONST`
-  Constant law, where :math:`I` has no dependence on
+  Constant law, where :math:`I_{\lambda}` has no dependence on
   :math:`\mu` whatsoever. This is discussed further below.
 
 `LINEAR`
@@ -108,7 +112,7 @@ as a piecewise-constant function on a wavelength abscissa :math:`\lambda =
 
 .. math::
 
-   I(\lambda; \ldots) = I_{i}(\ldots) \qquad \lambda_{i} \leq \lambda < \lambda_{i+1}.
+   I_{\lambda}(\lambda; \ldots) = I_{i}(\ldots) \qquad \lambda_{i} \leq \lambda < \lambda_{i+1}.
 
 (as before, the ellipses represent the omitted parameters). Mapping
 intensity data onto a new abscissa :math:`\lambda' =
@@ -117,7 +121,7 @@ conservatively, according to the expression
 
 .. math::
 
-   I'_{i}(\ldots) = \frac{\int_{\lambda'_{i}}^{\lambda'_{i+1}} I(\lambda; \ldots) \diff{\lambda}}{\lambda'_{i+1} - \lambda'_{i}}.
+   I'_{i}(\ldots) = \frac{\int_{\lambda'_{i}}^{\lambda'_{i+1}} I_{\lambda}(\lambda; \ldots) \diff{\lambda}}{\lambda'_{i+1} - \lambda'_{i}}.
 
 Beyond its simplicity, the advantage of this approach (as compared to
 higher-order interpolations) is that the equivalent width of line
@@ -137,7 +141,7 @@ join between each piecewise region.
 
 Grids often contain holes and/or ragged boundaries (the latter
 typically arising near the edge of the region of the :math:`T_{\rm
-eff}-\log_{10}(g)` plane corresponding to super-Eddington
+eff}-g` plane corresponding to super-Eddington
 luminosity). When an interpolation tries to access such missing data,
 MSG either switches to a lower-order scheme, or (if there simply
 aren't sufficient data to interpolate) returns with an error (see the
@@ -177,10 +181,9 @@ Evaluating Photometric Colors
 =============================
 
 To evaluate photometric colors, MSG convolves a stellar spectrum with
-appropriate passband response functions (each representing the
-combined sensitivity of the optical pathway, filter and the
-detector). For a given response function, this convolution can be
-performed before or after the interpolations discussed above:
+appropriate passband response functions. For a given response
+function, this convolution can be performed before or after the
+interpolations discussed above:
 
 * the 'before' option performs the convolution as a pre-processing
   step to create a `photgrid` file from a `specgrid` file (as
