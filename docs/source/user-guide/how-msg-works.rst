@@ -180,20 +180,44 @@ algorithm.
 Evaluating Photometric Colors
 =============================
 
-To evaluate photometric colors, MSG convolves a stellar spectrum with
-appropriate passband response functions. For a given response
-function, this convolution can be performed before or after the
-interpolations discussed above:
+To evaluate a photometric color, MSG convolves a stellar spectrum with
+appropriate passband response function :math:`S'(\lambda)`. This
+function represents the combined sensitivity of the optical pathway,
+filter and the detector. The mean flux in the passband is evaluated as
+
+.. math::
+   :label: eq:conv
+
+   \langle F \rangle = \frac{\int_{0}^{\infty} F_{\lambda}(\lambda) S'(\lambda) \diff{\lambda}}{\int_{0}^{\infty} S'(\lambda) \diff{\lambda}},
+
+...meaning that :math:`S'(\lambda)` is interpreted as an `energy`
+response function (see appendix A of :ads_citealp:`bessell:2012` for a
+discussion of the relationship between :math:`S'` and the
+corresponding photon response function :math:`S`). The apparent
+magnitude at the location where :math:`\langle F \rangle` is measured
+follows as
+
+.. math::
+
+   m = -2.5 \log_{10} \left\langle \frac{F}{F_{0}} \right\rangle,
+
+where the normalizing flux :math:`F_{0}` is determined by the
+zero-point of the photometric system.
+
+For a given response function, the convolution :math:numref:`eq:conv` can be
+performed before or after the interpolations discussed above:
 
 * the 'before' option performs the convolution as a pre-processing
-  step to create a `photgrid` file from a `specgrid` file (as
-  discussed in the :ref:`creating-photgrids` section). This is
-  computationally more efficient, but requires a separate `photgrid`
-  file for each passband.
+  step using the :command:`specgrid_to_photgrid` tool to create a
+  `photgrid` file from a `specgrid` file (as discussed in the
+  :ref:`creating-photgrids` section). This is computationally more
+  efficient, but requires a separate `photgrid` file to be created for
+  each passband.
 
-* the 'after' option performs the convolution on-the-fly after each
-  spectrum is interpolated. This is computationally less efficient,
-  but incurs no storage requirements beyond the `specgrid` file.
+* the 'after' option loads data from a `specgrid` file, but performs
+  the convolution on-the-fly after each spectrum is interpolated. This
+  is computationally less efficient, but incurs no storage
+  requirements beyond the `specgrid` file.
 
 .. _exception-handling:
   

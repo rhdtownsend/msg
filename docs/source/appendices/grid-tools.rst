@@ -76,7 +76,15 @@ spectral synthesis package :ads_citep:`lanz:2003`, and writes it to an
    corresponding :option:`<label>` argument).
 
 Note that :option:`<label>` and :option:`<value>` parameters must be
-paired; and that there can be multiple of these pairs.
+paired; and that there can be multiple of these pairs. For the law
+selected by the :option:`<law_str>` option, the tool calculates the
+limb-darkening coefficients at each wavelength via a least-squares fit
+to the function
+
+.. math::
+
+   y(\mu) = 1 - \frac{I_{\lambda}(\mu;\ldots)}{I_{\lambda}(1;\ldots)}.
+
 
 FERRE
 ~~~~~
@@ -236,24 +244,7 @@ command-line arguments:
 
 The input file is a text file tabulating wavelength :math:`\lambda`
 (in :math:`\angstrom`) and passband response function
-:math:`S'(\lambda)`. This function represents the combined sensitivity
-of the optical pathway, filter and the detector. The `normalized` flux
-in the passband is evaluated as
-
-.. math::
-
-   \langle F \rangle = \frac{1}{F_{0}} \frac{\int_{0}^{\infty} F_{\lambda}(\lambda) S'(\lambda) \diff{\lambda}}{\int_{0}^{\infty} S'(\lambda) \diff{\lambda}},
-
-...meaning that :math:`S'(\lambda)` is interpreted as an energy
-response function (see appendix A of :ads_citealp:`bessell:2012` for a
-discussion of the relationship between :math:`S'` and the
-corresponding photon response function :math:`S`). Given a normalized
-flux, the apparent magnitude at the location where :math:`\langle F \rangle`
-is measured follows as
-
-.. math::
-
-   m = -2.5 \log_{10} \langle F \rangle.
+:math:`S'(\lambda)` (see the :ref:`photometric-colors` section).
 
 .. _creating-photgrids:
 

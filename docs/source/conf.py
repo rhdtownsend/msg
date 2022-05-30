@@ -19,16 +19,14 @@ sys.path.insert(0, os.path.abspath('exts'))
 
 import sphinx_rtd_theme
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
 version = "1.0"
-release = "1.0-rc1"
+gittag = "1.0-rc1"
 branch = "main"
-copyright = '2021, Rich Townsend & The MSG Team'
-
+copyright = '2022, Rich Townsend'
 
 # -- General configuration ---------------------------------------------------
 
@@ -113,13 +111,8 @@ extlinks = {
 
 # Set site-wide targets
 
-if release == 'main':
-    tarball = 'main'
-else:
-    tarball = 'v{0:s}'.format(release)
-
 targets = {
-    'github-tarball': 'https://api.github.com/repos/rhdtownsend/msg/tarball/{0:s}'.format(tarball),
+    'github-tarball': 'https://codeload.github.com/rhdtownsend/msg/tar.gz/v{0:s}'.format(gittag),
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=madsdk'
 }
@@ -128,7 +121,7 @@ rst_prolog = '\n'.join(['.. _{:s}: {:s}'.format(x, targets[x]) for x in targets]
 
 # Add substitutions for sphinx_substitution_extensions
 
-rep_exts = {"release": release,
+rep_exts = {"gittag": gittag,
             "author": author}
 
 for rep_ext_key, rep_ext_val in rep_exts.items():

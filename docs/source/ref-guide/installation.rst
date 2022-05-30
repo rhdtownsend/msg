@@ -34,7 +34,7 @@ from the command line using the :command:`tar` utility:
 .. prompt:: bash
    :substitutions:
 
-   tar xf msg-|release|.tar.gz
+   tar xf msg-|gittag|.tar.gz
 
 Set the :envvar:`MSG_DIR` environment variable with the path to the
 newly created source directory; this can be achieved e.g. using the

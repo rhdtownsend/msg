@@ -18,9 +18,9 @@ OSTAR2002 Grids
 ===============
 
 The OSTAR2002 grids are based on the line-blanketed O-star model
-atmospheres published in :ads_citet:`lanz:2003`. They contain
-intensity spectra calculated by the MSG Team using SYNSPEC, and are as
-follows:
+atmospheres published in :ads_citet:`lanz:2003`. Spectra are
+calculated from these atmospheres using SYNSPEC, and their angle
+dependence parameterized with the `CLARET` limb-darkening law.
 
 .. list-table::
    :header-rows: 1	
@@ -43,7 +43,8 @@ follows:
      - :math:`[880\,\angstrom, 5.0\,\um]`
      - ``Teff``, ``log(g)``, ``Z/Zo``
 
-The definitions and ranges of the atmospheric parameters are as follows:
+The definitions and ranges of the atmospheric parameters are as
+follows:
 
 * effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [27500, 55000]`
 * surface gravity ``log(g)`` :math:`= \log_{10} (g/\cm\,\second^{-2}) \in [3.0, 4.75]`
@@ -56,9 +57,9 @@ BSTAR2006 Grids
 ===============
 
 The BSTAR2006 grids are based on the line-blanketed B-star model
-atmospheres published in :ads_citet:`lanz:2007`. They contain
-intensity spectra calculated by the MSG Team using SYNSPEC, and are as
-follows:
+atmospheres published in :ads_citet:`lanz:2007`. Spectra are
+calculated from these atmospheres using SYNSPEC, and their angle
+dependence parameterized with the `CLARET` limb-darkening law.
 
 .. list-table::
    :header-rows: 1	
@@ -96,8 +97,8 @@ CAP18 Grids
 
 The CAP18 grids are based on the data published in
 :ads_citet:`allende:2018` (the letters 'CAP' are the initials of the
-first author). They contain flux spectra only (no intensity data), and
-are as follows:
+first author). The angle dependence of spectra is parameterized with the `CONST`
+limb-darkening law.
 
 .. list-table::
    :header-rows: 1	
@@ -140,8 +141,9 @@ Göttingen Grids
 The Göettingen grids are based on the data described in
 :ads_citet:`husser:2013` and available for download from
 `phoenix.astro.physik.uni-goettingen.de
-<https://phoenix.astro.physik.uni-goettingen.de/>`__. They contain
-flux spectra only (no intensity data), and are as follows:
+<https://phoenix.astro.physik.uni-goettingen.de/>`__. The angle
+dependence of spectra is parameterized with the `CONST` limb-darkening
+law.
 
 .. list-table::
    :header-rows: 1	
