@@ -23,8 +23,7 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = "1.0"
-gittag = "1.0-rc1"
+version = "1.0-rc1"
 branch = "main"
 copyright = '2022, Rich Townsend'
 
@@ -112,7 +111,7 @@ extlinks = {
 # Set site-wide targets
 
 targets = {
-    'github-tarball': 'https://codeload.github.com/rhdtownsend/msg/tar.gz/v{0:s}'.format(gittag),
+    'github-tarball': 'https://codeload.github.com/rhdtownsend/msg/tar.gz/v{0:s}'.format(version),
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=madsdk'
 }
@@ -121,7 +120,7 @@ rst_prolog = '\n'.join(['.. _{:s}: {:s}'.format(x, targets[x]) for x in targets]
 
 # Add substitutions for sphinx_substitution_extensions
 
-rep_exts = {"gittag": gittag,
+rep_exts = {"version": version,
             "author": author}
 
 for rep_ext_key, rep_ext_val in rep_exts.items():
