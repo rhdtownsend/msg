@@ -3,5 +3,6 @@
 docs linguist-documentation
 
 .gitattributes export-ignore
+.gitmodules export-ignore
 .gitignore export-ignore
 .github export-ignore
