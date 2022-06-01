@@ -111,7 +111,7 @@ extlinks = {
 # Set site-wide targets
 
 targets = {
-    'tarball': 'http://www.astro.wisc.edu/~townsend/resource/download/msg/src/msg-{0:s}.tar.gz'.format(version),
+    'tarball': 'https://github.com/rhdtownsend/msg/releases/download/v1.0-rc2/msg-1.0-rc2.tar.gz',
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mad-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=madsdk'
 }
