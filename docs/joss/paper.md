@@ -1,5 +1,5 @@
 ---
-title: 'MSG: A package for interpolating in grids of spectra'
+title: 'MSG: A software package for interpolating stellar spectra in pre-calculated grids'
 tags:
   - Python
   - Fortran
@@ -7,6 +7,8 @@ tags:
   - astronomy
   - spectra
   - stars
+  - grids
+  - interpolation
 authors:
   - name: Rich Townsend
     orcid: 0000-0002-2522-8605
@@ -35,7 +37,7 @@ implements this interpolation capability.
 
 # Statement of Need
 
-There are a wide variety of stellar spetral grids published in the
+There are a wide variety of stellar spectral grids published in the
 astronomical literature --- examples include @Lanz:2003, @Lanz:2007,
 @Kirby:2011, @de-Laverny:2012, @Husser:2013, @Allende-Prieto:2018,
 @Chiavassa:2018 and @Zsargo:2020. However, the ecosystem of software
@@ -44,24 +46,25 @@ much more limited. iSPEC [@Blanco-Cuaresma:2014] and FERRE
 [@Allende-Prieto:2015] stand out in this category, but their principal
 focus is spectral analysis (determining stellar atmosphere parameters
 by fitting observed spectra) rather than interpolation; and, as
-monolithic packages they are not well suited to modular incoporation
+monolithic packages they are not well suited to modular incorporation
 within other projects. These considerations motivate us to develop
 MSG.
 
 # Capabilities
 
 MSG is implemented as a software library with Python, Fortran 2008 and
-C bindings. These APIs expose OpenMP-optimized Fortran code that
-performs energy-conservative interpoation in wavelength $\lambda$,
-parametric interpolation in direction cosine $\mu$ via limb-darkening
-laws, and $C^{1}$-continuous cubic tensor-product interpolation in an
-arbitrary number of atmospheric parameters (effective temperature
-$T_{\mathrm{eff}}$, surface gravity $g$, metallicity [Fe/H],
-etc.). Although the topology of grid points must remain Cartesian,
-their distribution along each separate dimension need not be
-uniform. Attempts to interpolate in regions with missing data (e.g.,
-ragged grid boundaries and/or holes) are handled gracefully via
-exceptions (Python) or returned status codes (Fortran and C).
+C bindings. These APIs are underpinned by OpenMP-parallelized Fortran
+code that performs energy-conservative interpolation in wavelength
+$\lambda$, parametric interpolation in direction cosine $\mu$ using
+limb-darkening laws, and $C^{1}$-continuous cubic tensor-product
+interpolation in an arbitrary number of atmosphere parameters
+(effective temperature $T_{\mathrm{eff}}$, surface gravity $g$,
+metallicity [Fe/H], etc.). Although the topology of grid points must
+remain Cartesian, their distribution along each separate dimension
+need not be uniform. Attempts to interpolate in regions with missing
+data (e.g., ragged grid boundaries and/or holes) are handled
+gracefully via exceptions (Python) or returned status codes (Fortran
+and C).
 
 To minimize disk space requirements, MSG grids are stored in HDF5
 container files with a flexible and extensible schema. Tools are
@@ -81,7 +84,7 @@ straightforward and complete solution to synthesizing observables
 (spectra, colors, etc.) for stellar models, and serves as an ideal
 seasoning to add flavor to stellar astrophysics research.
 
-# Acknowledgements
+# Acknowledgments
 
 We are grateful to the late Keith Smith for laying the original
 foundations for MSG, and likewise acknowledge support from NSF grant
