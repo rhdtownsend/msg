@@ -11,12 +11,22 @@ endif
 
 # Check SDK version
 
-MINIMUM_VERSION = 21.4.1
+MINIMUM_VERSION = 22.6.1
 
 ifneq ($(MAKECMDGOALS),clean)
-  ifneq ($(shell ./check_sdk_version $(MINIMUM_VERSION)),passed)
-    $(error Your MESASDK is too old; please update to version $(MINIMUM_VERSION) or newer)
+
+  VERSION_CHECK = $(shell ./check_sdk_version $(MINIMUM_VERSION))
+
+  ifneq ($(VERSION_CHECK),passed)
+    ifeq ($(VERSION_CHECK),SDK too old)
+      $(error Your MESA SDK installation is too old; please update to version $(MINIMUM_VERSION) or newer)
+    else ifeq ($(VERSION_CHECK),SDK not installed)
+      $(error MESA SDK is either not installed or not properly initialized)
+    else
+      $(error Could not determine MESA SDK availability)
+    endif
   endif
+
 endif
 
 # Preprocessor flags

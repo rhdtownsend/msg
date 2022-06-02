@@ -58,7 +58,7 @@ for com in madsdk_version mesasdk_version; do
 done
 
 if [[ -z $ver_com ]]; then
-   echo 'failed'
+   echo 'SDK not installed'
    exit 0
 fi
 
@@ -85,7 +85,7 @@ case $? in
 	echo 'passed'
 	;;
     2)
-	echo 'failed'
+	echo 'SDK too old'
 	;;
 esac
 
