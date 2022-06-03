@@ -82,8 +82,10 @@ TOOLS
 
 If a variable is not set, then its default value is assumed.
 
-Git Access
-==========
+.. _github-access:
+
+GitHub Access
+=============
 
 Sometimes, you'll want to try out new features in MSG that haven't
 yet made it into a formal release. In such cases, you can check out
