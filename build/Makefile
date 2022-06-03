@@ -37,8 +37,9 @@ endif
 
 ifeq (${TESTS},yes)
   UTEST_TARGETS := utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid
+  STRESS_TARGETS := stress_specgrid
   TIME_TARGETS := time_specgrid
-  EXEC_TARGETS := ${EXEC_TARGETS} ${UTEST_TARGETS} ${TIME_TARGETS}
+  EXEC_TARGETS := ${EXEC_TARGETS} ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
 endif
 
 ifeq (${TOOLS},yes)
@@ -145,21 +146,13 @@ utest_photgrid_OBJS = utest_photgrid.o utest_photgrid_m.o
 utest_photgrid_LIBS = libforum libmsg libfmsg
 utest_photgrid_DEPS = forum_m fmsg_m
 
-test_specgrid_OBJS = test_specgrid.o
-test_specgrid_LIBS = libforum libmsg libfmsg
-test_specgrid_DEPS = forum_m fmsg_m
+stress_specgrid_OBJS = stress_specgrid.o
+stress_specgrid_LIBS = libforum libmsg libfmsg
+stress_specgrid_DEPS = forum_m fmsg_m
 
 time_specgrid_OBJS = time_specgrid.o
 time_specgrid_LIBS = libforum libmsg libfmsg
 time_specgrid_DEPS = forum_m fmsg_m
-
-test_photgrid_OBJS = test_photgrid.o
-test_photgrid_LIBS = libforum libmsg libfmsg
-test_photgrid_DEPS = forum_m fmsg_m
-
-test_spec_photgrid_OBJS = test_spec_photgrid.o
-test_spec_photgrid_LIBS = libforum libmsg libfmsg
-test_spec_photgrid_DEPS = forum_m fmsg_m
 
 # Search subdirs
 

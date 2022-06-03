@@ -1,0 +1,131 @@
+! Program : stress_specgrid
+! Purpose : Stress testing for specgrid_m
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program stress_specgrid
+
+   ! Uses
+
+   use forum_m
+   use fmsg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: specgrid_file_name
+   real(RD)                  :: lam_min
+   real(RD)                  :: lam_max
+   integer                   :: n_lam
+   integer                   :: n_interp
+
+   type(specgrid_t)      :: specgrid
+   integer               :: i
+   real(RD), allocatable :: lam(:)
+   integer               :: rank
+   real(RD), allocatable :: x_min(:)
+   real(RD), allocatable :: x_max(:)
+   type(axis_t)          :: axis
+   real(RD), allocatable :: F(:)
+   real(RD), allocatable :: w(:)
+   real(RD), allocatable :: x_vec(:)
+   integer               :: stat
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 5, 'Syntax: stress_specgrid specgrid_file_name lam_min lam_max n_lam n_interp')
+
+   call get_arg(1, specgrid_file_name)
+   call get_arg(2, lam_min)
+   call get_arg(3, lam_max)
+   call get_arg(4, n_lam)
+   call get_arg(5, n_interp)
+
+   ! Load the grid
+
+   call load_specgrid(specgrid_file_name, specgrid)
+
+!   call specgrid%set_cache_lam_min(lam_min)
+!   call specgrid%set_cache_lam_max(lam_max)
+
+   ! Set up lam
+
+   lam = [((lam_min*(n_lam-i) + lam_max*(i-1))/(n_lam-1), i=1,n_lam)]
+
+   ! Determine grid rank and axis ranges
+
+   call specgrid%get_rank(rank)
+
+   allocate(x_min(rank))
+   allocate(x_max(rank))
+
+   do i = 1, rank
+      call specgrid%get_axis(i, axis)
+      call axis%get_x_min(x_min(i))
+      call axis%get_x_max(x_max(i))
+   end do
+
+   ! Do the interpolations
+
+   allocate(F(n_lam-1))
+   allocate(w(rank))
+
+   interp_loop : do i = 1, n_interp
+
+      write(OUTPUT_UNIT, 10, ADVANCE='NO') i
+10    format(I8,1X)
+
+      ! Choose random parameters and interpolate
+
+      random_loop : do
+
+         call RANDOM_NUMBER(w)
+         x_vec = x_min*(1._RD - w) + x_max*w
+
+         call specgrid%interp_flux(x_vec, lam, F, stat)
+
+         write(OUTPUT_UNIT, 20, ADVANCE='NO') '.'
+20       format(1A)
+
+         select case(stat)
+         case (STAT_OK)
+            exit random_loop
+         case (STAT_OUT_OF_BOUNDS_AXIS_LO)
+         case (STAT_OUT_OF_BOUNDS_AXIS_HI)
+         case (STAT_UNAVAILABLE_DATA)
+         case default
+            write(OUTPUT_UNIT, 30)
+            write(OUTPUT_UNIT, 40) 'stat:', stat
+30          format()
+40          format(A,1X,I0)
+            @:ABORT('unexpected stat code')
+         end select
+            
+      end do random_loop
+
+      write(OUTPUT_UNIT, 30)
+
+   end do interp_loop
+
+   ! Finish
+
+end program stress_specgrid
