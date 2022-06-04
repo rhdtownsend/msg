@@ -132,7 +132,7 @@ specgrid_t
       :o logical deriv_vec(:) [in]: Derivative flags.
 
 
-   .. f:subroutine:: interp_flux(x_vec, lam, I, stat, vderiv)
+   .. f:subroutine:: interp_flux(x_vec, lam, I, stat, deriv_vec)
 
       Interpolate the spectroscopic flux.
 
@@ -141,6 +141,6 @@ specgrid_t
       :p real(RD) F(:) [out]: Spectroscopic flux (erg/cm^2/s/Å) in
             bins delineated by lam; length LEN(lam)-1.
       :o integer stat [out]: Status code.
-      :o logical vderiv(:) [in]: Derivative flags.
+      :o logical deriv_vec(:) [in]: Derivative flags.
 
 			 

@@ -130,7 +130,7 @@ SpecGrid Functions
    :param stat: Returned status code (set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], Stat *stat, bool vderiv[])
+.. c:function:: void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], Stat *stat, bool deriv_vec[])
 
    Interpolate the spectroscopic intensity.
 
