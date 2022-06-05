@@ -1,0 +1,30 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "0000-0002-2522-8605",
+      "@type": "Person",
+      "email": "townsend@astro.wisc.edu",
+      "name": "Rich Townsend",
+      "affiliation": "University of Wisconsin-Madison"
+    },
+    {
+      "@id": "",
+      "@type": "Person",
+      "email": "alopez@astro.wisc.edu",
+      "name": "aaronesque",
+      "affiliation": "University of Wisconsin-Madison"
+    }
+  ],
+  "identifier": "",
+  "codeRepository": "https://github.com/rhdtownsend/msg",
+  "datePublished": "2022-06-05",
+  "dateModified": "2022-06-05",
+  "dateCreated": "2022-06-05",
+  "description": "Software package for interpolating stellar spectra in pre-calculated grids.",
+  "keywords": "Stars, spectra, interpolation, grids",
+  "license": "GPL v3.0",
+  "title": "MSG",
+  "version": "v1.0"
+}
