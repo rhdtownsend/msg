@@ -37,7 +37,7 @@ endif
 
 ifeq (${TESTS},yes)
   UTEST_TARGETS := utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid
-  STRESS_TARGETS := stress_specgrid
+  STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_specgrid
   EXEC_TARGETS := ${EXEC_TARGETS} ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
 endif
@@ -149,6 +149,10 @@ utest_photgrid_DEPS = forum_m fmsg_m
 stress_specgrid_OBJS = stress_specgrid.o
 stress_specgrid_LIBS = libforum libmsg libfmsg
 stress_specgrid_DEPS = forum_m fmsg_m
+
+stress_photgrid_OBJS = stress_photgrid.o
+stress_photgrid_LIBS = libforum libmsg libfmsg
+stress_photgrid_DEPS = forum_m fmsg_m
 
 time_specgrid_OBJS = time_specgrid.o
 time_specgrid_LIBS = libforum libmsg libfmsg
