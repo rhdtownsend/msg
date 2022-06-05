@@ -468,13 +468,17 @@ contains
       class(photint_t), allocatable, intent(out) :: photint
       integer, intent(out), optional             :: stat
 
-      real(RD) :: lam_min
-      real(RD) :: lam_max
-      real(RD) :: lam_min_pb
-      real(RD) :: lam_max_pb
-      real(RD) :: c(self%n_b)
-      integer  :: i
-      real(RD) :: P
+      real(RD)              :: lam_min
+      real(RD)              :: lam_max
+      real(RD)              :: lam_min_pb
+      real(RD)              :: lam_max_pb
+      integer               :: i_min
+      integer               :: i_max
+      integer               :: n_lam
+      real(RD), allocatable :: lam(:)
+      real(RD), allocatable :: P(:)
+      real(RD)              :: c(self%n_b)
+      integer               :: i
 
       ! Filter the specint through the passband to yield photint
 
@@ -506,19 +510,26 @@ contains
 
       ! Evaluate the coefficients
 
-      c = 0._RD
+      ! First, determine where the passband is located, and set up a
+      ! wavelength axis for the integration
 
-      coeff_loop : do i = 1, self%n_lam-1
+      call locate(self%lam, lam_min_pb, i_min)
+      call locate(self%lam, lam_max_pb, i_max, right=.TRUE.)
 
-         ! Evaluate the passthrough
+      lam = self%lam(i_min:i_max)
 
-         P = passband%passthru(self%lam(i), self%lam(i+1))
+      n_lam = SIZE(lam)
 
-         ! Add the contribution to c
+      lam(1) = lam_min_pb
+      lam(n_lam) = lam_max_pb
 
-         c = c + P*self%c(:,i)
+      ! Construct the passthru function
 
-      end do coeff_loop
+      P = passband%passthru(lam)
+
+      ! Integrate
+
+      c = MATMUL(self%c(:,i_min:i_max-1), P)
 
       ! Construct the photint
 

@@ -147,22 +147,22 @@ contains
 
    !****
 
-   function passthru(self, lam_a, lam_b) result (P)
+   function passthru(self, lam) result (P)
 
       class(passband_t), intent(in) :: self
-      real(RD), intent(in)          :: lam_a
-      real(RD), intent(in)          :: lam_b
-      real(RD)                      :: P
+      real(RD), intent(in)          :: lam(:)
+      real(RD), allocatable         :: P(:)
 
-      real(RD) :: lam_a_
-      real(RD) :: lam_b_
+      integer               :: n_lam
+      real(RD), allocatable :: G(:)
 
-      ! Evaluate the passthru P = int_a^b S(lam) dlam / D
+      ! Evaluate the passthru P = int_a^b S(lam) dlam / (D*F_0) for each interval lam[i,i+1]
 
-      lam_a_ = MIN(MAX(lam_a, self%lam_min), self%lam_max)
-      lam_b_ = MIN(MAX(lam_b, self%lam_min), self%lam_max)
+      n_lam = SIZE(lam)
 
-      P = (self%cubint%integ(lam_b_) - self%cubint%integ(lam_a_))/(self%F_0*self%Delta)
+      G = self%cubint%integ(lam)
+
+      P = (G(2:n_lam) - G(1:n_lam-1))/(self%F_0*self%Delta)
 
       ! Finish
 
