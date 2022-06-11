@@ -2,6 +2,9 @@
 *
 
 # ...apart from the build-system files
-Makefile
-Make.inc
-check_sdk_version
+!Makefile
+!Make.inc
+!check_sdk_version
+!fypp_deps
+!.gitignore
+
