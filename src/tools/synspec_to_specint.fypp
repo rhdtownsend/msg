@@ -1,5 +1,5 @@
 ! Module   : synspec_to_specint
-! Purpose  : create specint files from synspec files
+! Purpose  : create a specint file from a synspec file
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
