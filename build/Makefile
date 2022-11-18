@@ -43,7 +43,7 @@ ifeq (${TESTS},yes)
 endif
 
 ifeq (${TOOLS},yes)
-  EXEC_TARGETS := ${EXEC_TARGETS} synspec_to_specint ferre_to_specint \
+  EXEC_TARGETS := ${EXEC_TARGETS} ascii_to_specint synspec_to_specint ferre_to_specint \
                   specint_to_specint specgrid_to_photgrid specint_to_specgrid \
                   make_bb_photgrid make_passband
   ifneq (${FITS_LDFLAGS},)
@@ -81,6 +81,10 @@ libcmsg_DEPS = forum_m msg_m
 
 pycmsg_OBJS = pycmsg.o
 pycmsg_LIBS = libforum libmsg libcmsg
+
+ascii_to_specint_OBJS = ascii_to_specint.o
+ascii_to_specint_LIBS = libforum libmsg
+ascii_to_specint_DEPS = forum_m msg_m
 
 synspec_to_specint_OBJS = synspec_to_specint.o
 synspec_to_specint_LIBS = libforum libmsg
