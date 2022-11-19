@@ -44,7 +44,7 @@ module cmsg_spec_m
    public :: get_specgrid_lam_max
    public :: get_specgrid_cache_lam_min
    public :: get_specgrid_cache_lam_max
-   public :: get_specgrid_cache_count
+   public :: get_specgrid_cache_usage
    public :: get_specgrid_cache_limit
    public :: get_specgrid_axis_x_min
    public :: get_specgrid_axis_x_max
@@ -129,8 +129,8 @@ contains
                         ('lam_max', 'real(C_DOUBLE)'),       &
                         ('cache_lam_min', 'real(C_DOUBLE)'), &
                         ('cache_lam_max', 'real(C_DOUBLE)'), &
-                        ('cache_count', 'integer(C_INT)'),   &
-                        ('cache_limit', 'integer(C_INT)'))
+                        ('cache_usage', 'integer(C_LONG)'),   &
+                        ('cache_limit', 'integer(C_LONG)'))
                         
       subroutine get_specgrid_${name}$(specgrid_ptr, ${name}$) bind(C)
 
@@ -243,7 +243,7 @@ contains
 
    #:for name, type in (('cache_lam_min', 'real(C_DOUBLE)'), &
                         ('cache_lam_max', 'real(C_DOUBLE)'), &
-                        ('cache_limit', 'integer(C_INT)'))
+                        ('cache_limit', 'integer(C_LONG)'))
                         
       subroutine set_specgrid_${name}$(specgrid_ptr, ${name}$, stat) bind(C)
 

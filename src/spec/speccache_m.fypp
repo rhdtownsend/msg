@@ -34,28 +34,35 @@ module speccache_m
 
    implicit none
 
+   ! Parameter definitions
+
+   integer(ID), parameter :: INITIAL_SIZE = ISHFT(128_ID, 20)
+
    ! Derived-type definitions
 
    type :: speccache_t
       private
       type(specint_element_t), allocatable :: specint_elements(:)
-      integer, allocatable                 :: ltimes(:)
+      integer, allocatable                 :: ref_counts(:)
+      integer, allocatable                 :: exp_counts(:)
       real(RD)                             :: lam_min
       real(RD)                             :: lam_max
-      integer                              :: count
-      integer                              :: limit
+      integer(ID)                          :: usage
+      integer(ID)                          :: limit
       integer                              :: n
    contains
       private
       procedure, public :: get_lam_min
       procedure, public :: get_lam_max
-      procedure, public :: get_count
+      procedure, public :: get_usage
       procedure, public :: get_limit
       procedure, public :: set_lam_min
       procedure, public :: set_lam_max
       procedure, public :: set_limit
       procedure, public :: fetch
-      procedure         :: flush_cache_
+      procedure, public :: release
+      procedure         :: trim_
+      procedure         :: flush_
    end type speccache_t
 
    type :: specint_element_t
@@ -87,14 +94,17 @@ contains
 
       allocate(speccache%specint_elements(n))
 
-      allocate(speccache%ltimes(n))
-      speccache%ltimes = 0
+      allocate(speccache%ref_counts(n))
+      speccache%ref_counts = 0
+
+      allocate(speccache%exp_counts(n))
+      speccache%exp_counts = 0
 
       speccache%lam_min = lam_min
       speccache%lam_max = lam_max
 
-      speccache%limit = n
-      speccache%count = 0
+      speccache%usage = 0
+      speccache%limit = INITIAL_SIZE
 
       speccache%n = n
 
@@ -106,10 +116,10 @@ contains
 
    !****
 
-   #:for name, type in (('lam_min', 'real(RD)'), &
-                        ('lam_max', 'real(RD)'), &
-                        ('count', 'integer'),    &
-                        ('limit', 'integer'))        
+   #:for name, type in (('lam_min', 'real(RD)'),  &
+                        ('lam_max', 'real(RD)'),  &
+                        ('usage', 'integer(ID)'), &
+                        ('limit', 'integer(ID)'))        
                         
       subroutine get_${name}$(self, ${name}$)
 
@@ -149,11 +159,9 @@ contains
 
       self%lam_min = lam_min
 
-      ! If necessary, flush the cache
+      ! Flush the cache
 
-      if (self%count > 0) then
-         call self%flush_cache_()
-      end if
+      call self%flush_()
 
       ! Finish
 
@@ -184,11 +192,9 @@ contains
 
       self%lam_max = lam_max
 
-      ! If necessary, flush the cache
+      ! Flush the cache
 
-      if (self%count > 0) then
-         call self%flush_cache_()
-      end if
+      call self%flush_()
          
       ! Finish
 
@@ -203,12 +209,12 @@ contains
    subroutine set_limit(self, limit, stat)
 
       class(speccache_t), intent(inout) :: self
-      integer, intent(in)               :: limit
+      integer(ID), intent(in)           :: limit
       integer, intent(out), optional    :: stat
 
-      ! Set limit
+      ! Set the cache storage usage limit
 
-      if (limit < 0) then
+      if (limit < 0_ID) then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_ARGUMENT
             return
@@ -219,11 +225,9 @@ contains
 
       self%limit = limit
 
-      ! If necessary, flush the cache
+      ! Trim the cache
 
-      if (self%count > 0) then
-         call self%flush_cache_()
-      end if
+      call self%trim_()
          
       ! Finish
 
@@ -254,6 +258,7 @@ contains
       class(specint_t), allocatable :: specint_full
       real(RD)                      :: lam_min
       real(RD)                      :: lam_max
+      integer(ID)                   :: usage
          
       ! Fetch the i'th specint
 
@@ -266,75 +271,25 @@ contains
          end if
       end if
 
-      if (self%limit > 0) then
-         
-         ! Fetch from the cache; first check if the entry is already
-         ! present
+      ! Check if the entry is already present
 
-         if (self%ltimes(i) > 0) then
+      if (self%ref_counts(i) > 0) then
 
-            ! Update lifetime counters
+         ! Present and referenced; increment the reference counter
 
-            where (self%ltimes > self%ltimes(i))
-               self%ltimes = self%ltimes - 1
-            end where
+         self%ref_counts(i) = self%ref_counts(i) + 1
+
+      elseif (self%exp_counts(i) > 0) then
+
+         ! Present but not referenced; set the reference and expiry
+         ! counters
+
+         self%ref_counts(i) = 1
+         self%exp_counts(i) = 0
             
-            self%ltimes(i) = self%count
-
-         else
-
-            ! Fetch into the cache
-
-            if (self%count == self%limit) then
-
-               ! Evict the oldest entry to make room
-
-               j = MINLOC(self%ltimes, DIM=1, mask=self%ltimes > 0)
-
-               deallocate(self%specint_elements(j)%specint)
-
-               where (self%ltimes > 0)
-                  self%ltimes = self%ltimes - 1
-               end where
-               
-            else
-
-               self%count = self%count + 1
-
-            end if
-
-            self%ltimes(i) = self%count
-
-            call fetch_proc(i, specint_full, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
-
-            call specint_full%get_lam_min(lam_min)
-            call specint_full%get_lam_min(lam_max)
-
-            if (lam_min < self%lam_min .OR. lam_max > self%lam_max) then
-
-               call specint_full%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
-               if (PRESENT(stat)) then
-                  if (stat /= STAT_OK) return
-               end if
-
-            else
-
-               self%specint_elements(i)%specint = specint_full
-
-            endif
-            
-         end if
-
-         ! Wrap the entry in a proxy_specint_t (to avoid copying)
-
-         specint = proxy_specint_t(self%specint_elements(i)%specint)
-
       else
 
-         ! Fetch using fetch_proc
+         ! Fetch the specint
 
          call fetch_proc(i, specint_full, stat)
          if (PRESENT(stat)) then
@@ -346,18 +301,33 @@ contains
 
          if (lam_min < self%lam_min .OR. lam_max > self%lam_max) then
 
-            call specint_full%subset(self%lam_min, self%lam_max, specint, stat)
+            call specint_full%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
 
          else
 
-            specint = specint_full
+            self%specint_elements(i)%specint = specint_full
 
-         end if
+         endif
+
+         ! Update the memory usage
+
+         call self%specint_elements(i)%specint%get_usage(usage)
+
+         self%usage = self%usage + usage
+
+         ! Set the reference and expiry counters
+
+         self%ref_counts(i) = 1
+         self%exp_counts(i) = 0
 
       end if
+
+      ! Wrap the entry in a proxy_specint_t (to avoid copying)
+
+      specint = proxy_specint_t(self%specint_elements(i)%specint)
 
       ! Finish
 
@@ -369,7 +339,89 @@ contains
 
    !****
 
-   subroutine flush_cache_(self)
+   subroutine release(self, i, stat)
+
+      class(speccache_t), target, intent(inout) :: self
+      integer, intent(in)                       :: i
+      integer, intent(out), optional            :: stat
+
+      ! Release the i'th specint
+
+      if (i < 0 .OR. i > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      if (self%ref_counts(i) > 0) then
+
+         ! Decrement the reference counter
+
+         self%ref_counts(i) = self%ref_counts(i) - 1
+
+         ! If it's reached zero, set the expiry counter
+
+         if (self%ref_counts(i) == 0) self%exp_counts(i) = MAXVAL(self%exp_counts) + 1
+         
+      end if
+
+      ! Trim the cache
+
+      call self%trim_()
+
+      ! Finish
+
+      return
+
+   end subroutine release
+
+   !****
+
+   subroutine trim_(self)
+
+      class(speccache_t), intent(inout) :: self
+
+      integer     :: j
+      integer(ID) :: usage
+
+      ! Trim the cache so that its memory usage is smaller than limit
+
+      trim_loop : do
+
+         ! Check usage
+
+         if (self%usage <= self%limit) exit trim_loop
+
+         ! Find the unreferenced entry with the smallest expiry time
+
+         j = MINLOC(self%exp_counts, DIM=1, mask=self%ref_counts == 0 .AND. self%exp_counts > 0)
+
+         ! Deallocate it
+
+         call self%specint_elements(j)%specint%get_usage(usage)
+
+         deallocate(self%specint_elements(j)%specint)
+
+         self%usage = self%usage - usage
+
+         ! Update expiry counter
+
+         self%exp_counts(j) = 0
+
+      end do trim_loop
+
+      ! Finish
+
+      return
+
+   end subroutine trim_
+
+   !****
+
+   subroutine flush_(self)
 
       class(speccache_t), intent(inout) :: self
 
@@ -378,17 +430,22 @@ contains
       ! Flush the cache
 
       flush_loop : do i = 1, self%n
-         if (self%ltimes(i) > 0) deallocate(self%specint_elements(i)%specint)
+
+         if (self%exp_counts(i) > 0 .OR. self%ref_counts(i) > 0) then
+            deallocate(self%specint_elements(i)%specint)
+         end if
+
       end do flush_loop
 
-      self%ltimes = 0
+      self%ref_counts = 0
+      self%exp_counts = 0
 
-      self%count = 0
+      self%usage = 0
 
       ! Finish
 
       return
 
-   end subroutine flush_cache_
+   end subroutine flush_
 
 end module speccache_m

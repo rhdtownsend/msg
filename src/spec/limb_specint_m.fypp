@@ -56,6 +56,7 @@ module limb_specint_m
       procedure, public :: get_lam_min
       procedure, public :: get_lam_max
       procedure, public :: get_precise
+      procedure, public :: get_usage
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -205,6 +206,33 @@ contains
       return
 
    end subroutine get_precise
+
+   !****
+
+   subroutine get_usage(self, usage)
+
+      class(limb_specint_t), intent(in) :: self
+      integer(ID), intent(out)          :: usage
+
+      integer(ID) :: usage_range
+      integer(ID) :: usage_limb
+
+      ! Get the memory usage
+
+      call self%range%get_usage(usage_range)
+      call self%range%get_usage(usage_limb)
+
+      usage = STORAGE_SIZE(self)/8 +                    &
+              STORAGE_SIZE(self%c)/8*SIZE(self%c) +     &
+              STORAGE_SIZE(self%lam)/8*SIZE(self%lam) + &
+              usage_range +                             &
+              usage_limb
+
+      ! Finish
+
+      return
+
+   end subroutine get_usage
 
    !****
 

@@ -137,19 +137,19 @@ class SpecGrid:
         
 
     @property
-    def cache_count(self):
-        """int: Number of nodes currently held in grid cache."""
-        return pyc._get_specgrid_cache_count(self._specgrid)
+    def cache_usage(self):
+        """int: Memory usage of data (in bytes) currently held in grid cache."""
+        return pyc._get_specgrid_cache_usage(self._specgrid)
 
 
     @property
     def cache_limit(self):
-        """double: Maximum number of nodes to hold in grid cache. Set to 0 to disable 
+        """double: Maximum memory usagr of data (in bytes) to hold in grid cache. Set to 0 to disable 
            caching."""
         return pyc._get_specgrid_cache_limit(self._specgrid)
     @cache_limit.setter
     def cache_limit(self, cache_limit):
-        pyc._set_specgrid_cache_limit(self._specgrid, limit)
+        pyc._set_specgrid_cache_limit(self._specgrid, cache_limit)
 
 
     def intensity(self, x, mu, lam, deriv=None):
@@ -271,8 +271,6 @@ class SpecGrid:
         """
 
         x_vec, deriv_vec = self._vector_args(x, deriv)
-
-        print('x_vec, deriv_vec', x_vec, deriv_vec)
 
         return pyc._interp_specgrid_flux(self._specgrid, x_vec, lam,
                                          deriv_vec)

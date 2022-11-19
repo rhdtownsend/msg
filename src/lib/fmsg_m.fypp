@@ -143,7 +143,7 @@ contains
          if (stat /= STAT_OK) return
       endif
 
-      call specgrid%set_cache_limit(0)
+      call specgrid%set_cache_limit(0_ID)
 
       call specgrid%filter(passband, photgrid, stat)
 

@@ -46,6 +46,7 @@ module log_range_m
       procedure, public :: get_n
       procedure, public :: get_x_min
       procedure, public :: get_x_max
+      procedure, public :: get_usage
       procedure, public :: unpack
       procedure, public :: subset
       procedure, public :: read
@@ -138,6 +139,23 @@ contains
       return
 
    end subroutine get_x_max
+
+   !****
+
+   subroutine get_usage(self, usage)
+
+      class(log_range_t), intent(in) :: self
+      integer(ID), intent(out)       :: usage
+
+      ! Get the memory usage
+
+      usage = STORAGE_SIZE(self)/8
+
+      ! Finish
+
+      return
+
+   end subroutine get_usage
 
    !****
 

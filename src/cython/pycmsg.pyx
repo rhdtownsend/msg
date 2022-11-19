@@ -56,15 +56,15 @@ cdef extern from "cmsg.h":
     void get_specgrid_rank(void *specgrid, int *rank)
     void get_specgrid_lam_min(void *specgrid, double *lam_min)
     void get_specgrid_lam_max(void *specgrid, double *lam_max)
-    void get_specgrid_cache_count(void *specgrid, int *cache_count)
-    void get_specgrid_cache_limit(void *specgrid, int *cache_limit)
+    void get_specgrid_cache_usage(void *specgrid, long *cache_usage)
+    void get_specgrid_cache_limit(void *specgrid, long *cache_limit)
     void get_specgrid_cache_lam_min(void *specgrid, double *cache_lam_min)
     void get_specgrid_cache_lam_max(void *specgrid, double *cache_lam_max)
     void get_specgrid_axis_x_min(void *specgrid, int i, double *axis_x_min)
     void get_specgrid_axis_x_max(void *specgrid, int i, double *axis_x_max)
     void get_specgrid_axis_label(void *specgrid, int i, char *axis_label)
 
-    void set_specgrid_cache_limit(void *specgrid, int cache_limit, Stat *stat)
+    void set_specgrid_cache_limit(void *specgrid, long cache_limit, Stat *stat)
     void set_specgrid_cache_lam_min(void *specgrid, double cache_lam_min, Stat *stat)
     void set_specgrid_cache_lam_max(void *specgrid, double cache_lam_max, Stat *stat)
 
@@ -151,18 +151,18 @@ def _get_specgrid_lam_max(uintptr_t specgrid):
     return lam_max
 
 
-def _get_specgrid_cache_count(uintptr_t specgrid):
+def _get_specgrid_cache_usage(uintptr_t specgrid):
 
-    cdef int cache_count
+    cdef long cache_usage
 
-    get_specgrid_cache_count(<void *>specgrid, &cache_count)
+    get_specgrid_cache_usage(<void *>specgrid, &cache_usage)
 
-    return cache_count
+    return cache_usage
 
 
 def _get_specgrid_cache_limit(uintptr_t specgrid):
 
-    cdef int cache_limit
+    cdef long cache_limit
     
     get_specgrid_cache_limit(<void *>specgrid, &cache_limit)
 
@@ -214,7 +214,7 @@ def _get_specgrid_axis_label(uintptr_t specgrid, int i):
     return label.decode('ascii')
 
 
-def _set_specgrid_cache_limit(uintptr_t specgrid, int cache_limit):
+def _set_specgrid_cache_limit(uintptr_t specgrid, long cache_limit):
 
     cdef Stat stat
 

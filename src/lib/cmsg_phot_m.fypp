@@ -133,7 +133,7 @@ contains
          if (stat /= STAT_OK) return
       end if
  
-      call specgrid%set_cache_limit(0)
+      call specgrid%set_cache_limit(0_ID)
 
       allocate(photgrid)
       call specgrid%filter(passband, photgrid, stat)

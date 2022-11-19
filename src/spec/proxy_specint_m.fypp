@@ -45,6 +45,7 @@ module proxy_specint_m
       procedure, public :: get_lam_min
       procedure, public :: get_lam_max
       procedure, public :: get_precise
+      procedure, public :: get_usage
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -90,7 +91,8 @@ contains
 
    #:for name, type in (('lam_min', 'real(RD)'), &
                         ('lam_max', 'real(RD)'), &
-                        ('precise', 'logical'))
+                        ('precise', 'logical'), &
+                        ('usage', 'integer(ID)'))     
 
       subroutine get_${name}$(self, ${name}$)
 
