@@ -73,7 +73,7 @@ void load_photgrid_from_specgrid(const char *specgrid_file_name, const char *pas
 void unload_photgrid(PhotGrid photgrid);
 
 void get_photgrid_rank(PhotGrid photgrid, int *rank);
-void get_photgrid_cache_count(PhotGrid photgrid, long *cache_usage);
+void get_photgrid_cache_usage(PhotGrid photgrid, long *cache_usage);
 void get_photgrid_cache_limit(PhotGrid photgrid, long *cache_limit);
 void get_photgrid_axis_x_min(PhotGrid photgrid, int i, double *axis_x_min);
 void get_photgrid_axis_x_max(PhotGrid photgrid, int i, double *axis_x_max);
