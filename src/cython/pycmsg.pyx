@@ -86,13 +86,13 @@ cdef extern from "cmsg.h":
     void unload_photgrid(void *photgrid)
 
     void get_photgrid_rank(void *photgrid, int *rank)
-    void get_photgrid_cache_count(void *photgrid, int *cache_count)
-    void get_photgrid_cache_limit(void *photgrid, int *cache_limit)
+    void get_photgrid_cache_count(void *photgrid, long *cache_usage)
+    void get_photgrid_cache_limit(void *photgrid, long *cache_limit)
     void get_photgrid_axis_x_min(void *photgrid, int i, double *axis_x_min)
     void get_photgrid_axis_x_max(void *photgrid, int i, double *axis_x_max)
     void get_photgrid_axis_label(void *photgrid, int i, char *axis_label)
 
-    void set_photgrid_cache_limit(void *photgrid, int cache_limit, Stat *stat)
+    void set_photgrid_cache_limit(void *photgrid, long cache_limit, Stat *stat)
 
     void interp_photgrid_intensity(void *photgrid, double x_vec[], double mu,
                                    double *I, Stat *stat, bool deriv_vec[])
@@ -336,18 +336,18 @@ def _get_photgrid_rank(uintptr_t photgrid):
     return rank
 
 
-def _get_photgrid_cache_count(uintptr_t photgrid):
+def _get_photgrid_cache_usage(uintptr_t photgrid):
 
-    cdef int cache_count
+    cdef long cache_usage
 
-    get_photgrid_cache_count(<void *>photgrid, &cache_count)
+    get_photgrid_cache_count(<void *>photgrid, &cache_usage)
 
-    return cache_count
+    return cache_usage
 
 
 def _get_photgrid_cache_limit(uintptr_t photgrid):
 
-    cdef int cache_limit
+    cdef long cache_limit
     
     get_photgrid_cache_limit(<void *>photgrid, &cache_limit)
 
@@ -381,7 +381,7 @@ def _get_photgrid_axis_label(uintptr_t photgrid, int i):
     return label.decode('ascii')
 
 
-def _set_photgrid_cache_limit(uintptr_t photgrid, int cache_limit):
+def _set_photgrid_cache_limit(uintptr_t photgrid, long cache_limit):
 
     cdef Stat stat
 

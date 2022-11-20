@@ -73,13 +73,13 @@ void load_photgrid_from_specgrid(const char *specgrid_file_name, const char *pas
 void unload_photgrid(PhotGrid photgrid);
 
 void get_photgrid_rank(PhotGrid photgrid, int *rank);
-void get_photgrid_cache_count(PhotGrid photgrid, int *cache_count);
-void get_photgrid_cache_limit(PhotGrid photgrid, int *cache_limit);
+void get_photgrid_cache_count(PhotGrid photgrid, long *cache_usage);
+void get_photgrid_cache_limit(PhotGrid photgrid, long *cache_limit);
 void get_photgrid_axis_x_min(PhotGrid photgrid, int i, double *axis_x_min);
 void get_photgrid_axis_x_max(PhotGrid photgrid, int i, double *axis_x_max);
 void get_photgrid_axis_label(PhotGrid photgrid, int i, char *axis_label);
 
-void set_photgrid_cache_limit(PhotGrid photgrid, int cache_limit, Stat *stat);
+void set_photgrid_cache_limit(PhotGrid photgrid, long cache_limit, Stat *stat);
 
 void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, Stat *stat, bool deriv_vec[]);
 void interp_photgrid_E_moment(PhotGrid photgrid, double x_vec[], int k, double *E, Stat *stat, bool deriv_vec[]);

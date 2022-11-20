@@ -40,7 +40,7 @@ module cmsg_phot_m
    public :: load_photgrid
    public :: unload_photgrid
    public :: get_photgrid_rank
-   public :: get_photgrid_cache_count
+   public :: get_photgrid_cache_usage
    public :: get_photgrid_cache_limit
    public :: get_photgrid_axis_x_min
    public :: get_photgrid_axis_x_max
@@ -178,9 +178,9 @@ contains
 
    !****
 
-   #:for name, type in (('rank', 'integer(C_INT)'),          &
-                        ('cache_count', 'integer(C_INT)'),   &
-                        ('cache_limit', 'integer(C_INT)'))
+   #:for name, type in (('rank', 'integer(C_INT)'),         &
+                        ('cache_usage', 'integer(C_LONG)'), &
+                        ('cache_limit', 'integer(C_LONG)'))
                         
       subroutine get_photgrid_${name}$(photgrid_ptr, ${name}$) bind(C)
 
@@ -294,7 +294,7 @@ contains
    subroutine set_photgrid_cache_limit(photgrid_ptr, cache_limit, stat) bind(C)
 
       type(C_PTR), value       :: photgrid_ptr
-      integer(C_INT), value    :: cache_limit
+      integer(C_LONG), value   :: cache_limit
       integer(C_INT), optional :: stat
       
       type(photgrid_t), pointer :: photgrid

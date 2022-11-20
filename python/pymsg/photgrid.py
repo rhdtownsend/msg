@@ -113,14 +113,14 @@ class PhotGrid:
 
     
     @property
-    def cache_count(self):
-        """int: Number of nodes currently held in grid cache."""
-        return pyc._get_photgrid_cache_count(self._photgrid)
+    def cache_usage(self):
+        """int: Current memory usage (in bytes) of data in grid cache."""
+        return pyc._get_photgrid_cache_usage(self._photgrid)
 
 
     @property
     def cache_limit(self):
-        """double: Maximum number of nodes to hold in grid cache. Set to 0 to disable 
+        """int: Maximum memory usage (in bytes) of data in grid cache. Set to 0 to disable 
            caching."""
         return pyc._get_photgrid_cache_limit(self._photgrid)
     @cache_limit.setter

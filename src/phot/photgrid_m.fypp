@@ -50,7 +50,7 @@ module photgrid_m
       private
       procedure, public :: get_rank
       procedure, public :: get_axis
-      procedure, public :: get_cache_count
+      procedure, public :: get_cache_usage
       procedure, public :: get_cache_limit
       procedure, public :: set_cache_limit
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
@@ -140,8 +140,8 @@ contains
 
    !****
 
-   #:for name, type in (('count', 'integer'), &
-                        ('limit', 'integer'))
+   #:for name, type in (('usage', 'integer(ID)'), &
+                        ('limit', 'integer(ID)'))
    
       subroutine get_cache_${name}$(self, cache_${name}$)
 
@@ -165,10 +165,10 @@ contains
    subroutine set_cache_limit(self, cache_limit, stat)
 
       class(photgrid_t), intent(inout) :: self
-      integer, intent(in)              :: cache_limit
+      integer(ID), intent(in)          :: cache_limit
       integer, intent(out), optional   :: stat
 
-      ! Set the cache occupancy limit
+      ! Set the cache memory usage limit
 
       call self%photcache%set_limit(cache_limit, stat)
 
@@ -222,6 +222,11 @@ contains
             end if
 
             call photint%interp_${name}$(${arg_var}$, f, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call self%photcache%release(i_con, stat)
 
             return
 
@@ -282,6 +287,11 @@ contains
             end if
 
             call photint%interp_${name}$(f, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call self%photcache%release(i_con, stat)
 
             return
 
@@ -436,6 +446,11 @@ contains
          hdf5io_photint = hdf5io_t(hdf5io_photsource, photint_group_name_(i))
          call photint%write(hdf5io_photint, stat)
          call hdf5io_photint%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+         call self%photcache%release(i, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) exit write_loop
          end if
