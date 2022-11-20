@@ -138,13 +138,13 @@ class SpecGrid:
 
     @property
     def cache_usage(self):
-        """int: Memory usage of data (in bytes) currently held in grid cache."""
+        """int: Current memory usage (in bytes) of data in grid cache."""
         return pyc._get_specgrid_cache_usage(self._specgrid)
 
 
     @property
     def cache_limit(self):
-        """double: Maximum memory usagr of data (in bytes) to hold in grid cache. Set to 0 to disable 
+        """int: Maximum memory usage (in bytes) of data in grid cache. Set to 0 to disable 
            caching."""
         return pyc._get_specgrid_cache_limit(self._specgrid)
     @cache_limit.setter
