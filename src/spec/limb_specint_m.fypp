@@ -220,7 +220,7 @@ contains
       ! Get the memory usage
 
       call self%range%get_usage(usage_range)
-      call self%range%get_usage(usage_limb)
+      call self%limb%get_usage(usage_limb)
 
       usage = STORAGE_SIZE(self)/8 +                    &
               STORAGE_SIZE(self%c)/8*SIZE(self%c) +     &
