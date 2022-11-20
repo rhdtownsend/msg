@@ -86,7 +86,7 @@ cdef extern from "cmsg.h":
     void unload_photgrid(void *photgrid)
 
     void get_photgrid_rank(void *photgrid, int *rank)
-    void get_photgrid_cache_count(void *photgrid, long *cache_usage)
+    void get_photgrid_cache_usage(void *photgrid, long *cache_usage)
     void get_photgrid_cache_limit(void *photgrid, long *cache_limit)
     void get_photgrid_axis_x_min(void *photgrid, int i, double *axis_x_min)
     void get_photgrid_axis_x_max(void *photgrid, int i, double *axis_x_max)
@@ -340,7 +340,7 @@ def _get_photgrid_cache_usage(uintptr_t photgrid):
 
     cdef long cache_usage
 
-    get_photgrid_cache_count(<void *>photgrid, &cache_usage)
+    get_photgrid_cache_usage(<void *>photgrid, &cache_usage)
 
     return cache_usage
 
