@@ -173,8 +173,8 @@ contains
             integer, intent(out), optional             :: stat
          end subroutine fetch_proc
       end interface
-      class(photint_t), allocatable, intent(out) :: photint
-      integer, intent(out), optional             :: stat
+      class(photint_t), pointer, intent(out) :: photint
+      integer, intent(out), optional         :: stat
 
       integer     :: j
       integer(ID) :: usage
@@ -228,9 +228,9 @@ contains
 
       end if
 
-      ! Assign the photint
+      ! Set up the return pointer
 
-      photint = self%photint_elements(i)%photint
+      photint => self%photint_elements(i)%photint
 
       ! Finish
 

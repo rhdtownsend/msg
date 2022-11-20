@@ -25,7 +25,6 @@ module speccache_m
    use forum_m
 
    use specint_m
-   use proxy_specint_m
    use stat_m
 
    use ISO_FORTRAN_ENV
@@ -251,8 +250,8 @@ contains
             integer, intent(out), optional             :: stat
          end subroutine fetch_proc
       end interface
-      class(specint_t), allocatable, intent(out) :: specint
-      integer, intent(out), optional             :: stat
+      class(specint_t), pointer, intent(out) :: specint
+      integer, intent(out), optional         :: stat
 
       integer                       :: j
       class(specint_t), allocatable :: specint_full
@@ -325,9 +324,9 @@ contains
 
       end if
 
-      ! Wrap the entry in a proxy_specint_t (to avoid copying)
+      ! Set up the return pointer
 
-      specint = proxy_specint_t(self%specint_elements(i)%specint)
+      specint => self%specint_elements(i)%specint
 
       ! Finish
 

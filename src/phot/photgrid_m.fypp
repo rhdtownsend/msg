@@ -209,9 +209,9 @@ contains
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer                       :: i_lin
-            integer                       :: i_con
-            class(photint_t), allocatable :: photint
+            integer                   :: i_lin
+            integer                   :: i_con
+            class(photint_t), pointer :: photint
 
             i_lin = self%vgrid%lin_from_vec(i_vec)
             i_con = self%vgrid%con_from_lin(i_lin)
@@ -274,9 +274,9 @@ contains
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer                       :: i_lin
-            integer                       :: i_con
-            class(photint_t), allocatable :: photint
+            integer                   :: i_lin
+            integer                   :: i_con
+            class(photint_t), pointer :: photint
 
             i_lin = self%vgrid%lin_from_vec(i_vec)
             i_con = self%vgrid%con_from_lin(i_lin)
@@ -418,12 +418,12 @@ contains
       type(hdf5io_t), intent(inout)    :: hdf5io
       integer, intent(out), optional   :: stat
 
-      integer                       :: n
-      type(hdf5io_t)                :: hdf5io_photsource
-      integer                       :: i
-      class(photint_t), allocatable :: photint
-      type(hdf5io_t)                :: hdf5io_photint
-      type(hdf5io_t)                :: hdf5io_vgrid
+      integer                   :: n
+      type(hdf5io_t)            :: hdf5io_photsource
+      integer                   :: i
+      class(photint_t), pointer :: photint
+      type(hdf5io_t)            :: hdf5io_photint
+      type(hdf5io_t)            :: hdf5io_vgrid
 
       ! Write the photgrid
 

@@ -306,9 +306,9 @@ contains
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer                       :: i_lin
-            integer                       :: i_con
-            class(specint_t), allocatable :: specint
+            integer                   :: i_lin
+            integer                   :: i_con
+            class(specint_t), pointer :: specint
 
             i_lin = self%vgrid%lin_from_vec(i_vec)
             i_con = self%vgrid%con_from_lin(i_lin)
@@ -372,9 +372,9 @@ contains
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer                       :: i_lin
-            integer                       :: i_con
-            class(specint_t), allocatable :: specint
+            integer                   :: i_lin
+            integer                   :: i_con
+            class(specint_t), pointer :: specint
 
             i_lin = self%vgrid%lin_from_vec(i_vec)
             i_con = self%vgrid%con_from_lin(i_lin)
@@ -543,14 +543,14 @@ contains
       type(hdf5io_t), intent(inout)    :: hdf5io
       integer, intent(out), optional   :: stat
 
-      integer                       :: n
-      real(RD)                      :: lam_min
-      real(RD)                      :: lam_max
-      type(hdf5io_t)                :: hdf5io_specsource
-      integer                       :: i
-      class(specint_t), allocatable :: specint
-      type(hdf5io_t)                :: hdf5io_specint
-      type(hdf5io_t)                :: hdf5io_vgrid
+      integer                   :: n
+      real(RD)                  :: lam_min
+      real(RD)                  :: lam_max
+      type(hdf5io_t)            :: hdf5io_specsource
+      integer                   :: i
+      class(specint_t), pointer :: specint
+      type(hdf5io_t)            :: hdf5io_specint
+      type(hdf5io_t)            :: hdf5io_vgrid
 
       ! Write the specgrid
 
