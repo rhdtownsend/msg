@@ -32,7 +32,7 @@ module specint_m
       procedure(get_lam_min), deferred, public :: get_lam_min
       procedure(get_lam_max), deferred, public :: get_lam_max
       procedure(get_precise), deferred, public :: get_precise
-      procedure(get_usage), deferred, public    :: get_usage
+      procedure(get_usage), deferred, public   :: get_usage
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure(interp_${name}$), deferred, public :: interp_${name}$
       #:endfor

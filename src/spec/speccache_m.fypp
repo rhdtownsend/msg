@@ -212,7 +212,7 @@ contains
       integer(ID), intent(in)           :: limit
       integer, intent(out), optional    :: stat
 
-      ! Set the cache storage usage limit
+      ! Set the cache memory usage limit
 
       if (limit < 0_ID) then
          if (PRESENT(stat)) then
