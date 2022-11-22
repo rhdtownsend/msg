@@ -152,6 +152,11 @@ class SpecGrid:
         pyc._set_specgrid_cache_limit(self._specgrid, cache_limit)
 
 
+    def flush_cache(self):
+        """Flush the grid cache"""
+        pyc._flush_specgrid_cache(self._specgrid)
+
+
     def intensity(self, x, mu, lam, deriv=None):
         r"""Evaluate the spectroscopic intensity.
 
