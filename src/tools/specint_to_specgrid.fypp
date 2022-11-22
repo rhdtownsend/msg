@@ -341,7 +341,7 @@ contains
 
       specgrid = specgrid_t(specsource, vgrid)
 
-      call specgrid%set_cache_limit(0_ID)
+      call specgrid%set_cache_limit(0)
 
       ! Finish
 

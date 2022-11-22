@@ -50,9 +50,10 @@ module photgrid_m
       private
       procedure, public :: get_rank
       procedure, public :: get_axis
-      procedure, public :: get_cache_usage
       procedure, public :: get_cache_limit
+      procedure, public :: get_cache_usage 
       procedure, public :: set_cache_limit
+      procedure, public :: flush_cache
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -140,8 +141,8 @@ contains
 
    !****
 
-   #:for name, type in (('usage', 'integer(ID)'), &
-                        ('limit', 'integer(ID)'))
+   #:for name, type in (('limit', 'integer'), &
+                        ('usage', 'integer'))
    
       subroutine get_cache_${name}$(self, cache_${name}$)
 
@@ -165,7 +166,7 @@ contains
    subroutine set_cache_limit(self, cache_limit, stat)
 
       class(photgrid_t), intent(inout) :: self
-      integer(ID), intent(in)          :: cache_limit
+      integer, intent(in)              :: cache_limit
       integer, intent(out), optional   :: stat
 
       ! Set the cache memory usage limit
@@ -247,6 +248,22 @@ contains
       end subroutine interp_${name}$
 
    #:endfor
+
+   !****
+
+   subroutine flush_cache(self)
+
+      class(photgrid_t), intent(inout) :: self
+
+      ! Flush the cache
+
+      call self%photcache%flush()
+
+      ! Finish
+
+      return
+
+   end subroutine flush_cache
 
    !****
 

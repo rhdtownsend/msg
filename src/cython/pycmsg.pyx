@@ -56,17 +56,19 @@ cdef extern from "cmsg.h":
     void get_specgrid_rank(void *specgrid, int *rank)
     void get_specgrid_lam_min(void *specgrid, double *lam_min)
     void get_specgrid_lam_max(void *specgrid, double *lam_max)
-    void get_specgrid_cache_usage(void *specgrid, long *cache_usage)
-    void get_specgrid_cache_limit(void *specgrid, long *cache_limit)
+    void get_specgrid_cache_usage(void *specgrid, int *cache_usage)
+    void get_specgrid_cache_limit(void *specgrid, int *cache_limit)
     void get_specgrid_cache_lam_min(void *specgrid, double *cache_lam_min)
     void get_specgrid_cache_lam_max(void *specgrid, double *cache_lam_max)
     void get_specgrid_axis_x_min(void *specgrid, int i, double *axis_x_min)
     void get_specgrid_axis_x_max(void *specgrid, int i, double *axis_x_max)
     void get_specgrid_axis_label(void *specgrid, int i, char *axis_label)
 
-    void set_specgrid_cache_limit(void *specgrid, long cache_limit, Stat *stat)
+    void set_specgrid_cache_limit(void *specgrid, int cache_limit, Stat *stat)
     void set_specgrid_cache_lam_min(void *specgrid, double cache_lam_min, Stat *stat)
     void set_specgrid_cache_lam_max(void *specgrid, double cache_lam_max, Stat *stat)
+
+    void flush_specgrid_cache(void *specgrid)
 
     void interp_specgrid_intensity(void *specgrid, double x_vec[], double mu,
                                    int n, double lam[], double I[], Stat *stat,
@@ -86,13 +88,15 @@ cdef extern from "cmsg.h":
     void unload_photgrid(void *photgrid)
 
     void get_photgrid_rank(void *photgrid, int *rank)
-    void get_photgrid_cache_usage(void *photgrid, long *cache_usage)
-    void get_photgrid_cache_limit(void *photgrid, long *cache_limit)
+    void get_photgrid_cache_usage(void *photgrid, int *cache_usage)
+    void get_photgrid_cache_limit(void *photgrid, int *cache_limit)
     void get_photgrid_axis_x_min(void *photgrid, int i, double *axis_x_min)
     void get_photgrid_axis_x_max(void *photgrid, int i, double *axis_x_max)
     void get_photgrid_axis_label(void *photgrid, int i, char *axis_label)
 
-    void set_photgrid_cache_limit(void *photgrid, long cache_limit, Stat *stat)
+    void set_photgrid_cache_limit(void *photgrid, int cache_limit, Stat *stat)
+
+    void flush_photgrid_cache(void *photgrid)
 
     void interp_photgrid_intensity(void *photgrid, double x_vec[], double mu,
                                    double *I, Stat *stat, bool deriv_vec[])
@@ -153,7 +157,7 @@ def _get_specgrid_lam_max(uintptr_t specgrid):
 
 def _get_specgrid_cache_usage(uintptr_t specgrid):
 
-    cdef long cache_usage
+    cdef int cache_usage
 
     get_specgrid_cache_usage(<void *>specgrid, &cache_usage)
 
@@ -162,7 +166,7 @@ def _get_specgrid_cache_usage(uintptr_t specgrid):
 
 def _get_specgrid_cache_limit(uintptr_t specgrid):
 
-    cdef long cache_limit
+    cdef int cache_limit
     
     get_specgrid_cache_limit(<void *>specgrid, &cache_limit)
 
@@ -214,7 +218,7 @@ def _get_specgrid_axis_label(uintptr_t specgrid, int i):
     return label.decode('ascii')
 
 
-def _set_specgrid_cache_limit(uintptr_t specgrid, long cache_limit):
+def _set_specgrid_cache_limit(uintptr_t specgrid, int cache_limit):
 
     cdef Stat stat
 
@@ -236,6 +240,11 @@ def _set_specgrid_cache_lam_max(uintptr_t specgrid, double cache_lam_max):
 
     set_specgrid_cache_lam_max(<void *>specgrid, cache_lam_max, &stat)
     _handle_error(stat)
+
+
+def _flush_specgrid_cache(uintptr_t specgrid):
+
+    flush_specgrid_cache(<void *>specgrid)
 
 
 def _interp_specgrid_intensity(uintptr_t specgrid, double[:] x_vec, double mu, double[:] lam, bool[:] deriv_vec):
@@ -338,7 +347,7 @@ def _get_photgrid_rank(uintptr_t photgrid):
 
 def _get_photgrid_cache_usage(uintptr_t photgrid):
 
-    cdef long cache_usage
+    cdef int cache_usage
 
     get_photgrid_cache_usage(<void *>photgrid, &cache_usage)
 
@@ -347,7 +356,7 @@ def _get_photgrid_cache_usage(uintptr_t photgrid):
 
 def _get_photgrid_cache_limit(uintptr_t photgrid):
 
-    cdef long cache_limit
+    cdef int cache_limit
     
     get_photgrid_cache_limit(<void *>photgrid, &cache_limit)
 
@@ -381,7 +390,7 @@ def _get_photgrid_axis_label(uintptr_t photgrid, int i):
     return label.decode('ascii')
 
 
-def _set_photgrid_cache_limit(uintptr_t photgrid, long cache_limit):
+def _set_photgrid_cache_limit(uintptr_t photgrid, int cache_limit):
 
     cdef Stat stat
 
@@ -389,6 +398,11 @@ def _set_photgrid_cache_limit(uintptr_t photgrid, long cache_limit):
     _handle_error(stat)
 
     
+def _flush_photgrid_cache(uintptr_t photgrid):
+
+    flush_photgrid_cache(<void *>photgrid)
+
+
 def _interp_photgrid_intensity(uintptr_t photgrid, double[:] x_vec, double mu, bool[:] deriv_vec):
 
     cdef double I

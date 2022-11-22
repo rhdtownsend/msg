@@ -59,11 +59,12 @@ module specgrid_m
       procedure, public :: get_lam_max
       procedure, public :: get_cache_lam_min
       procedure, public :: get_cache_lam_max
-      procedure, public :: get_cache_usage
       procedure, public :: get_cache_limit
+      procedure, public :: get_cache_usage
       procedure, public :: set_cache_lam_min
       procedure, public :: set_cache_lam_max
       procedure, public :: set_cache_limit
+      procedure, public :: flush_cache
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -184,8 +185,8 @@ contains
 
    #:for name, type in (('lam_min', 'real(RD)'), &
                         ('lam_max', 'real(RD)'), &
-                        ('usage', 'integer(ID)'), &
-                        ('limit', 'integer(ID)'))
+                        ('limit', 'integer'),    &
+                        ('usage', 'integer'))
 
       subroutine get_cache_${name}$(self, cache_${name}$)
 
@@ -262,9 +263,9 @@ contains
 
    subroutine set_cache_limit(self, cache_limit, stat)
 
-      class(specgrid_t), intent(inout)  :: self
-      integer(ID), intent(in)           :: cache_limit
-      integer, intent(out), optional    :: stat
+      class(specgrid_t), intent(inout) :: self
+      integer, intent(in)              :: cache_limit
+      integer, intent(out), optional   :: stat
 
       ! Set the cache memory usage limit
 
@@ -275,6 +276,22 @@ contains
       return
 
    end subroutine set_cache_limit
+
+   !****
+
+   subroutine flush_cache(self)
+
+      class(specgrid_t), intent(inout) :: self
+
+      ! Flush the cache
+
+      call self%speccache%flush()
+
+      ! Finish
+
+      return
+
+   end subroutine flush_cache
 
    !****
 

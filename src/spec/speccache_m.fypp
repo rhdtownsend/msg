@@ -35,7 +35,7 @@ module speccache_m
 
    ! Parameter definitions
 
-   integer(ID), parameter :: INITIAL_SIZE = ISHFT(128_ID, 20)
+   integer(ID), parameter :: INITIAL_LIMIT = 128*1024
 
    ! Derived-type definitions
 
@@ -46,22 +46,22 @@ module speccache_m
       integer, allocatable                 :: exp_counts(:)
       real(RD)                             :: lam_min
       real(RD)                             :: lam_max
-      integer(ID)                          :: usage
-      integer(ID)                          :: limit
+      integer(ID)                          :: ssize
+      integer                              :: limit
       integer                              :: n
    contains
       private
       procedure, public :: get_lam_min
       procedure, public :: get_lam_max
-      procedure, public :: get_usage
       procedure, public :: get_limit
+      procedure, public :: get_usage
       procedure, public :: set_lam_min
       procedure, public :: set_lam_max
       procedure, public :: set_limit
       procedure, public :: fetch
       procedure, public :: release
+      procedure, public :: flush
       procedure         :: trim_
-      procedure         :: flush_
    end type speccache_t
 
    type :: specint_element_t
@@ -102,8 +102,8 @@ contains
       speccache%lam_min = lam_min
       speccache%lam_max = lam_max
 
-      speccache%usage = 0
-      speccache%limit = INITIAL_SIZE
+      speccache%ssize = 0
+      speccache%limit = INITIAL_LIMIT
 
       speccache%n = n
 
@@ -115,10 +115,9 @@ contains
 
    !****
 
-   #:for name, type in (('lam_min', 'real(RD)'),  &
-                        ('lam_max', 'real(RD)'),  &
-                        ('usage', 'integer(ID)'), &
-                        ('limit', 'integer(ID)'))        
+   #:for name, type in (('lam_min', 'real(RD)'), &
+                        ('lam_max', 'real(RD)'), &
+                        ('limit', 'integer'))        
                         
       subroutine get_${name}$(self, ${name}$)
 
@@ -136,6 +135,23 @@ contains
       end subroutine get_${name}$
 
    #:endfor
+
+   !****
+
+   subroutine get_usage(self, usage)
+
+      class(speccache_t), intent(in) :: self
+      integer, intent(out)           :: usage
+
+      ! Get the memory usage
+
+      usage = self%ssize/1024
+     
+      ! Finish
+
+      return
+
+   end subroutine get_usage
 
    !****
 
@@ -160,7 +176,7 @@ contains
 
       ! Flush the cache
 
-      call self%flush_()
+      call self%flush()
 
       ! Finish
 
@@ -193,7 +209,7 @@ contains
 
       ! Flush the cache
 
-      call self%flush_()
+      call self%flush()
          
       ! Finish
 
@@ -208,7 +224,7 @@ contains
    subroutine set_limit(self, limit, stat)
 
       class(speccache_t), intent(inout) :: self
-      integer(ID), intent(in)           :: limit
+      integer, intent(in)               :: limit
       integer, intent(out), optional    :: stat
 
       ! Set the cache memory usage limit
@@ -257,7 +273,7 @@ contains
       class(specint_t), allocatable :: specint_full
       real(RD)                      :: lam_min
       real(RD)                      :: lam_max
-      integer(ID)                   :: usage
+      integer(ID)                   :: ssize
          
       ! Fetch the i'th specint
 
@@ -311,11 +327,11 @@ contains
 
          endif
 
-         ! Update the memory usage
+         ! Update the storage size
 
-         call self%specint_elements(i)%specint%get_usage(usage)
+         call self%specint_elements(i)%specint%get_ssize(ssize)
 
-         self%usage = self%usage + usage
+         self%ssize = self%ssize + ssize
 
          ! Set the reference and expiry counters
 
@@ -379,48 +395,7 @@ contains
 
    !****
 
-   subroutine trim_(self)
-
-      class(speccache_t), intent(inout) :: self
-
-      integer     :: j
-      integer(ID) :: usage
-
-      ! Trim the cache so that its memory usage is smaller than limit
-
-      trim_loop : do
-
-         ! Check usage
-
-         if (self%usage <= self%limit) exit trim_loop
-
-         ! Find the unreferenced entry with the smallest expiry time
-
-         j = MINLOC(self%exp_counts, DIM=1, mask=self%ref_counts == 0 .AND. self%exp_counts > 0)
-
-         ! Deallocate it
-
-         call self%specint_elements(j)%specint%get_usage(usage)
-
-         deallocate(self%specint_elements(j)%specint)
-
-         self%usage = self%usage - usage
-
-         ! Update expiry counter
-
-         self%exp_counts(j) = 0
-
-      end do trim_loop
-
-      ! Finish
-
-      return
-
-   end subroutine trim_
-
-   !****
-
-   subroutine flush_(self)
+   subroutine flush(self)
 
       class(speccache_t), intent(inout) :: self
 
@@ -439,12 +414,56 @@ contains
       self%ref_counts = 0
       self%exp_counts = 0
 
-      self%usage = 0
+      self%ssize = 0
 
       ! Finish
 
       return
 
-   end subroutine flush_
+   end subroutine flush
+
+   !****
+
+   subroutine trim_(self)
+
+      class(speccache_t), intent(inout) :: self
+
+      integer     :: j
+      integer     :: usage
+      integer(ID) :: ssize
+
+      ! Trim the cache so that its memory usage is smaller than limit
+
+      trim_loop : do
+
+         ! Check usage
+
+         call self%get_usage(usage)
+
+         if (usage <= self%limit) exit trim_loop
+
+         ! Find the unreferenced entry with the smallest expiry time
+
+         j = MINLOC(self%exp_counts, DIM=1, mask=self%ref_counts == 0 .AND. self%exp_counts > 0)
+
+         ! Deallocate it
+
+         call self%specint_elements(j)%specint%get_ssize(ssize)
+
+         deallocate(self%specint_elements(j)%specint)
+
+         self%ssize = self%ssize - ssize
+
+         ! Update expiry counter
+
+         self%exp_counts(j) = 0
+
+      end do trim_loop
+
+      ! Finish
+
+      return
+
+   end subroutine trim_
 
 end module speccache_m

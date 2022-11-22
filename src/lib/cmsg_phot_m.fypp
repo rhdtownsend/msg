@@ -40,12 +40,13 @@ module cmsg_phot_m
    public :: load_photgrid
    public :: unload_photgrid
    public :: get_photgrid_rank
-   public :: get_photgrid_cache_usage
    public :: get_photgrid_cache_limit
+   public :: get_photgrid_cache_usage
    public :: get_photgrid_axis_x_min
    public :: get_photgrid_axis_x_max
    public :: get_photgrid_axis_label
    public :: set_photgrid_cache_limit
+   public :: flush_photgrid_cache
    public :: interp_photgrid_intensity
    public :: interp_photgrid_E_moment
    public :: interp_photgrid_D_moment
@@ -133,7 +134,7 @@ contains
          if (stat /= STAT_OK) return
       end if
  
-      call specgrid%set_cache_limit(0_ID)
+      call specgrid%set_cache_limit(0)
 
       allocate(photgrid)
       call specgrid%filter(passband, photgrid, stat)
@@ -178,9 +179,9 @@ contains
 
    !****
 
-   #:for name, type in (('rank', 'integer(C_INT)'),         &
-                        ('cache_usage', 'integer(C_LONG)'), &
-                        ('cache_limit', 'integer(C_LONG)'))
+   #:for name, type in (('rank', 'integer(C_INT)'),        &
+                        ('cache_usage', 'integer(C_INT)'), &
+                        ('cache_limit', 'integer(C_INT)'))
                         
       subroutine get_photgrid_${name}$(photgrid_ptr, ${name}$) bind(C)
 
@@ -294,7 +295,7 @@ contains
    subroutine set_photgrid_cache_limit(photgrid_ptr, cache_limit, stat) bind(C)
 
       type(C_PTR), value       :: photgrid_ptr
-      integer(C_LONG), value   :: cache_limit
+      integer(C_INT), value    :: cache_limit
       integer(C_INT), optional :: stat
       
       type(photgrid_t), pointer :: photgrid
@@ -312,6 +313,28 @@ contains
       return
 
    end subroutine set_photgrid_cache_limit
+
+   !****
+
+   subroutine flush_photgrid_cache(photgrid_ptr) bind(C)
+
+      type(C_PTR), value       :: photgrid_ptr
+         
+      type(photgrid_t), pointer :: photgrid
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(photgrid_ptr, photgrid)
+
+      ! Flush the cache
+
+      call photgrid%flush_cache()
+
+      ! Finish
+
+      return
+
+   end subroutine flush_photgrid_cache
 
    !****
 
