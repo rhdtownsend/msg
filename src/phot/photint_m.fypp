@@ -30,7 +30,7 @@ module photint_m
    contains
       private
       procedure(get_precise), deferred, public :: get_precise
-      procedure(get_usage), deferred, public   :: get_usage
+      procedure(get_ssize), deferred, public   :: get_ssize
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure(interp_${name}$), deferred, public :: interp_${name}$
       #:endfor
@@ -42,8 +42,8 @@ module photint_m
 
    abstract interface
 
-      #:for name, type in (('precise', 'logical'),   &
-                           ('usage', 'integer(ID)'))     
+      #:for name, type in (('precise', 'logical'), &
+                           ('ssize', 'integer(ID)'))
 
          subroutine get_${name}$(self, ${name}$)
             use forum_m

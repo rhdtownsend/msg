@@ -45,7 +45,7 @@ module tab_range_m
       procedure, public :: get_n
       procedure, public :: get_x_min
       procedure, public :: get_x_max
-      procedure, public :: get_usage
+      procedure, public :: get_ssize
       procedure, public :: unpack
       procedure, public :: subset
       procedure, public :: read
@@ -142,21 +142,21 @@ contains
 
    !****
 
-   subroutine get_usage(self, usage)
+   subroutine get_ssize(self, ssize)
 
       class(tab_range_t), intent(in) :: self
-      integer(ID), intent(out)       :: usage
+      integer(ID), intent(out)       :: ssize
 
-      ! Get the memory usage
+      ! Get the storage size
 
-      usage = STORAGE_SIZE(self)/8 + &
+      ssize = STORAGE_SIZE(self)/8 + &
               STORAGE_SIZE(self%x)/8*SIZE(self%x)
 
       ! Finish
 
       return
 
-   end subroutine get_usage
+   end subroutine get_ssize
 
    !****
 

@@ -47,7 +47,7 @@ module limb_photint_m
    contains
       private
       procedure, public :: get_precise
-      procedure, public :: get_usage
+      procedure, public :: get_ssize
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -151,26 +151,26 @@ contains
 
    !****
 
-   subroutine get_usage(self, usage)
+   subroutine get_ssize(self, ssize)
 
       class(limb_photint_t), intent(in) :: self
-      integer(ID), intent(out)          :: usage
+      integer(ID), intent(out)          :: ssize
 
-      integer(ID) :: usage_limb
+      integer(ID) :: ssize_limb
 
-      ! Get the memory usage
+      ! Get the storage size
 
-      call self%limb%get_usage(usage_limb)
+      call self%limb%get_ssize(ssize_limb)
       
-      usage = STORAGE_SIZE(self)/8 +                 &
+      ssize = STORAGE_SIZE(self)/8 +                 &
               STORAGE_SIZE(self%c)/8*SIZE(self%c) +  &
-              usage_limb
+              ssize_limb
 
       ! Finish
 
       return
 
-   end subroutine get_usage
+   end subroutine get_ssize
 
    !****
 

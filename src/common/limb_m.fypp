@@ -53,7 +53,7 @@ module limb_m
    contains
       private
       procedure, public :: get_n
-      procedure, public :: get_usage
+      procedure, public :: get_ssize
       procedure, public :: eval_intensity_basis
       procedure, public :: eval_flux_basis
       procedure, public :: eval_E_moment_basis
@@ -190,20 +190,20 @@ contains
 
    !****
 
-   subroutine get_usage(self, usage)
+   subroutine get_ssize(self, ssize)
    
       class(limb_t), intent(in) :: self
-      integer(ID), intent(out)  :: usage
+      integer(ID), intent(out)  :: ssize
 
-      ! Get the memory usage
+      ! Get the storage size
 
-      usage = STORAGE_SIZE(self)/8
+      ssize = STORAGE_SIZE(self)/8
 
       ! Finish
 
       return
 
-   end subroutine get_usage
+   end subroutine get_ssize
 
    !****
 

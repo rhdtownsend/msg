@@ -46,7 +46,7 @@ module comp_range_m
       procedure, public :: get_n
       procedure, public :: get_x_min
       procedure, public :: get_x_max
-      procedure, public :: get_usage
+      procedure, public :: get_ssize
       procedure, public :: unpack
       procedure, public :: subset
       procedure, public :: read
@@ -200,25 +200,25 @@ contains
 
    !****
 
-   subroutine get_usage(self, usage)
+   subroutine get_ssize(self, ssize)
 
       class(comp_range_t), intent(in) :: self
-      integer(ID), intent(out)        :: usage
+      integer(ID), intent(out)        :: ssize
 
       integer     :: j
-      integer(ID) :: usage_range
+      integer(ID) :: ssize_range
 
-      ! Get the memory usage
+      ! Get the storage size
 
-      usage = STORAGE_SIZE(self)/8 +                                          &
+      ssize = STORAGE_SIZE(self)/8 +                                          &
               STORAGE_SIZE(self%range_elements)/8*SIZE(self%range_elements) + &
               STORAGE_SIZE(self%i_bdy)/8*SIZE(self%i_bdy)
 
       ranges_loop: do j = 1, self%n_ranges
 
-         call self%range_elements(j)%range%get_usage(usage_range)
+         call self%range_elements(j)%range%get_ssize(ssize_range)
 
-         usage = usage + usage_range
+         ssize = ssize + ssize_range
 
       end do ranges_loop
 
@@ -226,7 +226,7 @@ contains
 
       return
 
-   end subroutine get_usage
+   end subroutine get_ssize
 
    !****
 

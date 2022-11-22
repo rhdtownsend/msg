@@ -32,7 +32,7 @@ module specint_m
       procedure(get_lam_min), deferred, public :: get_lam_min
       procedure(get_lam_max), deferred, public :: get_lam_max
       procedure(get_precise), deferred, public :: get_precise
-      procedure(get_usage), deferred, public   :: get_usage
+      procedure(get_ssize), deferred, public   :: get_ssize
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure(interp_${name}$), deferred, public :: interp_${name}$
       #:endfor
@@ -50,7 +50,7 @@ module specint_m
       #:for name, type in (('lam_min', 'real(RD)'),  &
                            ('lam_max', 'real(RD)'),  &
                            ('precise', 'logical'),   &
-                           ('usage', 'integer(ID)'))     
+                           ('ssize', 'integer(ID)'))     
 
          subroutine get_${name}$(self, ${name}$)
             use forum_m
