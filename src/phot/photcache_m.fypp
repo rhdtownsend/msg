@@ -36,7 +36,7 @@ module photcache_m
 
    ! Parameter definitions
 
-   integer(ID), parameter :: INITIAL_LIMIT = 128*1024
+   integer(ID), parameter :: INITIAL_LIMIT = 128
 
    ! Derived-type definitions
 
@@ -128,9 +128,9 @@ contains
       class(photcache_t), intent(in) :: self
       integer, intent(out)           :: usage
          
-      ! Get the memory usage
+      ! Get the memory usage (megabytes)
 
-      usage = self%ssize/1024
+      usage = self%ssize/(1024*1024)
 
       ! Finish
 
