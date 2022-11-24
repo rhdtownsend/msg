@@ -114,14 +114,13 @@ class PhotGrid:
     
     @property
     def cache_usage(self):
-        """int: Current memory usage (in kilobytes) of data in grid cache."""
+        """int: Current memory usage of grid cache (MB)."""
         return pyc._get_photgrid_cache_usage(self._photgrid)
 
 
     @property
     def cache_limit(self):
-        """int: Maximum memory usage (in kilobytes) of data in grid cache. Set to 0 to disable
-           caching."""
+        """int: Maximum memory usage of grid cache (MB)."""
         return pyc._get_photgrid_cache_limit(self._photgrid)
     @cache_limit.setter
     def cache_limit(self, cache_limit):

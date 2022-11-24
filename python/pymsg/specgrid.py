@@ -108,19 +108,19 @@ class SpecGrid:
     
     @property
     def lam_min(self):
-        """double: Minimum wavelength of grid."""
+        """double: Minimum wavelength of grid (Å)."""
         return pyc._get_specgrid_lam_min(self._specgrid)
 
     
     @property
     def lam_max(self):
-        """double: Maximum wavelength of grid."""
+        """double: Maximum wavelength of grid (Å)."""
         return pyc._get_specgrid_cache_lam_max(self._specgrid)
 
 
     @property
     def cache_lam_min(self):
-        """double: Minimum wavelength of grid cache."""
+        """double: Minimum wavelength of grid cache (Å)."""
         return pyc._get_specgrid_cache_lam_min(self._specgrid)
     @cache_lam_min.setter
     def cache_lam_min(self, cache_lam_min):
@@ -129,22 +129,22 @@ class SpecGrid:
 
     @property
     def cache_lam_max(self):
-        """double: Maximum wavelength of grid cache."""
+        """double: Maximum wavelength of grid cache (Å)."""
         return pyc._get_specgrid_cache_lam_max(self._specgrid)
     @cache_lam_max.setter
     def cache_lam_max(self, cache_lam_max):
-        pyc.set_specgrid_cache_lam_max(self._specgrid, cache_lam_max)
+        pyc._set_specgrid_cache_lam_max(self._specgrid, cache_lam_max)
         
 
     @property
     def cache_usage(self):
-        """int: Current memory usage (in bytes) of data in grid cache."""
+        """int: Current memory usage of grid cache (MB)."""
         return pyc._get_specgrid_cache_usage(self._specgrid)
 
 
     @property
     def cache_limit(self):
-        """int: Maximum memory usage (in bytes) of data in grid cache. Set to 0 to disable 
+        """int: Maximum memory usage of grid cache (MB)."""
            caching."""
         return pyc._get_specgrid_cache_limit(self._specgrid)
     @cache_limit.setter
