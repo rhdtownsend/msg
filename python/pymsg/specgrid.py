@@ -145,7 +145,6 @@ class SpecGrid:
     @property
     def cache_limit(self):
         """int: Maximum memory usage of grid cache (MB)."""
-           caching."""
         return pyc._get_specgrid_cache_limit(self._specgrid)
     @cache_limit.setter
     def cache_limit(self, cache_limit):
