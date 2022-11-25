@@ -127,10 +127,10 @@ limb-darkening law.
 
 The definitions and ranges of the atmospheric parameters are as follows:
 
-* effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [27500, 55000]`
-* surface gravity ``log(g)`` :math:`= \log_{10} (g/\cm\,\second^{-2}) \in [3.0, 4.5]`
+* effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [3500, 30000]`
+* surface gravity ``log(g)`` :math:`= \log_{10} (g/\cm\,\second^{-2}) \in [0.0, 5.0]`
 * metallicity ``[Fe/H]`` :math:`= \log_{10}[ (\mathrm{Fe}/\mathrm{H}) / (\mathrm{Fe}/\mathrm{H})_{\odot} ] \in [-5.0, 0.5]`
-* alpha enhancement ``[alpha/Fe]`` :math:`= \log_{10}[ (\alpha/\mathrm{Fe}) / (\alpha/\mathrm{Fe})_{\odot} ] \in [-5.0, 0.5]`
+* alpha enhancement ``[alpha/Fe]`` :math:`= \log_{10}[ (\alpha/\mathrm{Fe}) / (\alpha/\mathrm{Fe})_{\odot} ] \in [-1.0, 1.0]`
 * microturbulent velocity ``log(xi)`` :math:`= \log_{10} (\xi/\cm\,\second^{-1}) \in [-0.301,0.903]`
 
 .. _grid-files-Göttingen:

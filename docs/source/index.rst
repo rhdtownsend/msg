@@ -21,6 +21,8 @@ version 3.
    user-guide/fortran-walkthrough.rst
    user-guide/c-walkthrough.rst
    user-guide/how-msg-works.rst
+   user-guide/data-caching.ipynb
+   user-guide/exception-handling.rst
 
 .. toctree::
    :caption: Reference Guide
@@ -31,6 +33,7 @@ version 3.
    ref-guide/python-interface.rst
    ref-guide/fortran-interface.rst
    ref-guide/c-interface.rst
+   ref-guide/data-schema.rst
    ref-guide/troubleshooting.rst
 
 .. toctree::

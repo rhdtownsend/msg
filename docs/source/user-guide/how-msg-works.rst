@@ -147,34 +147,6 @@ MSG either switches to a lower-order scheme, or (if there simply
 aren't sufficient data to interpolate) returns with an error (see the
 :ref:`exception-handling` section below).
 
-Disk Storage
-============
-
-MSG spectroscopic and photometric grid data are stored on disk in
-`HDF5 <https://www.hdfgroup.org/solutions/hdf5/>`__ files with a
-bespoke schema. Throughout this documentation, these files are known
-as `specgrid` and `photgrid` files, respectively.
-
-.. _memory-management:
-
-Memory Management
-=================
-
-It's often the case that the data stored in `specgrid` and `photgrid`
-files greatly exceed the available computer memory (RAM). MSG handles
-such situations by loading data into memory only when they are
-required. These data are retained in memory until a user-defined
-capacity limit reached (see the :py:attr:`SpecGrid.cache_limit
-<pymsg.SpecGrid.cache_limit>` and :py:attr:`PhotGrid.cache_limit
-<pymsg.PhotGrid.cache_limit>` properties in the
-:ref:`python-interface`, and corresponding functionality in the
-:ref:`Fortran <fortran-interface>` and :ref:`C <c-interface>`
-interfaces); then, data are evicted from the memory cache via a
-:wiki:`least recently used
-<Cache_replacement_policies#Least_recently_used_(LRU)>`
-algorithm.
-
-
 .. _photometric-colors:
 
 Evaluating Photometric Colors
@@ -218,28 +190,4 @@ performed before or after the interpolations discussed above:
   the convolution on-the-fly after each spectrum is interpolated. This
   is computationally less efficient, but incurs no storage
   requirements beyond the `specgrid` file.
-
-.. _exception-handling:
   
-Exception Handling
-==================
-
-When a call to an MSG routine encounters a problem, the course of
-action depends on which langauge is being used:
-
-* In Python, an exception is thrown with a (reasonably) relevant
-  subtype and error message.
-
-* In Fortran, if the optional integer argument :f:var:`stat` is present
-  during the call, then on return :f:var:`stat` is set to an value
-  indicating the nature of the problem (see the :ref:`fortran-params`
-  chapter for the list of possible values). If :f:var:`stat`
-  is not present, then execution halts with an error message
-  printed to standard output.
-
-* In C, if the pointer argument :c:var:`stat` is non-null during the
-  call, then on return the target of :c:var:`stat` is set to a value
-  indicating the nature of the problem (see the :ref:`c-enums` chapter
-  for the list of possible values). If :c:var:`stat` is null, then
-  execution halts with an error message printed to standard output.
-

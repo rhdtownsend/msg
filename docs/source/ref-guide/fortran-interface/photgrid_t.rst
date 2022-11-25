@@ -26,25 +26,25 @@ photgrid_t
       :p axis_t axis [out]: Returned axis.
 
 
-   .. f:subroutine:: get_cache_count(cache_count)
-
-      Get the number of nodes currently held in the grid cache.
-
-      :p integer cache_count [out]: Returned number of nodes.
-
-      
    .. f:subroutine:: get_cache_limit(cache_limit)
 
-      Get the grid cache occupancy limit.
+      Get the maximum memory usage of the cache.
 
-      :p integer cache_limit [out]: Returned occupancy limit.
+      :p integer cache_limit [out]: Maximum memory usage (MB).
 
 
+   .. f:subroutine:: get_cache_usage(cache_usage)
+
+      Get the current memory usage of the cache.
+
+      :p integer cache_usage [out]: Current memory usage (MB)
+
+      
    .. f:subroutine:: set_cache_limit(cache_limit, stat)
 
-      Set the grid cache occupancy limit.
+      Set the maximum memory usage of the cache.
 
-      :p integer cache_limit [in]: Occupancy limit.
+      :p integer cache_limit [in]: Maximum memory usage (MB).
       :o integer stat [out]: Status code.
 
 

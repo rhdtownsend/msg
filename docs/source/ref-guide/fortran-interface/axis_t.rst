@@ -12,36 +12,36 @@ axis_t
 
       Get the number of points making up the axis.
 
-      :p integer rank [out]: Returned number of points.
+      :p integer rank [out]: Number of points.
 
 			     
    .. f:subroutine:: get_x_min(x_min)
 
       Get the minimum value of the axis.
 
-      :p real(RD) x_min [out]: Returned minimum value.
+      :p real(RD) x_min [out]: Minimum value.
 
 			     
    .. f:subroutine:: get_x_max(x_max)
 
       Get the maximum value of the axis.
 
-      :p real(RD) x_max [out]: Returned maximum value.
+      :p real(RD) x_max [out]: Maximum value.
 
 
    .. f:subroutine:: get_label(label)
 
-      Get the axis label
+      Get the axis label.
 
-      :p character(:), allocatable label [out]: Returned label.
+      :p character(:), allocatable label [out]: Label.
 
 
    .. f:subroutine:: fetch(i, x, stat)
 
-      Fetch an axis value
+      Fetch an axis value.
 
       :p integer i [in]: Index of value (from 1 to `n`).
-      :p real(RD) x [out]: Returned value.
+      :p real(RD) x [out]: Axis value.
       :o integer stat [out]: Status code.
 
    
