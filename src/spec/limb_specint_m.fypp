@@ -668,9 +668,9 @@ contains
 
    subroutine write(self, hdf5io, stat)
 
-      class(limb_specint_t), intent(in)   :: self
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      integer, intent(out), optional :: stat
+      class(limb_specint_t), intent(in) :: self
+      type(hdf5io_t), intent(inout)     :: hdf5io
+      integer, intent(out), optional    :: stat
 
       real(RD)       :: lam_min
       real(RD)       :: lam_max
