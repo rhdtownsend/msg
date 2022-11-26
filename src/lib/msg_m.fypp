@@ -22,8 +22,8 @@ module msg_m
    ! Uses
 
    use axis_m
+   use file_m
    use limb_m
-   use vgrid_m
    use passband_m
    use photint_m
    use limb_photint_m
@@ -43,6 +43,7 @@ module msg_m
    use specsource_m
    use hdf5_specsource_m
    use stat_m
+   use vgrid_m
 
    ! No implicit typing
 

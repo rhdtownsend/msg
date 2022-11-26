@@ -24,8 +24,6 @@ module cmsg_spec_m
    use forum_m
    use msg_m
 
-   use cmsg_utils_m
-
    use ISO_FORTRAN_ENV
    use ISO_C_BINDING
 

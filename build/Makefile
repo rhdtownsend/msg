@@ -75,7 +75,7 @@ libfmsg_OBJS = fmsg_m.o
 libfmsg_LIBS = libforum libmsg
 libfmsg_DEPS = forum_m msg_m
 
-libcmsg_OBJS = cmsg_m.o cmsg_spec_m.o cmsg_phot_m.o cmsg_utils_m.o
+libcmsg_OBJS = cmsg_m.o cmsg_spec_m.o cmsg_phot_m.o
 libcmsg_LIBS = libforum libmsg
 libcmsg_DEPS = forum_m msg_m
 

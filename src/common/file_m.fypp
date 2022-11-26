@@ -26,20 +26,81 @@ module file_m
    use stat_m
 
    use ISO_FORTRAN_ENV
+   use ISO_C_BINDING
 
    ! No implicit typing
 
    implicit none
 
+   ! Interfaces
+
+   interface open_file
+      module procedure open_file_
+      module procedure open_file_c_
+   end interface open_file
+
    ! Access specifiers
 
    private
 
+   public :: open_file
    public :: check_type
 
    ! Procedures
 
 contains
+
+   subroutine open_file_(file_name, hdf5io, stat)
+
+      character(*), intent(in)       :: file_name
+      type(hdf5io_t), intent(out)    :: hdf5io
+      integer, intent(out), optional :: stat
+
+      ! Open the file
+
+      if (is_hdf5(file_name)) then
+
+         hdf5io = hdf5io_t(file_name, OPEN_FILE_RO)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+      else
+
+         if (PRESENT(stat)) then
+            stat = STAT_FILE_NOT_FOUND
+         else
+            @:ABORT('file not found')
+         endif
+
+      endif
+
+      ! Finish
+
+      return
+
+   end subroutine open_file_
+
+   !****
+
+   subroutine open_file_c_(c_file_name, hdf5io, stat)
+
+      character(C_CHAR), intent(in)  :: c_file_name(*)
+      type(hdf5io_t), intent(out)    :: hdf5io
+      integer, intent(out), optional :: stat
+
+      character(:), allocatable :: file_name
+      
+      ! Open the file
+
+      call c_f_string(c_file_name, file_name)
+
+      call open_file_(file_name, hdf5io, stat)
+
+      ! Finish
+
+   end subroutine open_file_c_
+
+   !****
 
    subroutine check_type(hdf5io, type, stat)
 
