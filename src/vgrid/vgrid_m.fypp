@@ -796,6 +796,8 @@ contains
       select case(revision)
       case(1)
          call read_rev1_(self, hdf5io, stat)
+      case(2)
+         call read_rev2_(self, hdf5io, stat)
       case default
          if (PRESENT(stat)) then
             stat = STAT_INVALID_GROUP_REVISION
@@ -812,6 +814,60 @@ contains
    contains
 
       subroutine read_rev1_(self, hdf5io, stat)
+
+         class(vgrid_t), intent(out)    :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+
+         integer                   :: rank
+         logical, allocatable      :: mask(:)
+         type(axis_t), allocatable :: axes(:)
+         integer                   :: j
+         type(hdf5io_t)            :: hdf5io_axis
+
+         call hdf5io%read_attr('rank', rank)
+
+         allocate(axes(rank))
+
+         axis_loop : do j = 1, rank
+            hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_rev1_(j))
+            call axes(j)%read(hdf5io_axis, stat)
+            call hdf5io_axis%final()
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+         end do axis_loop
+
+         call hdf5io%alloc_read_dset('mask', mask)
+
+         select type(self)
+         type is(vgrid_t)
+            self = vgrid_t(axes, mask)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
+
+      !****
+
+      function axis_group_name_rev1_(j) result (name)
+
+         integer, intent(in) :: j
+         character(256)      :: name
+
+         write(name, 100) j
+100      format('axes(',I0,')')
+
+      end function axis_group_name_rev1_
+
+      !****
+
+      subroutine read_rev2_(self, hdf5io, stat)
 
          class(vgrid_t), intent(out)    :: self
          type(hdf5io_t), intent(inout)  :: hdf5io
@@ -849,7 +905,7 @@ contains
 
          return
 
-      end subroutine read_rev1_
+      end subroutine read_rev2_
 
    end subroutine read
 
@@ -867,7 +923,7 @@ contains
       ! Write the vgrid
       
       call hdf5io%write_attr('TYPE', 'vgrid_t')
-      call hdf5io%write_attr('REVISION', 1)
+      call hdf5io%write_attr('REVISION', 2)
 
       call hdf5io%write_attr('shape', self%shape)
       call hdf5io%write_attr('rank', self%rank)
@@ -899,7 +955,7 @@ contains
       character(256)      :: name
 
       write(name, 100) j
-100   format('axes(',I0,')')
+100   format('axes[',I0,']')
 
    end function axis_group_name_
 

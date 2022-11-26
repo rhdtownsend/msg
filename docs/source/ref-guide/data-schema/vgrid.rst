@@ -27,7 +27,7 @@ vgrid_t
      - attribute
      - integer
      - rank of grid.
-   * - :code:`axes(i)`
+   * - :code:`axes[i]`
      - group
      - :ref:`data-schema-axis`
      - grid axes (:code:`i = 1, ..., rank`).
