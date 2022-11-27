@@ -7,10 +7,10 @@
 PYTHON ?= yes
 
 # Build test programs
-TESTS ?= no
+TESTS ?= yes
 
 # Build tool executables
-TOOLS ?= no
+TOOLS ?= yes
 
 # Enable debugging (with a performance penalty)
 DEBUG ?= no
@@ -36,10 +36,10 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq (${TESTS},yes)
-  UTEST_TARGETS := utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid
+  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_specgrid
-  EXEC_TARGETS := ${EXEC_TARGETS} ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
+  EXEC_TARGETS := ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
 endif
 
 ifeq (${TOOLS},yes)
@@ -125,6 +125,10 @@ make_bb_photgrid_DEPS = forum_m msg_m
 make_passband_OBJS = make_passband.o
 make_passband_LIBS = libforum libmsg
 make_passband_DEPS = forum_m msg_m
+
+utest_file_OBJS = utest_file.o utest_file_m.o
+utest_file_LIBS = libforum libmsg
+utest_file_DEPS = forum_m file_m
 
 utest_fit_OBJS = utest_fit.o utest_fit_m.o
 utest_fit_LIBS = libforum libmsg
