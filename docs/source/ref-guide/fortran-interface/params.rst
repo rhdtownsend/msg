@@ -5,6 +5,12 @@
 Parameters
 ----------
 
+.. f:variable:: int RD
+   :attrs: parameter
+
+   Kind type parameter for reals.
+
+
 .. f:variable:: int LABEL_LEN
    :attrs: parameter
 

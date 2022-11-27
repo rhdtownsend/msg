@@ -1,7 +1,7 @@
-.. _data-schema-photgrid:
+.. _data-schema-photgrid-group:
 
-photgrid_t
-==========
+Photgrid Group
+==============
 
 .. list-table::
    :widths: 15 10 10 65
@@ -25,9 +25,9 @@ photgrid_t
      - number of photints.
    * - :code:`photsource/photints[i]`
      - group
-     - :ref:`photint_t`
+     - :ref:`data-schema-photint-group`
      - grid photints (:code:`i = 1, ..., n`).
    * - :code:`vgrid`
      - group
-     - :ref:`data-schema-vgrid`
+     - :ref:`data-schema-vgrid-group`
      - virtual grid.

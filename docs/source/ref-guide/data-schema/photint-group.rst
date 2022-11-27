@@ -1,10 +1,10 @@
-.. _data-schema-photint:
+.. _data-schema-photint-group:
 
-photint_t
-=========
+Photint Group
+=============
 
-limb_photint_t
---------------
+Limb-darkened
+-------------
 
 .. _data-schema-limb-photint:
 
@@ -34,5 +34,5 @@ limb_photint_t
      - intensity coefficients (/sr).
    * - :code:`limb`
      - group
-     - :ref:`data-schema-limb`
+     - :ref:`data-schema-limb-group`
      - limb-darkening law.

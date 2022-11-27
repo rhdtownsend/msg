@@ -1,12 +1,10 @@
-.. _data-schema-specint:
+.. _data-schema-specint-group:
 
-specint_t
-=========
+Specint Group
+=============
 
-limb_specint_t
---------------
-
-.. _data-schema-limb-specint:
+Limb-Darkened
+-------------
 
 .. list-table::
    :widths: 15 10 10 65
@@ -35,16 +33,16 @@ limb_specint_t
    * - :code:`precise`
      - attribute
      - logical
-     - precision of data (`.TRUE.` for 64-bit, `.FALSE.` for 32-bit).
+     - storage precision of :code:`c` (true for `H5T_IEEE_F64LE`, false for ``H5T_IEEE_F32LE`).
    * - :code:`c`
      - dataset
      - real(:,:)
      - intensity coefficients (erg/cm^2/s/Å/sr).
    * - :code:`range`
      - group
-     - range_t
+     - :ref:`data-schema-range-group`
      - wavelength grid (Å).
    * - :code:`limb`
      - group
-     - :ref:`data-schema-limb`
+     - :ref:`data-schema-limb-group`
      - limb-darkening law.

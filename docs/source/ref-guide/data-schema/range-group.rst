@@ -1,12 +1,10 @@
-.. _data-schema-range:
+.. _data-schema-range-group:
 
-range_t
-=======
+Range Group
+===========
 
-lin_range_t
------------
-
-.. _data-schema-lin-range:
+Linear
+------
 
 .. list-table::
    :widths: 15 10 10 65
@@ -38,10 +36,8 @@ lin_range_t
      - number of points.
 
 
-log_range_t
+Logarithmic
 -----------
-
-.. _data-schema-log-range:
 
 .. list-table::
    :widths: 15 10 10 65
@@ -73,10 +69,8 @@ log_range_t
      - number of points.
      
 
-tab_range_t
------------
-
-.. _data-schema-tab-range:
+Tabulated
+---------
 
 .. list-table::
    :widths: 15 10 10 65
@@ -100,10 +94,8 @@ tab_range_t
      - abscissa values.
 
 
-comp_range_t
-------------
-
-.. _data-schema-comp-range:
+Composite
+---------
 
 .. list-table::
    :widths: 15 10 10 65
@@ -127,7 +119,7 @@ comp_range_t
      - number of sub-ranges.
    * - :code:`ranges[i]`
      - group
-     - :ref:`data-schema-range`
+     - :ref:`data-schema-range-group`
      - sub-ranges (:code:`i = 1, ..., n_ranges`).
 
 
