@@ -13,7 +13,7 @@ All files adhere to the following conventions:
 
 * Groups are used to store nested data structures that correspond
   resonably closely to the derived data types (e.g.,
-:f:type:`specgrid_t`) of the Fortran interface.
+  :f:type:`specgrid_t`) of the Fortran interface.
 * Real values are written with type `H5T_IEEE_F64LE`, or
   `H5T_IEEE_F32LE` when reduced precision is permitted.
 * Integer values are written with type `H5T_STD_I32LE`.

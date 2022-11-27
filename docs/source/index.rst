@@ -17,12 +17,11 @@ version 3.
 
    user-guide/preliminaries.rst
    user-guide/quick-start.rst
-   user-guide/python-walkthrough.ipynb
-   user-guide/fortran-walkthrough.rst
-   user-guide/c-walkthrough.rst
+   user-guide/walkthroughs.rst
    user-guide/how-msg-works.rst
    user-guide/data-caching.ipynb
    user-guide/exception-handling.rst
+   user-guide/contributing.rst
 
 .. toctree::
    :caption: Reference Guide

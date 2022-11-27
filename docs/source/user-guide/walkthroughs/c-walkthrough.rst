@@ -1,15 +1,14 @@
-.. _c-walkthrough:
+.. _walkthroughs-c:
 
-*******************
 C Walkthrough
-*******************
+=============
 
-This chapter reprises the steps of the :ref:`python-walkthrough` --- evaluating
+This section reprises the steps of the :ref:`walkthroughs-python` --- evaluating
 spectra and photometric colors for Sirius A --- but now using the MSG
 C interface.
 
 Preparation
-===========
+-----------
 
 In your working directory, create a new file
 :file:`c-walkthrough.c` with the following source code:
@@ -32,7 +31,7 @@ A few brief comments on the code:
   arguments; these correspond to omitted optional arguments.
 
 Compiling
-=========
+---------
 
 The next step is to compile the demo program. Make sure the
 :envvar:`MSG_DIR` environment variable is set, as described in the
@@ -49,7 +48,7 @@ compiler flags necessary to link the program against the appropriate
 libraries.
 
 Running
-=======
+-------
 
 To run the code, first create a symbolic link to the demo grid:
 

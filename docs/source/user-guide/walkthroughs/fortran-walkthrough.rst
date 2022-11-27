@@ -1,15 +1,14 @@
-.. _fortran-walkthrough:
+.. _walkthroughs-fortran:
 
-*******************
 Fortran Walkthrough
-*******************
+===================
 
-This chapter reprises the steps of the :ref:`python-walkthrough` --- evaluating
-spectra and photometric colors for Sirius A --- but now using the MSG
-Fortran interface.
+This section reprises the steps of the :ref:`walkthroughs-python` ---
+evaluating spectra and photometric colors for Sirius A --- but now
+using the MSG Fortran interface.
 
 Preparation
-===========
+-----------
 
 In your working directory, create a new file
 :file:`fortran-walkthrough.f90` with the following source code:
@@ -34,7 +33,7 @@ A few brief comments on the code:
   sure the correct values are stored in each array element.
 
 Compiling
-=========
+---------
 
 The next step is to compile the demo program. Make sure the
 :envvar:`MSG_DIR` environment variable is set, as described in the
@@ -51,7 +50,7 @@ backticks) runs a link script that returns the compiler flags
 necessary to link the program against the appropriate libraries.
 
 Running
-=======
+-------
 
 To run the code, first create a symbolic link to the demo grid:
 

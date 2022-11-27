@@ -54,6 +54,21 @@ Finally, compile MSG using the :command:`make` utility:
 speeding up the build).  If things go awry, consult the
 :ref:`troubleshooting` chapter.
 
+Testing MSG
+===========
+
+To test MSG, use the command
+
+.. prompt:: bash
+
+   make -C $MSG_DIR test
+
+This runs unit tests for the various Fortran modules that together
+compose the MSG library. At the end of the test sequence, a summary of
+the number of tests passed and failed is printed. All tests should
+pass; if one or more fails, then please :ref:`open an issue
+<open-an-issue>` to report the problem.
+
 Custom Builds
 =============
 

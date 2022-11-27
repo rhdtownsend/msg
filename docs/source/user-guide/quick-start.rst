@@ -12,6 +12,7 @@ To get started with MSG, follow these five simple steps:
 * set the :envvar:`MSG_DIR` environment variable to point to the
   newly created source directory;
 * compile MSG using the command :command:`make -C $MSG_DIR`.
+* test MSG using the command :command:`make -C $MSG_DIR test`.
 
 For a more in-depth installation guide that covers alternative
 use-cases, refer to the :ref:`installation` chapter. If the code

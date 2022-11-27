@@ -4,10 +4,8 @@
 How MSG Works
 *************
 
-This chapter expands on the :ref:`Python <python-walkthrough>`,
-:ref:`Fortran <fortran-walkthrough>` and :ref:`C <c-walkthrough>`
-walkthroughs, by describing in detail how MSG evaluates stellar
-spectra and photometric colors.
+This chapter expands on the :ref:`walkthroughs`, by describing in
+detail how MSG evaluates stellar spectra and photometric colors.
 
 Evaluating a Spectrum
 =====================

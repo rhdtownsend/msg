@@ -33,7 +33,7 @@ Limb-Darkened
    * - :code:`precise`
      - attribute
      - logical
-     - storage precision of :code:`c` (true for `H5T_IEEE_F64LE`, false for ``H5T_IEEE_F32LE`).
+     - storage precision of :code:`c` (true for `H5T_IEEE_F64LE`, false for `H5T_IEEE_F32LE`).
    * - :code:`c`
      - dataset
      - real(:,:)
