@@ -220,7 +220,7 @@ contains
          cache_lam_min_chk = lam_min_chk
          cache_lam_max_chk = lam_max_chk
 
-         cache_limit_chk = 476
+         cache_limit_chk = 128
 
          ! Finish
 

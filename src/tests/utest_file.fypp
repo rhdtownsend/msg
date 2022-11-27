@@ -1,5 +1,5 @@
-! Program : utest_specgrid
-! Purpose : Unit testing for specgrid_m
+! Program : utest_file
+! Purpose : Unit testing for file_m
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -15,13 +15,11 @@
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#:include 'forum.inc'
-
-program utest_specgrid
+program  utest_file
 
   ! Uses
 
-  use utest_specgrid_m
+  use utest_file_m
 
   ! No implicit typing
 
@@ -29,8 +27,8 @@ program utest_specgrid
 
   ! Run the tests
 
-  print *, 'Testing specgrid_m...'
+  print *,'Testing file_m...'
 
   call test()
 
-end program utest_specgrid
+end program utest_file
