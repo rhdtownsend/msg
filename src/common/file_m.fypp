@@ -56,13 +56,31 @@ contains
       type(hdf5io_t), intent(out)    :: hdf5io
       integer, intent(out), optional :: stat
 
-      ! Open the file
+      logical :: file_exists
 
-      if (is_hdf5(file_name)) then
+      ! Check the file exists
 
-         hdf5io = hdf5io_t(file_name, OPEN_FILE_RO)
+      INQUIRE(FILE=file_name, EXIST=file_exists)
 
-         if (PRESENT(stat)) stat = STAT_OK
+      if (file_exists) then
+
+         ! Open the file
+
+         if (is_hdf5(file_name)) then
+
+            hdf5io = hdf5io_t(file_name, OPEN_FILE_RO)
+
+            if (PRESENT(stat)) stat = STAT_OK
+
+         else
+
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_FILE_TYPE
+            else
+               @:ABORT('invalid file type')
+            endif
+
+         end if
 
       else
 
