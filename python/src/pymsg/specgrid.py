@@ -1,7 +1,7 @@
 #python: language_level=3
 #
 # Module  : pymsg.specgrid
-# Purpose : MSG Python interface (specgrid part)
+# Purpose : MSG Python interface (SpecGrid class)
 #
 # Copyright 2021-2022 Rich Townsend & The MSG Team
 #
@@ -17,8 +17,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import sys
 import numpy as np
-import pymsg.pycmsg as pyc
+
+# Set path & import pycmsg
+
+sys.path.insert(0, os.path.join(os.environ['MSG_DIR'], 'lib'))
+import pycmsg as pyc
 
 # Class definition
 

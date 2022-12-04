@@ -15,14 +15,5 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides an interface to MSG (Multidimensinal Stellar
-Grids), a library for synthesizing astrophysical spectra and
-photometric colors via interpolation in pre-calculated grids.
-"""
-
 from .specgrid import SpecGrid
 from .photgrid import PhotGrid
-
-from .pycmsg import _get_msg_version
-
-__version__ = _get_msg_version()
