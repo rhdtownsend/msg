@@ -1,7 +1,7 @@
-.. _data-schema-specgrid-file:
+.. _data-schema-files-specgrid:
 
-Specgrid File
-=============
+:filetype:`specgrid`
+====================
 
 .. list-table::
    :widths: 15 10 10 65
@@ -13,5 +13,5 @@ Specgrid File
      - Definition
    * - :code:`/`
      - group
-     - :ref:`data-schema-specgrid-group`
+     - :groupref:`specgrid`
      - specgrid.

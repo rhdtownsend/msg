@@ -22,32 +22,8 @@ All files adhere to the following conventions:
 * Character valuesa are written with type `H5T_NATIVE_CHARACTER`.
 
   
-Files
-=====
-
 .. toctree::
    :maxdepth: 2
 
-   data-schema/specint-file.rst
-   data-schema/specgrid-file.rst
-   data-schema/passband-file.rst
-   data-schema/photgrid-file.rst
-   data-schema/photint-file.rst
-
-   
-Groups
-======
-
-.. toctree::
-   :maxdepth: 2
-
-   data-schema/axis-group.rst
-   data-schema/cubint-group.rst
-   data-schema/limb-group.rst
-   data-schema/range-group.rst
-   data-schema/passband-group.rst
-   data-schema/photgrid-group.rst
-   data-schema/photint-group.rst
-   data-schema/specgrid-group.rst
-   data-schema/specint-group.rst
-   data-schema/vgrid-group.rst
+   data-schema/files.rst
+   data-schema/groups.rst

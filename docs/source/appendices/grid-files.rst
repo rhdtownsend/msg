@@ -5,9 +5,9 @@ Grid Files
 **********
 
 Due to their large size and gradually evolving content (as
-improvements are made), HDF5 `specgrid` files are not shipped as part of the
-:git:`rhdtownsend/msg` git repository; they must be downloaded
-separately (the sole exception is the demo grid,
+improvements are made), :ref:`data-schema-files-specgrid` files are
+not shipped as part of the :git:`rhdtownsend/msg` git repository; they
+must be downloaded separately (the sole exception is the demo grid,
 :file:`$MSG_DIR/data/grids/sg-demo.h5`). This chapter describes the
 various grids currently available.
 
@@ -26,7 +26,7 @@ dependence parameterized with the `CLARET` limb-darkening law.
    :header-rows: 1	
    :widths: 30 10 10 50
 	 
-   * - File
+   * - :ref:`data-schema-files-specgrid` File
      - Resolution
      - :math:`\lambda` Range
      - Atmospheric Parameters
@@ -65,7 +65,7 @@ dependence parameterized with the `CLARET` limb-darkening law.
    :header-rows: 1	
    :widths: 30 10 10 50
 	 
-   * - File
+   * - :ref:`data-schema-files-specgrid` File
      - Resolution
      - :math:`\lambda` Range
      - Atmospheric Parameters
@@ -104,7 +104,7 @@ limb-darkening law.
    :header-rows: 1	
    :widths: 30 10 10 50
 	 
-   * - File
+   * - :ref:`data-schema-files-specgrid` File
      - Resolution
      - :math:`\lambda` Range
      - Atmospheric Parameters
@@ -149,7 +149,7 @@ law.
    :header-rows: 1	
    :widths: 30 10 10 50
 	 
-   * - File
+   * - :ref:`data-schema-files-specgrid` File
      - Resolution
      - :math:`\lambda` Range
      - Atmospheric Parameters
@@ -177,4 +177,3 @@ The definitions and ranges of the atmospheric parameters are as follows:
 .. |br| raw:: html
 
    <br>
-

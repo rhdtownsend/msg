@@ -1,8 +1,8 @@
-.. _how-msg-works:
+.. _msg-fundamentals:
 
-*************
-How MSG Works
-*************
+****************
+MSG Fundamentals
+****************
 
 This chapter expands on the :ref:`walkthroughs`, by describing in
 detail how MSG evaluates stellar spectra and photometric colors.

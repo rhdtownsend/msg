@@ -1,7 +1,7 @@
-.. _data-schema-vgrid-group:
+.. _data-schema-groups-vgrid:
 
-Vgrid Group
-===========
+:grouptype:`vgrid`
+==================
 
 .. list-table::
    :widths: 15 10 10 65
@@ -29,5 +29,5 @@ Vgrid Group
      - rank of grid.
    * - :code:`axes[i]`
      - group
-     - :ref:`data-schema-axis-group`
+     - :groupref:`axis`
      - grid axes (:code:`i = 1, ..., rank`).

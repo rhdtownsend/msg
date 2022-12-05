@@ -1,7 +1,7 @@
-.. _data-schema-limb-group:
+.. _data-schema-groups-passband:
 
-Limb Group
-==========
+:grouptype:`passband`
+=====================
 
 .. list-table::
    :widths: 15 10 10 65
@@ -14,12 +14,16 @@ Limb Group
    * - :code:`TYPE`
      - attribute
      - character
-     - literal :code:`'limb_t'`.
+     - literal :code:`'passband_t'`.
    * - :code:`REVISION`
      - attribute
      - integer
      - literal :code:`1`.
-   * - :code:`law`
+   * - :code:`F_0`
      - attribute
-     - integer
-     - limb-darkening law code.
+     - real
+     - normalizing flux (erg/cm^2/s).
+   * - :code:`cubint`
+     - group
+     - :groupref:`cubint`
+     - filter interpolant.

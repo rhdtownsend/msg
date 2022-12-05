@@ -93,7 +93,7 @@ TEST
   Enable building of testing tools (default ``yes``)
 
 TOOLS
-  Enable building of development tools (default ``no``)
+  Enable building of development tools (default ``yes``)
 
 If a variable is not set, then its default value is assumed.
 

@@ -1,17 +1,3 @@
-/* override table width restrictions */
-@media screen and (min-width: 767px) {
-
-   .wy-table-responsive table td {
-      /* !important prevents the common CSS stylesheets from overriding
-         this as on RTD they are loaded after this stylesheet */
-      white-space: normal !important;
-   }
-
-   .wy-table-responsive {
-      overflow: visible !important;
-   }
-}
-
 /* Center figures in jupyter-sphinx */
 
 .jupyter_container .cell_output img {
@@ -24,4 +10,14 @@
 
 td {
     vertical-align: top;
+}
+
+/* Role formatting */
+
+.filetype {
+    font-style: italic;
+}
+
+.grouptype {
+    font-style: italic;
 }

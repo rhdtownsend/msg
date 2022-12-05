@@ -1,7 +1,7 @@
-.. _data-schema-axis-group:
+.. _data-schema-groups-limb:
 
-Axis Group
-==========
+:grouptype:`limb`
+=================
 
 .. list-table::
    :widths: 15 10 10 65
@@ -14,16 +14,13 @@ Axis Group
    * - :code:`TYPE`
      - attribute
      - character
-     - literal :code:`'axis_t'`.
+     - literal :code:`'limb_t'`.
    * - :code:`REVISION`
      - attribute
      - integer
      - literal :code:`1`.
-   * - :code:`label`
+   * - :code:`law`
      - attribute
      - character
-     - label.
-   * - :code:`x`
-     - dataset
-     - real(:)
-     - abscissa values.
+     - limb-darkening law (see the :ref:`limb-darkening-laws` section for a list of options).
+       

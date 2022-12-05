@@ -5,4 +5,5 @@
 *-walkthrough
 
 # Data files
-spectrum.dat
+*.dat
+*.h5

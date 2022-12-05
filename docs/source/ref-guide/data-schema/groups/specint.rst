@@ -1,7 +1,7 @@
-.. _data-schema-specint-group:
+.. _data-schema-groups-specint:
 
-Specint Group
-=============
+:grouptype:`specint`
+====================
 
 Limb-Darkened
 -------------
@@ -40,9 +40,9 @@ Limb-Darkened
      - intensity coefficients (erg/cm^2/s/Å/sr).
    * - :code:`range`
      - group
-     - :ref:`data-schema-range-group`
+     - :groupref:`range`
      - wavelength grid (Å).
    * - :code:`limb`
      - group
-     - :ref:`data-schema-limb-group`
+     - :groupref:`limb`
      - limb-darkening law.

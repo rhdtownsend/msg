@@ -24,8 +24,26 @@ Data
 ====
 
 To contribute data toward the project (in the form of spectral
-intensity or flux grids), the first step is to create a set of files
-convert these data into MSG's HDF5-based `data schema`.
+intensity or flux grids), a number of options are available depending
+on your level of technical expertise. Both involve first converting
+your data into HDF5 files following the :ref:`specint
+<data-schema-specint-files>` data schemas.
+
+Using the Tools
+---------------
+
+The easier but less flexible approach is to use one of the :ref:`tools
+provided` to convert spectra from a 
+
+
+Building your Own Tools
+-----------------------
+
+
+
+the first step
+is to create a set of files convert these data into MSG's HDF5-based
+`data schema`.
 
 
 

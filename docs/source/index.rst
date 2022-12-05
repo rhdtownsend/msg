@@ -18,7 +18,8 @@ version 3.
    user-guide/preliminaries.rst
    user-guide/quick-start.rst
    user-guide/walkthroughs.rst
-   user-guide/how-msg-works.rst
+   user-guide/msg-fundamentals.rst
+   user-guide/data-files.rst
    user-guide/data-caching.ipynb
    user-guide/exception-handling.rst
    user-guide/contributing.rst
@@ -38,6 +39,7 @@ version 3.
 .. toctree::
    :caption: Appendices
    :name: appendices
+   :maxdepth: 2
 
    appendices/grid-files.rst
    appendices/passband-files.rst

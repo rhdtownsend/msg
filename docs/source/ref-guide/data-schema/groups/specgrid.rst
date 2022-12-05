@@ -1,7 +1,7 @@
-.. _data-schema-specgrid-group:
+.. _data-schema-groups-specgrid:
 
-Specgrid Group
-==============
+:grouptype:`specgrid`
+=====================
 
 .. list-table::
    :widths: 15 10 10 65
@@ -33,9 +33,9 @@ Specgrid Group
      - maximum wavelength (Å).
    * - :code:`specsource/specints[i]`
      - group
-     - :ref:`data-schema-specint-group`
+     - :groupref:`specint`
      - grid specints (:code:`i = 1, ..., n`).
    * - :code:`vgrid`
      - group
-     - :ref:`data-schema-vgrid-group`
+     - :groupref:`vgrid`
      - virtual grid.

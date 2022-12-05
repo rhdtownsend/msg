@@ -14,7 +14,7 @@ import os
 import sys
 import re
 
-sys.path.insert(0, os.path.abspath('../../python'))
+#sys.path.insert(0, os.path.abspath('../../lib'))
 sys.path.insert(0, os.path.abspath('exts'))
 
 import sphinx_rtd_theme
@@ -46,6 +46,7 @@ extensions = [
     'sphinx_substitution_extensions',
     'nbsphinx',
     'ads_cite',
+    'data_schema',
     'sphinxfortran.fortran_domain'
 ]
 
@@ -84,11 +85,9 @@ html_theme_options = {
 }
 
 # CSS
-#html_context = {
-#    'css_files': [
-#        '_static/theme_overrides.css'  # override wide tables in RTD theme
-#    ],
-#}
+html_css_files = [
+    'theme_overrides.css'
+]
 
 # Set master doc
 master_doc = 'index'
@@ -169,7 +168,7 @@ intersphinx_mapping = {
 # Set up autodoc
 autoclass_content = 'class'
 autodoc_member_order = 'bysource'
-autodoc_mock_imports = ['pymsg.pycmsg', 'numpy']
+autodoc_mock_imports = ['pycmsg', 'numpy']
 
 # Set up napoleon
 napoleon_google_docstring = True

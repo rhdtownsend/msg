@@ -1,7 +1,7 @@
-.. _data-schema-specint-file:
+.. _data-schema-files-specint:
 
-Specint File
-============
+:filetype:`specint`
+-------------------
 
 .. list-table::
    :widths: 25 10 10 55
@@ -13,7 +13,7 @@ Specint File
      - Definition
    * - :code:`/`
      - group
-     - :ref:`data-schema-specint-group`
+     - :groupref:`specint`
      - specint
    * - :code:`/labels/<label>`
      - attribute

@@ -2,7 +2,7 @@
    :header-rows: 1	
    :widths: 34 12 12 30
 	 
-   * - File
+   * - :ref:`data-schema-files-passband` File
      - Facility
      - Instrument
      - Filters

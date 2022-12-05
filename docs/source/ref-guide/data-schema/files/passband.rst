@@ -1,7 +1,7 @@
-.. _data-schema-passband-file:
+.. _data-schema-files-passband:
 
-Passband File
-=============
+:filetype:`passband`
+====================
 
 .. list-table::
    :widths: 15 10 10 65
@@ -13,5 +13,5 @@ Passband File
      - Definition
    * - :code:`/`
      - group
-     - :ref:`data-schema-passband-group`
+     - :groupref:`passband`
      - passband.

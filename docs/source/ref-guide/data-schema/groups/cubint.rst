@@ -1,7 +1,7 @@
-.. _data-schema-cubint-group:
+.. _data-schema-groups-cubint:
 
-Cubint Group
-============
+:grouptype:`cubint`
+===================
 
 .. list-table::
    :widths: 15 10 10 65

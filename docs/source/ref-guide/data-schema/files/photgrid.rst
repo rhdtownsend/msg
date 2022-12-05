@@ -1,7 +1,7 @@
-.. _data-schema-photgrid-file:
+.. _data-schema-files-photgrid:
 
-Photgrid File
-=============
+:filetype:`photgrid`
+====================
 
 .. list-table::
    :widths: 15 10 10 65
@@ -13,5 +13,5 @@ Photgrid File
      - Definition
    * - :code:`/`
      - group
-     - :ref:`data-schema-photgrid-group`
+     - :groupref:`photgrid`
      - photgrid.

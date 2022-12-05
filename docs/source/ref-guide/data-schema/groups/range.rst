@@ -1,7 +1,7 @@
-.. _data-schema-range-group:
+.. _data-schema-groups-range:
 
-Range Group
-===========
+:grouptype:`range`
+==================
 
 Linear
 ------
@@ -119,7 +119,7 @@ Composite
      - number of sub-ranges.
    * - :code:`ranges[i]`
      - group
-     - :ref:`data-schema-range-group`
+     - :groupref:`range`
      - sub-ranges (:code:`i = 1, ..., n_ranges`).
 
 

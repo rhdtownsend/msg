@@ -13,6 +13,7 @@ To get started with MSG, follow these five simple steps:
   newly created source directory;
 * compile MSG using the command :command:`make -C $MSG_DIR`.
 * test MSG using the command :command:`make -C $MSG_DIR test`.
+* (optional) install the :py:mod:`pymsg` module using the command :command:`pip install $MSG_DIR/python`.
 
 For a more in-depth installation guide that covers alternative
 use-cases, refer to the :ref:`installation` chapter. If the code

@@ -1,7 +1,7 @@
-.. _data-schema-photint-file:
+.. _data-schema-files-photint:
 
-Specint File
-============
+:filetype:`photint`
+===================
 
 .. list-table::
    :widths: 25 10 10 55
@@ -13,7 +13,7 @@ Specint File
      - Definition
    * - :code:`/`
      - group
-     - :ref:`data-schema-specint-group`
+     - :groupref:`photint`
      - specint
    * - :code:`/labels/<label>`
      - attribute

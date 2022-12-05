@@ -1,7 +1,7 @@
-.. _data-schema-passband-group:
+.. _data-schema-groups-axis:
 
-Passband Group
-==============
+:grouptype:`axis`
+=================
 
 .. list-table::
    :widths: 15 10 10 65
@@ -14,16 +14,16 @@ Passband Group
    * - :code:`TYPE`
      - attribute
      - character
-     - literal :code:`'passband_t'`.
+     - literal :code:`'axis_t'`.
    * - :code:`REVISION`
      - attribute
      - integer
      - literal :code:`1`.
-   * - :code:`F_0`
+   * - :code:`label`
      - attribute
-     - real
-     - normalizing flux (erg/cm^2/s).
-   * - :code:`cubint`
-     - group
-     - :ref:`data-schema-passband-group`
-     - filter interpolant.
+     - character
+     - label.
+   * - :code:`x`
+     - dataset
+     - real(:)
+     - abscissa values.

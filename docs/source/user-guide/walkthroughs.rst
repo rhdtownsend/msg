@@ -4,7 +4,10 @@
 Walkthroughs
 ************
 
-The best way to familiarize yourself with MSG is use it.
+The best way to familiarize yourself with MSG is use it. This chapter
+provides example walkthroughs in Python, Fortran, and C, each focused
+on calculating the spectrum and colors of :wiki:`Sirius`
+(:math:`\alpha` Canis Majoris A).
 
 .. toctree::
    :maxdepth: 2
