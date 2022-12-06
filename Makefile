@@ -5,7 +5,6 @@
 
 BINDIR=${CURDIR}/bin
 LIBDIR=${CURDIR}/lib
-PYCDIR=${CURDIR}/python/pymsg
 INCDIR=${CURDIR}/include
 
 # Rules
