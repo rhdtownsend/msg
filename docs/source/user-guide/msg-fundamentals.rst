@@ -180,7 +180,7 @@ performed before or after the interpolations discussed above:
 * the 'before' option performs the convolution as a pre-processing
   step using the :command:`specgrid_to_photgrid` tool to create a
   `photgrid` file from a `specgrid` file (as discussed in the
-  :ref:`creating-photgrids` section). This is computationally more
+  :ref:`data-files-importing` section). This is computationally more
   efficient, but requires a separate `photgrid` file to be created for
   each passband.
 

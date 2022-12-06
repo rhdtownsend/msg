@@ -14,7 +14,7 @@ This chapter discusses how MSG handles exceptions. These can arise in a variety 
 * Attempts to interpolate with incomplete specification of atmosphere parameters.
 * Attempts to interpolate for invalid wavelength and/or angle parameters.
 
-When an exception occurs, how it is signalled depends on the language interface being used.
+When an exception occurs, how it is signaled depends on the language interface being used.
 
 Python
 ======

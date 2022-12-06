@@ -8,6 +8,7 @@ The Fortran interface is provided through the :f:mod:`fmsg_m` module,
 which defines derived types together with supporting parameters and
 procedures.
 
+
 API Specification
 =================
 
@@ -20,6 +21,7 @@ API Specification
    fortran-interface/params.rst
    fortran-interface/procs.rst
 
+   
 Compiling/Linking
 =================
 

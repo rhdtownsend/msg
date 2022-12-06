@@ -12,8 +12,8 @@ transparent decompression.
 File Types
 ==========
 
-MSG files come in five types, distinguished by their differing data
-content:
+There are five types of MSG data files, distinguished by their
+differing content:
 
 * :f-schema:`specint` files store spectroscopic intensity
   data for a single combination of atmospheric parameters.
@@ -38,24 +38,24 @@ For a detailed description of each file type, refer to the
 Obtaining Data
 ==============
 
-MSG only ships with a limited set of data files, sufficient to enable
-the :ref:`walkthroughs <walkthroughs>`. Additional files can be
-downloaded separately from the :ref:`grid-files` and
-:ref:`passband-files` appendices.
+MSG ships with a limited set of data files, sufficient to enable the
+:ref:`walkthroughs <walkthroughs>`. Additional files can be downloaded
+separately from the :ref:`grid-files` and :ref:`passband-files`
+appendices.
 
+.. _data-files-importing:
 
 Importing Data
 ==============
 
-If you would like to import an existing spectroscopic grid into MSG,
-then this section describes the process. First, convert the individual
-spectra in your grid into corresponding :f-schema:`specint` files. MSG
+To import an existing spectroscopic grid into MSG, first convert the
+individual spectra into corresponding :f-schema:`specint` files. MSG
 provides a number of tools to assist with this conversion; see the
 :ref:`grid-tools` appendix for further details.
 
 The next step is to create a manifest (named, say,
 :file:`manifest.txt`) listing all the :f-schema:`specint` files
-composing your grid. This is a simple text file with each line naming
+composing the grid. This is a simple text file with each line naming
 one file; for instance::
 
    specint-0001.h5

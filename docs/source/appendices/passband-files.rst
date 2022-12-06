@@ -10,6 +10,7 @@ files used by MSG are not shipped as part of the
 separately. This chapter describes the various files available for
 download.
 
+
 SVO Filter Service Passbands
 ============================
 
@@ -23,4 +24,4 @@ database using the :command:`make_passband` tool. For each filter of
 each system, separate passband files for the Vega, AB and ST magnitude
 systems are provided.
 
-.. include:: svo-passbands.rst
+.. include:: svo-passbands.inc

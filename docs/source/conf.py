@@ -14,7 +14,7 @@ import os
 import sys
 import re
 
-#sys.path.insert(0, os.path.abspath('../../lib'))
+sys.path.insert(0, os.path.abspath('../../python/src'))
 sys.path.insert(0, os.path.abspath('exts'))
 
 import sphinx_rtd_theme
@@ -99,7 +99,6 @@ html_logo = 'msg-logo.png'
 extlinks = {
     'wiki': ('https://en.wikipedia.org/wiki/%s', ''),
     'dict': ('https://en.wiktionary.org/wiki/%s', ''),
-    'ads': ('https://ui.adsabs.harvard.edu/abs/%s/abstract', ''),
     'netlib': ('https://www.netlib.org/%s', ''),
     'git': ('https://github.com/%s', ''),
     'repo': ('https://github.com/rhdtownsend/msg/blob/{:s}/%s'.format(branch), ''),

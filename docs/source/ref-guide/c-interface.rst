@@ -7,6 +7,7 @@ C Interface
 The C interface is provided through the :file:`cmsg.h` header file,
 which defines typedefs, enums and functions.
 
+
 API Specification
 =================
 
@@ -17,6 +18,7 @@ API Specification
    c-interface/enums.rst
    c-interface/funcs.rst
 
+   
 Compiling/Linking
 =================
 

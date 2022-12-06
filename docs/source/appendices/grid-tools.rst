@@ -24,9 +24,13 @@ grids into one or more :f-schema:`specint` files:
    grid-tools/goettingen_to_specint.rst
    grid-tools/specint_to_specint.rst
 
+For spectra in a format that isn't covered by these tools, please
+:ref:`open an issue <open-an-issue>` describing the format and/or
+pointing to relevant literature.
+
    
-Building Grids
---------------
+Packaging Grids
+---------------
 
 The following tools package multiple :f-schema:`specint` files to
 create :f-schema:`specgrid` and :f-schema:`photgrid` files:
@@ -42,6 +46,15 @@ create :f-schema:`specgrid` and :f-schema:`photgrid` files:
 
 Creating Passband Files
 -----------------------
+
+The following tools create :f-schema:`passband` files:
+
+.. toctree::
+   :maxdepth: 2
+
+   grid-tools/make_passband.rst
+
+   
 
 Additional :f-schema:`passband` files (beyond those already provided in the
 :ref:`passband-files` appendix) can be created using the

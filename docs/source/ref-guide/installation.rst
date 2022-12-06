@@ -13,7 +13,7 @@ Pre-Requisites
 To compile and run MSG, you'll need the following software
 components:
 
-* A modern (2003+) Fortran compiler
+* A modern (2008+) Fortran compiler
 * The :netlib:`LAPACK <lapack>` linear algebra library
 * The :netlib:`LAPACK95 <lapack95>` Fortran 95
   interface to LAPACK
@@ -36,7 +36,7 @@ from the command line using the :command:`tar` utility:
    tar xf msg-|version|.tar.gz
 
 Set the :envvar:`MSG_DIR` environment variable with the path to the
-newly created source directory; this can be achieved e.g. using the
+newly created source directory; this can be achieved, e.g., using the
 :command:`realpath` command\ [#realpath]_:
 
 .. prompt:: bash
@@ -69,6 +69,22 @@ the number of tests passed and failed is printed. All tests should
 pass; if one or more fails, then please :ref:`open an issue
 <open-an-issue>` to report the problem.
 
+Installing the :py:mod:`pymsg` Module
+=====================================
+
+To install the :py:mod:`pymsg` Python module, use the :command:`pip` tool:
+
+.. prompt:: bash
+
+   pip install $MSG_DIR/python
+
+You can alternatively add the :file:`$MSG_DIR/python/src` directory to
+the :envvar:`PYTHONPATH` environment variable. Note that in order for
+:py:mod:`pymsg` to function correctly, the :envvar:`MSG_DIR`
+environment variable must be set at Python runtime (this variable
+allows the module to find the Python extension that interfaces to the
+back-end).
+
 Custom Builds
 =============
 
@@ -87,7 +103,7 @@ FPE
   Enable floating point exception checks (default ``yes``)
 
 PYTHON
-  Enable building of Python interface (default ``yes``)
+  Enable building of the Python extension (default ``yes``)
 
 TEST
   Enable building of testing tools (default ``yes``)
