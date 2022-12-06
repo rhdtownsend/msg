@@ -141,8 +141,8 @@ lib-install : ${LIB_TARGETS_}
 
 pyc-install : ${PYC_TARGETS_}
 	@for t in $^; do \
-            echo CP $${t} ${PYCDIR}; \
-            cp $${t} ${PYCDIR}; \
+            echo CP $${t} ${LIBDIR}; \
+            cp $${t} ${LIBDIR}; \
         done
 
 exec-install : ${EXEC_TARGETS}
