@@ -1,15 +1,12 @@
-.. _data-schema-groups-photgrid:
-
-:grouptype:`photgrid`
-=====================
+.. rst:group-schema:: photgrid
 
 .. list-table::
    :widths: 15 10 10 65
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`TYPE`
      - attribute
@@ -25,9 +22,9 @@
      - number of photints.
    * - :code:`photsource/photints[i]`
      - group
-     - :groupref:`photint`
+     - :g-schema:`limb_photint`
      - grid photints (:code:`i = 1, ..., n`).
    * - :code:`vgrid`
      - group
-     - :groupref:`vgrid`
+     - :g-schema:`vgrid`
      - virtual grid.

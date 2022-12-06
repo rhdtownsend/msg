@@ -1,19 +1,16 @@
-.. _data-schema-files-specint:
-
-:filetype:`specint`
--------------------
+.. rst:file-schema:: specint
 
 .. list-table::
    :widths: 25 10 10 55
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`/`
      - group
-     - :groupref:`specint`
+     - :g-schema:`limb_specint`
      - specint
    * - :code:`/labels/<label>`
      - attribute

@@ -1,8 +1,3 @@
-.. _fortran-specgrid:
-
-specgrid_t
-~~~~~~~~~~
-
 .. f:type:: specgrid_t
 
    The specgrid_t type represents a grid of spectroscopic data.

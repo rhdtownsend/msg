@@ -1,17 +1,14 @@
-.. _data-schema-files-photgrid:
-
-:filetype:`photgrid`
-====================
+.. rst:file-schema:: photgrid
 
 .. list-table::
    :widths: 15 10 10 65
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`/`
      - group
-     - :groupref:`photgrid`
+     - :g-schema:`photgrid`
      - photgrid.

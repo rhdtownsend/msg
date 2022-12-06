@@ -1,18 +1,12 @@
-.. _data-schema-groups-photint:
-
-:grouptype:`photint`
-====================
-
-Limb-darkened
--------------
+.. rst:group-schema:: limb_photint
 
 .. list-table::
    :widths: 15 10 10 65
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`TYPE`
      - attribute
@@ -32,5 +26,5 @@ Limb-darkened
      - intensity coefficients (/sr).
    * - :code:`limb`
      - group
-     - :groupref:`limb`
+     - :g-schema:`limb`
      - limb-darkening law.

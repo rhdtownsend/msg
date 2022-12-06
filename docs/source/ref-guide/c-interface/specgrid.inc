@@ -1,8 +1,3 @@
-.. _c-specgrid:
-
-SpecGrid Functions
-~~~~~~~~~~~~~~~~~~
-
 .. c:function:: void load_specgrid(const char *specgrid_file_name, SpecGrid *specgrid, Stat *stat)
 
    Create a new :c:type:`SpecGrid` by loading data from a `specgrid` file.

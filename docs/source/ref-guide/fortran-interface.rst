@@ -4,10 +4,9 @@
 Fortran Interface
 *****************
 
-The Fortran interface is provided through the :f:mod:`fmsg_m`
-module. This module defines the :f:type:`specgrid_t`,
-:f:type:`photgrid_t` and :f:type:`axis_t` derived types, together with
-supporting parameters and procedures.
+The Fortran interface is provided through the :f:mod:`fmsg_m` module,
+which defines derived types together with supporting parameters and
+procedures.
 
 API Specification
 =================

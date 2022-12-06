@@ -4,18 +4,18 @@ specint_to_specint
 ~~~~~~~~~~~~~~~~~~
 
 The :command:`specint_to_specint` tool subsets and/or rebins data in
-an existing :fileref:`specint` file It accepts the
+an existing :f-schema:`specint` file It accepts the
 following command-line arguments:
 
 .. program:: specint_to_specint
 
 .. option:: <specint_file_name_in>
 
-   Name of input :fileref:`specint` file.
+   Name of input :f-schema:`specint` file.
 
 .. option:: <specint_file_name_out>
 
-   Name of output :fileref:`specint` file.
+   Name of output :f-schema:`specint` file.
 
 .. option:: lam_min=<value> (optional)
 

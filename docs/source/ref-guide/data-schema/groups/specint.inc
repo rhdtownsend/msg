@@ -1,18 +1,12 @@
-.. _data-schema-groups-specint:
-
-:grouptype:`specint`
-====================
-
-Limb-Darkened
--------------
+.. rst:group-schema:: limb_specint
 
 .. list-table::
    :widths: 15 10 10 65
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`TYPE`
      - attribute
@@ -40,9 +34,9 @@ Limb-Darkened
      - intensity coefficients (erg/cm^2/s/Å/sr).
    * - :code:`range`
      - group
-     - :groupref:`range`
+     - :g-schema:`lin_range` | :g-schema:`log_range` | :g-schema:`tab_range` | :g-schema:`comp_range`
      - wavelength grid (Å).
    * - :code:`limb`
      - group
-     - :groupref:`limb`
+     - :g-schema:`limb`
      - limb-darkening law.

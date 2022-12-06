@@ -6,7 +6,7 @@ ferre_to_specint
 The :command:`ferre_to_specint` tool extracts a series of flux spectra
 from a data file in FERRE format (see the `FERRE User Guide
 <http://www.as.utexas.edu/~hebe/ferre/ferre.pdf>`__), and writes them
-to :fileref:`specint` files. It accepts the following
+to :f-schema:`specint` files. It accepts the following
 command-line arguments:
 
 .. program:: ferre_to_specint
@@ -24,6 +24,6 @@ command-line arguments:
 
 .. option:: <specint_prefix>
 
-   Prefix of output :fileref:`specint` files; these will have the name
+   Prefix of output :f-schema:`specint` files; these will have the name
    :file:`<specint_prefix>-NNNNNNNN.h5`, wehre :file:`NNNNNNNN` is the
    zero-padded index of the spectrum (starting at 1).

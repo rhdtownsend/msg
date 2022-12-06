@@ -4,8 +4,8 @@ specint_to_specgrid
 ~~~~~~~~~~~~~~~~~~~
 
 The :command:`specint_to_specgrid` tool packages together multiple
-:fileref:`specint` files to make a spectroscopic grid, writing it to a
-:fileref:`specgrid`. It accepts the following command-line arguments:
+:f-schema:`specint` files to make a spectroscopic grid, writing it to a
+:f-schema:`specgrid`. It accepts the following command-line arguments:
 
 .. program:: specint_to_specgrid
 
@@ -15,7 +15,7 @@ The :command:`specint_to_specgrid` tool packages together multiple
 
 .. option:: <specgrid_file_name>
 
-   Name of output :fileref:`specgrid` file.
+   Name of output :f-schema:`specgrid` file.
 
 .. option:: <allow_dupes> (optional)
 
@@ -23,7 +23,7 @@ The :command:`specint_to_specgrid` tool packages together multiple
    file; set to 'T' to allow duplicates.
 
 The manifest file is a simple text file that lists all the
-:fileref:`specint` files (one per line) that should be included in the
+:f-schema:`specint` files (one per line) that should be included in the
 grid. The axes and the topology of the grid are automatically
 determined by the labels attached to each specint file. If two files
 have identical labels, then the one appearing later in the manifest

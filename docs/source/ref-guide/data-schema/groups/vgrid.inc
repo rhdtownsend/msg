@@ -1,15 +1,12 @@
-.. _data-schema-groups-vgrid:
-
-:grouptype:`vgrid`
-==================
+.. rst:group-schema:: vgrid
 
 .. list-table::
    :widths: 15 10 10 65
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`TYPE`
      - attribute
@@ -29,5 +26,5 @@
      - rank of grid.
    * - :code:`axes[i]`
      - group
-     - :groupref:`axis`
+     - :g-schema:`axis`
      - grid axes (:code:`i = 1, ..., rank`).

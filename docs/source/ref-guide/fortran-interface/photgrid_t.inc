@@ -1,8 +1,3 @@
-.. _fortran-photgrid:
-
-photgrid_t
-~~~~~~~~~~
-
 .. f:type:: photgrid_t
 
    The photgrid_t type represents a grid of photometric data.

@@ -1,15 +1,12 @@
-.. _data-schema-groups-passband:
-
-:grouptype:`passband`
-=====================
+.. rst:group-schema:: passband
 
 .. list-table::
    :widths: 15 10 10 65
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`TYPE`
      - attribute
@@ -25,5 +22,5 @@
      - normalizing flux (erg/cm^2/s).
    * - :code:`cubint`
      - group
-     - :groupref:`cubint`
+     - :g-schema:`cubint`
      - filter interpolant.

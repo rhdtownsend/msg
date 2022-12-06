@@ -1,8 +1,3 @@
-.. _fortran-axis:
-
-axis_t
-~~~~~~
-
 .. f:type:: axis_t
 
    The axis_t type represents a grid axis.

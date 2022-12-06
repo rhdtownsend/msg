@@ -3,16 +3,16 @@
 Groups
 ======
 
-.. toctree::
-   :maxdepth: 2
-
-   groups/axis.rst
-   groups/cubint.rst
-   groups/limb.rst
-   groups/range.rst
-   groups/passband.rst
-   groups/photgrid.rst
-   groups/photint.rst
-   groups/specgrid.rst
-   groups/specint.rst
-   groups/vgrid.rst
+.. include:: groups/axis.inc
+.. include:: groups/comp_range.inc
+.. include:: groups/cubint.inc
+.. include:: groups/limb.inc
+.. include:: groups/lin_range.inc
+.. include:: groups/log_range.inc
+.. include:: groups/passband.inc
+.. include:: groups/photgrid.inc
+.. include:: groups/photint.inc
+.. include:: groups/specgrid.inc
+.. include:: groups/specint.inc
+.. include:: groups/tab_range.inc
+.. include:: groups/vgrid.inc

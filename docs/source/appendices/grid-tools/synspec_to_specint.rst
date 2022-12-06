@@ -6,7 +6,7 @@ synspec_to_specint
 The :command:`synspec_to_specint` tool extracts an single intensity
 spectrum from a :file:`fort.18` data file produced by the SYNSPEC
 spectral synthesis package :ads_citep:`lanz:2003`, and writes it to a
-:fileref:`specint` file. It accepts the following
+:f-schema:`specint` file. It accepts the following
 command-line arguments:
 
 .. program:: synspec_to_specint
@@ -44,7 +44,7 @@ command-line arguments:
 
 .. option:: <specint_file_name>
 
-   Name of output :fileref:`specint` file.
+   Name of output :f-schema:`specint` file.
 
 .. option:: <label> (optional)
 

@@ -1,8 +1,3 @@
-.. _c-photgrid:
-
-PhotGrid Functions
-~~~~~~~~~~~~~~~~~~
-
 .. c:function:: void load_photgrid(const char *photgrid_file_name, PhotGrid *photgrid, int *stat)
 
    Create a new :c:type:`PhotGrid` by loading data from a `photgrid` file.

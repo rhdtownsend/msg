@@ -1,19 +1,16 @@
-.. _data-schema-files-photint:
-
-:filetype:`photint`
-===================
+.. rst:file-schema:: photint
 
 .. list-table::
    :widths: 25 10 10 55
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`/`
      - group
-     - :groupref:`photint`
+     - :g-schema:`limb_photint`
      - specint
    * - :code:`/labels/<label>`
      - attribute

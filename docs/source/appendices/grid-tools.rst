@@ -14,7 +14,7 @@ Converting Spectra
 ------------------
 
 The following tools convert existing spectra and/or spectroscopic
-grids into one or more :fileref:`specint` files:
+grids into one or more :f-schema:`specint` files:
 
 .. toctree::
    :maxdepth: 2
@@ -28,8 +28,8 @@ grids into one or more :fileref:`specint` files:
 Building Grids
 --------------
 
-The following tools package multiple :fileref:`specint` files to
-create :fileref:`specgrid` and :fileref:`photgrid` files:
+The following tools package multiple :f-schema:`specint` files to
+create :f-schema:`specgrid` and :f-schema:`photgrid` files:
 
 .. toctree::
    :maxdepth: 2
@@ -43,7 +43,7 @@ create :fileref:`specgrid` and :fileref:`photgrid` files:
 Creating Passband Files
 -----------------------
 
-Additional :fileref:`passband` files (beyond those already provided in the
+Additional :f-schema:`passband` files (beyond those already provided in the
 :ref:`passband-files` appendix) can be created using the
 :command:`make_passband` tool. This tool accepts the following
 command-line arguments:
@@ -60,7 +60,7 @@ command-line arguments:
 
 .. option:: <passband_file_name>
 
-   Name of output :fileref:`passband` file.
+   Name of output :f-schema:`passband` file.
 
 The input file is a text file tabulating wavelength :math:`\lambda`
 (:math:`\angstrom`) and passband response function

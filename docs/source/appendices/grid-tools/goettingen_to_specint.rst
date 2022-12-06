@@ -6,7 +6,7 @@ goettingen_to_specint
 The :command:`goettingen_to_specint` tool extracts a flux spectrum
 from a data file in FITS format (with the schema described by
 :ads_citealp:`husser:2013`), and writes it to a
-:fileref:`specint` file. This tool accepts the following
+:f-schema:`specint` file. This tool accepts the following
 command-line arguments:
 
 .. program:: goettingen_to_specint
@@ -27,7 +27,7 @@ command-line arguments:
 
 .. option:: <specint_file_name>
 
-   Name of output :fileref:`specint` file.
+   Name of output :f-schema:`specint` file.
 
 .. note::
 

@@ -3,9 +3,8 @@
 Functions
 ---------
 
-.. toctree::
-   :maxdepth: 2
+.. include:: specgrid.inc
 
-   specgrid.rst
-   photgrid.rst
-   
+----
+
+.. include:: photgrid.inc

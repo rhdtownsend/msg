@@ -3,11 +3,8 @@
 Files
 =====
 
-.. toctree::
-   :maxdepth: 2
-
-   files/specint.rst
-   files/specgrid.rst
-   files/passband.rst
-   files/photgrid.rst
-   files/photint.rst
+.. include:: files/passband.inc
+.. include:: files/photgrid.inc
+.. include:: files/photint.inc
+.. include:: files/specgrid.inc
+.. include:: files/specint.inc

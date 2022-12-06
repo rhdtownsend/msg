@@ -1,17 +1,14 @@
-.. _data-schema-files-specgrid:
-
-:filetype:`specgrid`
-====================
+.. rst:file-schema:: specgrid
 
 .. list-table::
    :widths: 15 10 10 65
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`/`
      - group
-     - :groupref:`specgrid`
+     - :g-schema:`specgrid`
      - specgrid.

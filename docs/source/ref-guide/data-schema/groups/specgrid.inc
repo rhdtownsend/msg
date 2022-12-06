@@ -1,15 +1,12 @@
-.. _data-schema-groups-specgrid:
-
-:grouptype:`specgrid`
-=====================
+.. rst:group-schema:: specgrid
 
 .. list-table::
    :widths: 15 10 10 65
    :header-rows: 1
 
    * - Item
-     - Objtype
-     - Datatype
+     - Object Type
+     - Data Type
      - Definition
    * - :code:`TYPE`
      - attribute
@@ -33,9 +30,9 @@
      - maximum wavelength (Å).
    * - :code:`specsource/specints[i]`
      - group
-     - :groupref:`specint`
+     - :g-schema:`limb_specint`
      - grid specints (:code:`i = 1, ..., n`).
    * - :code:`vgrid`
      - group
-     - :groupref:`vgrid`
+     - :g-schema:`vgrid`
      - virtual grid.
