@@ -28,6 +28,10 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.environ['MSG_DIR'], 'lib'))
 import pycmsg as pyc
 
+# Attribute definitions
+
+__version__ = pyc._get_msg_version()
+
 # Class definitions
 
 class SpecGrid:
