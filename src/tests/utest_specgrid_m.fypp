@@ -316,7 +316,7 @@ contains
       real(RD)         :: F(n_lam-1)
       real(RD)         :: F_chk(n_lam-1)
  
-      print *, '  interpolations'
+      print *, '  interpolation'
 
       call load_specgrid('sg-demo.h5', sg)
       
@@ -372,25 +372,25 @@ contains
 
       subroutine interp_assert_()
 
-         if (ALL(I == I_chk)) then
+         if (ALL(ABS(I - I_chk) <= 4._RD*SPACING(I_chk))) then
             print *,'    PASS: ', 'intensity'
          else
             print *,'    FAIL: ', 'intensity', I, I_chk
          end if
             
-         if (ALL(E == E_chk)) then
+         if (ALL(ABS(E - E_chk) <= 4._RD*SPACING(E_chk))) then
             print *,'    PASS: ', 'E_moment'
          else
             print *,'    FAIL: ', 'E_moment', E, E_chk
          end if
             
-         if (ALL(D == D_chk)) then
+         if (ALL(ABS(D - D_chk) <= 4._RD*SPACING(D_chk))) then
             print *,'    PASS: ', 'D_moment'
          else
             print *,'    FAIL: ', 'D_moment', D, D_chk
          end if
             
-         if (ALL(F == F_chk)) then
+         if (ALL(ABS(F - F_chk) <= 4._RD*SPACING(F_chk))) then
             print *,'    PASS: ', 'flux'
          else
             print *,'    FAIL: ', 'flux', F, F_chk

@@ -61,7 +61,7 @@ contains
 
       print *, '  exceptions'
 
-      call load_photgrid_from_specgrid('sg-demo.h5', 'pb-generic-Johnson.V-Vega.h5', pg)
+      call load_photgrid_from_specgrid('sg-demo.h5', 'pb-Generic-Johnson.V-Vega.h5', pg)
       
       call stat_arrange_()
       call stat_act_()
@@ -175,7 +175,7 @@ contains
  
       print *, '  attributes'
 
-      call load_photgrid_from_specgrid('sg-demo.h5', 'pb-generic-Johnson.V-Vega.h5', pg)
+      call load_photgrid_from_specgrid('sg-demo.h5', 'pb-Generic-Johnson.V-Vega.h5', pg)
       
       call attr_arrange_()
       call attr_act_()
@@ -254,9 +254,9 @@ contains
       real(RD)         :: F
       real(RD)         :: F_chk
  
-      print *, '  interpolations'
+      print *, '  interpolation'
 
-      call load_photgrid_from_specgrid('sg-demo.h5', 'pb-generic-Johnson.V-Vega.h5', pg)
+      call load_photgrid_from_specgrid('sg-demo.h5', 'pb-Generic-Johnson.V-Vega.h5', pg)
       
       call interp_arrange_()
       call interp_act_()
@@ -308,25 +308,25 @@ contains
 
       subroutine interp_assert_()
 
-         if (I == I_chk) then
+         if (ABS(I - I_chk) <= 4._RD*SPACING(I_chk)) then
             print *,'    PASS: ', 'intensity'
          else
             print *,'    FAIL: ', 'intensity', I, I_chk
          end if
             
-         if (E == E_chk) then
+         if (ABS(E - E_chk) <= 4._RD*SPACING(E_chk)) then
             print *,'    PASS: ', 'E_moment'
          else
             print *,'    FAIL: ', 'E_moment', E, E_chk
          end if
             
-         if (D == D_chk) then
+         if (ABS(D - D_chk) <= 4._RD*SPACING(D_chk)) then
             print *,'    PASS: ', 'D_moment'
          else
             print *,'    FAIL: ', 'D_moment', D, D_chk
          end if
             
-         if (F == F_chk) then
+         if (ABS(F - F_chk) <= 4._RD*SPACING(F_chk)) then
             print *,'    PASS: ', 'flux'
          else
             print *,'    FAIL: ', 'flux', F, F_chk
