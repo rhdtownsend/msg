@@ -13,7 +13,7 @@ command-line arguments:
 
 .. option:: <synspec_file_name>
 
-   Name of input file.	      
+   Name of input SYNSPEC file.	      
 
 .. option:: <n_mu>
 

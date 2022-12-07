@@ -22,6 +22,7 @@ grids into one or more :f-schema:`specint` files:
    grid-tools/synspec_to_specint.rst
    grid-tools/ferre_to_specint.rst
    grid-tools/goettingen_to_specint.rst
+   grid-tools/ascii_to_specint.rst
    grid-tools/specint_to_specint.rst
 
 For spectra in a format that isn't covered by these tools, please
