@@ -165,7 +165,7 @@ contains
       end select
 
       select case(flux_units)
-      case('erg/s/cm^2/A')
+      case('erg/cm^2/s/A')
       case default
          @:ABORT('Invalid flux_units')
       end select
