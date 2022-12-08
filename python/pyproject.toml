@@ -10,8 +10,8 @@ authors = [
 ]
 description = "Python interface to MSG"
 readme = "README.rst"
-requires-python = ">=3.6"
-dependencies = ["numpy>=1.12.0"]
+requires-python = ">=3.7"
+dependencies = ["numpy>=1.15.0"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
