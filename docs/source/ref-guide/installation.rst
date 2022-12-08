@@ -10,7 +10,7 @@ to get up and running, have a look at the :ref:`quick-start` chapter.
 Pre-Requisites
 ==============
 
-To compile and run MSG, you'll need the following software
+To compile and use MSG, you'll need the following software
 components:
 
 * A modern (2008+) Fortran compiler
@@ -23,6 +23,12 @@ components:
 On Linux and MacOS platforms, these components are bundled together in
 the `MESA Software Development Kit (SDK) <mesa-sdk>`__. Using this SDK
 is `strongly` recommended.
+
+If you're planning on using the :py:mod:`pymsg` Python module, then
+you'll also need the following components:
+
+* `Python 3.7 <https://www.python.org/downloads/>`__ (or more recent)
+* `NumPy 1.15 <https://numpy.org/>`__ (or more recent)
 
 Building MSG
 ============

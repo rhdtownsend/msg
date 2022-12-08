@@ -23,8 +23,8 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = "1.0"
-branch = "main"
+version = '1.1rc2'
+branch = 'main'
 copyright = '2022, Rich Townsend'
 
 # -- General configuration ---------------------------------------------------
@@ -109,7 +109,7 @@ extlinks = {
 # Set site-wide targets
 
 targets = {
-    'tarball': 'https://github.com/rhdtownsend/msg/releases/download/v1.0/msg-1.0.tar.gz',
+    'tarball': f'https://github.com/rhdtownsend/msg/releases/download/v{version}/msg-{version}.tar.gz',
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mad-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=madsdk'
 }

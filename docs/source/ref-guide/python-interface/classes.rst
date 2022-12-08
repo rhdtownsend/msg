@@ -3,12 +3,10 @@
 Classes
 -------
 
-.. currentmodule:: pymsg
+.. py:currentmodule:: pymsg
 
 .. autoclass:: SpecGrid
    :members:
-
-----
 
 .. autoclass:: PhotGrid
    :members:
