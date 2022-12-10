@@ -35,4 +35,4 @@ used to compile/link a program with :command:`gfortran` as follows:
 
 .. prompt:: bash
 
-   gfortran -I $MSG_DIR/include -o myprogram myprogram.f90 `$MSG_DIR/scripts/fmsg_link`
+   gfortran -o myprogram myprogram.f90 -I $MSG_DIR/include `$MSG_DIR/scripts/fmsg_link`

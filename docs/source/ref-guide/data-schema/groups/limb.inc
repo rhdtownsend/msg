@@ -19,5 +19,5 @@
    * - :code:`law`
      - attribute
      - character
-     - limb-darkening law (see the :ref:`limb-darkening-laws` section for a list of options).
+     - limb-darkening law (see :ref:`here <limb-darkening-laws>` for a list of options).
        

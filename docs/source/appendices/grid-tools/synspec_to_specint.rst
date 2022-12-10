@@ -39,8 +39,8 @@ command-line arguments:
 
 .. option:: <law_str>
      
-   Limb-darkening law in output file (see the
-   :ref:`limb-darkening-laws` section for a list of options).
+   Limb-darkening law in output file (see :ref:`here
+   <limb-darkening-laws>` for a list of options).
 
 .. option:: <specint_file_name>
 

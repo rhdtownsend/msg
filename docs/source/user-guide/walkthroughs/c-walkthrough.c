@@ -20,13 +20,18 @@ int main(int argc, char *argv[]) {
 
   double x_vec[2];
 
+  double R2_d2;
+
   double lam[N_LAM];
   double lam_c[N_LAM-1];
   double F[N_LAM-1];
+  double F_obs[N_LAM-1];
   double F_U;
   double F_B;
   double F_V;
-  double R2_d2;
+  double F_U_obs;
+  double F_B_obs;
+  double F_V_obs;
   double U;
   double B;
   double V;
@@ -37,17 +42,17 @@ int main(int argc, char *argv[]) {
 
   load_specgrid("sg-demo.h5", &specgrid, NULL);
 
-  // Set atmospheric parameters to correspond to Sirius A
+  // Set photospheric parameters to correspond to Sirius A
 
   for(int i=0; i < 2; i++) {
 
     get_specgrid_axis_label(specgrid, i, label);
 
     if (strcmp(label, "log(g)") == 0) {
-      x_vec[i] = 4.277;
+      x_vec[i] = 4.2774;
     }
     else if (strcmp(label, "Teff") == 0) {
-      x_vec[i] = 9906.;
+      x_vec[i] = 9909.2;
     }
     else {
       printf("invalid label\n");
@@ -55,6 +60,11 @@ int main(int argc, char *argv[]) {
     }
       
   }
+
+  // Set the dilution factor R2_d2 = R**2/d**2, where R is Sirius A's
+  // radius and d its distance
+
+  R2_d2 = 2.1351E-16;
 
   // Set up the wavelength abscissa
 
@@ -70,12 +80,16 @@ int main(int argc, char *argv[]) {
 
   interp_specgrid_flux(specgrid, x_vec, N_LAM, lam, F, NULL, NULL);
 
+  for(int i=0; i < N_LAM-1; i++) {
+    F_obs[i] = R2_d2*F[i];
+  }
+
   // Write it to a file
 
   fptr = fopen("spectrum.dat", "w");
 
   for(int i=0; i < N_LAM-1; i++) {
-    fprintf(fptr, "%.17e %.17e\n", lam_c[i], F[i]);
+    fprintf(fptr, "%.17e %.17e\n", lam_c[i], F_obs[i]);
   }
 
   fclose(fptr);
@@ -92,17 +106,18 @@ int main(int argc, char *argv[]) {
   interp_photgrid_flux(photgrid_B, x_vec, &F_B, NULL, NULL);
   interp_photgrid_flux(photgrid_V, x_vec, &F_V, NULL, NULL);
 
-  // Evaluate apparent magnitudes (the droid factor R2_d2 is
-  // R^2/d^2, where R is Sirius A's radius and d its distance)
+  F_U_obs = R2_d2*F_U;
+  F_B_obs = R2_d2*F_B;
+  F_V_obs = R2_d2*F_V;
 
-  R2_d2 = 2.1366E-16;
+  // Evaluate apparent magnitudes
 
-  U = -2.5*log10(F_U*R2_d2);
-  B = -2.5*log10(F_B*R2_d2);
-  V = -2.5*log10(F_V*R2_d2);
+  U = -2.5*log10(F_U_obs);
+  B = -2.5*log10(F_B_obs);
+  V = -2.5*log10(F_V_obs);
 
   printf("  V=  %.17e\n", V);
-  printf("U-B=  %.17e\n", U-V);
+  printf("U-B=  %.17e\n", U-B);
   printf("B-V=  %.17e\n", B-V);
 
   // Clean up

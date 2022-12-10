@@ -21,10 +21,12 @@ program fortran_walkthrough
    type(axis_t)         :: axis
    character(LABEL_LEN) :: label
    integer              :: i
+   real(RD)             :: R2_d2
    real(RD)             :: lam(n_lam)
    real(RD)             :: lam_c(n_lam-1)
    real(RD)             :: x_vec(2)
-   real(RD)             :: F_lam(n_lam-1)
+   real(RD)             :: F(n_lam-1)
+   real(RD)             :: F_obs(n_lam-1)
    integer              :: unit
    type(photgrid_t)     :: photgrid_U
    type(photgrid_t)     :: photgrid_B
@@ -32,7 +34,9 @@ program fortran_walkthrough
    real(RD)             :: F_U
    real(RD)             :: F_B
    real(RD)             :: F_V
-   real(RD)             :: R2_d2
+   real(RD)             :: F_U_obs
+   real(RD)             :: F_B_obs
+   real(RD)             :: F_V_obs
    real(RD)             :: U
    real(RD)             :: B
    real(RD)             :: V
@@ -41,7 +45,7 @@ program fortran_walkthrough
 
    call load_specgrid('sg-demo.h5', specgrid)
 
-   ! Set atmospheric parameters to correspond to Sirius A
+   ! Set photospheric parameters to correspond to Sirius A
 
    do i = 1, 2
 
@@ -50,31 +54,38 @@ program fortran_walkthrough
 
       select case(label)
       case('log(g)')
-         x_vec(i) = 4.277_RD
+         x_vec(i) = 4.2774_RD
       case('Teff')
-         x_vec(i) = 9906._RD
+         x_vec(i) = 9909.2_RD
       case default
          stop 'unrecognized axis label'
       end select
 
    end do
    
+   ! Set the dilution factor R2_d2 = R**2/d**2, where R is Sirius A's
+   ! radius and d its distance
+
+   R2_d2 = 2.1351E-16_RD
+
    ! Set up the wavelength abscissa
 
    lam = [((lam_min*(n_lam-i) + lam_max*(i-1))/(n_lam-1), i=1,n_lam)]
 
    lam_c = 0.5_RD*(lam(:n_lam-1) + lam(2:))
 
-   ! Evaluate the flux
+   ! Evaluate the observed flux
 
-   call specgrid%interp_flux(x_vec, lam, F_lam)
+   call specgrid%interp_flux(x_vec, lam, F)
+
+   F_obs = R2_d2*F
 
    ! Write it to a file
 
    open(NEWUNIT=unit, FILE='spectrum.dat', STATUS='REPLACE')
 
    do i = 1, n_lam-1
-      write(unit, *) lam_c(i), F_lam(i)
+      write(unit, *) lam_c(i), F_obs(i)
    end do
 
    close(unit)
@@ -91,14 +102,15 @@ program fortran_walkthrough
    call photgrid_B%interp_flux(x_vec, F_B)
    call photgrid_V%interp_flux(x_vec, F_V)
 
-   ! Evaluate apparent magnitudes (the droid factor R2_d2 is
-   ! R**2/d**2, where R is Sirius A's radius and d its distance)
+   F_U_obs = R2_d2*F_U
+   F_B_obs = R2_d2*F_B
+   F_V_obs = R2_d2*F_V
 
-   R2_d2 = 2.1366E-16_RD
+   ! Evaluate apparent magnitudes
 
-   U = -2.5_RD*LOG10(F_U*R2_d2)
-   B = -2.5_RD*LOG10(F_B*R2_d2)
-   V = -2.5_RD*LOG10(F_V*R2_d2)
+   U = -2.5_RD*LOG10(F_U_obs)
+   B = -2.5_RD*LOG10(F_B_obs)
+   V = -2.5_RD*LOG10(F_V_obs)
 
    print *, '  V=', V
    print *, 'U-B=', U-B
