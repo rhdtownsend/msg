@@ -32,5 +32,4 @@ used to compile/link a program with :command:`gcc` as follows:
 
 .. prompt:: bash
 
-   gcc -I $MSG_DIR/include -o myprogram myprogram.c `$MSG_DIR/scripts/cmsg_link`
-   
+   gcc -o myprogram myprogram.c -I $MSG_DIR/include `$MSG_DIR/scripts/cmsg_link`

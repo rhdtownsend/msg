@@ -22,7 +22,7 @@ order to evaluate a spectrum.
 MSG is designed to solve this problem. It's not the first software
 package that offers stellar spectral interpolation (see, e.g.,
 :ads_citealp:`blanco-cuaresma:2014`; :ads_citealp:`allende:2015`;
-ads_citealp:`lianlim:2020`); however, with spectral interpolation as
+:ads_citealp:`lianlim:2020`); however, with spectral interpolation as
 its `sole` focus, it offers a combination of features unmatched by
 other packages:
 

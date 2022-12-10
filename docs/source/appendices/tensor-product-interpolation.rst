@@ -167,9 +167,9 @@ Likewise, for cubic interpolation, we have
    c_{p_{k}}(u_{k}).
 
 The coefficients :math:`\mathcal{L}^{p_{1},p_{2},\ldots,p_{N}}` and
-:math:`\mathcal{C}^{p_{1},p_{2},\ldots,p_{N}}` cannot easily be expressed in
-closed form, but they are relatively easy to construct
-algorithmically.
+:math:`\mathcal{C}^{p_{1},p_{2},\ldots,p_{N}}` cannot easily be
+expressed in closed form, but they are relatively straightforward to
+construct algorithmically.
 
 The summations in expressions above can be regarded as the contraction
 (over all indices) of a pair of rank-:math:`N` tensors. In the cubic
@@ -190,5 +190,5 @@ vectors
    \quad
    (k = 1,\ldots,N)
 
-Hence, this kind of multivariate interpolation is also known as tensor
+Hence, this kind of multivariate interpolation is known as tensor
 product interpolation.

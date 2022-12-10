@@ -194,12 +194,15 @@ Photospheric Parameter Dependence
 ---------------------------------
 
 The photospheric parameter dependence of the specific intensity is
-represented using cubic tensor product interpolation. The appendices
-provide a :ref:`(relatively) gentle introduction to tensor product
-interpolation <tensor-product-interpolation>`. The short version is
-that the intensity is modeled via piecewise-cubic functions of each
-component of :math:`\vx`, constructed to be continuous and smooth at
-the join between each piecewise region.
+represented using cubic Hermite tensor product interpolation. The
+appendices provide a :ref:`(relatively) gentle introduction to tensor
+product interpolation <tensor-product-interpolation>`. The short
+version is that the intensity is modeled via piecewise-cubic functions
+of each component of :math:`\vx`, constructed to be continuous and
+smooth at the join between each piecewise region. The derivatives at
+these joins are estimated using second-order finite difference
+approximations involving neighboring points (or first order at grid
+boundaries).
 
 Grids often contain holes and/or ragged boundaries (the latter
 typically arising near the edge of the region of the :math:`\Teff-g`

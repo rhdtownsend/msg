@@ -18,7 +18,7 @@ Documentation
 
 To contribute documentation toward the project, follow the same
 approach as above for code. (The ReStructured Text source files for
-the documentation reside in the :file:`docs/source` sub-directory.)
+the documentation reside in the :file:`docs/source` subdirectory.)
 
 Data
 ====
