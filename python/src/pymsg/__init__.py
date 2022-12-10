@@ -39,7 +39,7 @@ class SpecGrid:
 
     This grid may be used to interpolate the intensity (or related
     quantities) across a wavelength abscissa and for a set of
-    atmosphere parameter values.
+    photospheric parameter values.
 
     """
 
@@ -102,19 +102,19 @@ class SpecGrid:
     
     @property
     def axis_labels(self):
-        """list: Atmosphere parameter axis labels."""
+        """list: Photospheric parameter axis labels."""
         return self._axis_labels
 
     
     @property
     def axis_x_min(self):
-        """dict: Atmosphere parameter axis minima."""
+        """dict: Photospheric parameter axis minima."""
         return self._axis_x_min
 
     
     @property
     def axis_x_max(self):
-        """dict: Atmosphere parameter axis maxima."""
+        """dict: Photospheric parameter axis maxima."""
         return self._axis_x_max
 
     
@@ -172,13 +172,13 @@ class SpecGrid:
         r"""Evaluate the spectroscopic intensity.
 
         Args:
-            x (dict): Atmosphere parameters; keys must match 
+            x (dict): Photospheric parameters; keys must match 
                 `axis_labels` property, values must be double.b
             mu (double): Cosine of angle of emergence relative to 
                 surface normal.
             lam (numpy.ndarray): Wavelength abscissa (Å).
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmosphere parameter; 
+                derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -204,12 +204,12 @@ class SpecGrid:
         r"""Evaluate the spectroscopic intensity E-moment.
 
         Args:
-            x (dict): Atmosphere parameters; keys must match
+            x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             k (int): Degree of moment.
             lam (numpy.ndarray): Wavelength abscissa (Å).
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmosphere parameter; 
+                derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -235,12 +235,12 @@ class SpecGrid:
         r"""Evaluate the spectroscopic intensity D-moment.
 
         Args:
-            x (dict): Atmosphere parameters; keys must match
+            x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             l (int): Harmonic degree of moment.
             lam (numpy.ndarray): Wavelength abscissa (Å).
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmosphere parameter; 
+                derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -266,11 +266,11 @@ class SpecGrid:
         r"""Evaluate the spectroscopic flux.
 
         Args:
-            x (dict): Atmosphere parameters; keys must match
+            x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             lam (numpy.ndarray): Wavelength abscissa (Å)
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmosphere parameter; 
+                derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -296,7 +296,7 @@ class PhotGrid:
     r"""The PhotGrid class represents a grid of photometric intensity data.
 
     This grid may be used to interpolate the intensity (or related
-    quantities) for a set of atmosphere parameter values.
+    quantities) for a set of photospheric parameter values.
 
     """
     
@@ -366,19 +366,19 @@ class PhotGrid:
     
     @property
     def axis_labels(self):
-        """list: Atmosphere parameter axis labels."""
+        """list: Photospheric parameter axis labels."""
         return self._axis_labels
 
     
     @property
     def axis_x_min(self):
-        """dict: Atmosphere parameter axis minima."""
+        """dict: Photospheric parameter axis minima."""
         return self._axis_x_min
 
     
     @property
     def axis_x_max(self):
-        """dict: Atmosphere parameter axis maxima."""
+        """dict: Photospheric parameter axis maxima."""
         return self._axis_x_max
 
     
@@ -407,12 +407,12 @@ class PhotGrid:
         point flux.
 
         Args:
-            x (dict): Atmosphere parameters; keys must match 
+            x (dict): Photospheric parameters; keys must match 
                 `axis_labels` property, values must be double.
             mu (double): Cosine of angle of emergence relative to 
                 surface normal.
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmosphere parameter; 
+                derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -437,11 +437,11 @@ class PhotGrid:
         the zero-point flux.
 
         Args:
-            x (dict): Atmosphere parameters; keys must match
+            x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             k (int): Degree of moment.
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmosphere parameter; 
+                derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -466,11 +466,11 @@ class PhotGrid:
         the zero-point flux.
 
         Args:
-            x (dict): Atmosphere parameters; keys must match
+            x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             l (int): Harmonic degree of moment.
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmosphere parameter; 
+                derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
@@ -495,10 +495,10 @@ class PhotGrid:
         flux.
 
         Args:
-            x (dict): Atmosphere parameters; keys must match
+            x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             deriv (dict, optional): Flags indicating whether to evaluate 
-                derivative with respect to each atmosphere parameter; 
+                derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
 
