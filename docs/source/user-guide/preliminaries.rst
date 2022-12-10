@@ -15,15 +15,16 @@ astrophysical literature (see, e.g., :ads_citealp:`lanz:2003`;
 :ads_citealp:`de-laverny:2012`; :ads_citealp:`husser:2013`;
 :ads_citealp:`allende:2018`; :ads_citealp:`chiavassa:2018`;
 :ads_citealp:`zsargo:2020`). However, even with these grids a
-significant obstacle remains: when atmospheric parameters fall between
-the grid nodes, some kind of interpolation is necessary in order to
-evaluate a spectrum.
+significant obstacle remains: when photospheric parameters fall
+between the grid nodes, some kind of interpolation is necessary in
+order to evaluate a spectrum.
 
 MSG is designed to solve this problem. It's not the first software
 package that offers stellar spectral interpolation (see, e.g.,
-:ads_citealp:`blanco-cuaresma:2014`; :ads_citealp:`allende:2015`);
-however, with spectral interpolation as its `sole` focus, it offers a
-combination of features unmatched by other packages:
+:ads_citealp:`blanco-cuaresma:2014`; :ads_citealp:`allende:2015`;
+ads_citealp:`lianlim:2020`); however, with spectral interpolation as
+its `sole` focus, it offers a combination of features unmatched by
+other packages:
 
 * scalability --- MSG handles grids that are much larger
   (on disk) than available computer memory.

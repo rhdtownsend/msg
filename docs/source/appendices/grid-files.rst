@@ -29,7 +29,7 @@ dependence parameterized with the `CLARET` limb-darkening law.
    * - :f-schema:`Specgrid <specgrid>` File
      - Resolution
      - :math:`\lambda` Range
-     - Atmospheric Parameters
+     - Photospheric Parameters
    * - :grids:`sg-OSTAR2002-low.h5 <OSTAR2002/sg-OSTAR2002-low.h5>` (50MB)
      - :math:`\mathcal{R}=1000`
      - :math:`[880\,\angstrom, 5.0\,\um]`
@@ -43,7 +43,7 @@ dependence parameterized with the `CLARET` limb-darkening law.
      - :math:`[880\,\angstrom, 5.0\,\um]`
      - ``Teff``, ``log(g)``, ``Z/Zo``
 
-The definitions and ranges of the atmospheric parameters are as
+The definitions and ranges of the photospheric parameters are as
 follows:
 
 * effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [27500, 55000]`
@@ -68,7 +68,7 @@ dependence parameterized with the `CLARET` limb-darkening law.
    * - :f-schema:`Specgrid <specgrid>` File
      - Resolution
      - :math:`\lambda` Range
-     - Atmospheric Parameters
+     - Photospheric Parameters
    * - :grids:`sg-BSTAR2006-low.h5 <BSTAR2006/sg-BSTAR2006-low.h5>` (77MB)
      - :math:`\mathcal{R}=1000`
      - :math:`[880\,\angstrom, 5\,\um]`
@@ -82,7 +82,7 @@ dependence parameterized with the `CLARET` limb-darkening law.
      - :math:`[880\,\angstrom, 5\,\um]`
      - ``Teff``, ``log(g)``, ``Z/Zo``
 
-The definitions and ranges of the atmospheric parameters are as
+The definitions and ranges of the photospheric parameters are as
 follows:
 
 * effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [15000, 30000]`
@@ -107,7 +107,7 @@ limb-darkening law.
    * - :f-schema:`Specgrid <specgrid>` File
      - Resolution
      - :math:`\lambda` Range
-     - Atmospheric Parameters
+     - Photospheric Parameters
    * - :grids:`sg-CAP18-large.h5 <CAP18/sg-CAP18-large.h5>` (73GB)
      - :math:`\mathcal{R}=10000`
      - :math:`[1300\,\angstrom, 6.5\,\um]`
@@ -125,7 +125,7 @@ limb-darkening law.
      - :math:`[1300\,\angstrom, 6.5\,\um]`
      - ``Teff``, ``log(g)``, ``[Fe/H]``
 
-The definitions and ranges of the atmospheric parameters are as follows:
+The definitions and ranges of the photospheric parameters are as follows:
 
 * effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [3500, 30000]`
 * surface gravity ``log(g)`` :math:`= \log_{10} (g/\cm\,\second^{-2}) \in [0.0, 5.0]`
@@ -152,7 +152,7 @@ law.
    * - :f-schema:`Specgrid <specgrid>` File
      - Resolution
      - :math:`\lambda` Range
-     - Atmospheric Parameters
+     - Photospheric Parameters
    * - :grids:`sg-Goettingen-HiRes.h5 <Goettingen/sg-Goettingen-HiRes.h5>` (116GB)
      - variable
      - :math:`[500\,\angstrom, 5.5\um]`
@@ -166,7 +166,7 @@ law.
      - :math:`[3000\,\angstrom, 2.5\,\um]`
      - ``Teff``, ``log(g)``, ``[Fe/H]``, ``[alpha/Fe]``
 
-The definitions and ranges of the atmospheric parameters are as follows:
+The definitions and ranges of the photospheric parameters are as follows:
 
 * effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [2\,300, 12\,000]`
 * surface gravity ``log(g)`` :math:`= \log_{10}(g/\cm\,\second^{-2}) \in [0.0, 6.0]`

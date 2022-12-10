@@ -22,6 +22,7 @@ version 3.
    user-guide/data-files.rst
    user-guide/data-caching.ipynb
    user-guide/exception-handling.rst
+   user-guide/troubleshooting.rst
    user-guide/contributing.rst
 
 .. toctree::
@@ -34,7 +35,6 @@ version 3.
    ref-guide/fortran-interface.rst
    ref-guide/c-interface.rst
    ref-guide/data-schema.rst
-   ref-guide/troubleshooting.rst
 
 .. toctree::
    :caption: Appendices

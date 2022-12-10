@@ -17,8 +17,8 @@ command-line arguments:
 
 .. option:: <ferre_file_type>
 
-   Type of input file. This determines the mapping between atmospheric
-   parameters given in the input file, and atmospheric parameters
+   Type of input file. This determines the mapping between photospheric
+   parameters given in the input file, and photospheric parameters
    written to the output file. Supported options are: 'CAP18' (for the
    :ads_citealp:`allende:2018` grids).
 

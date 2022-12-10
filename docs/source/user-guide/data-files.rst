@@ -16,16 +16,16 @@ There are five types of MSG data files, distinguished by their
 differing content:
 
 * :f-schema:`specint` files store spectroscopic intensity
-  data for a single combination of atmospheric parameters.
+  data for a single combination of photospheric parameters.
 
 * :f-schema:`photint` files store photometric intensity
-  data for a single combination of atmospheric parameters.
+  data for a single combination of photospheric parameters.
 
 * :f-schema:`specgrid` files store spectroscopic
-  intensity data over a grid of atmospheric parameters.
+  intensity data over a grid of photospheric parameters.
 
 * :f-schema:`photgrid` files store photometric intensity
-  data over a grid of atmospheric parameters.
+  data over a grid of photospheric parameters.
 
 * :f-schema:`passband` files store passband response
   functions, used to convert spectroscopic intensities into
