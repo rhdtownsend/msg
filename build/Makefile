@@ -3,6 +3,15 @@
 
 # Default settings
 
+# Enable debugging (with a performance penalty)
+DEBUG ?= no
+
+# Enable FPE checks
+FPE ?= yes
+
+# Enable OpenMP parallelization
+OMP ?= yes
+
 # Build Python interface
 PYTHON ?= yes
 
@@ -11,15 +20,6 @@ TESTS ?= yes
 
 # Build tool executables
 TOOLS ?= yes
-
-# Enable debugging (with a performance penalty)
-DEBUG ?= no
-
-# Enable OpenMP parallelization
-OMP ?= yes
-
-# Enable FPE checks
-FPE ?= yes
 
 # Link string for FITS library
 # (leave undefined if not available)
