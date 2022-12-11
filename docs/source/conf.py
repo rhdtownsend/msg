@@ -23,7 +23,7 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = '1.1rc2'
+version = '1.1'
 branch = 'main'
 copyright = '2022, Rich Townsend'
 
