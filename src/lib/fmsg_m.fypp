@@ -34,7 +34,6 @@ module fmsg_m
 
    private
 
-   public :: RD
    public :: LABEL_LEN
    public :: STAT_OK
    public :: STAT_OUT_OF_BOUNDS_AXIS_LO
