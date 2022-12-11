@@ -49,8 +49,8 @@ void get_specgrid_lam_min(SpecGrid specgrid, double *lam_min);
 void get_specgrid_lam_max(SpecGrid specgrid, double *lam_max);
 void get_specgrid_cache_lam_min(SpecGrid specgrid, double *cache_lam_min);
 void get_specgrid_cache_lam_max(SpecGrid specgrid, double *cache_lam_max);
-void get_specgrid_cache_usage(SpecGrid specgrid, int *cache_usage);
 void get_specgrid_cache_limit(SpecGrid specgrid, int *cache_limit);
+void get_specgrid_cache_usage(SpecGrid specgrid, int *cache_usage);
 void get_specgrid_axis_x_min(SpecGrid specgrid, int i, double *axis_x_min);
 void get_specgrid_axis_x_max(SpecGrid specgrid, int i, double *axis_x_max);
 void get_specgrid_axis_label(SpecGrid specgrid, int i, char *axis_label);
@@ -75,8 +75,8 @@ void load_photgrid_from_specgrid(const char *specgrid_file_name, const char *pas
 void unload_photgrid(PhotGrid photgrid);
 
 void get_photgrid_rank(PhotGrid photgrid, int *rank);
-void get_photgrid_cache_usage(PhotGrid photgrid, int *cache_usage);
 void get_photgrid_cache_limit(PhotGrid photgrid, int *cache_limit);
+void get_photgrid_cache_usage(PhotGrid photgrid, int *cache_usage);
 void get_photgrid_axis_x_min(PhotGrid photgrid, int i, double *axis_x_min);
 void get_photgrid_axis_x_max(PhotGrid photgrid, int i, double *axis_x_max);
 void get_photgrid_axis_label(PhotGrid photgrid, int i, char *axis_label);
