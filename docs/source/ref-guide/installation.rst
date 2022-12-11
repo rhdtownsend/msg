@@ -10,10 +10,10 @@ to get up and running, have a look at the :ref:`quick-start` chapter.
 Pre-Requisites
 ==============
 
-To compile and run MSG, you'll need the following software
+To compile and use MSG, you'll need the following software
 components:
 
-* A modern (2003+) Fortran compiler
+* A modern (2008+) Fortran compiler
 * The :netlib:`LAPACK <lapack>` linear algebra library
 * The :netlib:`LAPACK95 <lapack95>` Fortran 95
   interface to LAPACK
@@ -23,6 +23,12 @@ components:
 On Linux and MacOS platforms, these components are bundled together in
 the `MESA Software Development Kit (SDK) <mesa-sdk>`__. Using this SDK
 is `strongly` recommended.
+
+If you're planning on using the :py:mod:`pymsg` Python module, then
+you'll also need the following components:
+
+* `Python 3.7 <https://www.python.org/downloads/>`__ (or more recent)
+* `NumPy 1.15 <https://numpy.org/>`__ (or more recent)
 
 Building MSG
 ============
@@ -36,7 +42,7 @@ from the command line using the :command:`tar` utility:
    tar xf msg-|version|.tar.gz
 
 Set the :envvar:`MSG_DIR` environment variable with the path to the
-newly created source directory; this can be achieved e.g. using the
+newly created source directory; this can be achieved, e.g., using the
 :command:`realpath` command\ [#realpath]_:
 
 .. prompt:: bash
@@ -54,6 +60,37 @@ Finally, compile MSG using the :command:`make` utility:
 speeding up the build).  If things go awry, consult the
 :ref:`troubleshooting` chapter.
 
+Testing MSG
+===========
+
+To test MSG, use the command
+
+.. prompt:: bash
+
+   make -C $MSG_DIR test
+
+This runs unit tests for the various Fortran modules that together
+compose the MSG library. At the end of the test sequence, a summary of
+the number of tests passed and failed is printed. All tests should
+pass; if one or more fails, then please :git:`open an issue
+<rhdtownsend/msg/issues>` to report the problem.
+
+Installing the :py:mod:`pymsg` Module
+=====================================
+
+To install the :py:mod:`pymsg` Python module, use the :command:`pip` tool:
+
+.. prompt:: bash
+
+   pip install $MSG_DIR/python
+
+You can alternatively add the :file:`$MSG_DIR/python/src` directory to
+the :envvar:`PYTHONPATH` environment variable. Note that in order for
+:py:mod:`pymsg` to function correctly, the :envvar:`MSG_DIR`
+environment variable must be set at Python runtime (this variable
+allows the module to find the Python extension that interfaces to the
+back-end).
+
 Custom Builds
 =============
 
@@ -65,20 +102,20 @@ following variables are currently supported:
 DEBUG
   Enable debugging mode (default ``no``)
 
-OMP
-  Enable OpenMP parallelization (default ``yes``)
-
 FPE
   Enable floating point exception checks (default ``yes``)
 
+OMP
+  Enable OpenMP parallelization (default ``yes``)
+
 PYTHON
-  Enable building of Python interface (default ``yes``)
+  Enable building of the Python extension (default ``yes``)
 
 TEST
   Enable building of testing tools (default ``yes``)
 
 TOOLS
-  Enable building of development tools (default ``no``)
+  Enable building of development tools (default ``yes``)
 
 If a variable is not set, then its default value is assumed.
 

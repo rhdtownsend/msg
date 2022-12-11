@@ -3,23 +3,23 @@
 
 # Default settings
 
-# Build Python interface
-PYTHON ?= yes
-
-# Build test programs
-TESTS ?= no
-
-# Build tool executables
-TOOLS ?= no
-
 # Enable debugging (with a performance penalty)
 DEBUG ?= no
+
+# Enable FPE checks
+FPE ?= yes
 
 # Enable OpenMP parallelization
 OMP ?= yes
 
-# Enable FPE checks
-FPE ?= yes
+# Build Python interface
+PYTHON ?= yes
+
+# Build test programs
+TESTS ?= yes
+
+# Build tool executables
+TOOLS ?= yes
 
 # Link string for FITS library
 # (leave undefined if not available)
@@ -36,14 +36,14 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq (${TESTS},yes)
-  UTEST_TARGETS := utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid
+  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_specgrid
-  EXEC_TARGETS := ${EXEC_TARGETS} ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
+  EXEC_TARGETS := ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
 endif
 
 ifeq (${TOOLS},yes)
-  EXEC_TARGETS := ${EXEC_TARGETS} synspec_to_specint ferre_to_specint \
+  EXEC_TARGETS := ${EXEC_TARGETS} ascii_to_specint synspec_to_specint ferre_to_specint \
                   specint_to_specint specgrid_to_photgrid specint_to_specgrid \
                   make_bb_photgrid make_passband
   ifneq (${FITS_LDFLAGS},)
@@ -65,7 +65,7 @@ libforum_OBJS = forum_m.o cinter_m.o const_m.o hdf5io_m.o kinds_m.o memory_m.o \
 
 libmsg_OBJS = msg_m.o axis_m.o vgrid_m.o ncubic_m.o \
               range_m.o range_sm.o comp_range_m.o lin_range_m.o log_range_m.o tab_range_m.o \
-              specgrid_m.o speccache_m.o specsource_m.o hdf5_specsource_m.o specint_m.o specint_sm.o limb_specint_m.o proxy_specint_m.o \
+              specgrid_m.o speccache_m.o specsource_m.o hdf5_specsource_m.o specint_m.o specint_sm.o limb_specint_m.o \
               photgrid_m.o photcache_m.o photsource_m.o hdf5_photsource_m.o spec_photsource_m.o mem_photsource_m.o photint_m.o photint_sm.o limb_photint_m.o \
               passband_m.o cubint_m.o stat_m.o file_m.o fit_m.o limb_m.o math_m.o
 libmsg_LIBS = libforum
@@ -75,12 +75,16 @@ libfmsg_OBJS = fmsg_m.o
 libfmsg_LIBS = libforum libmsg
 libfmsg_DEPS = forum_m msg_m
 
-libcmsg_OBJS = cmsg_m.o cmsg_spec_m.o cmsg_phot_m.o cmsg_utils_m.o
+libcmsg_OBJS = cmsg_m.o cmsg_spec_m.o cmsg_phot_m.o
 libcmsg_LIBS = libforum libmsg
 libcmsg_DEPS = forum_m msg_m
 
 pycmsg_OBJS = pycmsg.o
 pycmsg_LIBS = libforum libmsg libcmsg
+
+ascii_to_specint_OBJS = ascii_to_specint.o
+ascii_to_specint_LIBS = libforum libmsg
+ascii_to_specint_DEPS = forum_m msg_m
 
 synspec_to_specint_OBJS = synspec_to_specint.o
 synspec_to_specint_LIBS = libforum libmsg
@@ -121,6 +125,10 @@ make_bb_photgrid_DEPS = forum_m msg_m
 make_passband_OBJS = make_passband.o
 make_passband_LIBS = libforum libmsg
 make_passband_DEPS = forum_m msg_m
+
+utest_file_OBJS = utest_file.o utest_file_m.o
+utest_file_LIBS = libforum libmsg
+utest_file_DEPS = forum_m file_m
 
 utest_fit_OBJS = utest_fit.o utest_fit_m.o
 utest_fit_LIBS = libforum libmsg

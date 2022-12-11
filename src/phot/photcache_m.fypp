@@ -34,24 +34,30 @@ module photcache_m
 
    implicit none
 
+   ! Parameter definitions
+
+   integer(ID), parameter :: INITIAL_LIMIT = 128
+
    ! Derived-type definitions
 
    type :: photcache_t
       private
       class(photsource_t), allocatable     :: photsource
       type(photint_element_t), allocatable :: photint_elements(:)
-      integer, allocatable                 :: ltimes(:)
-      integer                              :: count
+      integer, allocatable                 :: ref_counts(:)
+      integer, allocatable                 :: exp_counts(:)
+      integer(ID)                          :: ssize
       integer                              :: limit
       integer                              :: n
    contains
       private
-      procedure, public :: get_count
       procedure, public :: get_limit
+      procedure, public :: get_usage
       procedure, public :: set_limit
       procedure, public :: fetch
-      procedure         :: update_cache_
-      procedure         :: flush_cache_
+      procedure, public :: release
+      procedure, public :: flush
+      procedure         :: trim_
    end type photcache_t
 
    type :: photint_element_t
@@ -81,11 +87,14 @@ contains
 
       allocate(photcache%photint_elements(n))
 
-      allocate(photcache%ltimes(n))
-      photcache%ltimes = 0
+      allocate(photcache%ref_counts(n))
+      photcache%ref_counts = 0
 
-      photcache%limit = n
-      photcache%count = 0
+      allocate(photcache%exp_counts(n))
+      photcache%exp_counts = 0
+
+      photcache%ssize = 0
+      photcache%limit = INITIAL_LIMIT
 
       photcache%n = n
 
@@ -97,25 +106,37 @@ contains
 
    !****
 
-   #:for name, type in (('count', 'integer'), &
-                        ('limit', 'integer'))
+   subroutine get_limit(self, limit)
 
-      subroutine get_${name}$(self, ${name}$)
+      class(photcache_t), intent(in) :: self
+      integer, intent(out)           :: limit
+         
+      ! Get the memory usage limit
 
-         class(photcache_t), intent(in) :: self
-         ${type}$, intent(out)          :: ${name}$
+      limit = self%limit
 
-         ! Get ${name}$
+      ! Finish
 
-         ${name}$ = self%${name}$
+      return
 
-         ! Finish
+   end subroutine get_limit
 
-         return
+   !****
 
-      end subroutine get_${name}$
+   subroutine get_usage(self, usage)
 
-   #:endfor
+      class(photcache_t), intent(in) :: self
+      integer, intent(out)           :: usage
+         
+      ! Get the memory usage (megabytes)
+
+      usage = self%ssize/(1024*1024)
+
+      ! Finish
+
+      return
+
+   end subroutine get_usage
 
    !****
 
@@ -125,7 +146,7 @@ contains
       integer, intent(in)               :: limit
       integer, intent(out), optional    :: stat
 
-      ! Set the cache occupancy limit
+      ! Set the memory usage limit
 
       if (limit < 0) then
          if (PRESENT(stat)) then
@@ -138,11 +159,9 @@ contains
 
       self%limit = limit
 
-      ! If necessary, flush the cache
+      ! Trim the cache
 
-      if (self%count > 0) then
-         call self%flush_cache_()
-      end if
+      call self%trim_()
          
       ! Finish
 
@@ -166,10 +185,11 @@ contains
             integer, intent(out), optional             :: stat
          end subroutine fetch_proc
       end interface
-      class(photint_t), allocatable, intent(out) :: photint
-      integer, intent(out), optional             :: stat
+      class(photint_t), pointer, intent(out) :: photint
+      integer, intent(out), optional         :: stat
 
-      integer :: j
+      integer     :: j
+      integer(ID) :: ssize
          
       ! Fetch the i'th photint
 
@@ -182,66 +202,47 @@ contains
          end if
       end if
 
-      if (self%limit > 0) then
-         
-         ! Fetch from the cache; first check if the entry is already
-         ! present
+      ! Check if the entry is already present
 
-         if (self%ltimes(i) > 0) then
+      if (self%ref_counts(i) > 0) then
 
-            ! Update lifetime counters
+         ! Present and referenced; increment the reference counter
 
-            where (self%ltimes > self%ltimes(i))
-               self%ltimes = self%ltimes - 1
-            end where
+         self%ref_counts(i) = self%ref_counts(i) + 1
+
+      elseif (self%exp_counts(i) > 0) then
+
+         ! Present but not referenced; set the reference and expiry
+         ! counters
+
+         self%ref_counts(i) = 1
+         self%exp_counts(i) = 0
             
-            self%ltimes(i) = self%count
-
-         else
-
-            ! Fetch into the cache
-
-            if (self%count == self%limit) then
-
-               ! Evict the oldest entry to make room
-
-               j = MINLOC(self%ltimes, DIM=1, mask=self%ltimes > 0)
-
-               deallocate(self%photint_elements(j)%photint)
-
-               where (self%ltimes > 0)
-                  self%ltimes = self%ltimes - 1
-               end where
-               
-            else
-
-               self%count = self%count + 1
-
-            end if
-
-            self%ltimes(i) = self%count
-
-            call fetch_proc(i, self%photint_elements(i)%photint, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
-
-         end if
-
-         ! Assign the entry
-
-         photint = self%photint_elements(i)%photint
-
       else
 
-         ! Fetch using fetch_proc
+         ! Fetch the photint
 
-         call fetch_proc(i, photint, stat)
+         call fetch_proc(i, self%photint_elements(i)%photint, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
 
+         ! Update the storage size
+
+         call self%photint_elements(i)%photint%get_ssize(ssize)
+
+         self%ssize = self%ssize + ssize
+
+         ! Set the reference and expiry counters
+
+         self%ref_counts(i) = 1
+         self%exp_counts(i) = 0
+
       end if
+
+      ! Set up the return pointer
+
+      photint => self%photint_elements(i)%photint
 
       ! Finish
 
@@ -252,67 +253,49 @@ contains
    end subroutine fetch
 
    !****
-      
-   subroutine update_cache_(self, i, stat)
 
-      class(photcache_t), intent(inout) :: self
-      integer, intent(in)               :: i
-      integer, intent(out), optional    :: stat
+   subroutine release(self, i, stat)
 
-      integer :: j
+      class(photcache_t), target, intent(inout) :: self
+      integer, intent(in)                       :: i
+      integer, intent(out), optional            :: stat
 
-      ! Update the cache to ensure the i'th entry is present
+      ! Release the i'th photint
 
-      if (self%ltimes(i) > 0) then
-
-         ! Entry is already in the cache; update the lifetime counters
-
-         where (self%ltimes > self%ltimes(i))
-            self%ltimes = self%ltimes - 1
-         end where
-
-      else
-
-         ! Entry is not in the cache; fetch it
-
-         if (self%count == self%limit) then
-
-            ! Evict the oldest entry to make room
-
-            j = MINLOC(self%ltimes, DIM=1, mask=self%ltimes > 0)
-
-            deallocate(self%photint_elements(j)%photint)
-
-            where (self%ltimes > 0)
-               self%ltimes = self%ltimes - 1
-            end where
-
-         else
-
-            self%count = self%count + 1
-
-         end if
-
-         call self%photsource%fetch(i, self%photint_elements(i)%photint, stat)
+      if (i < 0 .OR. i > self%n) then
          if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
          end if
-
       end if
 
-      self%ltimes(i) = self%count
+      if (self%ref_counts(i) > 0) then
+
+         ! Decrement the reference counter
+
+         self%ref_counts(i) = self%ref_counts(i) - 1
+
+         ! If it's reached zero, set the expiry counter
+
+         if (self%ref_counts(i) == 0) self%exp_counts(i) = MAXVAL(self%exp_counts) + 1
+         
+      end if
+
+      ! Trim the cache
+
+      call self%trim_()
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
 
-   end subroutine update_cache_
+   end subroutine release
 
    !****
 
-   subroutine flush_cache_(self)
+   subroutine flush(self)
 
       class(photcache_t), intent(inout) :: self
 
@@ -321,17 +304,66 @@ contains
       ! Flush the cache
 
       flush_loop : do i = 1, self%n
-         if (self%ltimes(i) > 0) deallocate(self%photint_elements(i)%photint)
+
+         if (self%exp_counts(i) > 0 .OR. self%ref_counts(i) > 0) then
+            deallocate(self%photint_elements(i)%photint)
+         end if
+
       end do flush_loop
 
-      self%ltimes = 0
+      self%ref_counts = 0
+      self%exp_counts = 0
 
-      self%count = 0
+      self%ssize = 0
 
       ! Finish
 
       return
 
-   end subroutine flush_cache_
+   end subroutine flush
+
+   !****
+
+   subroutine trim_(self)
+
+      class(photcache_t), intent(inout) :: self
+
+      integer     :: j
+      integer     :: usage
+      integer(ID) :: ssize
+
+      ! Trim the cache so that its memory usage is smaller than limit
+
+      trim_loop : do
+
+         ! Check usage
+
+         call self%get_usage(usage)
+
+         if (usage <= self%limit) exit trim_loop
+
+         ! Find the unreferenced entry with the smallest expiry time
+
+         j = MINLOC(self%exp_counts, DIM=1, mask=self%ref_counts == 0 .AND. self%exp_counts > 0)
+
+         ! Deallocate it
+
+         call self%photint_elements(j)%photint%get_ssize(ssize)
+
+         deallocate(self%photint_elements(j)%photint)
+
+         self%ssize = self%ssize - ssize
+
+         ! Update expiry counter
+
+         self%exp_counts(j) = 0
+
+      end do trim_loop
+
+      ! Finish
+
+      return
+
+   end subroutine trim_
 
 end module photcache_m

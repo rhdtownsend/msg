@@ -24,8 +24,6 @@ module cmsg_spec_m
    use forum_m
    use msg_m
 
-   use cmsg_utils_m
-
    use ISO_FORTRAN_ENV
    use ISO_C_BINDING
 
@@ -44,14 +42,15 @@ module cmsg_spec_m
    public :: get_specgrid_lam_max
    public :: get_specgrid_cache_lam_min
    public :: get_specgrid_cache_lam_max
-   public :: get_specgrid_cache_count
    public :: get_specgrid_cache_limit
+   public :: get_specgrid_cache_usage
    public :: get_specgrid_axis_x_min
    public :: get_specgrid_axis_x_max
    public :: get_specgrid_axis_label
    public :: set_specgrid_cache_lam_min
    public :: set_specgrid_cache_lam_max
    public :: set_specgrid_cache_limit
+   public :: flush_specgrid_cache
    public :: interp_specgrid_intensity
    public :: interp_specgrid_E_moment
    public :: interp_specgrid_D_moment
@@ -129,8 +128,8 @@ contains
                         ('lam_max', 'real(C_DOUBLE)'),       &
                         ('cache_lam_min', 'real(C_DOUBLE)'), &
                         ('cache_lam_max', 'real(C_DOUBLE)'), &
-                        ('cache_count', 'integer(C_INT)'),   &
-                        ('cache_limit', 'integer(C_INT)'))
+                        ('cache_limit', 'integer(C_INT)'),   &
+                        ('cache_usage', 'integer(C_INT)'))
                         
       subroutine get_specgrid_${name}$(specgrid_ptr, ${name}$) bind(C)
 
@@ -268,6 +267,28 @@ contains
       end subroutine set_specgrid_${name}$
 
    #:endfor
+
+   !****
+
+   subroutine flush_specgrid_cache(specgrid_ptr) bind(C)
+
+      type(C_PTR), value       :: specgrid_ptr
+         
+      type(specgrid_t), pointer :: specgrid
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Flush the cache
+
+      call specgrid%flush_cache()
+
+      ! Finish
+
+      return
+
+   end subroutine flush_specgrid_cache
 
    !****
 

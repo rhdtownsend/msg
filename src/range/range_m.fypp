@@ -31,6 +31,7 @@ module range_m
       procedure(get_n), deferred     :: get_n
       procedure(get_x_min), deferred :: get_x_min
       procedure(get_x_max), deferred :: get_x_max
+      procedure(get_ssize), deferred :: get_ssize
       procedure(unpack), deferred    :: unpack
       procedure(subset), deferred    :: subset
       procedure(read), deferred      :: read
@@ -43,8 +44,9 @@ module range_m
 
       #:for name, type in (('n', 'integer'), &
                            ('x_min', 'real(RD)'), &
-                           ('x_max', 'real(RD)'))
-
+                           ('x_max', 'real(RD)'), &
+                           ('ssize', 'integer(ID)'))
+                           
          subroutine get_${name}$(self, ${name}$)
             use forum_m
             import range_t

@@ -1,0 +1,179 @@
+! Module   : ascii_to_specint
+! Purpose  : create a specint file from an ASCII file
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program ascii_to_specint
+
+   ! Uses
+
+   use forum_m
+   use math_m
+   use msg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: ascii_file_name
+   character(:), allocatable :: lam_units
+   character(:), allocatable :: flux_units
+   character(:), allocatable :: specint_file_name
+
+   real(RD), allocatable     :: lam(:)
+   real(RD), allocatable     :: F(:)
+   integer                   :: n_lam
+   real(RD), allocatable     :: I(:,:)
+   type(limb_specint_t)      :: specint
+   type(hdf5io_t)            :: hdf5io
+   type(hdf5io_t)            :: hdf5io_labels
+   integer                   :: j
+   character(:), allocatable :: label
+   real(RD)                  :: value
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() >= 4 .AND. MOD(n_arg(), 2)==0, 'Syntax: ascii_to_specint ascii_file_name lam_units flux_units specint_file_name [label value]')
+
+   call get_arg(1, ascii_file_name)
+   call get_arg(2, lam_units)
+   call get_arg(3, flux_units)
+   call get_arg(4, specint_file_name)
+
+   ! Read data from the input file
+
+   call read_ascii_file(ascii_file_name, lam_units, flux_units, lam, F)
+
+   ! Set up the bin-averaged intensity
+
+   n_lam = SIZE(F)
+
+   allocate(I(1,n_lam-1))
+
+   I(1,:) = 0.5*(F(:n_lam-1) + F(2:))/PI
+
+   ! Create specint
+
+   specint = limb_specint_t(I, [1._RD], tab_range_t(lam), limb_t('CONST'), precise=.FALSE.)
+
+   ! Write it (together with labels)
+
+   hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
+
+   call specint%write(hdf5io)
+
+   hdf5io_labels = hdf5io_t(hdf5io, 'labels')
+
+   do j = 5, n_arg(), 2
+      call get_arg(j, label)
+      call get_arg(j+1, value)
+      call hdf5io_labels%write_attr(label, value)
+   end do
+
+   call hdf5io_labels%final()
+
+   call hdf5io%final()
+
+   ! Finish
+
+contains
+
+   subroutine read_ascii_file(file_name, lam_units, flux_units, lam, F)
+
+      character(*), intent(in)           :: file_name
+      character(*), intent(in)           :: lam_units
+      character(*), intent(in)           :: flux_units
+      real(RD), allocatable, intent(out) :: lam(:)
+      real(RD), allocatable, intent(out) :: F(:)
+
+      integer         :: unit
+      integer         :: d_lam
+      integer         :: n_lam
+      character(1024) :: line
+
+      ! Open the input file
+
+      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD')
+
+      ! Read in the wavelength and flux data
+
+      d_lam = 1024
+
+      allocate(lam(d_lam))
+      allocate(F(d_lam))
+
+      n_lam = 0
+
+      read_loop : do
+
+         ! Read a line of data
+
+         read(unit, 100, END=200) line
+100      format(A)
+
+         if (line == '' .OR. line(1:1) == '#') cycle read_loop
+
+         ! If necessary, expand arrays
+
+         n_lam = n_lam + 1
+
+         if(n_lam > d_lam) then
+            d_lam = d_lam*2
+            call reallocate(lam, [d_lam])
+            call reallocate(F, [d_lam])
+         endif
+
+         ! Store the data
+
+         read(line, *) lam(n_lam), F(n_lam)
+
+      end do read_loop
+
+200   continue
+
+      close(unit)
+
+      d_lam = n_lam
+
+      call reallocate(lam, [d_lam])
+      call reallocate(F, [d_lam])
+
+      ! Convert units
+
+      select case(lam_units)
+      case('A')
+      case default
+         @:ABORT('Invalid lam_units')
+      end select
+
+      select case(flux_units)
+      case('erg/cm^2/s/A')
+      case default
+         @:ABORT('Invalid flux_units')
+      end select
+
+      ! Finish
+
+      return
+
+   end subroutine read_ascii_file
+
+end program

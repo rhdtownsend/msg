@@ -50,9 +50,10 @@ module photgrid_m
       private
       procedure, public :: get_rank
       procedure, public :: get_axis
-      procedure, public :: get_cache_count
       procedure, public :: get_cache_limit
+      procedure, public :: get_cache_usage 
       procedure, public :: set_cache_limit
+      procedure, public :: flush_cache
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -140,8 +141,8 @@ contains
 
    !****
 
-   #:for name, type in (('count', 'integer'), &
-                        ('limit', 'integer'))
+   #:for name, type in (('limit', 'integer'), &
+                        ('usage', 'integer'))
    
       subroutine get_cache_${name}$(self, cache_${name}$)
 
@@ -168,7 +169,7 @@ contains
       integer, intent(in)              :: cache_limit
       integer, intent(out), optional   :: stat
 
-      ! Set the cache occupancy limit
+      ! Set the cache memory usage limit
 
       call self%photcache%set_limit(cache_limit, stat)
 
@@ -209,9 +210,9 @@ contains
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer                       :: i_lin
-            integer                       :: i_con
-            class(photint_t), allocatable :: photint
+            integer                   :: i_lin
+            integer                   :: i_con
+            class(photint_t), pointer :: photint
 
             i_lin = self%vgrid%lin_from_vec(i_vec)
             i_con = self%vgrid%con_from_lin(i_lin)
@@ -222,6 +223,11 @@ contains
             end if
 
             call photint%interp_${name}$(${arg_var}$, f, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call self%photcache%release(i_con, stat)
 
             return
 
@@ -242,6 +248,22 @@ contains
       end subroutine interp_${name}$
 
    #:endfor
+
+   !****
+
+   subroutine flush_cache(self)
+
+      class(photgrid_t), intent(inout) :: self
+
+      ! Flush the cache
+
+      call self%photcache%flush()
+
+      ! Finish
+
+      return
+
+   end subroutine flush_cache
 
    !****
 
@@ -269,9 +291,9 @@ contains
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer                       :: i_lin
-            integer                       :: i_con
-            class(photint_t), allocatable :: photint
+            integer                   :: i_lin
+            integer                   :: i_con
+            class(photint_t), pointer :: photint
 
             i_lin = self%vgrid%lin_from_vec(i_vec)
             i_con = self%vgrid%con_from_lin(i_lin)
@@ -282,6 +304,11 @@ contains
             end if
 
             call photint%interp_${name}$(f, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call self%photcache%release(i_con, stat)
 
             return
 
@@ -408,12 +435,12 @@ contains
       type(hdf5io_t), intent(inout)    :: hdf5io
       integer, intent(out), optional   :: stat
 
-      integer                       :: n
-      type(hdf5io_t)                :: hdf5io_photsource
-      integer                       :: i
-      class(photint_t), allocatable :: photint
-      type(hdf5io_t)                :: hdf5io_photint
-      type(hdf5io_t)                :: hdf5io_vgrid
+      integer                   :: n
+      type(hdf5io_t)            :: hdf5io_photsource
+      integer                   :: i
+      class(photint_t), pointer :: photint
+      type(hdf5io_t)            :: hdf5io_photint
+      type(hdf5io_t)            :: hdf5io_vgrid
 
       ! Write the photgrid
 
@@ -436,6 +463,11 @@ contains
          hdf5io_photint = hdf5io_t(hdf5io_photsource, photint_group_name_(i))
          call photint%write(hdf5io_photint, stat)
          call hdf5io_photint%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+         call self%photcache%release(i, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) exit write_loop
          end if

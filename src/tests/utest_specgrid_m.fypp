@@ -43,6 +43,7 @@ contains
 
       call test_stat_()
       call test_attr_()
+      call test_interp_()
 
    end subroutine test
 
@@ -180,19 +181,18 @@ contains
    subroutine test_attr_()
 
       type(specgrid_t) :: sg
-
-      integer  :: rank
-      integer  :: rank_chk
-      real(RD) :: lam_min
-      real(RD) :: lam_max
-      real(RD) :: lam_min_chk
-      real(RD) :: lam_max_chk
-      real(RD) :: cache_lam_min
-      real(RD) :: cache_lam_max
-      real(RD) :: cache_lam_min_chk
-      real(RD) :: cache_lam_max_chk
-      integer  :: cache_limit
-      integer  :: cache_limit_chk
+      integer          :: rank
+      integer          :: rank_chk
+      real(RD)         :: lam_min
+      real(RD)         :: lam_max
+      real(RD)         :: lam_min_chk
+      real(RD)         :: lam_max_chk
+      real(RD)         :: cache_lam_min
+      real(RD)         :: cache_lam_max
+      real(RD)         :: cache_lam_min_chk
+      real(RD)         :: cache_lam_max_chk
+      integer          :: cache_limit
+      integer          :: cache_limit_chk
  
       print *, '  attributes'
 
@@ -220,9 +220,11 @@ contains
          cache_lam_min_chk = lam_min_chk
          cache_lam_max_chk = lam_max_chk
 
-         cache_limit_chk = 476
+         cache_limit_chk = 128
 
          ! Finish
+
+         return
 
       end subroutine attr_arrange_
 
@@ -295,6 +297,112 @@ contains
       end subroutine attr_assert_
 
    end subroutine test_attr_
+
+   !****
+
+   subroutine test_interp_()
+
+      integer, parameter :: n_lam = 3
+
+      type(specgrid_t) :: sg
+      real(RD)         :: x_vec(2)
+      real(RD)         :: lam(n_lam)
+      real(RD)         :: I(n_lam-1)
+      real(RD)         :: I_chk(n_lam-1)
+      real(RD)         :: E(n_lam-1)
+      real(RD)         :: E_chk(n_lam-1)
+      real(RD)         :: D(n_lam-1)
+      real(RD)         :: D_chk(n_lam-1)
+      real(RD)         :: F(n_lam-1)
+      real(RD)         :: F_chk(n_lam-1)
+ 
+      print *, '  interpolation'
+
+      call load_specgrid('sg-demo.h5', sg)
+      
+      call interp_arrange_()
+      call interp_act_()
+      call interp_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine interp_arrange_()
+
+         ! Set up interpolations
+
+         call set_xvec(sg, ['Teff  ', 'log(g)'], [10000._RD, 4.00_RD], x_vec)
+
+         lam = [3000._RD, 5000._RD, 7000._RD]
+
+         I_chk = [28030282.999992810_RD, 15241389.849050688_RD]
+         E_chk = [7692392.4361349288_RD, 4084491.8724862086_RD]
+         D_chk = [4811175.9311023634_RD, 2442872.3012035391_RD]
+
+         F_chk = [96665454.263564929_RD, 51327238.640999608_RD]
+
+         ! Finish
+
+         return
+
+      end subroutine interp_arrange_
+
+      !****
+
+      subroutine interp_act_()
+
+         ! Perform interoplations
+
+         call sg%interp_intensity(x_vec, 0.5_RD, lam, I)
+         call sg%interp_E_moment(x_vec, 1, lam, E)
+         call sg%interp_D_moment(x_vec, 2, lam, D)
+
+         call sg%interp_flux(x_vec, lam, F)
+         
+         ! Finish
+
+         return
+
+      end subroutine interp_act_
+
+      !****
+
+      subroutine interp_assert_()
+
+         if (ALL(ABS(I - I_chk) <= 4._RD*SPACING(I_chk))) then
+            print *,'    PASS: ', 'intensity'
+         else
+            print *,'    FAIL: ', 'intensity', I, I_chk
+         end if
+            
+         if (ALL(ABS(E - E_chk) <= 4._RD*SPACING(E_chk))) then
+            print *,'    PASS: ', 'E_moment'
+         else
+            print *,'    FAIL: ', 'E_moment', E, E_chk
+         end if
+            
+         if (ALL(ABS(D - D_chk) <= 4._RD*SPACING(D_chk))) then
+            print *,'    PASS: ', 'D_moment'
+         else
+            print *,'    FAIL: ', 'D_moment', D, D_chk
+         end if
+            
+         if (ALL(ABS(F - F_chk) <= 4._RD*SPACING(F_chk))) then
+            print *,'    PASS: ', 'flux'
+         else
+            print *,'    FAIL: ', 'flux', F, F_chk
+         end if
+            
+         ! Finish
+
+         return
+
+      end subroutine interp_assert_
+
+   end subroutine test_interp_
 
    !****
 

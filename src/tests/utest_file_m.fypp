@@ -1,0 +1,129 @@
+! Module  : utest_file_m
+! Purpose : Testing routines for utest_file_m
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module utest_file_m
+
+  ! Uses
+
+  use forum_m
+
+  use file_m
+  use stat_m
+
+  use ISO_FORTRAN_ENV
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Access specifiers
+
+  private
+
+  public :: test
+
+contains
+
+   subroutine test ()
+
+      call test_stat_()
+
+   end subroutine test
+
+   !****
+
+   subroutine test_stat_()
+
+      integer, parameter :: n = 4
+
+      integer :: stat(n)
+      integer :: stat_chk(n)
+
+      print *, '  exceptions'
+
+      call stat_arrange_()
+      call stat_act_()
+      call stat_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine stat_arrange_()
+
+         ! Set status check values
+
+         stat_chk(1) = STAT_FILE_NOT_FOUND
+         stat_chk(2) = STAT_INVALID_FILE_TYPE
+         stat_chk(3) = STAT_OK
+         stat_chk(4) = STAT_INVALID_GROUP_TYPE
+         
+         ! Finish
+
+         return
+
+      end subroutine stat_arrange_
+
+      !****
+
+      subroutine stat_act_()
+
+         type(hdf5io_t) :: hdf5io
+
+         ! Attempt to open files
+
+         call open_file('not-present-file.h5', hdf5io, stat(1))
+         call open_file('text-file.txt', hdf5io, stat(2))
+         call open_file('sg-demo.h5', hdf5io, stat(3))
+         
+         ! Check type
+
+         call check_type(hdf5io, 'photgrid_t', stat(4))
+
+         ! Finish
+
+         return
+
+      end subroutine stat_act_
+
+      !****
+
+      subroutine stat_assert_()
+
+         integer :: j
+
+         do j = 1, n
+            if (stat(j) /= stat_chk(j)) then
+               print *,'    FAIL:', stat(j), stat_chk(j)
+            else
+               print *,'    PASS:', stat(j)
+            end if
+         end do
+               
+         ! Finish
+
+         return
+
+      end subroutine stat_assert_
+
+   end subroutine test_stat_
+
+end module utest_file_m

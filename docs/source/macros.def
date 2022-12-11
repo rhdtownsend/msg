@@ -13,5 +13,21 @@ kelvin	{\rm K}
 radian	{\rm rad}
 sterad	{\rm sr}
 barye	{\rm Ba}
-diff	\operatorname{d}
-sderiv	{\rm d}#1/{\rm d}#2
+diff	{\rm d}#1
+sderiv	\diff{#1}/\diff{#2}
+obs	{\rm o}
+vshat	{\bf \hat{s}}
+vdhat	{\bf \hat{d}}
+vnhat	{\bf \hat{n}}
+vx	{\bf x}
+engy	E
+engyo	E^{\obs}
+intsy	I_{\lambda}
+mintsy	\overline{I}
+flux	F_{\lambda}
+fluxo	\flux^{\obs}
+mflux	\overline{F}
+mfluxo	\overline{F}^{\obs}
+fluxz	F_{0}
+area	A
+areao	A^{\obs}

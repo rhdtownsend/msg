@@ -3,9 +3,12 @@
 Derived Types
 -------------
 
-.. toctree::
-   :maxdepth: 2
+.. include:: specgrid_t.inc
 
-   specgrid_t.rst
-   photgrid_t.rst
-   axis_t.rst
+----
+
+.. include:: photgrid_t.inc
+
+----
+
+.. include:: axis_t.inc

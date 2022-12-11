@@ -29,7 +29,7 @@ program utest_specgrid
 
   ! Run the tests
 
-  print *,'Testing specgrid_m...'
+  print *, 'Testing specgrid_m...'
 
   call test()
 

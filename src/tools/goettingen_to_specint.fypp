@@ -42,7 +42,6 @@ program goettingen_to_specint
    integer                           :: n_lam
    real(RD), allocatable             :: I(:,:)
    class(range_t), allocatable       :: range
-   type(limb_t)                      :: limb
    type(limb_specint_t)              :: specint
    type(hdf5io_t)                    :: hdf5io
    type(hdf5io_t)                    :: hdf5io_labels
@@ -83,9 +82,7 @@ program goettingen_to_specint
 
    ! Create specint
 
-   limb = limb_t('CONST')
-
-   specint = limb_specint_t(I, [1._RD], range, limb, precise=.FALSE.)
+   specint = limb_specint_t(I, [1._RD], range, limb_t('CONST'), precise=.FALSE.)
 
    ! Write it
 

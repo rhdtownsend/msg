@@ -14,6 +14,9 @@ The MSG Library
 .. image:: https://img.shields.io/readthedocs/msg
    :alt: Read the Docs
    :target: https://msg.readthedocs.io/en/latest
+.. image:: https://joss.theoj.org/papers/fdb605600d48545f98dfb9f825dc833d/status.svg
+   :alt: Journal of Open Source Software
+   :target: https://joss.theoj.org/papers/fdb605600d48545f98dfb9f825dc833d
 
 Overview
 ========

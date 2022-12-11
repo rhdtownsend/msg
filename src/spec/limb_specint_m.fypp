@@ -56,6 +56,7 @@ module limb_specint_m
       procedure, public :: get_lam_min
       procedure, public :: get_lam_max
       procedure, public :: get_precise
+      procedure, public :: get_ssize
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
@@ -205,6 +206,33 @@ contains
       return
 
    end subroutine get_precise
+
+   !****
+
+   subroutine get_ssize(self, ssize)
+
+      class(limb_specint_t), intent(in) :: self
+      integer(ID), intent(out)          :: ssize
+
+      integer(ID) :: ssize_range
+      integer(ID) :: ssize_limb
+
+      ! Get the storage size
+
+      call self%range%get_ssize(ssize_range)
+      call self%limb%get_ssize(ssize_limb)
+
+      ssize = STORAGE_SIZE(self)/8 +                    &
+              STORAGE_SIZE(self%c)/8*SIZE(self%c) +     &
+              STORAGE_SIZE(self%lam)/8*SIZE(self%lam) + &
+              ssize_range +                             &
+              ssize_limb
+
+      ! Finish
+
+      return
+
+   end subroutine get_ssize
 
    !****
 
@@ -640,9 +668,9 @@ contains
 
    subroutine write(self, hdf5io, stat)
 
-      class(limb_specint_t), intent(in)   :: self
-      type(hdf5io_t), intent(inout)  :: hdf5io
-      integer, intent(out), optional :: stat
+      class(limb_specint_t), intent(in) :: self
+      type(hdf5io_t), intent(inout)     :: hdf5io
+      integer, intent(out), optional    :: stat
 
       real(RD)       :: lam_min
       real(RD)       :: lam_max

@@ -14,7 +14,7 @@ import os
 import sys
 import re
 
-sys.path.insert(0, os.path.abspath('../../python'))
+sys.path.insert(0, os.path.abspath('../../python/src'))
 sys.path.insert(0, os.path.abspath('exts'))
 
 import sphinx_rtd_theme
@@ -23,8 +23,8 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = "1.0-rc2"
-branch = "main"
+version = '1.1'
+branch = 'main'
 copyright = '2022, Rich Townsend'
 
 # -- General configuration ---------------------------------------------------
@@ -46,6 +46,7 @@ extensions = [
     'sphinx_substitution_extensions',
     'nbsphinx',
     'ads_cite',
+    'data_schema',
     'sphinxfortran.fortran_domain'
 ]
 
@@ -84,11 +85,9 @@ html_theme_options = {
 }
 
 # CSS
-#html_context = {
-#    'css_files': [
-#        '_static/theme_overrides.css'  # override wide tables in RTD theme
-#    ],
-#}
+html_css_files = [
+    'theme_overrides.css'
+]
 
 # Set master doc
 master_doc = 'index'
@@ -100,7 +99,6 @@ html_logo = 'msg-logo.png'
 extlinks = {
     'wiki': ('https://en.wikipedia.org/wiki/%s', ''),
     'dict': ('https://en.wiktionary.org/wiki/%s', ''),
-    'ads': ('https://ui.adsabs.harvard.edu/abs/%s/abstract', ''),
     'netlib': ('https://www.netlib.org/%s', ''),
     'git': ('https://github.com/%s', ''),
     'repo': ('https://github.com/rhdtownsend/msg/blob/{:s}/%s'.format(branch), ''),
@@ -111,7 +109,7 @@ extlinks = {
 # Set site-wide targets
 
 targets = {
-    'tarball': 'https://github.com/rhdtownsend/msg/releases/download/v1.0-rc2/msg-1.0-rc2.tar.gz',
+    'tarball': f'https://github.com/rhdtownsend/msg/releases/download/v{version}/msg-{version}.tar.gz',
     'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mad-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=madsdk'
 }
@@ -169,7 +167,7 @@ intersphinx_mapping = {
 # Set up autodoc
 autoclass_content = 'class'
 autodoc_member_order = 'bysource'
-autodoc_mock_imports = ['pymsg.pycmsg', 'numpy']
+autodoc_mock_imports = ['pycmsg', 'numpy']
 
 # Set up napoleon
 napoleon_google_docstring = True

@@ -68,7 +68,7 @@ contains
 
       ! Load the specgrid from file
 
-      call open_file_(specgrid_file_name, hdf5io, stat)
+      call open_file(specgrid_file_name, hdf5io, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
@@ -97,7 +97,7 @@ contains
 
       ! Load the photgrid from file
 
-      call open_file_(photgrid_file_name, hdf5io, stat)
+      call open_file(photgrid_file_name, hdf5io, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
@@ -127,7 +127,7 @@ contains
 
       ! Load the photgrid_t from specgrid_t and passband_t files
 
-      call open_file_(passband_file_name, hdf5io, stat)
+      call open_file(passband_file_name, hdf5io, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       endif
@@ -153,36 +153,4 @@ contains
 
    end subroutine load_photgrid_from_specgrid
          
-   !****
-
-   subroutine open_file_(file_name, hdf5io, stat)
-
-      character(*), intent(in)       :: file_name
-      type(hdf5io_t), intent(out)    :: hdf5io
-      integer, intent(out), optional :: stat
-
-      ! Open the file
-
-      if (is_hdf5(file_name)) then
-
-         hdf5io = hdf5io_t(file_name, OPEN_FILE_RO)
-
-         if (PRESENT(stat)) stat = STAT_OK
-
-      else
-
-         if (PRESENT(stat)) then
-            stat = STAT_FILE_NOT_FOUND
-         else
-            @:ABORT('file not found')
-         endif
-
-      endif
-
-      ! Finish
-
-      return
-
-   end subroutine open_file_
-
 end module fmsg_m

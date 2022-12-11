@@ -53,6 +53,7 @@ module limb_m
    contains
       private
       procedure, public :: get_n
+      procedure, public :: get_ssize
       procedure, public :: eval_intensity_basis
       procedure, public :: eval_flux_basis
       procedure, public :: eval_E_moment_basis
@@ -186,6 +187,23 @@ contains
       return
 
    end subroutine get_n
+
+   !****
+
+   subroutine get_ssize(self, ssize)
+   
+      class(limb_t), intent(in) :: self
+      integer(ID), intent(out)  :: ssize
+
+      ! Get the storage size
+
+      ssize = STORAGE_SIZE(self)/8
+
+      ! Finish
+
+      return
+
+   end subroutine get_ssize
 
    !****
 

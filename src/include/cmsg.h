@@ -49,8 +49,8 @@ void get_specgrid_lam_min(SpecGrid specgrid, double *lam_min);
 void get_specgrid_lam_max(SpecGrid specgrid, double *lam_max);
 void get_specgrid_cache_lam_min(SpecGrid specgrid, double *cache_lam_min);
 void get_specgrid_cache_lam_max(SpecGrid specgrid, double *cache_lam_max);
-void get_specgrid_cache_count(SpecGrid specgrid, int *cache_count);
 void get_specgrid_cache_limit(SpecGrid specgrid, int *cache_limit);
+void get_specgrid_cache_usage(SpecGrid specgrid, int *cache_usage);
 void get_specgrid_axis_x_min(SpecGrid specgrid, int i, double *axis_x_min);
 void get_specgrid_axis_x_max(SpecGrid specgrid, int i, double *axis_x_max);
 void get_specgrid_axis_label(SpecGrid specgrid, int i, char *axis_label);
@@ -58,6 +58,8 @@ void get_specgrid_axis_label(SpecGrid specgrid, int i, char *axis_label);
 void set_specgrid_cache_lam_min(SpecGrid specgrid, double cache_lam_min, Stat *stat);
 void set_specgrid_cache_lam_max(SpecGrid specgrid, double cache_lam_max, Stat *stat);
 void set_specgrid_cache_limit(SpecGrid specgrid, int cache_limit, Stat *stat);
+
+void flush_specgrid_cache(SpecGrid specgrid);
 
 void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], Stat *stat, bool deriv_vec[]);
 void interp_specgrid_E_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], Stat *stat, bool deriv_vec[]);
@@ -73,13 +75,15 @@ void load_photgrid_from_specgrid(const char *specgrid_file_name, const char *pas
 void unload_photgrid(PhotGrid photgrid);
 
 void get_photgrid_rank(PhotGrid photgrid, int *rank);
-void get_photgrid_cache_count(PhotGrid photgrid, int *cache_count);
 void get_photgrid_cache_limit(PhotGrid photgrid, int *cache_limit);
+void get_photgrid_cache_usage(PhotGrid photgrid, int *cache_usage);
 void get_photgrid_axis_x_min(PhotGrid photgrid, int i, double *axis_x_min);
 void get_photgrid_axis_x_max(PhotGrid photgrid, int i, double *axis_x_max);
 void get_photgrid_axis_label(PhotGrid photgrid, int i, char *axis_label);
 
 void set_photgrid_cache_limit(PhotGrid photgrid, int cache_limit, Stat *stat);
+
+void flush_photgrid_cache(PhotGrid photgrid);
 
 void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, Stat *stat, bool deriv_vec[]);
 void interp_photgrid_E_moment(PhotGrid photgrid, double x_vec[], int k, double *E, Stat *stat, bool deriv_vec[]);

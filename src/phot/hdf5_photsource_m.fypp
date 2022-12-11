@@ -24,6 +24,7 @@ module hdf5_photsource_m
 
    use forum_m
 
+   use file_m
    use photint_m
    use photsource_m
    use stat_m
@@ -123,7 +124,11 @@ contains
          end if
       end if
 
-      hdf5io = hdf5io_t(self%file_names(i), OPEN_FILE_RO)
+      call open_file(self%file_names(i), hdf5io, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
       hdf5io_photint = hdf5io_t(hdf5io, self%group_names(i))
 
       call hdf5io_photint%read_attr('TYPE', type)
