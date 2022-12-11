@@ -27,7 +27,7 @@ A few brief comments on the code:
   interface. Primarily, this interface serves to define the
   :f:type:`~fmsg_m/specgrid_t` and :f:type:`~fmsg_m/photgrid_t` datatypes.
 
-* Because Fortran doesn't have :py:class:`dict` datatypes, the atmosphere
+* Because Fortran doesn't have :py:class:`dict` datatypes, the photospheric
   parameters must be passed to MSG as a plain array (here, stored in
   the variable :f:var:`x_vec`). A :code:`select case` construct is used to make
   sure the correct values are stored in each array element.

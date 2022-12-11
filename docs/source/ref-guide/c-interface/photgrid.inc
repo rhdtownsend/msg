@@ -1,21 +1,21 @@
 .. c:function:: void load_photgrid(const char *photgrid_file_name, PhotGrid *photgrid, int *stat)
 
-   Create a new :c:type:`PhotGrid` by loading data from a `photgrid` file.
+   Create a new :c:type:`PhotGrid` by loading data from a :f-schema:`photgrid` file.
 
-   :param photgrid_file_name: Name of the `photgrid` file.
-   :param photgrid: Returned grid object.
-   :param stat: Returned status code.
+   :param photgrid_file_name: Name of the :f-schema:`photgrid` file.
+   :param photgrid: Grid object.
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 		
 .. c:function:: void load_photgrid_from_specgrid(const char *specgrid_file_name, const char *passband_file_name, PhotGrid *photgrid, int *stat)
 
-   Create a new :c:type:`PhotGrid` by loading data from a `specgrid` file,
-   and convolving on-the-fly with a passband response function also loaded from file.
+   Create a new :c:type:`PhotGrid` by loading data from a :f-schema:`specgrid` file,
+   and convolving on-the-fly with a response function loaded from a :f-schema:`passband` file.
 
-   :param specgrid_file_name: Name of the `specgrid` file.
-   :param passband_file_name: Name of the passband file.
-   :param photgrid: Returned grid object.
-   :param stat: Returned status code.
+   :param specgrid_file_name: Name of the :f-schema:`specgrid` file.
+   :param passband_file_name: Name of the :f-schema:`passband` file.
+   :param photgrid: Grid object.
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 		
 .. c:function:: void unload_photgrid(PhotGrid photgrid)
@@ -30,23 +30,23 @@
    Get the rank (dimension) of the grid.
 
    :param photgrid: Grid object.
-   :param rank: Returned rank.
+   :param rank: Rank.
 
 		
-.. c:function:: void get_photgrid_cache_count(Photgrid photgrid, int *cache_count)
+.. c:function:: void get_photgrid_cache_usage(Photgrid photgrid, int *cache_usage)
 
-   Get the number of nodes currently held in the grid cache.
+   Get the current memory usage of the grid cache.
 
    :param photgrid: Grid object.
-   :param ceche_count: Returned number of nodes.
+   :param cache_usage: Current memory usage (MB).
  
 
 .. c:function:: void get_photgrid_cache_limit(Photgrid photgrid, int *cache_limit)
 
-   Get the maximum number of nodes to hold in the grid cache.
+   Get the maximum memory usage of the grid cache.
 
    :param photgrid: Grid object.
-   :param cache_limit: Returned maximum number of nodes.
+   :param cache_limit: Maximum memory usage (MB).
 
 		    
 .. c:function:: void get_photgrid_axis_x_min(Photgrid photgrid, int i, double *x_min)
@@ -55,7 +55,7 @@
 
    :param photgrid: Grid object.
    :param i: Axis index (beginning at 0).
-   :param x_min: Returned minimum value.
+   :param x_min: Minimum value.
 
 
 .. c:function:: void get_photgrid_axis_x_max(Photgrid photgrid, int i, double *x_max)
@@ -64,7 +64,7 @@
 
    :param photgrid: Grid object.
    :param i: Axis index (beginning at 0).
-   :param x_max: Returned maximum value.
+   :param x_max: Maximum value.
 
 
 .. c:function:: void get_photgrid_axis_label(SpecGrid specgrid, int i, char *label)
@@ -73,17 +73,16 @@
 
    :param photgrid: Grid object.
    :param i: Index of the label (beginning at 0).
-   :param axis_label: Buffer to store axis label buffer (at least 17 bytes, to accomodate label plus null terminator).
+   :param axis_label: Buffer to store axis label (at least 17 bytes, to accomodate label plus null terminator).
 
 
 .. c:function:: void set_photgrid_cache_limit(Photgrid photgrid, int cache_limit, int *stat)
 
-   Set the maximum number of notes to hold in the grid cache. Set to 0 to
-   disable caching.
+   Set the maximum memory usage of the grid cache.
 
    :param photgrid: Grid object.
-   :param cache_limit: Maximum number of nodes.
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param cache_limit: Maximum memory usage (MB).
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 
 .. c:function:: void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, int *stat, bool deriv_vec[])
@@ -91,10 +90,10 @@
    Interpolate the photometric intensity, normalized to the zero-point flux.
 
    :param photgrid: Grid object.
-   :param x_vec: Atmospheric parameter values.
+   :param x_vec: Photospheric parameter values.
    :param mu: Cosine of angle of emergence relative to surface normal.
-   :param I: Returned photometric intensity (/sr).
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param I: Photometric intensity (/sr).
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
@@ -103,10 +102,10 @@
    Interpolate the photometric intensity E-moment, normalized to the zero-point flux.
 
    :param photgrid: Grid object.
-   :param x_vec: Atmospheric parameter values.
+   :param x_vec: Photospheric parameter values.
    :param k: Degree of moment.
-   :param D: Returned photometric intensity E-moment.
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param D: Photometric intensity E-moment.
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 		  
 		
@@ -115,10 +114,10 @@
    Interpolate the photometric intensity D-moment, normalized to the zero-point flux.
 
    :param photgrid: Grid object.
-   :param x_vec: Atmospheric parameter values.
+   :param x_vec: Photospheric parameter values.
    :param l: Harmonic degree of moment.
-   :param D: Returned photometric intensity D-moment.
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param D: Photometric intensity D-moment.
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 		  
 		
@@ -127,9 +126,9 @@
    Interpolate the photometric flux, normalized to the zero-point flux.
 
    :param PhotGrid: Grid object.
-   :param x_vec: Atmospheric parameter values.
-   :param F: Returned photometric flux.
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param x_vec: Photospheric parameter values.
+   :param F: Photometric flux.
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 	       
 

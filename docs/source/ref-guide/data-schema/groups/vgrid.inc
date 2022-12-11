@@ -15,7 +15,7 @@
    * - :code:`REVISION`
      - attribute
      - integer
-     - literal :code:`1`.
+     - literal :code:`2`.
    * - :code:`shape`
      - attribute
      - integer(:code:`rank`)

@@ -5,9 +5,9 @@ MSG Fundamentals
 ****************
 
 This chapter expands on the :ref:`walkthroughs`, by describing in
-detail how MSG evaluates stellar spectra and photometric colors. The
-first couple of sections serve to clarify the variety of different
-concepts that are often lumped together under the name 'spectrum'.
+detail how MSG evaluates stellar spectra and photometric colors. It
+also aims to clarify the variety of different concepts that are often
+lumped together under the name 'spectrum'.
 
 .. _elem-spectra:
 
@@ -76,7 +76,7 @@ distinguish these `elemental` spectra from the :ref:`observed spectrum
 
 Evaluating an elemental spectrum requires solution of the radiative
 transfer equation throughout the atmospheric layers composing the
-surface element. This is typically far too computationally expensive
+surface element. This is often far too computationally expensive
 to do on-the-fly. An alternative approach is to pre-calculate spectra
 across a multi-dimensional grid spanning a range of photospheric
 parameters, and then interpolate within this grid when an elemental
@@ -92,7 +92,7 @@ dependence of :math:`\intsy` on each of its three arguments as follows:
 * Wavelength dependence is represented using piecewise-constant
   functions.
 * Angle dependence is represented using limb-darkening laws.
-* Photosphere parameter dependence is represented using tensor surface
+* Photospheric parameter dependence is represented using tensor surface
   interpolation.
 
 The following subsections discuss these in greater detail.
@@ -132,7 +132,7 @@ using limb-darkening laws. Most familiar is the linear law
    :label: eq:linear-law
 
    \frac{\intsy(\mu)}{\intsy(1)} =
-   1 - c  \left[1 - \mu\right]
+   1 - c  \left[1 - \mu\right],
 
 where :math:`\intsy(1)` represents the normally emergent
 (:math:`\mu=1`) intensity and :math:`c` is the linear
@@ -201,7 +201,7 @@ version is that the intensity is modeled via piecewise-cubic functions
 of each component of :math:`\vx`, constructed to be continuous and
 smooth at the join between each piecewise region. The derivatives at
 these joins are estimated using second-order finite difference
-approximations involving neighboring points (or first order at grid
+approximations involving neighboring points (or first-order at grid
 boundaries).
 
 Grids often contain holes and/or ragged boundaries (the latter
@@ -245,11 +245,12 @@ been replaced by :math:`\diff{\area}/d^{2}`, and the bounds of the
 integral are limited to the parts of the stellar surface that are
 visible from Earth.
 
-For stars that are spherical and have a uniform :math:`\vx` across
-their surface, further simplifications can be made. Let :math:`\theta`
-and :math:`\phi` be the colatitude and azimuth angles in a spherical
-coordinate system centered on the star and with polar axis
-antiparallel to :math:`\vdhat`. Then, the observed flux becomes
+However, for stars that are spherical and have photospheric parameters
+that don't vary across their surface, further simplifications can be
+made. Let :math:`\theta` and :math:`\phi` be the colatitude and
+azimuth angles in a spherical coordinate system centered on the star
+and with polar axis antiparallel to :math:`\vdhat`. Then, the observed
+flux becomes
 
 .. math::
 
@@ -264,7 +265,9 @@ radiation field, this further reduces to
    \fluxo(\lambda) =
    2 \pi \frac{R^{2}}{d^{2}} \int_{0}^{\pi/2} \intsy(\lambda; \cos\theta; \vx) \, \cos\theta \, \sin\theta \, \diff{\theta}.
 
-With the substitution :math:`\mu = \cos\theta`, the result pops out that
+With the substitution :math:`\mu = \cos\theta` (replacing a spatial
+coordinate :math:`\theta` with a directional one :math:`\mu`) the
+result pops out that
 
 .. math::
    :label: eq:obs-flux-elem
@@ -278,7 +281,7 @@ many spectral grids in the literature include flux spectra instead of
 specific intensity spectra.
 
 However, remember that equation :math:numref:`eq:obs-flux-elem`
-applies only for spherically symmetric and uniform-surface stars. In
+applies only for spherically symmetric and fixed-:math:`\vx` stars. In
 more complex situations, for instance when a star is rotationally
 oblate, spotted, pulsating or even eclipsed, evaluation of
 :math:`\fluxo` must proceed via the visible-disk integration appearing

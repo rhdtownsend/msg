@@ -3,7 +3,7 @@
    The photgrid_t type represents a grid of photometric data.
 
    This grid may be used to interpolate the intensity (or related
-   quantities) for a set of atmosphere parameter values.
+   quantities) for a set of photospheric parameter values.
 
 
    .. f:subroutine:: get_rank(rank)
@@ -47,7 +47,7 @@
 
       Interpolate the photometric intensity, normalized to the zero-point flux.
 
-      :p real(RD) x_vec(:) [in]: Atmosphere parameter values.
+      :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p real(RD) mu [in]: Cosine of angle of emergence relative to surface normal.
       :p real(RD) I [out]: Photometric intensity (/sr).
       :o integer stat [out]: Status code.
@@ -58,7 +58,7 @@
 
       Interpolate the photometric E-moment, normalized to the zero-point flux.
 
-      :p real(RD) x_vec(:) [in]: Atmosphere parameter values.
+      :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer k [in]: Degree of of moment.
       :p real(RD) E [out]: Photometric E-moment.
       :o integer stat [out]: Status code.
@@ -69,7 +69,7 @@
 
       Interpolate the photometric D-moment, normalized to the zero-point flux.
 
-      :p real(RD) x_vec(:) [in]: Atmosphere parameter values.
+      :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer l [in]: Harmonic degree of moment.
       :p real(RD) D [out]: Photometric D-moment.
       :o integer stat [out]: Status code.
@@ -80,7 +80,7 @@
 
       Interpolate the photometric flux, normalized to the zero-point flux.
 
-      :p real(RD) x_vec(:) [in]: Atmosphere parameter values.
+      :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p real(RD) F [out]: Photometric flux.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.

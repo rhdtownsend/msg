@@ -35,4 +35,4 @@ following command-line arguments:
 
 .. option:: just=<L|R> (optional)
 
-   Justify the new wavelength abscissa to the left ('L') or right ('R').
+   Justify the new wavelength abscissa to the left (:code:`L`) or right (:code:`R`).

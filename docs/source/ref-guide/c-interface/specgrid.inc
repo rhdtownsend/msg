@@ -1,17 +1,17 @@
 .. c:function:: void load_specgrid(const char *specgrid_file_name, SpecGrid *specgrid, Stat *stat)
 
-   Create a new :c:type:`SpecGrid` by loading data from a `specgrid` file.
+   Create a new :c:type:`SpecGrid` by loading data from a :f-schema:`specgrid` file.
 
-   :param specgrid_file_name: Name of the `specgrid` file.
-   :param specgrid: Returned grid.
-   :param stat: Returned status code.
+   :param specgrid_file_name: Name of the :f-schema:`specgrid` file.
+   :param specgrid: Grid object.
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 		
 .. c:function:: void unload_specgrid(SpecGrid specgrid)
 
    Unload a :c:type:`specgrid` grid, freeing up memory.
 
-   :param specgrid: Grid to unload.
+   :param specgrid: Grid object.
 
 	       
 .. c:function:: void get_specgrid_rank(SpecGrid specgrid, int *rank)
@@ -19,7 +19,7 @@
    Get the rank (dimension) of the grid.
 
    :param specgrid: Grid object.
-   :param rank: Returned rank.
+   :param rank: Rank.
 
 		
 .. c:function:: void get_specgrid_lam_min(SpecGrid specgrid, double *lam_min)
@@ -27,7 +27,7 @@
    Get the minimum wavelength of the grid.
 
    :param specgrid: Grid object.
-   :param lam_min: Returned minimum wavelength.
+   :param lam_min: Minimum wavelength (Å).
 
 
 .. c:function:: void get_specgrid_lam_max(SpecGrid specgrid, double *lam_max)
@@ -35,7 +35,7 @@
    Get the maximum wavelength of the grid.
 
    :param specgrid: Grid object.
-   :param lam_max: Returned maximum wavelength.
+   :param lam_max: Maximum wavelength (Å).
 
 
 .. c:function:: void get_specgrid_cache_lam_min(SpecGrid specgrid, double *cache_lam_min)
@@ -43,7 +43,7 @@
    Get the minimum wavelength of the grid cache.
 
    :param specgrid: Grid object.
-   :param cache_lam_min: Returned minimum wavelength.
+   :param cache_lam_min: Minimum wavelength (Å).
 
 
 .. c:function:: void get_specgrid_cache_lam_max(SpecGrid specgrid, double *cache_lam_max)
@@ -51,32 +51,32 @@
    Get the maximum wavelength of the grid cache.
 
    :param specgrid: Grid object.
-   :param cache_lam_max: Returned maximum wavelength.
-
-
-.. c:function:: void get_specgrid_cache_count(SpecGrid specgrid, int *cache_count)
-
-   Get the number of nodes currently held in the grid cache.
-
-   :param specgrid: Grid object.
-   :param cache_count: Returned number of nodes.
+   :param cache_lam_max: Maximum wavelength (Å).
 
 
 .. c:function:: void get_specgrid_cache_limit(SpecGrid specgrid, int *cache_limit)
 
-   Get the maximum number of nodes to hold in the grid cache.
+   Get the maximum memory usage of the grid cache.
 
    :param specgrid: Grid object.
-   :param cache_limit: Returned maximum number of nodes.
+   :param cache_limit: Maximum memory usage (MB).
 
 		    
+.. c:function:: void get_specgrid_cache_usage(SpecGrid specgrid, int *cache_usage)
+
+   Get the current memory usage of the grid cache.
+
+   :param specgrid: Grid object.
+   :param cache_usage: Current memory usage (MB).
+
+
 .. c:function:: void get_specgrid_axis_x_min(SpecGrid specgrid, int i, double *x_min)
 
    Get the minimum value of the i'th grid axis.
 
    :param specgrid: Grid object.
    :param i: Axis index (beginning at 0).
-   :param x_min: Returned minimum value.
+   :param x_min: Minimum value.
 
 
 .. c:function:: void get_specgrid_axis_x_max(SpecGrid specgrid, int i, double *x_max)
@@ -85,7 +85,7 @@
 
    :param specgrid: Grid object.
    :param i: Axis index (beginning at 0).
-   :param x_max: Returned maximum value.
+   :param x_max: Maaximum value.
 
 
 .. c:function:: void get_specgrid_axis_label(SpecGrid specgrid, int i, char *label)
@@ -94,7 +94,7 @@
 
    :param photgrid: Grid object.
    :param i: Index of the label (beginning at 0).
-   :param axis_label: Buffer to store axis label buffer (at least 17 bytes, to accomodate label plus null terminator).
+   :param axis_label: Buffer to store axis label (at least 17 bytes, to accomodate label plus null terminator).
 
 
 .. c:function:: void set_specgrid_cache_lam_min(SpecGrid specgrid, double cache_lam_min, Stat *stat)
@@ -102,8 +102,8 @@
    Set the minimum wavelength of the grid cache.
 
    :param specgrid: Grid object.
-   :param cache_lam_min: Minimum wavelength.
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param cache_lam_min: Minimum wavelength (Å).
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 
 .. c:function:: void set_specgrid_cache_lam_max(SpecGrid specgrid, double cache_lam_max, Stat *stat)
@@ -111,18 +111,17 @@
    Set the maximum wavelength of the grid cache.
 
    :param specgrid: Grid object.
-   :param cache_lam_max: Maximum wavelength.
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param cache_lam_max: Maximum wavelength (Å).
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 
 .. c:function:: void set_specgrid_cache_limit(SpecGrid specgrid, int cache_limit, Stat *stat)
 
-   Set the maximum number of notes to hold in the grid cache. Set to 0 to
-   disable caching.
+   Set the maximum memory usage of the grid cache.
 
    :param specgrid: Grid object.
-   :param cache_limit: Maximum number of nodes.
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param cache_limit: Maximum memory usage (MB).
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 
 .. c:function:: void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], Stat *stat, bool deriv_vec[])
@@ -130,12 +129,12 @@
    Interpolate the spectroscopic intensity.
 
    :param specgrid: Grid object.
-   :param x_vec: Atmospheric parameter values.
+   :param x_vec: Photospheric parameter values.
    :param mu: Cosine of angle of emergence relative to surface normal.
    :param n: Number of points in wavelength abscissa.
    :param lam[n]: Wavelength abscissa (Å).
-   :param I[n-1]: Returned spectroscopic intensity (erg/cm^2/s/Å/sr) in bins delineated by lam
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param I[n-1]: Spectroscopic intensity (erg/cm^2/s/Å/sr) in bins delineated by lam
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
@@ -144,12 +143,12 @@
    Interpolate the spectroscopic intensity E-moment.
 
    :param specgrid: Grid object.
-   :param x_vec: Atmospheric parameter values.
+   :param x_vec: Photospheric parameter values.
    :param k: Degree of moment.
    :param n: Number of points in wavelength abscissa.
    :param lam[n]: Wavelength abscissa (Å).
-   :param D[n-1]: Returned spectroscopic intensity E-moment (erg/cm^2/s/Å) in bins delineated by lam
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param D[n-1]: Spectroscopic intensity E-moment (erg/cm^2/s/Å) in bins delineated by lam
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
@@ -158,12 +157,12 @@
    Interpolate the spectroscopic intensity D-moment.
 
    :param specgrid: Grid object.
-   :param x_vec: Atmospheric parameter values.
+   :param x_vec: Photospheric parameter values.
    :param l: Harmonic degree of moment.
    :param n: Number of points in wavelength abscissa.
    :param lam[n]: Wavelength abscissa (Å).
-   :param D[n-1]: Returned spectroscopic intensity D-moment (erg/cm^2/s/Å) in bins delineated by lam
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param D[n-1]: Spectroscopic intensity D-moment (erg/cm^2/s/Å) in bins delineated by lam
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 
 		  
@@ -172,10 +171,10 @@
    Interpolate the spectroscopic flux.
 
    :param specgrid: Grid object.
-   :param x_vec: Atmospheric parameter values.
+   :param x_vec: Photospheric parameter values.
    :param n: Number of points in wavelength abscissa.
    :param lam[n]: Wavelength abscissa (Å).
-   :param F[n-1]: Returned spectroscopic flux (erg/cm^2/s/Å) in bins delineated by lam
-   :param stat: Returned status code (set to :c:expr:`NULL` if not required).
+   :param F[n-1]: Spectroscopic flux (erg/cm^2/s/Å) in bins delineated by lam
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 

@@ -3,9 +3,9 @@
 make_passband
 ~~~~~~~~~~~~~
 
-The :command:`specint_to_specgrid` tool reads filter response data,
-and writes them to a :f-schema:`passband` file. It accepts the
-following command-line arguments:
+The :command:`make_passband` tool reads response data, and writes them
+to a :f-schema:`passband` file. It accepts the following command-line
+arguments:
 
 .. program:: make_passband
 

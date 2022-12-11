@@ -86,7 +86,7 @@ The definitions and ranges of the photospheric parameters are as
 follows:
 
 * effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [15000, 30000]`
-* surface gravity ``log(g)`` :math:`= \log_{10} (g/\cm\,\second^{-2}) \in [1.753.00, 4.75]`
+* surface gravity ``log(g)`` :math:`= \log_{10} (g/\cm\,\second^{-2}) \in [1.75, 4.75]`
 * metallicity ``Z/Zo`` :math:`= Z/Z_{\odot} \in [0, 2]`
 
 

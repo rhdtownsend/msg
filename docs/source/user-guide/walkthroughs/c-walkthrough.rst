@@ -21,7 +21,7 @@ A few brief comments on the code:
 * The :code:`#include "cmsg.h"` statement includes the header definitions
   for the MSG C interface.
 
-* Because Fortran doesn't have :py:class:`dict` datatypes, the atmosphere
+* Because C doesn't have :py:class:`dict` datatypes, the photospheric
   parameters must be passed to MSG as a plain array (here, stored in
   the variable :c:var:`x_vec`). A loop with :c:func:`strcmp()` calls is used to make
   sure the correct values are stored in each array element.

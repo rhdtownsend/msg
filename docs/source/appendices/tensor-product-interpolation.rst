@@ -180,7 +180,7 @@ vectors
 
 .. math::
 
-   \mathbf{c}_{k}(u_{k}) =
+   \mathbf{c}(u_{k}) =
    \begin{bmatrix}
    c_{1}(u_{k}) \\
    c_{2}(u_{k}) \\

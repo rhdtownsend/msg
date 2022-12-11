@@ -5,32 +5,32 @@ Procedures
 
 .. f:subroutine:: load_specgrid(specgrid_file_name, specgrid, stat)
 
-   Create a new :f:type:`specgrid_t` by loading data from a `specgrid` file.
+   Create a new :f:type:`specgrid_t` by loading data from a :f-schema:`specgrid` file.
 
    :p character(*) specgrid_file_name [in]: Name of the `specgrid` file.
-   :p specgrid_t specgrid [out]: Returned grid.
-   :o integer stat [out]: Returned status code.
+   :p specgrid_t specgrid [out]: Grid object.
+   :o integer stat [out]: Status code.
 
 .. f:subroutine:: load_photgrid(photgrid_file_name, photgrid, stat)
 
-   Create a new :f:type:`photgrid_t` by loading data from a `photgrid` file.
+   Create a new :f:type:`photgrid_t` by loading data from a :f-schema:`photgrid` file.
 
-   :p character(*) photgrid_file_name [in]: Name of the `photgrid` file.
-   :p specgrid_t photgrid [out]: Returned grid.
-   :o integer stat [out]: Returned status code.
+   :p character(*) photgrid_file_name [in]: Name of the :f-schema:`photgrid` file.
+   :p specgrid_t photgrid [out]: Grid object.
+   :o integer stat [out]: Status code.
 
 .. f:subroutine:: load_photgrid_from_specgrid(specgrid_file_name, passband_file_name, photgrid, stat)
 
-   Create a new :f:type:`photgrid_t` by loading data from a `specgrid` file,
-   and convolving on-the-fly with a passband response function also loaded from file.
+   Create a new :f:type:`photgrid_t` by loading data from a :f-schema:`specgrid` file,
+   and convolving on-the-fly with a response function loaded from a :f-schema:`passband` file.
 
-   :p character(*) specgrid_file_name [in]: Name of the `specgrid` file.
-   :p character(*) passband_file_name [in]: Name of the passband file.
-   :p specgrid_t photgrid [out]: Returned grid.
-   :o integer stat [out]: Returned status code.
+   :p character(*) specgrid_file_name [in]: Name of the :f-schema:`specgrid` file.
+   :p character(*) passband_file_name [in]: Name of the :f-schema:`passband` file.
+   :p specgrid_t photgrid [out]: Grid object.
+   :o integer stat [out]: Status code.
 
 .. f:subroutine:: get_version(version)
 
    Get the version of the MSG library
 
-   :p character(*), allocatable version [out]: Returned version string.
+   :p character(*), allocatable version [out]: Version string.

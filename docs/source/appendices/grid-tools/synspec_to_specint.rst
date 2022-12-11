@@ -64,4 +64,4 @@ to the function
 
 .. math::
 
-   y(\mu) = 1 - \frac{I_{\lambda}(\mu;\ldots)}{I_{\lambda}(1;\ldots)}.
+   y(\mu) = 1 - \frac{I_{\lambda}(\mu)}{I_{\lambda}(1)}.

@@ -72,8 +72,8 @@ To test MSG, use the command
 This runs unit tests for the various Fortran modules that together
 compose the MSG library. At the end of the test sequence, a summary of
 the number of tests passed and failed is printed. All tests should
-pass; if one or more fails, then please :ref:`open an issue
-<open-an-issue>` to report the problem.
+pass; if one or more fails, then please :git:`open an issue
+<rhdtownsend/msg/issues>` to report the problem.
 
 Installing the :py:mod:`pymsg` Module
 =====================================
@@ -102,11 +102,11 @@ following variables are currently supported:
 DEBUG
   Enable debugging mode (default ``no``)
 
-OMP
-  Enable OpenMP parallelization (default ``yes``)
-
 FPE
   Enable floating point exception checks (default ``yes``)
+
+OMP
+  Enable OpenMP parallelization (default ``yes``)
 
 PYTHON
   Enable building of the Python extension (default ``yes``)

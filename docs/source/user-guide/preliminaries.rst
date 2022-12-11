@@ -20,11 +20,12 @@ between the grid nodes, some kind of interpolation is necessary in
 order to evaluate a spectrum.
 
 MSG is designed to solve this problem. It's not the first software
-package that offers stellar spectral interpolation (see, e.g.,
-:ads_citealp:`blanco-cuaresma:2014`; :ads_citealp:`allende:2015`;
-:ads_citealp:`lianlim:2020`); however, with spectral interpolation as
-its `sole` focus, it offers a combination of features unmatched by
-other packages:
+package that offers stellar spectral interpolation (see, e.g., `FERRE
+<http://hebe.as.utexas.edu/ferre/>`__, `Starfish
+<https://starfish.readthedocs.io/en/latest/>`__ and `stsynphot
+<https://stsynphot.readthedocs.io/en/latest/index.html>`__); however,
+with spectral interpolation as its *sole* focus, it offers a
+combination of features unmatched by other packages:
 
 * scalability --- MSG handles grids that are much larger
   (on disk) than available computer memory.

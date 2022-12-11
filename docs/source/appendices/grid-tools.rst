@@ -25,9 +25,9 @@ grids into one or more :f-schema:`specint` files:
    grid-tools/ascii_to_specint.rst
    grid-tools/specint_to_specint.rst
 
-For spectra in a format that isn't covered by these tools, please
-:ref:`open an issue <open-an-issue>` describing the format and/or
-pointing to relevant literature.
+If you would like to convert spectra from a format that isn't covered by
+these tools, please :git:`open an issue <rhdtownsend/msg/issues>`
+describing the format and/or pointing to relevant literature.
 
    
 Packaging Grids
@@ -54,28 +54,3 @@ The following tools create :f-schema:`passband` files:
    :maxdepth: 2
 
    grid-tools/make_passband.rst
-
-   
-
-Additional :f-schema:`passband` files (beyond those already provided in the
-:ref:`passband-files` appendix) can be created using the
-:command:`make_passband` tool. This tool accepts the following
-command-line arguments:
-
-.. program:: make_passband
-
-.. option:: <table_file_name>
-
-   Name of input file (see below).
-
-.. option:: <F_0>
-
-   Normalizing flux :math:`F_{0}` (:math:`\erg\,\cm^{-2}\,\second^{-1}\,\angstrom^{-1}`).
-
-.. option:: <passband_file_name>
-
-   Name of output :f-schema:`passband` file.
-
-The input file is a text file tabulating wavelength :math:`\lambda`
-(:math:`\angstrom`) and passband response function
-:math:`S'(\lambda)` (see the :ref:`photometric-colors` section).

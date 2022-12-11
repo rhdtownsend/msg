@@ -20,9 +20,9 @@ command-line arguments:
    Type of wavelength abscissa. This determines the number and
    distribution of points to assume for the input file. Supported
    options, corresponding to the different grids described by
-   :ads_citet:`husser:2013`, are: 'HiRes' (high-resolution),
-   'MedRes-A1' (medium-resolution, :math:`\Delta \lambda =
-   1\,\angstrom`) and 'MedRes-R10000' (medium resolution,
+   :ads_citet:`husser:2013`, are :code:`HiRes` (high-resolution),
+   :code:`MedRes-A1` (medium-resolution, :math:`\Delta \lambda =
+   1\,\angstrom`) and :code:`MedRes-R10000` (medium resolution,
    :math:`\mathcal{R}=10\,000`).
 
 .. option:: <specint_file_name>

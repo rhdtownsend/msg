@@ -4,7 +4,7 @@
 Quick Start
 ***********
 
-To get started with MSG, follow these five simple steps:
+To get started with MSG, follow these simple steps:
 
 * Install the `MESA Software Development Kit <mesa-sdk_>`__.
 * Download the `MSG source code <tarball_>`__.

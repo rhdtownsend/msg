@@ -10,7 +10,7 @@ new features, the preferred method is the standard
 fork---branch---pull-request paradigm described `here
 <https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project>`__. If
 your pull request languishes for more than a couple of weeks without
-receiving a response, consider :ref:`opening an issue <open-an-issue>`
+receiving a response, consider :git:`opening an issue <rhdtownsend/msg/issues>`
 to give the developers a nudge.
 
 Documentation
@@ -29,4 +29,4 @@ intensity or flux grids), a number of options are available. The
 grid; but if this lies beyond your technical expertise, then the MSG
 team will be happy to assist. Either way, if you want to make your
 data publicly available and listed in the :ref:`grid-files` chapter,
-then please :ref:`open an issue <open-an-issue>`.
+then please :git:`open an issue <rhdtownsend/msg/issues>`.
