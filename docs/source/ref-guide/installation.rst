@@ -21,7 +21,7 @@ components:
 * The `HDF5 <https://www.hdfgroup.org/solutions/hdf5/>`__ data management library
 
 On Linux and MacOS platforms, these components are bundled together in
-the `MESA Software Development Kit (SDK) <mesa-sdk>`__. Using this SDK
+the `MESA Software Development Kit (SDK) <mesa-sdk_>`__. Using this SDK
 is `strongly` recommended.
 
 If you're planning on using the :py:mod:`pymsg` Python module, then
