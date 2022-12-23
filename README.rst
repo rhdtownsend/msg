@@ -33,4 +33,4 @@ wide variety of photometric systems.
 Documentation
 =============
 
-Full documentation for MSG can be found at https://msg.readthedocs.io/en/latest.
+Full documentation for MSG can be found at https://msg.readthedocs.io/en/stable.
