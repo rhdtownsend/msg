@@ -1,0 +1,16 @@
+Gbp
+goettingen
+grism
+Hermite
+i'th
+millimag
+photint
+photints
+photgrid
+rebin
+rebins
+specint
+specints
+specgrid
+Strömgren
+synspec
