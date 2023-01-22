@@ -188,7 +188,7 @@
      - 24mu, 70mu, 160mu
    * - :passbands:`Generic-Stromgren.tar.bz2 <SVO/Generic-Stromgren.tar.bz2>`
      - Generic
-     - Stromgren
+     - Strömgren
      - u, v, b, y
    * - :passbands:`TESS.tar.bz2 <SVO/TESS.tar.bz2>`
      - TESS

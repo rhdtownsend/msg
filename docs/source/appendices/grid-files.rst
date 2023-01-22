@@ -138,7 +138,7 @@ The definitions and ranges of the photospheric parameters are as follows:
 Göttingen Grids
 ===============
 
-The Göettingen grids are based on the data described in
+The Göttingen grids are based on the data described in
 :ads_citet:`husser:2013` and available for download from
 `phoenix.astro.physik.uni-goettingen.de
 <https://phoenix.astro.physik.uni-goettingen.de/>`__. The angle

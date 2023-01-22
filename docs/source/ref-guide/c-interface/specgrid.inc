@@ -85,7 +85,7 @@
 
    :param specgrid: Grid object.
    :param i: Axis index (beginning at 0).
-   :param x_max: Maaximum value.
+   :param x_max: Maximum value.
 
 
 .. c:function:: void get_specgrid_axis_label(SpecGrid specgrid, int i, char *label)

@@ -16,7 +16,7 @@ arguments:
 
 .. option:: <passband_file_name>
 
-   Name of inut :f-schema:`passband` file.
+   Name of input :f-schema:`passband` file.
 
 .. option:: <photgrid_file_name>
 

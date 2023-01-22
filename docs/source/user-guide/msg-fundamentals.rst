@@ -86,7 +86,7 @@ fundamental purpose of MSG.`
 Evaluating Elemental Spectra
 ============================
 
-To evaluate an elemental specific intensity spectrum, MSG mdoels the
+To evaluate an elemental specific intensity spectrum, MSG models the
 dependence of :math:`\intsy` on each of its three arguments as follows:
 
 * Wavelength dependence is represented using piecewise-constant
@@ -229,7 +229,7 @@ intervals, is
    \diff{t} \,
    \areao
 
-(here and subsequetly the superscript :math:`^{\obs}` should be read
+(here and subsequently the superscript :math:`^{\obs}` should be read
 as 'observed'), where the observed flux is introduced as
 
 .. math::
