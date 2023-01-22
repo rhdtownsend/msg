@@ -23,9 +23,9 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = '1.1'
-branch = 'main'
-copyright = '2022, Rich Townsend'
+version = '1.1.1'
+branch = 'release-1.1.1'
+copyright = '2023, Rich Townsend & The MSG Team'
 
 # -- General configuration ---------------------------------------------------
 
@@ -42,6 +42,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
+    'sphinxcontrib.spelling',
     'sphinx-prompt',
     'sphinx_substitution_extensions',
     'nbsphinx',
@@ -175,3 +176,6 @@ napoleon_include_init_with_doc = True
 
 # Set up nbsphinx
 nbsphinx_execute = 'never'
+
+# Spelling
+spelling_word_list_filename='spelling_wordlist.txt'
