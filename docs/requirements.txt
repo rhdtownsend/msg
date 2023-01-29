@@ -5,4 +5,4 @@ Sphinx-Substitution-Extensions>=2019.6.15.0
 ads>=0.12.3
 nbsphinx>=0.8.8
 ipykernel>=5.5.5
-pymsg==1.1
+pymsg
