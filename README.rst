@@ -17,6 +17,9 @@ The MSG Library
 .. image:: https://joss.theoj.org/papers/fdb605600d48545f98dfb9f825dc833d/status.svg
    :alt: Journal of Open Source Software
    :target: https://joss.theoj.org/papers/fdb605600d48545f98dfb9f825dc833d
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.7559319.svg
+   :target: https://doi.org/10.5281/zenodo.7559319
+
 
 Overview
 ========
