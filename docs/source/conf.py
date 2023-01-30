@@ -23,8 +23,8 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = '1.1.1'
-branch = 'release-1.1.1'
+version = '1.1.2'
+branch = 'release-1.1.2'
 copyright = '2023, Rich Townsend & The MSG Team'
 
 # -- General configuration ---------------------------------------------------
