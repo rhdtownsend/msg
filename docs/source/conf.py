@@ -137,13 +137,17 @@ with open('macros.def', encoding='utf-8') as f:
         line = f.readline()
 
 mathjax_macros = {}
+latex_preamble = ''
 
 for key, value in macros.items():
     argnums = re.findall('#(\d)', value)
     if argnums:
-        mathjax_macros[key] = [value, int(max(argnums))]
+        n_args = int(max(argnums))
+        mathjax_macros[key] = [value, n_args]
+        latex_preamble += f'\\newcommand{{\\{key}}}[{n_args}]{{{value}}}\n'
     else:
         mathjax_macros[key] = value
+        latex_preamble += f'\\newcommand{{\\{key}}}{{{value}}}\n'
 
 #mathjax_config = {                  
 #    'TeX': { 
@@ -154,6 +158,10 @@ mathjax3_config = {
     'tex': { 
         'macros': mathjax_macros
     }
+}
+
+latex_elements = {
+    'preamble': latex_preamble
 }
 
 # Enable email obfuscation
