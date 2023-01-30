@@ -62,7 +62,7 @@ Citing MSG
 
 If you use MSG in your research, please cite the following papers:
 
-* Townsend R. H. D., Lopez A., 2022, `Journal of Open-Source Software`, in preparation
+* Townsend R. H. D., Lopez A., 2022, `Journal of Open-Source Software`, 8(81), 4602, `https://doi.org/10.21105/joss.04 <https://doi.org/10.21105/joss.04602>`__
 
 Be sure to also cite the source of the grid data that you're using
 with MSG. For instance, if you're working with one of the :ref:`CAP18
