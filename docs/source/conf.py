@@ -179,3 +179,8 @@ nbsphinx_execute = 'never'
 
 # Spelling
 spelling_word_list_filename='spelling_wordlist.txt'
+
+# Pymsg
+os.environ['MSG_DIR'] = os.path.abspath('../..')
+
+
