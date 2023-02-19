@@ -171,7 +171,7 @@ The definitions and ranges of the photospheric parameters are as follows:
 * effective temperature ``Teff`` :math:`= \Teff/\kelvin \in [2\,300, 12\,000]`
 * surface gravity ``log(g)`` :math:`= \log_{10}(g/\cm\,\second^{-2}) \in [0.0, 6.0]`
 * metallicity ``[Fe/H]`` :math:`= \log_{10}[ (\mathrm{Fe}/\mathrm{H}) / (\mathrm{Fe}/\mathrm{H})_{\odot} ] \in [-4.0, 1.0]`
-* alpha enhancement ``[alpha/H]`` :math:`= \log_{10}[ (\alpha/\mathrm{Fe}) / (\alpha/\mathrm{Fe})_{\odot} ] \in [-0.2,1.2]`
+* alpha enhancement ``[alpha/Fe]`` :math:`= \log_{10}[ (\alpha/\mathrm{Fe}) / (\alpha/\mathrm{Fe})_{\odot} ] \in [-0.2,1.2]`
 
 
 .. |br| raw:: html
