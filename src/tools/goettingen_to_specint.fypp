@@ -194,6 +194,10 @@ contains
       @:ASSERT(status == 0,'error reading data')
       @:ASSERT(.NOT. anyf,'undefined values encountered in data')
 
+      ! Convert data from erg/s/cm^2/cm to erg/s/cm^2/A
+
+      data = data*1E-8_WP
+
       ! If necessary, extract labels
 
       if (PRESENT(head_labels) .AND. PRESENT(head_values)) then
