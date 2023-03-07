@@ -196,7 +196,7 @@ contains
 
       ! Convert data from erg/s/cm^2/cm to erg/s/cm^2/A
 
-      data = data*1E-8_WP
+      data = data*1E-8_RD
 
       ! If necessary, extract labels
 
