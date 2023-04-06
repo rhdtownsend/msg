@@ -2,7 +2,7 @@
 ! Purpose : Define vgrid_t type, providing support for virtual N-dimensional
 !           interpolating grids
 !
-! Copyright 2021-2022 Rich Townsend & The MSG Team
+! Copyright 2021-2023 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -22,7 +22,7 @@ module vgrid_m
 
    ! Uses
    
-   use forum_m, locate_ => locate
+   use forum_m
 
    use axis_m
    use file_m
@@ -44,30 +44,30 @@ module vgrid_m
    type vgrid_t
       private
       type(axis_t), allocatable :: axes(:)
-      logical, allocatable      :: mask(:)
+      logical, allocatable      :: v_lin_mask(:)
+      logical, allocatable      :: c_lin_mask(:)
+      integer, allocatable      :: v_seq_lin(:)
+      integer, allocatable      :: v_lin_seq(:)
       integer, allocatable      :: shape(:)
-      integer, allocatable      :: lin_con(:)
-      integer, allocatable      :: con_lin(:)
       integer                   :: rank
-      integer                   :: n_con
-      integer                   :: n_lin
       integer                   :: n_stn
+      integer                   :: n_seq
    contains
       private
+      procedure, public :: get_n_seq
       procedure, public :: get_rank
-      procedure, public :: get_n_con
-      procedure, public :: get_n_lin
+      procedure, public :: get_shape
       procedure, public :: get_axis
-      procedure, public :: locate
       procedure, public :: map
-      procedure, public :: con_from_lin
-      procedure, public :: lin_from_con
-      procedure, public :: lin_from_vec
-      procedure, public :: vec_from_lin
-      procedure         :: vec_from_stn_
       procedure         :: interp_0_
       procedure         :: interp_1_
       generic, public   :: interp => interp_0_, interp_1_
+      procedure         :: locate_
+      procedure         :: c_lin_vec_
+      procedure         :: c_vec_lin_
+      procedure         :: v_lin_vec_
+      procedure         :: v_vec_lin_
+      procedure         :: v_vec_stn_
       procedure         :: setup_interp_
       procedure, public :: read
       procedure, public :: write
@@ -89,42 +89,70 @@ module vgrid_m
 
 contains
 
-   function vgrid_t_ (axes, mask) result(vgrid)
+   function vgrid_t_ (x_vecs, labels) result(vgrid)
 
-      type(axis_t), intent(in) :: axes(:)
-      logical, intent(in)      :: mask(:)
+      real(RD), intent(in)     :: x_vecs(:,:)
+      character(*), intent(in) :: labels(:)
       type(vgrid_t)            :: vgrid
 
-      integer :: rank
-      integer :: j
-      integer :: shape(SIZE(axes))
-      integer :: i_con
-      integer :: i_lin
+      integer                   :: rank
+      integer                   :: n_seq
+      real(RD), allocatable     :: x(:)
+      type(axis_t), allocatable :: axes(:)
+      integer                   :: r
+      integer, allocatable      :: v_lin_seq(:)
+      integer                   :: v_seq
+      integer                   :: p
+      integer                   :: i
+      integer                   :: n
 
-      ! Construct vgrid from the supplied data
+      @:CHECK_BOUNDS(SIZE(labels), SIZE(x_vecs, 1))
 
-      rank = SIZE(axes)
+      ! Construct vgrid from the supplied list of vertex coordinates
+      ! and axis labels
 
-      do j = 1, rank
-         call axes(j)%get_n(shape(j))
+      ! First, build the axes
+
+      rank = SIZE(labels)
+      n_seq = SIZE(x_vecs, 2)
+
+      allocate(x(n_seq))
+      allocate(axes(rank))
+      
+      do r = 1, rank
+
+         x = x_vecs(r,:)
+
+         associate (u => unique_indices(x))
+           axes(r) = axis_t(x(u), labels(r))
+         end associate
+
       end do
 
-      @:CHECK_BOUNDS(SIZE(mask), PRODUCT(shape))
+      ! Create the vertex sequence-to-linear index map
 
-      vgrid%mask = mask
-      vgrid%axes = axes
+      allocate(v_lin_seq(n_seq))
 
-      vgrid%shape = shape
-      vgrid%rank = rank
+      do v_seq = 1, n_seq
 
-      vgrid%n_con = COUNT(mask)
-      vgrid%n_lin = SIZE(mask)
+         ! Determine the linear index of the vertex
 
-      vgrid%con_lin = UNPACK([(i_con, i_con=1,vgrid%n_con)], mask, 0)
-      vgrid%lin_con = PACK([(i_lin, i_lin=1,vgrid%n_lin)], vgrid%con_lin /= 0)
+         v_lin_seq(v_seq) = 1
+         p = 1
 
-      vgrid%n_stn = 4**rank
+         do r = 1, rank
+            call axes(r)%get_n(n)
+            call axes(r)%locate(x_vecs(r,v_seq), i)
+            v_lin_seq(v_seq) = v_lin_seq(v_seq) + (i-1)*p
+            p = p*n
+         end do
 
+      end do
+
+      ! Construct vgrid
+
+      vgrid = vgrid_t_map_(axes, v_lin_seq)
+      
       ! Finish
 
       return
@@ -133,9 +161,169 @@ contains
 
    !****
 
-   #:for name, type in (('rank', 'integer'),  &
-                        ('n_con', 'integer'), &
-                        ('n_lin', 'integer'))
+   function vgrid_t_mask_ (axes, mask) result(vgrid)
+
+      type(axis_t), intent(in) :: axes(:)
+      logical, intent(in)      :: mask(:)
+      type(vgrid_t)            :: vgrid
+
+      integer              :: n_lin
+      integer              :: n_seq
+      integer, allocatable :: v_lin_seq(:)
+      integer              :: v_seq
+      integer              :: v_lin
+
+      ! Construct vgrid from the axes and occupancy mask. This is a
+      ! compatibility constructor for grids read in the "old" (rev <=
+      ! 2) format
+
+      ! Set up the vertex sequence-to-linear mask
+
+      n_lin = SIZE(mask)
+      n_seq = COUNT(mask)
+
+      allocate(v_lin_seq(n_seq))
+
+      v_seq = 0
+
+      do v_lin = 1, n_lin
+
+         if (mask(v_lin)) then
+            v_seq = v_seq + 1
+            v_lin_seq(v_seq) = v_lin
+         end if
+
+      end do
+
+      ! Construct vgrid
+
+      vgrid = vgrid_t_map_(axes, v_lin_seq)
+
+      ! Finish
+
+      return
+
+   end function vgrid_t_mask_
+
+   !****
+
+   function vgrid_t_map_ (axes, v_lin_seq) result(vgrid)
+
+      type(axis_t), intent(in) :: axes(:)
+      integer, intent(in)      :: v_lin_seq(:)
+      type(vgrid_t)            :: vgrid
+
+      integer              :: rank
+      integer              :: r
+      integer              :: shape(SIZE(axes))
+      integer              :: n_lin
+      integer              :: n_seq
+      logical, allocatable :: v_lin_mask(:)
+      integer              :: v_seq
+      integer, allocatable :: v_seq_lin(:)
+      logical, allocatable :: c_lin_mask(:)
+      integer              :: c_lin
+      integer              :: c_vec(SIZE(axes))
+      integer              :: v
+      integer              :: v_vec(SIZE(axes))
+      integer              :: v_lin
+      
+      @:ASSERT_DEBUG(SIZE(unique_indices(v_lin_seq)) == n_seq, 'Invalid v_lin_seq')
+
+      ! Construct vgrid from the axes and sequence-to-linear index map
+
+      ! First, determine the shape
+
+      rank = SIZE(axes)
+
+      do r = 1, rank
+         call axes(r)%get_n(shape(r))
+      end do
+
+      n_lin = PRODUCT(shape)
+      n_seq = SIZE(v_lin_seq)
+
+      @:ASSERT_DEBUG(MINVAL(v_lin_seq) >= 1, 'Invalid v_lin_seq')
+      @:ASSERT_DEBUG(MAXVAL(v_lin_seq) <= n_lin, 'Invalid v_lin_seq')
+
+      @:ASSERT_DEBUG(ALL(shape > 1), 'Degenerate axis')
+
+      ! Set up the linear vertex mask
+
+      allocate(v_lin_mask(n_lin))
+
+      v_lin_mask = .FALSE.
+      v_lin_mask(v_lin_seq) = .TRUE.
+
+      ! Set up the linear-to-sequence index map
+
+      v_seq_lin = UNPACK([(v_seq, v_seq=1,n_seq)], v_lin_mask, 0)
+
+      ! Initialize vgrid
+
+      vgrid%axes = axes
+
+      call MOVE_ALLOC(v_lin_mask, vgrid%v_lin_mask)
+
+      vgrid%v_lin_seq = v_lin_seq
+      call MOVE_ALLOC(v_seq_lin, vgrid%v_seq_lin)
+
+      vgrid%shape = shape
+      vgrid%rank = rank
+
+      vgrid%n_seq = n_seq
+      vgrid%n_stn = 4**rank
+
+      ! Initialize c_lin_mask last, to take advantage of indexing
+      ! routines
+
+      n_lin = PRODUCT(shape-1)
+
+      allocate(c_lin_mask(n_lin))
+
+      cell_loop: do c_lin = 1, n_lin
+
+         ! Iterate over vertices associated with the cell
+
+         c_vec = vgrid%c_vec_lin_(c_lin)
+
+         do v = 1, 2**rank
+
+            do r = 1, rank
+
+               if (BTEST(v-1, r-1)) then
+                  v_vec(r) = c_vec(r) + 1
+               else
+                  v_vec(r) = c_vec(r)
+               end if
+
+            end do
+
+            v_lin = vgrid%v_lin_vec_(v_vec)
+
+            if (.NOT. vgrid%v_lin_mask(v_lin)) then
+               c_lin_mask(c_lin) = .FALSE.
+               cycle cell_loop
+            end if
+
+         end do
+
+         c_lin_mask(c_lin) = .TRUE.
+
+      end do cell_loop
+
+      call MOVE_ALLOC(c_lin_mask, vgrid%c_lin_mask)
+      
+      ! Finish
+
+      return
+
+   end function vgrid_t_map_
+
+   !****
+
+   #:for name, type in (('n_seq', 'integer'),  &
+                        ('rank', 'integer'))
 
       subroutine get_${name}$(self, ${name}$)
 
@@ -153,6 +341,25 @@ contains
       end subroutine get_${name}$
 
    #:endfor
+      
+   !****
+
+   subroutine get_shape(self, shape)
+
+      class(vgrid_t), intent(in) :: self
+      integer, intent(out)       :: shape(:)
+
+      @:CHECK_BOUNDS(SIZE(shape), self%rank)
+
+      ! Get the shape
+
+      shape = self%shape
+
+      ! Finish
+
+      return
+
+   end subroutine get_shape
 
    !****
       
@@ -174,41 +381,41 @@ contains
 
    !****
 
-   subroutine locate(self, x_vec, i_vec, stat)
+   subroutine locate_(self, x_vec, j_vec, stat)
 
       class(vgrid_t), intent(in)     :: self
       real(RD), intent(in)           :: x_vec(:)
-      integer, intent(out)           :: i_vec(:)
+      integer, intent(out)           :: j_vec(:)
       integer, intent(out), optional :: stat
 
-      integer              :: j
+      integer              :: r
       character(LABEL_LEN) :: label
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
-      @:CHECK_BOUNDS(SIZE(i_vec), self%rank)
+      @:CHECK_BOUNDS(SIZE(j_vec), self%rank)
 
-      ! Locate x_vec in the grid
+      ! Locate x_vec in the grid, returning the vector cell index
 
-      do j = 1, self%rank
+      do r = 1, self%rank
 
-         call self%axes(j)%locate(x_vec(j), i_vec(j))
+         call self%axes(r)%locate(x_vec(r), j_vec(r))
 
-         if (i_vec(j) < 1) then
+         if (j_vec(r) < 1) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_AXIS_LO
                return
             else
-               call self%axes(j)%get_label(label)
+               call self%axes(r)%get_label(label)
                @:ABORT('out-of-bounds (lo) on '//label//' axis')
             endif
          endif
 
-         if (i_vec(j) > self%shape(j)) then
+         if (j_vec(r) > self%shape(r)) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_AXIS_HI
                return
             else
-               call self%axes(j)%get_label(label)
+               call self%axes(r)%get_label(label)
                @:ABORT('out-of-bounds (hi) on '//label//' axis')
             endif
          endif
@@ -221,7 +428,7 @@ contains
 
       return
 
-   end subroutine locate
+   end subroutine locate_
 
    !****
 
@@ -229,26 +436,26 @@ contains
 
       class(vgrid_t), intent(in) :: self
       interface
-         subroutine map_proc(i_vec, stat)
-            use forum_m
-            integer, intent(in)            :: i_vec(:)
+         subroutine map_proc(v_seq, stat)
+            integer, intent(in)            :: v_seq
             integer, intent(out), optional :: stat
          end subroutine map_proc
       end interface
       integer, intent(out), optional :: stat
 
-      integer :: i_lin
-      integer :: i_vec(self%rank)
+      integer :: v_lin
+      integer :: v_seq
 
-      ! Apply the map_proc function to each unmasked node in the grid
+      ! Apply the map_proc function to each unmasked vertex in the
+      ! grid
 
-      map_loop : do i_lin = 1, self%n_lin
+      map_loop : do v_lin = 1, SIZE(self%v_lin_mask)
 
-         if (self%mask(i_lin)) then
+         if (self%v_lin_mask(v_lin)) then
 
-            i_vec = self%vec_from_lin(i_lin)
+            v_seq = self%v_seq_lin(v_lin)
 
-            call map_proc(i_vec, stat)
+            call map_proc(v_seq, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
@@ -265,145 +472,13 @@ contains
 
    !****
 
-   function con_from_lin(self, i_lin) result(i_con)
-
-      class(vgrid_t), intent(in) :: self
-      integer, intent(in)        :: i_lin
-      integer                    :: i_con
-
-      ! Calculate a contiguous index from a linear index
-
-      i_con = self%con_lin(i_lin)
-
-      ! Finish
-
-      return
-
-   end function con_from_lin
-
-   !****
-
-   function lin_from_con(self, i_con) result(i_lin)
-
-      class(vgrid_t), intent(in) :: self
-      integer, intent(in)        :: i_con
-      integer                    :: i_lin
-
-      ! Calculate a linear index from a contiguous index
-
-      i_lin = self%lin_con(i_con)
-
-      ! Finish
-
-      return
-
-   end function lin_from_con
-
-   !****
-
-   function lin_from_vec(self, i_vec) result(i_lin)
-
-      class(vgrid_t), intent(in) :: self
-      integer, intent(in)        :: i_vec(:)
-      integer                    :: i_lin
-
-      integer :: p
-      integer :: j
-
-      @:CHECK_BOUNDS(SIZE(i_vec), self%rank)
-
-      ! Calculate a linear index from a vector index
-
-      p = 1
-      i_lin = i_vec(1)
-
-      do j = 2, self%rank
-         p = p*self%shape(j-1)
-         i_lin = i_lin + (i_vec(j)-1)*p
-      end do
-
-      ! Finish
-
-      return
-
-   end function lin_from_vec
-
-   !****
-
-   function vec_from_lin(self, i_lin) result(i_vec)
-
-      class(vgrid_t), intent(in) :: self
-      integer, intent(in)        :: i_lin
-      integer                    :: i_vec(self%rank)
-
-      integer :: p
-      integer :: r
-      integer :: j
-
-      ! Calculate a vector index from a linear index
-
-      p = self%n_lin
-      r = i_lin - 1
-
-      do j = self%rank, 1, -1
-         p = p/self%shape(j)
-         i_vec(j) = r/p + 1
-         r = r - (i_vec(j)-1)*p
-      end do
-
-      @:ASSERT_DEBUG(i_lin == self%lin_from_vec(i_vec), 'indexing error')
-
-      ! Finish
-
-      return
-
-   end function vec_from_lin
-
-   !****
-
-   function vec_from_stn_(self, i_cell, i_stn) result(i_vec)
-
-      class(vgrid_t), intent(in) :: self
-      integer, intent(in)        :: i_cell(:)
-      integer, intent(in)        :: i_stn
-      integer                    :: i_vec(self%rank)
-
-      integer :: p
-      integer :: r
-      integer :: j
-
-      @:CHECK_BOUNDS(SIZE(i_cell), self%rank)
-
-      ! Calculate a vector index from cell and stencil indices
-
-      p = self%n_stn
-      r = i_stn - 1
-
-      do j = self%rank, 1, -1
-         p = p/4
-         i_vec(j) = r/p + 1
-         r = r - (i_vec(j)-1)*p
-      end do
-
-      i_vec = i_vec + i_cell - 2
-
-      @:ASSERT_DEBUG(ALL(i_vec >= i_cell-1 .AND. i_vec <= i_cell+2), 'indexing error')
-
-      ! Finish
-
-      return
-
-   end function vec_from_stn_
-
-   !****
-
    subroutine interp_0_(self, data_proc, x_vec, f_int, stat, vderiv)
 
       class(vgrid_t), intent(in) :: self
       interface
-         subroutine data_proc(i_vec, data, stat)
+         subroutine data_proc(v_seq, data, stat)
             use forum_m
-            integer, intent(in)            :: i_vec(:)
+            integer, intent(in)            :: v_seq
             real(RD), intent(out)          :: data
             integer, intent(out), optional :: stat
          end subroutine data_proc
@@ -413,7 +488,7 @@ contains
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: vderiv(:)
 
-      integer  :: i_cell(self%rank)
+      integer  :: c_vec(self%rank)
       logical  :: mask(self%n_stn)
       real(RD) :: vdelta(3,self%rank)
       real(RD) :: vu(self%rank)
@@ -421,8 +496,10 @@ contains
       real(RD) :: K_I(self%n_stn)
       real(RD) :: K(self%n_stn)
       real(RD) :: F
-      integer  :: i_stn
-      integer  :: i_vec(self%rank)
+      integer  :: s
+      integer  :: v_vec(self%rank)
+      integer  :: v_lin
+      integer  :: v_seq
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
@@ -430,7 +507,7 @@ contains
 
       ! Set up the interpolation
 
-      call self%setup_interp_(x_vec, i_cell, mask, vdelta, vu, stat)
+      call self%setup_interp_(x_vec, c_vec, mask, vdelta, vu, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
@@ -452,22 +529,24 @@ contains
 
       ! Now perform the interpolation
 
-      do i_stn = 1, self%n_stn
+      do s = 1, self%n_stn
 
-         if (K(i_stn) /= 0._RD) then
+         if (K(s) /= 0._RD) then
 
-            ! Evaluate data for this node
+            ! Evaluate data for this vertex
 
-            i_vec = self%vec_from_stn_(i_cell, i_stn)
+            v_vec = self%v_vec_stn_(s, c_vec)
+            v_lin = self%v_lin_vec_(v_vec)
+            v_seq = self%v_seq_lin(v_lin)
 
-            call data_proc(i_vec, F, stat)
+            call data_proc(v_seq, F, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
 
             ! Add the contribution to f_int
 
-            f_int = f_int + K(i_stn)*F
+            f_int = f_int + K(s)*F
 
          end if
 
@@ -487,9 +566,9 @@ contains
 
       class(vgrid_t), intent(in) :: self
       interface
-         subroutine data_proc(i_vec, data, stat)
+         subroutine data_proc(v_seq, data, stat)
             use forum_m
-            integer, intent(in)            :: i_vec(:)
+            integer, intent(in)            :: v_seq
             real(RD), intent(out)          :: data(:)
             integer, intent(out), optional :: stat
          end subroutine data_proc
@@ -499,7 +578,7 @@ contains
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: vderiv(:)
 
-      integer  :: i_cell(self%rank)
+      integer  :: c_vec(self%rank)
       logical  :: mask(self%n_stn)
       real(RD) :: vdelta(3,self%rank)
       real(RD) :: vu(self%rank)
@@ -507,8 +586,10 @@ contains
       real(RD) :: K_I(self%n_stn)
       real(RD) :: K(self%n_stn)
       integer  :: n_m
-      integer  :: i_stn
-      integer  :: i_vec(self%rank)
+      integer  :: s
+      integer  :: v_vec(self%rank)
+      integer  :: v_lin
+      integer  :: v_seq
       real(RD) :: F(SIZE(f_int))
       integer  :: m
 
@@ -526,7 +607,7 @@ contains
 
       ! Set up the interpolation
 
-      call self%setup_interp_(x_vec, i_cell, mask, vdelta, vu, stat)
+      call self%setup_interp_(x_vec, c_vec, mask, vdelta, vu, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
@@ -553,15 +634,17 @@ contains
 
       ! Now perform the interpolation
 
-      do i_stn = 1, self%n_stn
+      do s = 1, self%n_stn
 
-         if (K(i_stn) /= 0._RD) then
+         if (K(s) /= 0._RD) then
 
             ! Evaluate data for this node
 
-            i_vec = self%vec_from_stn_(i_cell, i_stn)
+            v_vec = self%v_vec_stn_(s, c_vec)
+            v_lin = self%v_lin_vec_(v_vec)
+            v_seq = self%v_seq_lin(v_lin)
 
-            call data_proc(i_vec, F, stat)
+            call data_proc(v_seq, F, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
@@ -584,13 +667,13 @@ contains
 
                m_b = MIN(m_b, n_m)
 
-               f_int(m_a:m_b) = f_int(m_a:m_b) + K(i_stn)*F(m_a:m_b)
+               f_int(m_a:m_b) = f_int(m_a:m_b) + K(s)*F(m_a:m_b)
 
                !$OMP END PARALLEL
 
             #:else
 
-               f_int = f_int + K(i_stn)*F
+               f_int = f_int + K(s)*F
 
             #:endif
 
@@ -607,32 +690,186 @@ contains
    end subroutine interp_1_
 
    !****
+
+   function c_lin_vec_(self, c_vec) result(c_lin)
+
+      class(vgrid_t), intent(in) :: self
+      integer, intent(in)        :: c_vec(:)
+      integer                    :: c_lin
+
+      integer :: p
+      integer :: r
+
+      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
+
+      ! Calculate a linear cell index from a vector cell index
+
+      c_lin = 1
+      p = 1
+
+      do r = 1, self%rank
+         c_lin = c_lin + (c_vec(r)-1)*p
+         p = p*(self%shape(r)-1)
+      end do
+
+      ! Finish
+
+      return
+
+   end function c_lin_vec_
+
+   !****
+
+   function c_vec_lin_(self, c_lin) result(c_vec)
+
+      class(vgrid_t), intent(in) :: self
+      integer, intent(in)        :: c_lin
+      integer                    :: c_vec(self%rank)
+
+      integer :: p
+      integer :: q
+      integer :: r
+
+      ! Calculate a vector cell index from a linear cell index
+
+      p = PRODUCT(self%shape-1)
+      q = c_lin - 1
+
+      do r = self%rank, 1, -1
+         p = p/(self%shape(r)-1)
+         c_vec(r) = q/p + 1
+         q = q - (c_vec(r)-1)*p
+      end do
+
+      ! Finish
+
+      return
+
+   end function c_vec_lin_
+
+   !****
+
+   function v_lin_vec_(self, v_vec) result(v_lin)
+
+      class(vgrid_t), intent(in) :: self
+      integer, intent(in)        :: v_vec(:)
+      integer                    :: v_lin
+
+      integer :: p
+      integer :: r
+
+      @:CHECK_BOUNDS(SIZE(v_vec), self%rank)
+
+      ! Calculate a linear vertex index from a vector vertex index
+
+      v_lin = 1
+      p = 1
+
+      do r = 1, self%rank
+         v_lin = v_lin + (v_vec(r)-1)*p
+         p = p*self%shape(r)
+      end do
+
+      ! Finish
+
+      return
+
+   end function v_lin_vec_
+
+   !****
+
+   function v_vec_lin_(self, v_lin) result(v_vec)
+
+      class(vgrid_t), intent(in) :: self
+      integer, intent(in)        :: v_lin
+      integer                    :: v_vec(self%rank)
+
+      integer :: p
+      integer :: q
+      integer :: r
+
+      ! Calculate a vector vertex index from a linear vertex index
+
+      p = PRODUCT(self%shape)
+      q = v_lin - 1
+
+      do r = self%rank, 1, -1
+         p = p/self%shape(r)
+         v_vec(r) = q/p + 1
+         q = q - (v_vec(r)-1)*p
+      end do
+
+      ! Finish
+
+      return
+
+   end function v_vec_lin_
+
+   !****
+
+   function v_vec_stn_(self, s, c_vec) result(v_vec)
+
+      class(vgrid_t), intent(in) :: self
+      integer, intent(in)        :: s
+      integer, intent(in)        :: c_vec(:)
+      integer                    :: v_vec(self%rank)
+
+      integer :: p
+      integer :: q
+      integer :: r
+
+      @:CHECK_BOUNDS(SIZE(j_cell), self%rank)
+
+      ! Calculate a vector vertex index from a stencil index and a
+      ! vector cell index
+
+      p = self%n_stn
+      q = s - 1
+
+      do r = self%rank, 1, -1
+         p = p/4
+         v_vec(r) = q/p + 1
+         q = q - (v_vec(r)-1)*p
+      end do
+
+      v_vec = v_vec + c_vec - 2
+
+      @:ASSERT_DEBUG(ALL(v_vec >= c_vec-1 .AND. v_vec <= c_vec+2), 'indexing error')
+
+      ! Finish
+
+      return
+
+   end function v_vec_stn_
+
+   !****
    
-   subroutine setup_interp_(self, x_vec, i_cell, mask, vdelta, vu, stat)
+   subroutine setup_interp_(self, x_vec, c_vec, mask, vdelta, vu, stat)
 
       class(vgrid_t), intent(in)     :: self
       real(RD), intent(in)           :: x_vec(:)
-      integer, intent(out)           :: i_cell(:)
+      integer, intent(out)           :: c_vec(:)
       logical, intent(out)           :: mask(:)
       real(RD), intent(out)          :: vdelta(:,:)
       real(RD), intent(out)          :: vu(:)
       integer, intent(out), optional :: stat
 
-      integer  :: j
+      integer  :: c_lin
+      integer  :: r
       real(RD) :: x_bdy(self%rank)
       logical  :: on_bdy(self%rank)
-      integer  :: i_adj
-      integer  :: i_cell_adj(self%rank)
-      integer  :: i_cnr
-      integer  :: i_vec(self%rank)
-      integer  :: i_lin
-      integer  :: i_stn
+      integer  :: a
+      integer  :: c_vec_adj(self%rank)
+      integer  :: c_lin_adj
+      integer  :: v_vec(self%rank)
+      integer  :: v_lin
+      integer  :: s
       integer  :: l
       integer  :: i
       real(RD) :: x(4)
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
-      @:CHECK_BOUNDS(SIZE(i_cell), self%rank)
+      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
       @:CHECK_BOUNDS(SIZE(mask), self%n_stn)
 
       @:CHECK_BOUNDS(SIZE(vdelta, 1), 3)
@@ -640,129 +877,122 @@ contains
 
       @:CHECK_BOUNDS(SIZE(vu), self%rank)
 
-      ! Locate the starting interpolation cell
+      ! Locate the initial interpolation cell
 
-      call self%locate(x_vec, i_cell, stat)
+      call self%locate_(x_vec, c_vec, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      i_cell = MIN(i_cell, self%shape-1)
+      c_vec = MIN(c_vec, self%shape-1)
 
-      ! Now (possibly) update the interpolation cell, to handle cases
-      ! where it doesn't have all corners defined. If the point lies
-      ! on a boundary with a neighboring cell, and that neighbor has
-      ! all corners defined, then this will set i_cell to point to the
-      ! neighbor
+      ! See if the cell has sufficient data (i.e., all vertices
+      ! defined) to do an interpolation
 
-      ! First, determine which boundary(ies) the point is on
+      c_lin = self%c_lin_vec_(c_vec)
 
-      do j = 1, self%rank
-         call self%axes(j)%fetch(i_cell(j), x_bdy(j))
-      end do
+      if (.NOT. self%c_lin_mask(c_lin)) then
 
-      on_bdy = x_vec == x_bdy
+         ! If not, then if the point is on a boundary of the cell, see
+         ! if one of the adjacent (toward-the-origin) cells can be
+         ! used
 
-      ! Iterate over the interpolation cell and all neighboring cells
+         ! First, determine which boundary(ies) the point is on
 
-      adjacent_loop : do i_adj = 1, 2**self%rank
-
-         do j = 1, self%rank
-
-            ! Set up the cell index, weeding out cases that don't
-            ! contain the point or fall outside the grid
-
-            if (BTEST(i_adj-1, j-1)) then
-
-               if (.NOT. on_bdy(j)) cycle adjacent_loop
-               if (i_cell(j) == 1) cycle adjacent_loop
-
-               i_cell_adj(j) = i_cell(j) - 1
-
-            else
-
-               i_cell_adj(j) = i_cell(j)
-
-            end if
-
+         do r = 1, self%rank
+            call self%axes(r)%fetch(c_vec(r), x_bdy(r))
          end do
 
-         ! Check whether all corners are defined
+         on_bdy = x_vec == x_bdy
 
-         corner_loop : do i_cnr = 1, 2**self%rank
+         ! Iterate over adjacent cells
 
-            do j = 1, self%rank
+         adjacent_loop : do a = 1, 2**self%rank-1
 
-               if (BTEST(i_cnr-1, j-1)) then
-                  i_vec(j) = i_cell_adj(j) + 1
+            ! Set up the vector index for the adjacent cell
+
+            do r = 1, self%rank
+
+               if (BTEST(a, r-1)) then
+
+                  if (.NOT. on_bdy(r)) cycle adjacent_loop
+                  if (c_vec(r) == 1) cycle adjacent_loop
+
+                  c_vec_adj(r) = c_vec(r) - 1
+
                else
-                  i_vec(j) = i_cell_adj(j)
-               endif
+
+                  c_vec_adj(r) = c_vec(r)
+
+               end if
 
             end do
 
-            i_lin = self%lin_from_vec(i_vec)
+            ! Check whether the adjacent cell will do
 
-            if (.NOT. self%mask(i_lin)) cycle adjacent_loop
+            c_lin_adj = self%c_lin_vec_(c_vec_adj)
 
-         end do corner_loop
+            if (self%c_lin_mask(c_lin_adj)) exit adjacent_loop
 
-         ! If so, update i_cell and finish
+         end do adjacent_loop
 
-         i_cell = i_cell_adj
-         exit adjacent_loop
+         ! Check whether a suitable adjacent cell was found
 
-      end do adjacent_loop
+         if (a < 2**self%rank) then
 
-      ! Check whether the exercise failed
+            ! Update the cell index
 
-      if (i_adj > 2**self%rank) then
+            c_vec = c_vec_adj
 
-         if (PRESENT(stat)) then
-            stat = STAT_UNAVAILABLE_DATA
-            return
          else
-            @:ABORT('unavailable data')
-         endif
+
+            if (PRESENT(stat)) then
+               stat = STAT_UNAVAILABLE_DATA
+               return
+            else
+               @:ABORT('unavailable data')
+            endif
+
+         end if
 
       endif
 
       ! Set up the stencil mask
 
-      do i_stn = 1, self%n_stn
+      do s = 1, self%n_stn
 
-         i_vec = self%vec_from_stn_(i_cell, i_stn)
+         v_vec = self%v_vec_stn_(s, c_vec)
 
-         mask(i_stn) = .NOT. ANY(i_vec < 1 .OR. i_vec > self%shape)
+         mask(s) = .NOT. ANY(v_vec < 1 .OR. v_vec > self%shape)
 
-         if (mask(i_stn)) then
-            i_lin = self%lin_from_vec(i_vec)
-            mask(i_stn) = mask(i_stn) .AND. self%mask(i_lin)
+         if (mask(s)) then
+            v_lin = self%v_lin_vec_(v_vec)
+            mask(s) = mask(s) .AND. self%v_lin_mask(v_lin)
          end if
 
       end do
 
       ! Set up the vdelta and vu values
 
-      do j = 1, self%rank
+      do r = 1, self%rank
 
          do l = 1, 4
 
-            i = i_cell(j) + l - 2
+            i = c_vec(r) + l - 2
 
             if (i < 1) then
                x(l) = -HUGE(0._RD)
-            elseif (i > self%shape(j)) then
+            elseif (i > self%shape(r)) then
                x(l) = HUGE(0._RD)
             else
-               call self%axes(j)%fetch(i, x(l))
+               call self%axes(r)%fetch(i, x(l))
             endif
 
          end do
 
-         vdelta(:,j) = x(2:4) - x(1:3)
+         vdelta(:,r) = x(2:4) - x(1:3)
 
-         vu(j) = (x_vec(j) - x(2))/vdelta(2,j)
+         vu(r) = (x_vec(r) - x(2))/vdelta(2,r)
 
       end do
 
@@ -798,6 +1028,8 @@ contains
          call read_rev1_(self, hdf5io, stat)
       case(2)
          call read_rev2_(self, hdf5io, stat)
+      case(3)
+         call read_rev3_(self, hdf5io, stat)
       case default
          if (PRESENT(stat)) then
             stat = STAT_INVALID_GROUP_REVISION
@@ -822,16 +1054,16 @@ contains
          integer                   :: rank
          logical, allocatable      :: mask(:)
          type(axis_t), allocatable :: axes(:)
-         integer                   :: j
+         integer                   :: r
          type(hdf5io_t)            :: hdf5io_axis
 
          call hdf5io%read_attr('rank', rank)
 
          allocate(axes(rank))
 
-         axis_loop : do j = 1, rank
-            hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_rev1_(j))
-            call axes(j)%read(hdf5io_axis, stat)
+         axis_loop : do r = 1, rank
+            hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_rev1_(r))
+            call axes(r)%read(hdf5io_axis, stat)
             call hdf5io_axis%final()
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
@@ -842,7 +1074,7 @@ contains
 
          select type(self)
          type is(vgrid_t)
-            self = vgrid_t(axes, mask)
+            self = vgrid_t_mask_(axes, mask)
          class default
             @:ABORT('invalid type')
          end select
@@ -855,12 +1087,12 @@ contains
 
       !****
 
-      function axis_group_name_rev1_(j) result (name)
+      function axis_group_name_rev1_(r) result (name)
 
-         integer, intent(in) :: j
+         integer, intent(in) :: r
          character(256)      :: name
 
-         write(name, 100) j
+         write(name, 100) r
 100      format('axes(',I0,')')
 
       end function axis_group_name_rev1_
@@ -876,16 +1108,16 @@ contains
          integer                   :: rank
          logical, allocatable      :: mask(:)
          type(axis_t), allocatable :: axes(:)
-         integer                   :: j
+         integer                   :: r
          type(hdf5io_t)            :: hdf5io_axis
 
          call hdf5io%read_attr('rank', rank)
 
          allocate(axes(rank))
 
-         axis_loop : do j = 1, rank
-            hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(j))
-            call axes(j)%read(hdf5io_axis, stat)
+         axis_loop : do r = 1, rank
+            hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(r))
+            call axes(r)%read(hdf5io_axis, stat)
             call hdf5io_axis%final()
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
@@ -896,7 +1128,7 @@ contains
 
          select type(self)
          type is(vgrid_t)
-            self = vgrid_t(axes, mask)
+            self = vgrid_t_mask_(axes, mask)
          class default
             @:ABORT('invalid type')
          end select
@@ -906,6 +1138,48 @@ contains
          return
 
       end subroutine read_rev2_
+
+      !****
+
+      subroutine read_rev3_(self, hdf5io, stat)
+
+         class(vgrid_t), intent(out)    :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+
+         integer                   :: rank
+         integer, allocatable      :: v_lin_seq(:)
+         type(axis_t), allocatable :: axes(:)
+         integer                   :: r
+         type(hdf5io_t)            :: hdf5io_axis
+
+         call hdf5io%read_attr('rank', rank)
+
+         allocate(axes(rank))
+
+         axis_loop : do r = 1, rank
+            hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(r))
+            call axes(r)%read(hdf5io_axis, stat)
+            call hdf5io_axis%final()
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+         end do axis_loop
+
+         call hdf5io%alloc_read_dset('v_lin_seq', v_lin_seq)
+
+         select type(self)
+         type is(vgrid_t)
+            self = vgrid_t_map_(axes, v_lin_seq)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev3_
 
    end subroutine read
 
@@ -917,27 +1191,27 @@ contains
       type(hdf5io_t), intent(inout)  :: hdf5io
       integer, intent(out), optional :: stat
 
-      integer        :: j
+      integer        :: r
       type(hdf5io_t) :: hdf5io_axis
 
       ! Write the vgrid
       
       call hdf5io%write_attr('TYPE', 'vgrid_t')
-      call hdf5io%write_attr('REVISION', 2)
+      call hdf5io%write_attr('REVISION', 3)
 
       call hdf5io%write_attr('shape', self%shape)
       call hdf5io%write_attr('rank', self%rank)
 
-      axis_loop: do j = 1, self%rank
-         hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(j))
-         call self%axes(j)%write(hdf5io_axis, stat)
+      axis_loop: do r = 1, self%rank
+         hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(r))
+         call self%axes(r)%write(hdf5io_axis, stat)
          call hdf5io_axis%final()
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          endif
       end do axis_loop
 
-      call hdf5io%write_dset('mask', self%mask)
+      call hdf5io%write_dset('v_lin_seq', self%v_lin_seq)
 
       ! Finish
 
@@ -949,12 +1223,12 @@ contains
 
    !****
 
-   function axis_group_name_(j) result (name)
+   function axis_group_name_(r) result (name)
 
-      integer, intent(in) :: j
+      integer, intent(in) :: r
       character(256)      :: name
 
-      write(name, 100) j
+      write(name, 100) r
 100   format('axes[',I0,']')
 
    end function axis_group_name_

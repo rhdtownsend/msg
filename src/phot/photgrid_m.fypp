@@ -49,6 +49,7 @@ module photgrid_m
    contains
       private
       procedure, public :: get_rank
+      procedure, public :: get_shape
       procedure, public :: get_axis
       procedure, public :: get_cache_limit
       procedure, public :: get_cache_usage 
@@ -84,14 +85,14 @@ contains
       type(photgrid_t)                :: photgrid
 
       integer :: n
-      integer :: n_con
+      integer :: n_seq
 
       ! Construct photgrid from the supplied data
 
       call photsource%get_n(n)
-      call vgrid%get_n_con(n_con)
+      call vgrid%get_n_seq(n_seq)
 
-      @:CHECK_BOUNDS(n, n_con)
+      @:CHECK_BOUNDS(n, n_chk)
 
       photgrid%photsource = photsource
       photgrid%photcache = photcache_t(n)
@@ -120,6 +121,23 @@ contains
       return
 
    end subroutine get_rank
+
+   !****
+
+   subroutine get_shape(self, shape)
+
+      class(photgrid_t), intent(in) :: self
+      integer, intent(out)          :: shape(:)
+
+      ! Get the shape
+
+      call self%vgrid%get_shape(shape)
+
+      ! Finish
+
+      return
+
+   end subroutine get_shape
 
    !****
 
@@ -204,20 +222,15 @@ contains
 
       contains
 
-         subroutine data_proc_(i_vec, f, stat)
+         subroutine data_proc_(v_seq, f, stat)
 
-            integer, intent(in)            :: i_vec(:)
+            integer, intent(in)            :: v_seq
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer                   :: i_lin
-            integer                   :: i_con
             class(photint_t), pointer :: photint
 
-            i_lin = self%vgrid%lin_from_vec(i_vec)
-            i_con = self%vgrid%con_from_lin(i_lin)
-
-            call self%photcache%fetch(i_con, fetch_proc_, photint, stat)
+            call self%photcache%fetch(v_seq, fetch_proc_, photint, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
@@ -227,7 +240,7 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            call self%photcache%release(i_con, stat)
+            call self%photcache%release(v_seq, stat)
 
             return
 
@@ -285,20 +298,15 @@ contains
 
       contains
 
-         subroutine data_proc_(i_vec, f, stat)
+         subroutine data_proc_(v_seq, f, stat)
 
-            integer, intent(in)            :: i_vec(:)
+            integer, intent(in)            :: v_seq
             real(RD), intent(out)          :: f
             integer, intent(out), optional :: stat
 
-            integer                   :: i_lin
-            integer                   :: i_con
             class(photint_t), pointer :: photint
 
-            i_lin = self%vgrid%lin_from_vec(i_vec)
-            i_con = self%vgrid%con_from_lin(i_lin)
-
-            call self%photcache%fetch(i_con, fetch_proc_, photint, stat)
+            call self%photcache%fetch(v_seq, fetch_proc_, photint, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
@@ -308,7 +316,7 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            call self%photcache%release(i_con, stat)
+            call self%photcache%release(v_seq, stat)
 
             return
 
@@ -447,7 +455,7 @@ contains
       call hdf5io%write_attr('TYPE', 'photgrid_t')
       call hdf5io%write_attr('REVISION', 1)
 
-      call self%vgrid%get_n_con(n)
+      call self%vgrid%get_n_seq(n)
 
       hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
 

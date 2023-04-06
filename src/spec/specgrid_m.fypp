@@ -54,6 +54,7 @@ module specgrid_m
    contains
       private
       procedure, public :: get_rank
+      procedure, public :: get_shape
       procedure, public :: get_axis
       procedure, public :: get_lam_min
       procedure, public :: get_lam_max
@@ -98,7 +99,7 @@ contains
       integer  :: n
       real(RD) :: lam_min
       real(RD) :: lam_max
-      integer  :: n_con
+      integer  :: n_seq
 
       ! Construct specgrid from the supplied data
 
@@ -106,9 +107,9 @@ contains
       call specsource%get_lam_min(lam_min)
       call specsource%get_lam_max(lam_max)
       
-      call vgrid%get_n_con(n_con)
+      call vgrid%get_n_seq(n_seq)
 
-      @:CHECK_BOUNDS(n, n_con)
+      @:CHECK_BOUNDS(n, n_chk)
 
       specgrid%specsource = specsource
       specgrid%speccache = speccache_t(n, lam_min, lam_max)
@@ -140,6 +141,23 @@ contains
       return
 
    end subroutine get_rank
+
+   !****
+
+   subroutine get_shape(self, shape)
+
+      class(specgrid_t), intent(in) :: self
+      integer, intent(out)          :: shape(:)
+
+      ! Get the shape
+
+      call self%vgrid%get_shape(shape)
+
+      ! Finish
+
+      return
+
+   end subroutine get_shape
 
    !****
 
@@ -317,20 +335,15 @@ contains
 
       contains
 
-         subroutine data_proc_(i_vec, f, stat)
+         subroutine data_proc_(v_seq, f, stat)
 
-            integer, intent(in)            :: i_vec(:)
+            integer, intent(in)            :: v_seq
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer                   :: i_lin
-            integer                   :: i_con
             class(specint_t), pointer :: specint
 
-            i_lin = self%vgrid%lin_from_vec(i_vec)
-            i_con = self%vgrid%con_from_lin(i_lin)
-
-            call self%speccache%fetch(i_con, fetch_proc_, specint, stat)
+            call self%speccache%fetch(v_seq, fetch_proc_, specint, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
@@ -340,7 +353,7 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            call self%speccache%release(i_con, stat)
+            call self%speccache%release(v_seq, stat)
 
             return
 
@@ -383,20 +396,15 @@ contains
 
       contains
 
-         subroutine data_proc_(i_vec, f, stat)
+         subroutine data_proc_(v_seq, f, stat)
 
-            integer, intent(in)            :: i_vec(:)
+            integer, intent(in)            :: v_seq
             real(RD), intent(out)          :: f(:)
             integer, intent(out), optional :: stat
 
-            integer                   :: i_lin
-            integer                   :: i_con
             class(specint_t), pointer :: specint
 
-            i_lin = self%vgrid%lin_from_vec(i_vec)
-            i_con = self%vgrid%con_from_lin(i_lin)
-
-            call self%speccache%fetch(i_con, fetch_proc_, specint, stat)
+            call self%speccache%fetch(v_seq, fetch_proc_, specint, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
@@ -406,7 +414,7 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            call self%speccache%release(i_con, stat)
+            call self%speccache%release(v_seq, stat)
 
             return
 
@@ -574,7 +582,7 @@ contains
       call hdf5io%write_attr('TYPE', 'specgrid_t')
       call hdf5io%write_attr('REVISION', 1)
 
-      call self%vgrid%get_n_con(n)
+      call self%vgrid%get_n_seq(n)
       call self%speccache%get_lam_min(lam_min)
       call self%speccache%get_lam_max(lam_max)
 

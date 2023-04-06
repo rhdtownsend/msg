@@ -1,0 +1,355 @@
+! Module  : utest_vgrid_m
+! Purpose : Test implementations for utest_vgrid
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module utest_vgrid_m
+
+  ! Uses
+
+  use forum_m
+
+  use stat_m
+  use vgrid_m
+
+  use ISO_FORTRAN_ENV
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Access specifiers
+
+  private
+
+  public :: test
+
+contains
+ 
+   subroutine test()
+
+      call test_attr_()
+      call test_map_()
+      call test_interp_()
+
+   end subroutine test
+
+   !****
+
+   subroutine test_attr_()
+
+      type(vgrid_t) :: vg
+      integer       :: rank
+      integer       :: rank_chk
+      integer       :: shape(2)
+      integer       :: shape_chk(2)
+      integer       :: n_seq
+      integer       :: n_seq_chk
+
+      print *, '  attributes'
+
+      call attr_arrange_()
+      call attr_act_()
+      call attr_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine attr_arrange_()
+
+         call build_vgrid_(vg)
+
+         ! Finish
+
+         return
+
+      end subroutine attr_arrange_
+
+      !****
+
+      subroutine attr_act_()
+
+         call vg%get_rank(rank)
+         call vg%get_shape(shape)
+         call vg%get_n_seq(n_seq)
+
+         rank_chk = 2
+         shape_chk = [3,3]
+         n_seq_chk = 8
+
+         ! Finish
+
+         return
+
+      end subroutine attr_act_
+
+      !****
+
+      subroutine attr_assert_()
+
+         if (rank == rank_chk) then
+            print *,'    PASS rank'
+         else
+            print *,'    FAIL rank:', rank, '/=', rank_chk
+         end if
+         
+         if (ALL(shape == shape_chk)) then
+            print *,'    PASS shape'
+         else
+            print *,'    FAIL shape:', shape, '/=', shape_chk
+         end if
+
+         if (n_seq == n_seq_chk) then
+            print *,'    PASS n_seq'
+         else
+            print *,'    FAIL n_seq:', n_seq, '/=', n_seq_chk
+         end if
+
+         ! Finish
+         
+         return
+
+      end subroutine attr_assert_
+
+   end subroutine test_attr_
+
+   !****
+
+   subroutine test_map_()
+
+      type(vgrid_t) :: vg
+      logical       :: mask(8)
+      logical       :: mask_chk(8)
+
+      print *, '  map'
+
+      call map_arrange_()
+      call map_act_()
+      call map_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine map_arrange_()
+
+         call build_vgrid_(vg)
+
+         ! Finish
+
+         return
+
+      end subroutine map_arrange_
+
+      !****
+
+      subroutine map_act_()
+
+         mask = .FALSE.
+
+         call vg%map(map_proc_)
+
+         mask_chk = .TRUE.
+
+         ! Finish
+
+         return
+
+      end subroutine map_act_
+
+      !****
+
+      subroutine map_proc_(v_seq, stat)
+
+         integer, intent(in)            :: v_seq
+         integer, intent(out), optional :: stat
+
+         mask(v_seq) = .TRUE.
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         ! Finish
+
+         return
+
+      end subroutine map_proc_
+
+      !****
+
+      subroutine map_assert_()
+
+         if (ALL(mask .EQV. mask_chk)) then
+            print *,'    PASS mask'
+         else
+            print *,'    FAIL mask', mask, '/=', mask_chk
+         end if
+         
+         ! Finish
+         
+         return
+
+      end subroutine map_assert_
+
+   end subroutine test_map_
+
+   !****
+
+   subroutine test_interp_()
+
+      type(vgrid_t) :: vg
+      real(RD)      :: f(8)
+      real(RD)      :: x_vec(2,2)
+      real(RD)      :: f_in(2)
+      real(RD)      :: f_chk(2)
+
+      print *, '  interp'
+
+      call interp_arrange_()
+      call interp_act_()
+      call interp_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine interp_arrange_()
+
+         call build_vgrid_(vg)
+
+         ! Set vertex values (f = 1+x+2*y)
+
+         f(1) = 1._RD
+         f(2) = 2._RD
+         f(3) = 3._RD
+
+         f(4) = 3._RD
+         f(5) = 4._RD
+         f(6) = 5._RD
+
+         f(7) = 5._RD
+         f(8) = 6._RD
+
+         x_vec(:,1) = [1.0_RD, 1.0_RD]
+         x_vec(:,2) = [0.5_RD, 1.5_RD]
+
+         f_chk = 1._RD + x_vec(1,:) + 2._RD*x_vec(2,:)
+         
+         ! Finish
+
+         return
+
+      end subroutine interp_arrange_
+
+      !****
+
+      subroutine interp_act_()
+
+         call vg%interp(data_proc_, x_vec(:,1), f_in(1))
+         call vg%interp(data_proc_, x_vec(:,2), f_in(2))
+
+         ! Finish
+
+         return
+
+      end subroutine interp_act_
+
+      !****
+
+      subroutine data_proc_(v_seq, data, stat)
+
+         integer, intent(in)            :: v_seq
+         real(RD), intent(out)          :: data
+         integer, intent(out), optional :: stat
+
+         data = f(v_seq)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         ! Finish
+
+         return
+
+      end subroutine data_proc_
+
+      !****
+
+      subroutine interp_assert_()
+
+         real(RD), parameter :: tol = 1E-14_RD
+
+         real(RD) :: f_err(2)
+
+         f_err = (f_in - f_chk)/f_chk
+
+         if (ALL(ABS(f_err) < tol)) then
+            print *,'    PASS f'
+         else
+            print *,'    FAIL f: ', MAXVAL(ABS(f_err)), '>', tol
+         end if
+         
+         ! Finish
+         
+         return
+
+      end subroutine interp_assert_
+
+   end subroutine test_interp_
+
+   !****
+
+   subroutine build_vgrid_(vg)
+
+      type(vgrid_t), intent(inout) :: vg
+
+      real(RD), allocatable :: x_vec(:,:)
+
+      ! Build a vgrid to be used for testing
+
+      ! First, set up vertex values (3x3 square, with one corner
+      ! missing)
+
+      allocate(x_vec(2,8))
+
+      x_vec(:,1) = [0._RD, 0._RD]
+      x_vec(:,2) = [1._RD, 0._RD]
+      x_vec(:,3) = [2._RD, 0._RD]
+
+      x_vec(:,4) = [0._RD, 1._RD]
+      x_vec(:,5) = [1._RD, 1._RD]
+      x_vec(:,6) = [2._RD, 1._RD]
+
+      x_vec(:,7) = [0._RD, 2._RD]
+      x_vec(:,8) = [1._RD, 2._RD]
+
+      ! Construct the vgrid
+
+      vg = vgrid_t(x_vec, ['a', 'b'])
+
+      ! Finish
+
+      return
+
+   end subroutine build_vgrid_
+
+end module utest_vgrid_m
