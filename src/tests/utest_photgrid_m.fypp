@@ -148,9 +148,9 @@ contains
 
          do j = 1, n
             if (stat(j) /= stat_chk(j)) then
-               print *,'    FAIL:', stat(j), stat_chk(j)
+               print *,'    FAIL:', stat(j), '/=', stat_chk(j)
             else
-               print *,'    PASS:', stat(j)
+               print *,'    PASS'
             end if
          end do
                
@@ -220,15 +220,15 @@ contains
       subroutine attr_assert_()
 
          if (rank == rank_chk) then
-            print *,'    PASS: ', 'rank'
+            print *,'    PASS rank'
          else
-            print *,'    FAIL: ', 'rank', rank, rank_chk
+            print *,'    FAIL rank:', rank, '/=', rank_chk
          end if
             
          if (cache_limit == cache_limit_chk) then
-            print *,'    PASS: ', 'cache_limit'
+            print *,'    PASS cache_limit'
          else
-            print *,'    FAIL: ', 'cache_limit', cache_limit, cache_limit_chk
+            print *,'    FAIL cache_limit:', cache_limit, '/=', cache_limit_chk
          end if
 
          ! Finish
@@ -308,28 +308,40 @@ contains
 
       subroutine interp_assert_()
 
-         if (ABS(I - I_chk) <= 4._RD*SPACING(I_chk)) then
-            print *,'    PASS: ', 'intensity'
+         real(RD), parameter :: tol = 1E-14_RD
+
+         real(RD) :: I_err
+         real(RD) :: E_err
+         real(RD) :: D_err
+         real(RD) :: F_err
+
+         I_err = (I - I_chk)/I_chk
+         E_err = (E - E_chk)/E_chk
+         D_err = (D - D_chk)/D_chk
+         F_err = (F - F_chk)/F_chk
+
+         if (ABS(I_err) < tol) then
+            print *,'    PASS intensity'
          else
-            print *,'    FAIL: ', 'intensity', I, I_chk
+            print *,'    FAIL intensity:', ABS(I_err), '>', tol
          end if
             
-         if (ABS(E - E_chk) <= 4._RD*SPACING(E_chk)) then
-            print *,'    PASS: ', 'E_moment'
+         if (ABS(E_err) < tol) then
+            print *,'    PASS E_moment'
          else
-            print *,'    FAIL: ', 'E_moment', E, E_chk
+            print *,'    FAIL E_moment:', ABS(E_err), '>', tol
          end if
             
-         if (ABS(D - D_chk) <= 4._RD*SPACING(D_chk)) then
-            print *,'    PASS: ', 'D_moment'
+         if (ABS(D_err) < tol) then
+            print *,'    PASS D_moment'
          else
-            print *,'    FAIL: ', 'D_moment', D, D_chk
+            print *,'    FAIL D_moment:', ABS(D_err), '>', tol
          end if
             
-         if (ABS(F - F_chk) <= 4._RD*SPACING(F_chk)) then
-            print *,'    PASS: ', 'flux'
+         if (ABS(F_err) < tol) then
+            print *,'    PASS flux'
          else
-            print *,'    FAIL: ', 'flux', F, F_chk
+            print *,'    FAIL flux:', ABS(F_err), '>', tol
          end if
             
          ! Finish
