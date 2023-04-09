@@ -177,6 +177,24 @@ contains
 
       ! Fetch an x value
 
+      if (i < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) on '//self%label//' axis')
+         endif
+      endif
+
+      if (i > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+            return
+         else
+            @:ABORT('out-of-bounds (hi) on '//self%label//' axis')
+         endif
+      endif
+
       x = self%x(i)
 
       ! Finish
