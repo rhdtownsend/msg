@@ -36,7 +36,7 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq (${TESTS},yes)
-  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ncubic utest_specgrid utest_photgrid
+  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ncubic utest_vgrid utest_specgrid utest_photgrid
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_specgrid
   EXEC_TARGETS := ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
@@ -145,6 +145,10 @@ utest_cubint_DEPS = forum_m cubint_m
 utest_ncubic_OBJS = utest_ncubic.o utest_ncubic_m.o
 utest_ncubic_LIBS = libforum libmsg
 utest_ncubic_DEPS = forum_m ncubic_m
+
+utest_vgrid_OBJS = utest_vgrid.o utest_vgrid_m.o
+utest_vgrid_LIBS = libforum libmsg
+utest_vgrid_DEPS = forum_m vgrid_m stat_m
 
 utest_specgrid_OBJS = utest_specgrid.o utest_specgrid_m.o
 utest_specgrid_LIBS = libforum libmsg libfmsg
