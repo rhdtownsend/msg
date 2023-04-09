@@ -49,28 +49,21 @@ program specint_to_specgrid
    character(:), allocatable :: manifest_file_name
    character(:), allocatable :: specgrid_file_name
    character(:), allocatable :: label
-   logical                   :: allow_dupes
 
    type(specgrid_t) :: specgrid
    type(hdf5io_t)   :: hdf5io
    
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3 .OR. n_arg() == 4, 'Syntax: specint_to_specgrid manifest_file_name specgrid_file_name label [allow_dupes]')
+   @:ASSERT(n_arg() == 3, 'Syntax: specint_to_specgrid manifest_file_name specgrid_file_name label')
 
    call get_arg(1, manifest_file_name)
    call get_arg(2, specgrid_file_name)
    call get_arg(3, label)
 
-   if (n_arg() == 4) then
-      call get_arg(4, allow_dupes)
-   else
-      allow_dupes = .FALSE.
-   end if
-
    ! Create the grid
 
-   call create_grid(manifest_file_name, allow_dupes, specgrid)
+   call create_grid(manifest_file_name,  specgrid)
 
    ! Write the grid
 
@@ -86,30 +79,19 @@ program specint_to_specgrid
 
 contains
 
-   subroutine create_grid(manifest_file_name, allow_dupes, specgrid)
+   subroutine create_grid(manifest_file_name, specgrid)
 
       character(*), intent(in)      :: manifest_file_name
-      logical, intent(in)           :: allow_dupes
       type(specgrid_t), intent(out) :: specgrid
 
       type(smeta_t), allocatable :: smetas(:)
       character(:), allocatable  :: labels(:)
-      type(axis_t), allocatable  :: axes(:)
-      logical, allocatable       :: mask(:)
 
       ! Create the grid
 
       call read_smetas(manifest_file_name, smetas, labels)
 
-      call build_axes(smetas, labels, axes)
-
-      call strip_degen(smetas, labels, axes)
-
-      call build_mask(smetas, axes, mask)
-
-      call trim_smetas(smetas, labels, axes, mask)
-
-      call build_grid(smetas, axes, mask, allow_dupes, specgrid)
+      call build_grid(smetas, labels, specgrid)
 
       ! Finish
 
@@ -214,353 +196,351 @@ contains
 
    end subroutine read_smetas
 
-   !****
+!    !****
 
-   subroutine build_axes(smetas, labels, axes)
+!    subroutine build_axes(smetas, labels, axes)
 
-      type(smeta_t), intent(in)              :: smetas(:)
-      character(*), intent(in)               :: labels(:)
-      type(axis_t), allocatable, intent(out) :: axes(:)
+!       type(smeta_t), intent(in)              :: smetas(:)
+!       character(*), intent(in)               :: labels(:)
+!       type(axis_t), allocatable, intent(out) :: axes(:)
 
-      integer                :: n_smetas
-      integer                :: rank
-      integer                :: i
-      integer                :: j
-      real(RD), allocatable  :: x(:)
+!       integer                :: n_smetas
+!       integer                :: rank
+!       integer                :: i
+!       integer                :: j
+!       real(RD), allocatable  :: x(:)
 
-      ! Build the axes
+!       ! Build the axes
 
-      write(OUTPUT_UNIT, 100) 'Building axes...'
-100   format(A)
+!       write(OUTPUT_UNIT, 100) 'Building axes...'
+! 100   format(A)
 
-      n_smetas = SIZE(smetas)
-      rank = SIZE(labels)
+!       n_smetas = SIZE(smetas)
+!       rank = SIZE(labels)
 
-      allocate(x(n_smetas))
-      allocate(axes(rank))
+!       allocate(x(n_smetas))
+!       allocate(axes(rank))
 
-      do j = 1, rank
+!       do j = 1, rank
 
-         do i = 1, n_smetas
-            x(i) = smetas(i)%x_vec(j)
-         end do
+!          do i = 1, n_smetas
+!             x(i) = smetas(i)%x_vec(j)
+!          end do
          
-         associate (u => unique_indices(x))
+!          associate (u => unique_indices(x))
 
-           axes(j) = axis_t(x(u), labels(j))
+!            axes(j) = axis_t(x(u), labels(j))
 
-           write(OUTPUT_UNIT, 110) 'Axis', j, ':', TRIM(labels(j)), '(', MINVAL(x(u)), '->', MAXVAL(x(u)), &
-                ',', SIZE(x(u)), 'points)'
-110        format(2X,A,1X,I0,1X,A,1X,A,1X,A,1PE10.3,1X,A,1X,1PE10.3,1X,A,1X,I0,1X,A)
+!            write(OUTPUT_UNIT, 110) 'Axis', j, ':', TRIM(labels(j)), '(', MINVAL(x(u)), '->', MAXVAL(x(u)), &
+!                 ',', SIZE(x(u)), 'points)'
+! 110        format(2X,A,1X,I0,1X,A,1X,A,1X,A,1PE10.3,1X,A,1X,1PE10.3,1X,A,1X,I0,1X,A)
 
-         end associate
+!          end associate
 
-      end do
+!       end do
 
 
-      ! Finish
+!       ! Finish
 
-      return
+!       return
 
-   end subroutine build_axes
+!    end subroutine build_axes
+
+!    !****
+
+!    subroutine strip_degen(smetas, labels, axes)
+
+!       type(smeta_t), intent(inout)             :: smetas(:)
+!       character(:), allocatable, intent(inout) :: labels(:)
+!       type(axis_t), allocatable, intent(inout) :: axes(:)
+
+!       integer                   :: rank
+!       integer, allocatable      :: shape(:)
+!       logical, allocatable      :: mask(:)
+!       integer                   :: i
+!       integer                   :: j
+!       character(:), allocatable :: labels_new(:)
+
+!       ! Strip degenerate (length-1) axes
+
+!       rank = SIZE(axes)
+!       allocate(shape(rank))
+
+!       call shape_from_axes(axes, shape)
+
+!       mask = shape > 1
+
+!       if (COUNT(mask) < rank) then
+
+!          write(OUTPUT_UNIT, 100) 'Stripping degenerate axes...'
+! 100      format(A)
+
+!          do j = 1, SIZE(mask)
+!             if (.NOT. mask(j)) write(OUTPUT_UNIT, 110) 'Axis', j, ':', TRIM(labels(j))
+! 110         format(2X,A,1X,I0,1X,A,1X,A)
+!          end do
+
+!          do i = 1, SIZE(smetas)
+!             smetas(i)%x_vec = PACK(smetas(i)%x_vec, mask)
+!          end do
+
+!          ! The following code works around a bug in gfortran, with
+!          ! assignment of character arrays
+
+!          allocate(labels_new(COUNT(mask)), MOLD=labels)
+
+!          i = 1
+
+!          do j = 1, SIZE(mask)
+!             if (mask(j)) then
+!                labels_new(i) = labels(j)
+!                i = i + 1
+!             end if
+!          end do
+
+!          call MOVE_ALLOC(labels_new, labels)
+!          axes = PACK(axes, mask)
+
+!          ! Re-build the axes and usage mask
+
+!          call build_axes(smetas, labels, axes)
+
+!       end if
+
+!       ! Finish
+
+!       return
+
+!    end subroutine strip_degen
+
+!    !****
+
+!    subroutine build_mask(smetas, axes, mask)
+
+!       type(smeta_t), intent(in)         :: smetas(:)
+!       type(axis_t), intent(in)          :: axes(:)
+!       logical, allocatable, intent(out) :: mask(:)
+
+!       integer       :: shape(SIZE(axes))
+!       integer       :: n_lin
+!       type(vgrid_t) :: vgrid
+!       integer       :: i
+!       integer       :: i_vec(SIZE(axes))
+!       integer       :: i_lin
+
+!       ! Initialize the node occupancy mask
+
+!       write(OUTPUT_UNIT, 100) 'Building node occupancy mask...'
+! 100   format(A)
+
+!       call shape_from_axes(axes, shape)
+
+!       n_lin = PRODUCT(shape)
+
+!       allocate(mask(n_lin))
+!       mask = .FALSE.
+
+!       ! Create a dummy vgrid to provide indexing      
+
+!       vgrid = vgrid_t(axes, mask)
+
+!       ! Update the mask
+
+!       do i = 1, SIZE(smetas)
+
+!          call vgrid%locate(smetas(i)%x_vec, i_vec)
+!          i_lin = vgrid%lin_from_vec(i_vec)
+
+!          mask(i_lin) = .TRUE.
+
+!       end do
+
+!       write(OUTPUT_UNIT, 110) 'Number of nodes (total)   :', n_lin
+!       write(OUTPUT_UNIT, 110) 'Number of nodes (defined) :', SIZE(smetas)
+! 110   format(2X,A,1X,I0)
+
+!       ! Finish
+
+!       return
+
+!    end subroutine build_mask
+
+!    !****
+
+!    subroutine trim_smetas(smetas, labels, axes, mask)
+
+!       type(smeta_t), allocatable, intent(inout) :: smetas(:)
+!       character(:), allocatable, intent(inout)  :: labels(:)
+!       type(axis_t), allocatable, intent(inout)  :: axes(:)
+!       logical, allocatable, intent(inout)       :: mask(:)
+
+!       logical, allocatable :: use_mask(:)
+!       type(vgrid_t)        :: vgrid
+!       integer              :: rank
+!       integer, allocatable :: shape(:)
+!       integer, allocatable :: i_cell(:)
+!       integer, allocatable :: i_vec_cnr(:)
+!       integer, allocatable :: i_lin_cnr(:)
+!       integer              :: i_lin
+!       integer              :: i_cnr
+!       integer              :: j
+!       logical, allocatable :: smetas_mask(:)
+!       integer              :: i
+
+!       ! Create a dummy vgrid to provide indexing
+
+!       vgrid = vgrid_t(axes, mask)
+
+!       ! Allocate indexing arrays
+
+!       rank = SIZE(axes)
+!       allocate(shape(rank))
+
+!       call shape_from_axes(axes, shape)
+
+!       allocate(i_cell(rank))
+!       allocate(i_vec_cnr(rank))
+
+!       allocate(i_lin_cnr(2**rank))
+
+!       ! Loop through cells of the grid, setting use_mask for those
+!       ! nodes that belong to "complete" cells (i.e., with all corner
+!       ! nodes present)
+
+!       allocate(use_mask(SIZE(mask)))
+!       use_mask = .FALSE.
+
+!       do i_lin = 1, SIZE(mask)
+
+!          i_cell = vgrid%vec_from_lin(i_lin)
+
+!          if (ALL(i_cell < shape)) then
+
+!             ! Get a list of linear and contiguous indices for the cell
+!             ! corners
+
+!             corner_loop : do i_cnr = 1, 2**rank
+
+!                do j = 1, rank
+
+!                   if (BTEST(i_cnr-1, j-1)) then
+!                      i_vec_cnr(j) = i_cell(j) + 1
+!                   else
+!                      i_vec_cnr(j) = i_cell(j)
+!                   endif
+
+!                end do
+
+!                i_lin_cnr(i_cnr) = vgrid%lin_from_vec(i_vec_cnr)
+
+!             end do corner_loop
+
+!             ! See whether all corners are present
+
+!             if (ALL(mask(i_lin_cnr))) then
+!                use_mask(i_lin_cnr) = .TRUE.
+!             end if
+
+!          end if
+
+!       end do
+
+!       ! If necessary, perform the trimming
+
+!       if (COUNT(use_mask) < COUNT(mask)) then
+
+!          ! Trim the smetas list based on the usage mask
+
+!          write(OUTPUT_UNIT, 100) 'Trimming unusable spectra...'
+! 100      format(A)
+
+!          allocate(smetas_mask(SIZE(smetas)))
+
+!          do i = 1, SIZE(smetas)
+
+!             call vgrid%locate(smetas(i)%x_vec, i_cell)
+!             i_lin = vgrid%lin_from_vec(i_cell)
+
+!             smetas_mask(i) = use_mask(i_lin)
+
+!             if (VERBOSE .AND. .NOT. smetas_mask(i)) then
+
+!                write(OUTPUT_UNIT, 110) 'Trim', i_lin, ', coords', i_cell
+! 110            format(2X,A,1X,I0,A,999(1X,I0))
+!                write(OUTPUT_UNIT, 115) 'from file', TRIM(smetas(i)%file_name), smetas(i)%x_vec
+! 115            format(A,1X,A,999(1X,1PE10.3))
+!             end if
+
+!          end do
+
+!          write(OUTPUT_UNIT, 120) 'Number of spectra (usable)   :', COUNT(smetas_mask)
+!          write(OUTPUT_UNIT, 120) 'Number of spectra (unusable) :', SIZE(smetas_mask)-COUNT(smetas_mask)
+! 120      format(2X,A,1X,I0)
+
+!          smetas = PACK(smetas, smetas_mask)
+
+!          ! Re-build the axes and usage mask
+
+!          call build_axes(smetas, labels, axes)
+!          call build_mask(smetas, axes, mask)
+
+!       end if
+
+!       ! Finish
+
+!       return
+
+!    end subroutine trim_smetas
 
    !****
 
-   subroutine strip_degen(smetas, labels, axes)
-
-      type(smeta_t), intent(inout)             :: smetas(:)
-      character(:), allocatable, intent(inout) :: labels(:)
-      type(axis_t), allocatable, intent(inout) :: axes(:)
-
-      integer                   :: rank
-      integer, allocatable      :: shape(:)
-      logical, allocatable      :: mask(:)
-      integer                   :: i
-      integer                   :: j
-      character(:), allocatable :: labels_new(:)
-
-      ! Strip degenerate (length-1) axes
-
-      rank = SIZE(axes)
-      allocate(shape(rank))
-
-      call shape_from_axes(axes, shape)
-
-      mask = shape > 1
-
-      if (COUNT(mask) < rank) then
-
-         write(OUTPUT_UNIT, 100) 'Stripping degenerate axes...'
-100      format(A)
-
-         do j = 1, SIZE(mask)
-            if (.NOT. mask(j)) write(OUTPUT_UNIT, 110) 'Axis', j, ':', TRIM(labels(j))
-110         format(2X,A,1X,I0,1X,A,1X,A)
-         end do
-
-         do i = 1, SIZE(smetas)
-            smetas(i)%x_vec = PACK(smetas(i)%x_vec, mask)
-         end do
-
-         ! The following code works around a bug in gfortran, with
-         ! assignment of character arrays
-
-         allocate(labels_new(COUNT(mask)), MOLD=labels)
-
-         i = 1
-
-         do j = 1, SIZE(mask)
-            if (mask(j)) then
-               labels_new(i) = labels(j)
-               i = i + 1
-            end if
-         end do
-
-         call MOVE_ALLOC(labels_new, labels)
-         axes = PACK(axes, mask)
-
-         ! Re-build the axes and usage mask
-
-         call build_axes(smetas, labels, axes)
-
-      end if
-
-      ! Finish
-
-      return
-
-   end subroutine strip_degen
-
-   !****
-
-   subroutine build_mask(smetas, axes, mask)
-
-      type(smeta_t), intent(in)         :: smetas(:)
-      type(axis_t), intent(in)          :: axes(:)
-      logical, allocatable, intent(out) :: mask(:)
-
-      integer       :: shape(SIZE(axes))
-      integer       :: n_lin
-      type(vgrid_t) :: vgrid
-      integer       :: i
-      integer       :: i_vec(SIZE(axes))
-      integer       :: i_lin
-
-      ! Initialize the node occupancy mask
-
-      write(OUTPUT_UNIT, 100) 'Building node occupancy mask...'
-100   format(A)
-
-      call shape_from_axes(axes, shape)
-
-      n_lin = PRODUCT(shape)
-
-      allocate(mask(n_lin))
-      mask = .FALSE.
-
-      ! Create a dummy vgrid to provide indexing      
-
-      vgrid = vgrid_t(axes, mask)
-
-      ! Update the mask
-
-      do i = 1, SIZE(smetas)
-
-         call vgrid%locate(smetas(i)%x_vec, i_vec)
-         i_lin = vgrid%lin_from_vec(i_vec)
-
-         mask(i_lin) = .TRUE.
-
-      end do
-
-      write(OUTPUT_UNIT, 110) 'Number of nodes (total)   :', n_lin
-      write(OUTPUT_UNIT, 110) 'Number of nodes (defined) :', SIZE(smetas)
-110   format(2X,A,1X,I0)
-
-      ! Finish
-
-      return
-
-   end subroutine build_mask
-
-   !****
-
-   subroutine trim_smetas(smetas, labels, axes, mask)
+   subroutine build_grid(smetas, labels, specgrid)
 
       type(smeta_t), allocatable, intent(inout) :: smetas(:)
-      character(:), allocatable, intent(inout)  :: labels(:)
-      type(axis_t), allocatable, intent(inout)  :: axes(:)
-      logical, allocatable, intent(inout)       :: mask(:)
+      character(*), intent(in)                  :: labels(:)
+      type(specgrid_t), intent(out)             :: specgrid
 
-      logical, allocatable :: use_mask(:)
-      type(vgrid_t)        :: vgrid
-      integer              :: rank
-      integer, allocatable :: shape(:)
-      integer, allocatable :: i_cell(:)
-      integer, allocatable :: i_vec_cnr(:)
-      integer, allocatable :: i_lin_cnr(:)
-      integer              :: i_lin
-      integer              :: i_cnr
-      integer              :: j
-      logical, allocatable :: smetas_mask(:)
-      integer              :: i
-
-      ! Create a dummy vgrid to provide indexing
-
-      vgrid = vgrid_t(axes, mask)
-
-      ! Allocate indexing arrays
-
-      rank = SIZE(axes)
-      allocate(shape(rank))
-
-      call shape_from_axes(axes, shape)
-
-      allocate(i_cell(rank))
-      allocate(i_vec_cnr(rank))
-
-      allocate(i_lin_cnr(2**rank))
-
-      ! Loop through cells of the grid, setting use_mask for those
-      ! nodes that belong to "complete" cells (i.e., with all corner
-      ! nodes present)
-
-      allocate(use_mask(SIZE(mask)))
-      use_mask = .FALSE.
-
-      do i_lin = 1, SIZE(mask)
-
-         i_cell = vgrid%vec_from_lin(i_lin)
-
-         if (ALL(i_cell < shape)) then
-
-            ! Get a list of linear and contiguous indices for the cell
-            ! corners
-
-            corner_loop : do i_cnr = 1, 2**rank
-
-               do j = 1, rank
-
-                  if (BTEST(i_cnr-1, j-1)) then
-                     i_vec_cnr(j) = i_cell(j) + 1
-                  else
-                     i_vec_cnr(j) = i_cell(j)
-                  endif
-
-               end do
-
-               i_lin_cnr(i_cnr) = vgrid%lin_from_vec(i_vec_cnr)
-
-            end do corner_loop
-
-            ! See whether all corners are present
-
-            if (ALL(mask(i_lin_cnr))) then
-               use_mask(i_lin_cnr) = .TRUE.
-            end if
-
-         end if
-
-      end do
-
-      ! If necessary, perform the trimming
-
-      if (COUNT(use_mask) < COUNT(mask)) then
-
-         ! Trim the smetas list based on the usage mask
-
-         write(OUTPUT_UNIT, 100) 'Trimming unusable spectra...'
-100      format(A)
-
-         allocate(smetas_mask(SIZE(smetas)))
-
-         do i = 1, SIZE(smetas)
-
-            call vgrid%locate(smetas(i)%x_vec, i_cell)
-            i_lin = vgrid%lin_from_vec(i_cell)
-
-            smetas_mask(i) = use_mask(i_lin)
-
-            if (VERBOSE .AND. .NOT. smetas_mask(i)) then
-
-               write(OUTPUT_UNIT, 110) 'Trim', i_lin, ', coords', i_cell
-110            format(2X,A,1X,I0,A,999(1X,I0))
-               write(OUTPUT_UNIT, 115) 'from file', TRIM(smetas(i)%file_name), smetas(i)%x_vec
-115            format(A,1X,A,999(1X,1PE10.3))
-            end if
-
-         end do
-
-         write(OUTPUT_UNIT, 120) 'Number of spectra (usable)   :', COUNT(smetas_mask)
-         write(OUTPUT_UNIT, 120) 'Number of spectra (unusable) :', SIZE(smetas_mask)-COUNT(smetas_mask)
-120      format(2X,A,1X,I0)
-
-         smetas = PACK(smetas, smetas_mask)
-
-         ! Re-build the axes and usage mask
-
-         call build_axes(smetas, labels, axes)
-         call build_mask(smetas, axes, mask)
-
-      end if
-
-      ! Finish
-
-      return
-
-   end subroutine trim_smetas
-
-   !****
-
-   subroutine build_grid(smetas, axes, mask, allow_dupes, specgrid)
-
-      type(smeta_t), intent(in)     :: smetas(:)
-      type(axis_t), intent(in)      :: axes(:)
-      logical, intent(in)           :: mask(:)
-      logical, intent(in)           :: allow_dupes
-      type(specgrid_t), intent(out) :: specgrid
- 
+      integer                          :: n_smetas
+      integer                          :: rank
+      real(RD), allocatable            :: x_vecs(:,:)
+      logical, allocatable             :: mask(:)
+      integer                          :: i
       type(vgrid_t)                    :: vgrid
-      integer                          :: n_con
       character(NAME_LEN), allocatable :: file_names(:)
       character(NAME_LEN), allocatable :: group_names(:)
-      integer                          :: i
-      integer                          :: i_vec(SIZE(axes))
-      integer                          :: i_lin
-      integer                          :: i_con
       type(hdf5_specsource_t)          :: specsource
       
-      ! Create vgrid
+      ! Create the vgrid
 
       write(OUTPUT_UNIT, 100) 'Building grid...'
 100   format(A)
 
-      vgrid = vgrid_t(axes, mask)
+      ! First, get the list of vertex coordinates
+
+      n_smetas = SIZE(smetas)
+      rank = SIZE(labels)
+
+      allocate(x_vecs(rank,n_smetas))
+
+      smeta_loop : do i = 1, n_smetas
+         x_vecs(:,i) = smetas(i)%x_vec
+      end do smeta_loop
+
+      ! Optimize it
+
+      call optimize(x_vecs, mask)
+
+      smetas = PACK(smetas, mask)
+
+      ! Construct the grid
+
+      vgrid = vgrid_t(x_vecs, labels)
 
       ! Set up the file/group name lists
 
-      n_con = COUNT(mask)
+      file_names = smetas%file_name
 
-      allocate(file_names(n_con))
-      file_names = ''
-
-      do i = 1, SIZE(smetas)
-
-         call vgrid%locate(smetas(i)%x_vec, i_vec)
-         i_lin = vgrid%lin_from_vec(i_vec)
-         i_con = vgrid%con_from_lin(i_lin)
-
-         if (file_names(i_con) /= '' .AND. .NOT. allow_dupes) then
-            write(ERROR_UNIT, 110) TRIM(smetas(i)%file_name), TRIM(file_names(i_con)), smetas(i)%x_vec
-110         format('file ', A, ' replaces existing file ', A,'; axes =', 999(1X,E11.4))
-            @:ABORT('set the allow_dupes flag to proceed')
-         end if
-
-         file_names(i_con) = smetas(i)%file_name
-
-      end do
-
-      allocate(group_names(n_con))
+      allocate(group_names(n_smetas))
       group_names = '/'
 
       ! Create specsource
@@ -579,25 +559,25 @@ contains
 
    end subroutine build_grid
 
-   !****
+   ! !****
 
-   subroutine shape_from_axes(axes, shape)
+   ! subroutine shape_from_axes(axes, shape)
 
-      type(axis_t), intent(in) :: axes(:)
-      integer, intent(out)     :: shape(:)
+   !    type(axis_t), intent(in) :: axes(:)
+   !    integer, intent(out)     :: shape(:)
 
-      integer :: j
+   !    integer :: j
 
-      ! Get the shape from the axes
+   !    ! Get the shape from the axes
 
-      do j = 1, SIZE(axes)
-         call axes(j)%get_n(shape(j))
-      end do
+   !    do j = 1, SIZE(axes)
+   !       call axes(j)%get_n(shape(j))
+   !    end do
 
-      ! Finish
+   !    ! Finish
 
-      return
+   !    return
 
-   end subroutine shape_from_axes
+   ! end subroutine shape_from_axes
 
 end program specint_to_specgrid

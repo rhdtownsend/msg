@@ -55,6 +55,7 @@ module cmsg_spec_m
    public :: interp_specgrid_E_moment
    public :: interp_specgrid_D_moment
    public :: interp_specgrid_flux
+   public :: adjust_specgrid_x_vec
 
    ! Procedures
 
@@ -372,5 +373,35 @@ contains
       end subroutine interp_specgrid_${name}$
 
    #:endfor
+
+   !****
+
+   subroutine adjust_specgrid_x_vec(specgrid_ptr, x_vec, dx_vec, x_adj, &
+                                    stat) bind(C, name='adjust_specgrid_x_vec')
+
+      type(C_PTR), value        :: specgrid_ptr
+      real(C_DOUBLE)            :: x_vec(*)
+      real(C_DOUBLE)            :: dx_vec(*)
+      real(C_DOUBLE)            :: x_adj(*)
+      integer(C_INT), optional  :: stat
+
+      type(specgrid_t), pointer :: specgrid
+      integer                   :: rank
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Adjust x_vec
+
+      call specgrid%get_rank(rank)
+
+      call specgrid%adjust_x_vec(x_vec(1:rank), dx_vec(1:rank), x_adj(1:rank), stat)
+
+      ! Finish
+
+      return
+
+   end subroutine adjust_specgrid_x_vec
 
 end module cmsg_spec_m

@@ -50,8 +50,10 @@ module vgrid_m
       integer, allocatable      :: v_lin_seq(:)
       integer, allocatable      :: shape(:)
       integer                   :: rank
-      integer                   :: n_stn
+      integer                   :: n_v_lin
+      integer                   :: n_c_lin
       integer                   :: n_seq
+      integer                   :: n_stn
    contains
       private
       procedure, public :: get_n_seq
@@ -62,12 +64,14 @@ module vgrid_m
       procedure         :: interp_0_
       procedure         :: interp_1_
       generic, public   :: interp => interp_0_, interp_1_
+      procedure, public :: adjust_x_vec
       procedure         :: locate_
       procedure         :: c_lin_vec_
       procedure         :: c_vec_lin_
       procedure         :: v_lin_vec_
       procedure         :: v_vec_lin_
-      procedure         :: v_vec_stn_
+      procedure         :: v_lin_cnr_
+      procedure         :: v_lin_stn_
       procedure         :: setup_interp_
       procedure, public :: read
       procedure, public :: write
@@ -84,6 +88,7 @@ module vgrid_m
    private
 
    public :: vgrid_t
+   public :: optimize
 
    ! Procedures
 
@@ -167,7 +172,7 @@ contains
       logical, intent(in)      :: mask(:)
       type(vgrid_t)            :: vgrid
 
-      integer              :: n_lin
+      integer              :: n_v_lin
       integer              :: n_seq
       integer, allocatable :: v_lin_seq(:)
       integer              :: v_seq
@@ -179,14 +184,14 @@ contains
 
       ! Set up the vertex sequence-to-linear mask
 
-      n_lin = SIZE(mask)
+      n_v_lin = SIZE(mask)
       n_seq = COUNT(mask)
 
       allocate(v_lin_seq(n_seq))
 
       v_seq = 0
 
-      do v_lin = 1, n_lin
+      do v_lin = 1, n_v_lin
 
          if (mask(v_lin)) then
             v_seq = v_seq + 1
@@ -216,7 +221,8 @@ contains
       integer              :: rank
       integer              :: r
       integer              :: shape(SIZE(axes))
-      integer              :: n_lin
+      integer              :: n_v_lin
+      integer              :: n_c_lin
       integer              :: n_seq
       logical, allocatable :: v_lin_mask(:)
       integer              :: v_seq
@@ -224,11 +230,8 @@ contains
       logical, allocatable :: c_lin_mask(:)
       integer              :: c_lin
       integer              :: c_vec(SIZE(axes))
-      integer              :: v
-      integer              :: v_vec(SIZE(axes))
+      integer              :: i
       integer              :: v_lin
-      
-      @:ASSERT_DEBUG(SIZE(unique_indices(v_lin_seq)) == n_seq, 'Invalid v_lin_seq')
 
       ! Construct vgrid from the axes and sequence-to-linear index map
 
@@ -240,17 +243,20 @@ contains
          call axes(r)%get_n(shape(r))
       end do
 
-      n_lin = PRODUCT(shape)
+      n_v_lin = PRODUCT(shape)
+      n_c_lin = PRODUCT(shape-1)
       n_seq = SIZE(v_lin_seq)
 
       @:ASSERT_DEBUG(MINVAL(v_lin_seq) >= 1, 'Invalid v_lin_seq')
-      @:ASSERT_DEBUG(MAXVAL(v_lin_seq) <= n_lin, 'Invalid v_lin_seq')
+      @:ASSERT_DEBUG(MAXVAL(v_lin_seq) <= n_v_lin, 'Invalid v_lin_seq')
 
       @:ASSERT_DEBUG(ALL(shape > 1), 'Degenerate axis')
 
+      @:ASSERT_DEBUG(SIZE(unique_indices(v_lin_seq)) == n_seq, 'Invalid v_lin_seq')
+
       ! Set up the linear vertex mask
 
-      allocate(v_lin_mask(n_lin))
+      allocate(v_lin_mask(n_v_lin))
 
       v_lin_mask = .FALSE.
       v_lin_mask(v_lin_seq) = .TRUE.
@@ -271,35 +277,25 @@ contains
       vgrid%shape = shape
       vgrid%rank = rank
 
+      vgrid%n_v_lin = n_v_lin
+      vgrid%n_c_lin = n_c_lin
       vgrid%n_seq = n_seq
       vgrid%n_stn = 4**rank
 
       ! Initialize c_lin_mask last, to take advantage of indexing
       ! routines
 
-      n_lin = PRODUCT(shape-1)
+      allocate(c_lin_mask(n_c_lin))
 
-      allocate(c_lin_mask(n_lin))
-
-      cell_loop: do c_lin = 1, n_lin
-
-         ! Iterate over vertices associated with the cell
+      cell_loop: do c_lin = 1, n_c_lin
 
          c_vec = vgrid%c_vec_lin_(c_lin)
 
-         do v = 1, 2**rank
+         ! Iterate over corner vertices of the cell
 
-            do r = 1, rank
+         do i = 1, 2**rank
 
-               if (BTEST(v-1, r-1)) then
-                  v_vec(r) = c_vec(r) + 1
-               else
-                  v_vec(r) = c_vec(r)
-               end if
-
-            end do
-
-            v_lin = vgrid%v_lin_vec_(v_vec)
+            v_lin = vgrid%v_lin_cnr_(i, c_vec)
 
             if (.NOT. vgrid%v_lin_mask(v_lin)) then
                c_lin_mask(c_lin) = .FALSE.
@@ -381,57 +377,6 @@ contains
 
    !****
 
-   subroutine locate_(self, x_vec, j_vec, stat)
-
-      class(vgrid_t), intent(in)     :: self
-      real(RD), intent(in)           :: x_vec(:)
-      integer, intent(out)           :: j_vec(:)
-      integer, intent(out), optional :: stat
-
-      integer              :: r
-      character(LABEL_LEN) :: label
-
-      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
-      @:CHECK_BOUNDS(SIZE(j_vec), self%rank)
-
-      ! Locate x_vec in the grid, returning the vector cell index
-
-      do r = 1, self%rank
-
-         call self%axes(r)%locate(x_vec(r), j_vec(r))
-
-         if (j_vec(r) < 1) then
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_AXIS_LO
-               return
-            else
-               call self%axes(r)%get_label(label)
-               @:ABORT('out-of-bounds (lo) on '//label//' axis')
-            endif
-         endif
-
-         if (j_vec(r) > self%shape(r)) then
-            if (PRESENT(stat)) then
-               stat = STAT_OUT_OF_BOUNDS_AXIS_HI
-               return
-            else
-               call self%axes(r)%get_label(label)
-               @:ABORT('out-of-bounds (hi) on '//label//' axis')
-            endif
-         endif
-
-      end do
-
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine locate_
-
-   !****
-
    subroutine map(self, map_proc, stat)
 
       class(vgrid_t), intent(in) :: self
@@ -449,7 +394,7 @@ contains
       ! Apply the map_proc function to each unmasked vertex in the
       ! grid
 
-      map_loop : do v_lin = 1, SIZE(self%v_lin_mask)
+      map_loop : do v_lin = 1, self%n_v_lin
 
          if (self%v_lin_mask(v_lin)) then
 
@@ -496,8 +441,7 @@ contains
       real(RD) :: K_I(self%n_stn)
       real(RD) :: K(self%n_stn)
       real(RD) :: F
-      integer  :: s
-      integer  :: v_vec(self%rank)
+      integer  :: i
       integer  :: v_lin
       integer  :: v_seq
 
@@ -529,14 +473,13 @@ contains
 
       ! Now perform the interpolation
 
-      do s = 1, self%n_stn
+      do i = 1, self%n_stn
 
-         if (K(s) /= 0._RD) then
+         if (K(i) /= 0._RD) then
 
             ! Evaluate data for this vertex
 
-            v_vec = self%v_vec_stn_(s, c_vec)
-            v_lin = self%v_lin_vec_(v_vec)
+            v_lin = self%v_lin_stn_(i, c_vec)
             v_seq = self%v_seq_lin(v_lin)
 
             call data_proc(v_seq, F, stat)
@@ -546,7 +489,7 @@ contains
 
             ! Add the contribution to f_int
 
-            f_int = f_int + K(s)*F
+            f_int = f_int + K(i)*F
 
          end if
 
@@ -586,8 +529,7 @@ contains
       real(RD) :: K_I(self%n_stn)
       real(RD) :: K(self%n_stn)
       integer  :: n_m
-      integer  :: s
-      integer  :: v_vec(self%rank)
+      integer  :: i
       integer  :: v_lin
       integer  :: v_seq
       real(RD) :: F(SIZE(f_int))
@@ -634,14 +576,13 @@ contains
 
       ! Now perform the interpolation
 
-      do s = 1, self%n_stn
+      do i = 1, self%n_stn
 
-         if (K(s) /= 0._RD) then
+         if (K(i) /= 0._RD) then
 
             ! Evaluate data for this node
 
-            v_vec = self%v_vec_stn_(s, c_vec)
-            v_lin = self%v_lin_vec_(v_vec)
+            v_lin = self%v_lin_stn_(i, c_vec)
             v_seq = self%v_seq_lin(v_lin)
 
             call data_proc(v_seq, F, stat)
@@ -667,13 +608,13 @@ contains
 
                m_b = MIN(m_b, n_m)
 
-               f_int(m_a:m_b) = f_int(m_a:m_b) + K(s)*F(m_a:m_b)
+               f_int(m_a:m_b) = f_int(m_a:m_b) + K(i)*F(m_a:m_b)
 
                !$OMP END PARALLEL
 
             #:else
 
-               f_int = f_int + K(s)*F
+               f_int = f_int + K(i)*F
 
             #:endif
 
@@ -688,6 +629,235 @@ contains
       return
 
    end subroutine interp_1_
+
+   !****
+
+   subroutine adjust_x_vec(self, x_vec, dx_vec, x_adj, stat)
+
+      class(vgrid_t), intent(in)     :: self
+      real(RD), intent(in)           :: x_vec(:)
+      real(RD), intent(in)           :: dx_vec(:)
+      real(RD), intent(out)          :: x_adj(:)
+      integer, intent(out), optional :: stat
+
+      integer              :: c_vec(self%rank)
+      integer              :: r
+      character(LABEL_LEN) :: label
+      real(RD)             :: x_min
+      real(RD)             :: x_max
+      integer              :: c_lin
+      real(RD)             :: x_bdy(2,self%rank)
+      real(RD)             :: t(2,self%rank)
+      integer              :: i(2)
+
+      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
+      @:CHECK_BOUNDS(SIZE(dx_vec), self%rank)
+      @:CHECK_BOUNDS(SIZE(x_adj), self%rank)
+
+      ! Adjust x_vec in the direction dx_vec, until it falls within a
+      ! valid cell (one with c_lin_mask set)
+
+      ! Check the direction vector
+
+      if (ALL(dx_vec == 0._RD)) then
+
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('dx_vec cannot be null')
+         end if
+
+      end if
+
+      ! Determine the starting cell
+
+      call self%locate_(x_vec, c_vec, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Check whether x_vec is on a grid boundary; if so, check that
+      ! dx_vec isn't pointing outside the grid
+
+      do r = 1, self%rank
+
+         call self%axes(r)%get_x_min(x_min)
+         call self%axes(r)%get_x_max(x_max)
+
+         if (x_vec(r) == x_min .AND. dx_vec(r) < 0._RD) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+               return
+            else
+               call self%axes(r)%get_label(label)
+               @:ABORT('out-of-bounds (lo) on '//label//' axis')
+            end if
+         end if
+               
+         if (x_vec(r) == x_max .AND. dx_vec(r) > 0._RD) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+               return
+            else
+               call self%axes(r)%get_label(label)
+               @:ABORT('out-of-bounds (hi) on '//label//' axis')
+            end if
+         end if
+
+      end do
+
+      ! Move from cell to cell within the grid, updating x_adj and
+      ! c_vec until a valid cell is found
+
+      print *, 'shape:', self%shape
+      print *, 'start:', c_vec
+      print *,' dx:  :', dx_vec
+
+      x_adj = x_vec
+
+      do
+
+         c_lin = self%c_lin_vec_(c_vec)
+
+         ! Finish if the cell is valid
+
+         if (self%c_lin_mask(c_lin)) exit
+
+         ! Get the bounds of the current cell
+
+         do r = 1, self%rank
+            call self%axes(r)%fetch(c_vec(r), x_bdy(1,r))
+            call self%axes(r)%fetch(c_vec(r)+1, x_bdy(2,r))
+         end do
+
+         !  Find the intersections of the ray x = x_adj + t*dx_vec with
+         !  these bounds
+
+         where (dx_vec /= 0._RD)
+            t(1,:) = (x_bdy(1,:) - x_adj)/dx_vec
+            t(2,:) = (x_bdy(2,:) - x_adj)/dx_vec
+         elsewhere
+            t(1,:) = SIGN(HUGE(0._RD), x_bdy(1,:)-x_vec)
+            t(2,:) = SIGN(HUGE(0._RD), x_bdy(2,:)-x_vec)
+         end where
+
+         ! Choose the first intersection along the ray (t > 0)
+
+         i = MINLOC(t, t > 0._RD)
+
+         @:ASSERT(ALL(i /= 0), 'No intersection found')
+
+         ! Update x_adj and c_vec, being careful with rounding
+
+         x_adj = x_adj + t(i(1),i(2))*dx_vec
+         
+         do r = 1, self%rank
+
+            if ((i(1) == 1 .AND. i(2) == r) .OR. x_adj(r) < x_bdy(1,r)) then
+
+               x_adj(r) = x_bdy(1,r)
+               c_vec(r) = c_vec(r) - 1
+
+            elseif ((i(1) == 2 .AND. i(2) == r) .OR. x_adj(r) > x_bdy(2,r)) then
+
+               x_adj(r) = x_bdy(2,r)
+               c_vec(r) = c_vec(r) + 1
+               
+            end if
+
+         end do
+
+         print *,'updated:', c_vec
+
+         ! Check if we've gone off the grid
+
+         do r = 1, self%rank
+
+            if (c_vec(r) < 1) then
+               if (PRESENT(stat)) then
+                  stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+                  return
+               else
+                  call self%axes(r)%get_label(label)
+                  @:ABORT('out-of-bounds (lo) on '//label//' axis')
+               endif
+            endif
+
+            if (c_vec(r) >= self%shape(r)) then
+               if (PRESENT(stat)) then
+                  stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+                  return
+               else
+                  call self%axes(r)%get_label(label)
+                  @:ABORT('out-of-bounds (hi) on '//label//' axis')
+               endif
+            endif
+
+         end do
+
+      end do
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine adjust_x_vec
+         
+   !****
+
+   subroutine locate_(self, x_vec, c_vec, stat)
+
+      class(vgrid_t), intent(in)     :: self
+      real(RD), intent(in)           :: x_vec(:)
+      integer, intent(out)           :: c_vec(:)
+      integer, intent(out), optional :: stat
+
+      integer              :: r
+      character(LABEL_LEN) :: label
+
+      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
+      @:CHECK_BOUNDS(SIZE(j_vec), self%rank)
+
+      ! Locate x_vec in the grid, returning the vector cell index
+
+      do r = 1, self%rank
+
+         call self%axes(r)%locate(x_vec(r), c_vec(r))
+
+         if (c_vec(r) < 1) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+               return
+            else
+               call self%axes(r)%get_label(label)
+               @:ABORT('out-of-bounds (lo) on '//label//' axis')
+            endif
+         endif
+
+         if (c_vec(r) > self%shape(r)) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+               return
+            else
+               call self%axes(r)%get_label(label)
+               @:ABORT('out-of-bounds (hi) on '//label//' axis')
+            endif
+         endif
+
+      end do
+
+      c_vec = MIN(c_vec, self%shape-1)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine locate_
 
    !****
 
@@ -807,40 +977,69 @@ contains
 
    !****
 
-   function v_vec_stn_(self, s, c_vec) result(v_vec)
+   function v_lin_cnr_(self, i, c_vec) result(v_lin)
 
       class(vgrid_t), intent(in) :: self
-      integer, intent(in)        :: s
+      integer, intent(in)        :: i
       integer, intent(in)        :: c_vec(:)
-      integer                    :: v_vec(self%rank)
+      integer                    :: v_lin
 
-      integer :: p
-      integer :: q
       integer :: r
+      integer :: v_vec(self%rank)
 
-      @:CHECK_BOUNDS(SIZE(j_cell), self%rank)
+      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
 
-      ! Calculate a vector vertex index from a stencil index and a
-      ! vector cell index
+      ! Calculate a linear vertex index from a corner index
+      ! (i=1,...,2**rank) and a vector cell index
 
-      p = self%n_stn
-      q = s - 1
+      ! First calculate the vector vertex index
 
-      do r = self%rank, 1, -1
-         p = p/4
-         v_vec(r) = q/p + 1
-         q = q - (v_vec(r)-1)*p
+      do r = 1, self%rank
+         v_vec(r) = c_vec(r) + IBITS(i-1, r-1, 1)
       end do
 
-      v_vec = v_vec + c_vec - 2
+      ! Convert to a linear index
 
-      @:ASSERT_DEBUG(ALL(v_vec >= c_vec-1 .AND. v_vec <= c_vec+2), 'indexing error')
+      v_lin = self%v_lin_vec_(v_vec)
 
       ! Finish
 
       return
 
-   end function v_vec_stn_
+   end function v_lin_cnr_
+
+   !****
+
+   function v_lin_stn_(self, i, c_vec) result(v_lin)
+
+      class(vgrid_t), intent(in) :: self
+      integer, intent(in)        :: i
+      integer, intent(in)        :: c_vec(:)
+      integer                    :: v_lin
+
+      integer :: r
+      integer :: v_vec(self%rank)
+
+      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
+
+      ! Calculate a linear vertex index from a stencil index
+      ! (i=1,...,4**rank) and a vector cell index
+
+      ! First calculate the vector vertex index
+
+      do r = 1, self%rank
+         v_vec(r) = c_vec(r) + IBITS(i-1, 2*(r-1), 2) - 1
+      end do
+
+      ! Convert to a linear index
+
+      v_lin = self%v_lin_vec_(v_vec)
+
+      ! Finish
+
+      return
+
+   end function v_lin_stn_
 
    !****
    
@@ -861,11 +1060,9 @@ contains
       integer  :: a
       integer  :: c_vec_adj(self%rank)
       integer  :: c_lin_adj
-      integer  :: v_vec(self%rank)
       integer  :: v_lin
-      integer  :: s
-      integer  :: l
       integer  :: i
+      integer  :: j
       real(RD) :: x(4)
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
@@ -883,8 +1080,6 @@ contains
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
-
-      c_vec = MIN(c_vec, self%shape-1)
 
       ! See if the cell has sufficient data (i.e., all vertices
       ! defined) to do an interpolation
@@ -959,15 +1154,14 @@ contains
 
       ! Set up the stencil mask
 
-      do s = 1, self%n_stn
+      do i = 1, self%n_stn
 
-         v_vec = self%v_vec_stn_(s, c_vec)
+         v_lin = self%v_lin_stn_(i, c_vec)
 
-         mask(s) = .NOT. ANY(v_vec < 1 .OR. v_vec > self%shape)
+         mask(i) = v_lin >= 1 .AND. v_lin <= self%n_v_lin
 
-         if (mask(s)) then
-            v_lin = self%v_lin_vec_(v_vec)
-            mask(s) = mask(s) .AND. self%v_lin_mask(v_lin)
+         if (mask(i)) then
+            mask(i) = mask(i) .AND. self%v_lin_mask(v_lin)
          end if
 
       end do
@@ -976,16 +1170,16 @@ contains
 
       do r = 1, self%rank
 
-         do l = 1, 4
+         do j = 1, 4
 
-            i = c_vec(r) + l - 2
+            i = c_vec(r) + j - 2
 
             if (i < 1) then
-               x(l) = -HUGE(0._RD)
+               x(j) = -HUGE(0._RD)
             elseif (i > self%shape(r)) then
-               x(l) = HUGE(0._RD)
+               x(j) = HUGE(0._RD)
             else
-               call self%axes(r)%fetch(i, x(l))
+               call self%axes(r)%fetch(i, x(j))
             endif
 
          end do
@@ -1232,5 +1426,74 @@ contains
 100   format('axes[',I0,']')
 
    end function axis_group_name_
+
+   !****
+
+   subroutine optimize(x_vecs, mask)
+
+      real(RD), intent(in) :: x_vecs(:,:)
+      logical, intent(out) :: mask(:)
+
+      integer                   :: rank
+      character(1), allocatable :: labels(:)
+      type(vgrid_t)             :: vgrid
+      integer                   :: c_lin
+      integer, allocatable      :: c_vec(:)
+      integer                   :: i
+      integer                   :: v_lin
+      integer                   :: v_seq
+
+      @:CHECK_BOUNDS(SIZE(mask), SIZE(x_vecs, 2))
+
+      ! Optimize grid construction by returning a mask that indices
+      ! which vertices in x_vecs are usable (the remainder do not
+      ! belong to complete interpolation cells, and therefore can be
+      ! discarded)
+
+      ! Start by creating a dummy vgrid
+
+      rank = SIZE(x_vecs, 1)
+
+      allocate(labels(rank))
+      labels = ''
+
+      vgrid = vgrid_t_(x_vecs, labels)
+
+      ! Loop through cells of the grid
+
+      allocate(c_vec(rank))
+
+      mask = .FALSE.
+
+      do c_lin = 1, vgrid%n_c_lin
+
+         ! Check if the cell is complete
+
+         if (vgrid%c_lin_mask(c_lin)) then
+
+            c_vec = vgrid%c_vec_lin_(c_lin)
+
+            ! Iterate over corner vertices of the cell
+
+            do i = 1, 2**rank
+
+               v_lin = vgrid%v_lin_cnr_(i, c_vec)
+               v_seq = vgrid%v_seq_lin(v_lin)
+
+               ! Update the mask
+
+               mask(v_seq) = .TRUE.
+
+            end do
+
+         end if
+
+      end do
+
+      ! Finish
+
+      return
+
+   end subroutine optimize
 
 end module vgrid_m

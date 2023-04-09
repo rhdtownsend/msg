@@ -81,9 +81,14 @@ class SpecGrid:
         self._specgrid = None
 
 
-    def _vector_args(self, x, deriv):
+    def _dict_to_x_vec(self, x):
 
         x_vec = np.array([x[key] for key in self._axis_labels])
+
+        return x_vec
+    
+
+    def _dict_to_deriv_vec(self, deriv):
 
         if deriv is not None:
             deriv_vec = np.array([key in deriv for key in self._axis_labels],
@@ -91,7 +96,14 @@ class SpecGrid:
         else:
             deriv_vec = np.array([False]*self.rank, dtype=np.uint8)
 
-        return x_vec, deriv_vec
+        return deriv_vec
+
+    
+    def _x_vec_to_dict(self, x_vec):
+
+        x = dict(zip(self._axis_labels, x_vec))
+
+        return x
 
     
     @property
@@ -194,7 +206,8 @@ class SpecGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        x_vec, deriv_vec = self._vector_args(x, deriv)
+        x_vec = self._dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_specgrid_intensity(self._specgrid, x_vec, mu, lam,
                                               deriv_vec)
@@ -225,7 +238,8 @@ class SpecGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        x_vec, deriv_vec = self._vector_args(x, deriv)
+        x_vec = self._dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_specgrid_E_moment(self._specgrid, x_vec, k, lam,
                                              deriv_vec)
@@ -256,7 +270,8 @@ class SpecGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        x_vec, deriv_vec = self._vector_args(x, deriv)
+        x_vec = self._dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_specgrid_D_moment(self._specgrid, x_vec, l, lam,
                                              deriv_vec)
@@ -286,10 +301,39 @@ class SpecGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        x_vec, deriv_vec = self._vector_args(x, deriv)
+        x_vec = self._dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_specgrid_flux(self._specgrid, x_vec, lam,
                                          deriv_vec)
+
+    
+    def adjust_x(self, x, dx):
+        r"""Adjust photospheric parameters x along direction dx, until 
+            they fall within the valid part of the grid.
+
+        Args:
+            x (dict): Photospheric parameters; keys must match
+                `axis_labels` property, values must be double.
+            dx (dict): Direction vector to adjust in; keys must match
+                `axis_labels` property, values must be double. THe
+                overall length of the vector is unimportant.
+
+        Returns:
+            numpy.ndarray: Adjusted photospheric parameters.
+
+        Raises:
+            KeyError: If `x` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If no valid `x` can be found.
+        """
+
+        x_vec = self._dict_to_x_vec(x)
+        dx_vec = self._dict_to_x_vec(dx)
+
+        x_adj = pyc._adjust_specgrid_x_vec(self._specgrid, x_vec, dx_vec) 
+        
+        return self._x_vec_to_dict(x_adj)
 
     
 class PhotGrid:
@@ -345,9 +389,14 @@ class PhotGrid:
         self._photgrid = None
 
         
-    def _vector_args(self, x, deriv):
+    def _dict_to_x_vec(self, x):
 
         x_vec = np.array([x[key] for key in self._axis_labels])
+
+        return x_vec
+    
+
+    def _dict_to_deriv_vec(self, deriv):
 
         if deriv is not None:
             deriv_vec = np.array([key in deriv for key in self._axis_labels],
@@ -355,9 +404,16 @@ class PhotGrid:
         else:
             deriv_vec = np.array([False]*self.rank, dtype=np.uint8)
 
-        return x_vec, deriv_vec
+        return deriv_vec
+
     
-        
+    def _x_vec_to_dict(self, x_vec):
+
+        x = dict(zip(self._axis_labels, x_vec))
+
+        return x
+
+    
     @property
     def rank(self):
         """int: Number of dimensions in grid."""
@@ -427,7 +483,8 @@ class PhotGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        x_vec, deriv_vec = self._vector_args(x, deriv)
+        x_vec = self._dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_photgrid_intensity(self._photgrid, x_vec, mu, deriv_vec)
 
@@ -456,7 +513,8 @@ class PhotGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        x_vec, deriv_vec = self._vector_args(x, deriv)
+        x_vec = self._dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_photgrid_E_moment(self._photgrid, x_vec, k, deriv_vec)
 
@@ -485,7 +543,8 @@ class PhotGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        x_vec, deriv_vec = self._vector_args(x, deriv)
+        x_vec = self._dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_photgrid_D_moment(self._photgrid, x_vec, l, deriv_vec)
 
@@ -513,6 +572,36 @@ class PhotGrid:
             LookupError: If `x` falls in a grid void.
         """
 
-        x_vec, deriv_vec = self._vector_args(x, deriv)
+        x_vec = self._dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_photgrid_flux(self._photgrid, x_vec, deriv_vec)
+
+
+    def adjust_x(self, x, dx):
+        r"""Adjust photospheric parameters x along direction dx, until 
+            they fall within the valid part of the grid.
+
+        Args:
+            x (dict): Photospheric parameters; keys must match
+                `axis_labels` property, values must be double.
+            dx (dict): Direction vector to adjust in; keys must match
+                `axis_labels` property, values must be double. THe
+                overall length of the vector is unimportant.
+
+        Returns:
+            numpy.ndarray: Adjusted photospheric parameters.
+
+        Raises:
+            KeyError: If `x` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If no valid `x` can be found.
+        """
+
+        x_vec = self._dict_to_x_vec(x)
+        dx_vec = self._dict_to_x_vec(dx)
+
+        x_adj = pyc._adjust_photgrid_x_vec(self._photgrid, x_vec, dx_vec) 
+        
+        return self._x_vec_to_dict(x_adj)
+    

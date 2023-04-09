@@ -80,6 +80,9 @@ cdef extern from "cmsg.h":
     void interp_specgrid_flux(void *specgrid, double x_vec[], int n, double lam[],
                               double F[], Stat *stat, bool deriv_vec[])
     
+    void adjust_specgrid_x_vec(void *specgrid, double x_vec[], double dx_vec[],
+                               double x_adj[], Stat *stat)
+
     # photgrid
 
     void load_photgrid(const char *photgrid_file_name, void **photgrid, Stat *stat)
@@ -106,6 +109,9 @@ cdef extern from "cmsg.h":
                                   Stat *stat, bool deriv_vec[])
     void interp_photgrid_flux(void *photgrid, double x_vec[], double *F, Stat *stat,
                               bool deriv_vec[])
+
+    void adjust_photgrid_x_vec(void *photgrid, double x_vec[], double dx_vec[],
+                               double x_adj[], Stat *stat)
 
 
 # Wrappers
@@ -307,6 +313,21 @@ def _interp_specgrid_flux(uintptr_t specgrid, double[:] x_vec, double[:] lam, bo
     return F
 
 
+def _adjust_specgrid_x_vec(uintptr_t specgrid, double[:] x_vec, double[:] dx_vec):
+
+    cdef double[:] x_adj
+    cdef Stat stat
+
+    rank = len(x_vec)
+
+    x_adj = np.empty(rank, dtype=np.double)
+
+    adjust_specgrid_x_vec(<void *>specgrid, &x_vec[0], &dx_vec[0], &x_adj[0], &stat)
+    _handle_error(stat)
+
+    return x_adj
+
+
 # photgrid
 
 def _load_photgrid(str photgrid_filename):
@@ -445,6 +466,21 @@ def _interp_photgrid_flux(uintptr_t photgrid, double[:] x_vec, bool[:] deriv_vec
     _handle_error(stat)
 
     return F
+
+
+def _adjust_photgrid_x_vec(uintptr_t photgrid, double[:] x_vec, double[:] dx_vec):
+
+    cdef double[:] x_adj
+    cdef Stat stat
+
+    rank = len(x_vec)
+
+    x_adj = np.empty(rank, dtype=np.double)
+
+    adjust_photgrid_x_vec(<void *>photgrid, &x_vec[0], &dx_vec[0], &x_adj[0], &stat)
+    _handle_error(stat)
+
+    return x_adj
 
 
 # shared

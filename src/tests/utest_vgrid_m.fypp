@@ -45,6 +45,7 @@ contains
       call test_attr_()
       call test_map_()
       call test_interp_()
+      call test_adjust_()
 
    end subroutine test
 
@@ -318,6 +319,144 @@ contains
 
    !****
 
+   subroutine test_adjust_()
+
+      type(vgrid_t) :: vg
+      real(RD)      :: x_vec(2,5)
+      real(RD)      :: dx_vec(2,5)
+      real(RD)      :: x_adj(2,5)
+      real(RD)      :: x_adj_chk(2,5)
+      integer       :: stat(5)
+      integer       :: stat_chk(5)
+
+      print *, '  adjust_x_vec'
+
+      call adjust_arrange_()
+      call adjust_act_()
+      call adjust_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine adjust_arrange_()
+
+         call build_vgrid_(vg)
+
+         ! Set points needing adjustment
+
+         ! Point not needing adjustment
+
+         x_vec(:,1) = [0.5_RD, 1.5_RD]
+         dx_vec(:,1) = [1._RD, 1._RD]
+         
+         x_adj_chk(:,1) = [0.5_RD, 1.5_RD]
+         stat_chk(1) = STAT_OK
+
+         ! Point needing adjustment in x-direction
+
+         x_vec(:,2) = [1.5_RD, 1.5_RD]
+         dx_vec(:,2) = [-1._RD, 0._RD]
+         
+         x_adj_chk(:,2) = [1.0_RD, 1.5_RD]
+         stat_chk(2) = STAT_OK
+
+         ! Point needing adjustment in y-direction, starting
+         ! on grid boundary
+
+         x_vec(:,3) = [1.5_RD, 2.0_RD]
+         dx_vec(:,3) = [0._RD, -1._RD]
+         
+         x_adj_chk(:,3) = [1.5_RD, 1.0_RD]
+         stat_chk(3) = STAT_OK
+
+         ! Point needing adjustment in both directions, starting on grid corner
+
+         x_vec(:,4) = [2.0_RD, 2.0_RD]
+         dx_vec(:,4) = [-2._RD, -1._RD]
+         
+         x_adj_chk(:,4) = [1.0_RD, 1.5_RD]
+         stat_chk(4) = STAT_OK
+
+         ! Point needing adjustment but not possible
+
+         x_vec(:,5) = [1.5_RD, 1.5_RD]
+         dx_vec(:,5) = [2._RD, 1._RD]
+         
+         x_adj_chk(:,5) = [1.0_RD, 1.5_RD]
+         stat_chk(5) = STAT_OUT_OF_BOUNDS_AXIS_HI
+
+         ! Finish
+
+         return
+
+      end subroutine adjust_arrange_
+
+      !****
+
+      subroutine adjust_act_()
+
+         integer :: i
+
+         do i = 1, 5
+            call vg%adjust_x_vec(x_vec(:,i), dx_vec(:,i), x_adj(:,i), stat(i))
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine adjust_act_
+
+      !****
+
+      subroutine adjust_assert_()
+
+         real(RD), parameter :: tol = 1E-14_RD
+
+         integer  :: i
+         real(RD) :: f_err(2)
+
+         do i = 1, 5
+
+            if (stat(i) == stat_chk(i)) then
+
+               if (stat(i) == STAT_OK) then
+
+                  f_err = (x_adj(:,i) - x_adj_chk(:,i))/x_adj_chk(:,i)
+               
+                  if (ALL(ABS(f_err) < tol)) then
+                     print *,'    PASS case ', i
+                  else
+                     print *,'    FAIL case ', i, ':', MAXVAL(ABS(f_err)), '>', tol
+                  end if
+
+               else
+
+                  print *,'    PASS case ', i
+
+               end if
+
+            else
+
+               print *,'    FAIL case ', i, ':', stat(i), '/=', stat_chk(i)
+               
+            end if
+
+         end do
+         
+         ! Finish
+         
+         return
+
+      end subroutine adjust_assert_
+
+   end subroutine test_adjust_
+
+   !****
+
    subroutine build_vgrid_(vg)
 
       type(vgrid_t), intent(inout) :: vg
@@ -344,7 +483,7 @@ contains
 
       ! Construct the vgrid
 
-      vg = vgrid_t(x_vec, ['a', 'b'])
+      vg = vgrid_t(x_vec, ['x', 'y'])
 
       ! Finish
 

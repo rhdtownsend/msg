@@ -43,12 +43,15 @@ program make_bb_photgrid
    character(:), allocatable :: law_str
    character(:), allocatable :: photgrid_file_name
 
-   type(axis_t)                      :: axes(2)
-   integer                           :: n_nodes
-   logical, allocatable              :: mask(:)
+   integer                           :: n
+   real(RD), allocatable             :: x_vecs(:,:)
+   integer                           :: i
+   integer                           :: i_Teff
+   integer                           :: i_logg
+   real(RD)                          :: logT
+   real(RD)                          :: logg
    type(vgrid_t)                     :: vgrid
    type(limb_t)                      :: limb
-   integer                           :: i
    real(RD), allocatable             :: mu(:)
    real(RD), allocatable             :: f_mu(:)
    type(limb_photint_t), allocatable :: photints(:)
@@ -74,19 +77,34 @@ program make_bb_photgrid
 
    call get_arg(10, photgrid_file_name)
 
-   ! Create the axes
+   ! Create the vertex coordinates
 
-   axes(1) = make_axis(LOG10(Teff_min), LOG10(Teff_max), n_Teff, 'logT')
-   axes(2) = make_axis(logg_min, logg_max, n_logg, 'logg')
+   n = n_Teff*n_logg
 
+   allocate(x_vecs(2,n))
+
+   i = 1
+
+   do i_Teff = 1, n_Teff
+
+      logT = (LOG10(Teff_min)*(n_Teff-i_Teff) + LOG10(Teff_max)*(i_Teff-1))/(n_Teff-1)
+
+      do i_logg = 1, n_logg
+
+         logg = (logg_min*(n_logg-i_logg) + logg_max*(i_logg-1))/(n_logg-1)
+
+         x_vecs(1,i) = logT
+         x_vecs(2,i) = logg
+
+         i = i + 1
+
+      end do
+
+   end do
+         
    ! Create vgrid
 
-   n_nodes = n_Teff*n_logg
-
-   allocate(mask(n_nodes))
-   mask = .TRUE.
-
-   vgrid = vgrid_t(axes, mask)
+   vgrid = vgrid_t(x_vecs, ['logT', 'logg'])
 
    ! Set up limb-darkening stuff
 
@@ -97,7 +115,7 @@ program make_bb_photgrid
 
    ! Create photints
 
-   allocate(photints(n_nodes))
+   allocate(photints(n))
 
    call vgrid%map(make_photint)
 
@@ -119,57 +137,23 @@ program make_bb_photgrid
 
 contains
 
-   function make_axis (x_min, x_max, n, label) result(axis)
+   subroutine make_photint (v_seq, stat)
 
-      real(RD), intent(in)     :: x_min
-      real(RD), intent(in)     :: x_max
-      integer, intent(in)      :: n
-      character(*), intent(in) :: label
-      type(axis_t)             :: axis
-
-      integer  :: i
-      real(RD) :: x(n)
-
-      ! Set up axis values
-
-      x = [((x_min*(n-i) + x_max*(i-1))/(n-1),i=1,n)]
-
-      ! Create the axis
-
-      axis = axis_t(x, label)
-
-      ! Finish
-
-      return
-
-   end function make_axis
-
-   !****
-
-   subroutine make_photint (i_vec, stat)
-
-      integer, intent(in)            :: i_vec(:)
+      integer, intent(in)            :: v_seq
       integer, intent(out), optional :: stat
 
-      integer  :: i_lin
-      real(RD) :: logT
       real(RD) :: Teff
       real(RD) :: I(n_mu)
 
-      ! Convert vector indices into linear indices
-
-      i_lin = vgrid%lin_from_vec(i_vec)
-
       ! Create intensity data
 
-      call axes(1)%fetch(i_vec(1), logT)
-      Teff = 10**logT
+      Teff = 10**x_vecs(1,v_seq)
 
       I = SIGMA_STEFAN*Teff**4/(TWOPI*(1._RD/2._RD - u/6._RD)) * f_mu
 
       ! Construct the photint_t
 
-      photints(i_lin) = limb_photint_t(I, mu, limb)
+      photints(v_seq) = limb_photint_t(I, mu, limb)
 
       ! Finish
 

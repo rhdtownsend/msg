@@ -69,6 +69,7 @@ module specgrid_m
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
+      procedure, public :: adjust_x_vec
       procedure, public :: filter
       procedure, public :: read
       procedure, public :: write
@@ -109,7 +110,7 @@ contains
       
       call vgrid%get_n_seq(n_seq)
 
-      @:CHECK_BOUNDS(n, n_chk)
+      @:CHECK_BOUNDS(n, n_seq)
 
       specgrid%specsource = specsource
       specgrid%speccache = speccache_t(n, lam_min, lam_max)
@@ -437,6 +438,27 @@ contains
    #:endfor
 
    !****
+
+   subroutine adjust_x_vec(self, x_vec, dx_vec, x_adj, stat)
+
+      class(specgrid_t), intent(in)  :: self
+      real(RD), intent(in)           :: x_vec(:)
+      real(RD), intent(in)           :: dx_vec(:)
+      real(RD), intent(out)          :: x_adj(:)
+      integer, intent(out), optional :: stat
+
+      ! Adjust x_vec in the direction dx_vec, until it falls within a
+      ! valid cell
+
+      call self%vgrid%adjust_x_vec(x_vec, dx_vec, x_adj, stat)
+
+      ! Finish
+
+      return
+
+   end subroutine adjust_x_vec
+
+   !****   
 
    subroutine filter(self, passband, photgrid, stat)
 
