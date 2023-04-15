@@ -316,7 +316,7 @@ class SpecGrid:
             x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             dx (dict): Direction vector to adjust in; keys must match
-                `axis_labels` property, values must be double. THe
+                `axis_labels` property, values must be double. The
                 overall length of the vector is unimportant.
 
         Returns:
@@ -325,7 +325,7 @@ class SpecGrid:
         Raises:
             KeyError: If `x` does not define all keys appearing in the
                 `axis_labels` property.
-            ValueError: If no valid `x` can be found.
+            ValueError: If no valid `x` can be found, or if 'dx' is invalid.
         """
 
         x_vec = self._dict_to_x_vec(x)
@@ -586,7 +586,7 @@ class PhotGrid:
             x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             dx (dict): Direction vector to adjust in; keys must match
-                `axis_labels` property, values must be double. THe
+                `axis_labels` property, values must be double. The
                 overall length of the vector is unimportant.
 
         Returns:
@@ -595,7 +595,7 @@ class PhotGrid:
         Raises:
             KeyError: If `x` does not define all keys appearing in the
                 `axis_labels` property.
-            ValueError: If no valid `x` can be found.
+            ValueError: If no valid `x` can be found, or if 'dx' is invalid.
         """
 
         x_vec = self._dict_to_x_vec(x)
