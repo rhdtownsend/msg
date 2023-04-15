@@ -38,6 +38,7 @@ module cmsg_spec_m
    public :: load_specgrid
    public :: unload_specgrid
    public :: get_specgrid_rank
+   public :: get_specgrid_shape
    public :: get_specgrid_lam_min
    public :: get_specgrid_lam_max
    public :: get_specgrid_cache_lam_min
@@ -154,6 +155,32 @@ contains
       end subroutine get_specgrid_${name}$
 
    #:endfor
+
+   !****
+
+   subroutine get_specgrid_shape(specgrid_ptr, shape) bind(C)
+
+      type(C_PTR), value :: specgrid_ptr
+      integer(C_INT)     :: shape(*)
+
+      type(specgrid_t), pointer :: specgrid
+      integer                   :: rank
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Get the shape
+
+      call specgrid%get_rank(rank)
+
+      call specgrid%get_shape(shape(1:rank))
+
+      ! Finish
+
+      return
+
+   end subroutine get_specgrid_shape
 
    !****
 

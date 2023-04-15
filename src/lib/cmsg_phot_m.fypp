@@ -38,6 +38,7 @@ module cmsg_phot_m
    public :: load_photgrid
    public :: unload_photgrid
    public :: get_photgrid_rank
+   public :: get_photgrid_shape
    public :: get_photgrid_cache_limit
    public :: get_photgrid_cache_usage
    public :: get_photgrid_axis_x_min
@@ -204,6 +205,32 @@ contains
       end subroutine get_photgrid_${name}$
 
    #:endfor
+
+   !****
+
+   subroutine get_photgrid_shape(photgrid_ptr, shape) bind(C)
+
+      type(C_PTR), value :: photgrid_ptr
+      integer(C_INT)     :: shape(*)
+
+      type(photgrid_t), pointer :: photgrid
+      integer                   :: rank
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(photgrid_ptr, photgrid)
+
+      ! Get the shape
+
+      call photgrid%get_rank(rank)
+
+      call photgrid%get_shape(shape(1:rank))
+
+      ! Finish
+
+      return
+
+   end subroutine get_photgrid_shape
 
    !****
 
