@@ -309,15 +309,16 @@ class SpecGrid:
 
     
     def adjust_x(self, x, dx):
-        r"""Adjust photospheric parameters x along direction dx, until 
-            they fall within the valid part of the grid.
+        r"""Adjust photospheric parameters in a specified direction, until 
+        they fall within the valid part of the grid.
 
         Args:
             x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
-            dx (dict): Direction vector to adjust in; keys must match
-                `axis_labels` property, values must be double. The
-                overall length of the vector is unimportant.
+            dx (dict): Phtospheric parameter adjustment direction; keys 
+                must match `axis_labels` property, values must be double. 
+                The overall scaling is unimportant, but at least one value 
+                must be non-zero.
 
         Returns:
             numpy.ndarray: Adjusted photospheric parameters.
@@ -325,7 +326,7 @@ class SpecGrid:
         Raises:
             KeyError: If `x` does not define all keys appearing in the
                 `axis_labels` property.
-            ValueError: If no valid `x` can be found, or if 'dx' is invalid.
+            ValueError: If no valid `x` can be found, or if `dx` is invalid.
         """
 
         x_vec = self._dict_to_x_vec(x)
@@ -579,15 +580,16 @@ class PhotGrid:
 
 
     def adjust_x(self, x, dx):
-        r"""Adjust photospheric parameters x along direction dx, until 
-            they fall within the valid part of the grid.
+        r"""Adjust photospheric parameters in a specified direction, until 
+        they fall within the valid part of the grid.
 
         Args:
             x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
-            dx (dict): Direction vector to adjust in; keys must match
-                `axis_labels` property, values must be double. The
-                overall length of the vector is unimportant.
+            dx (dict): Phtospheric parameter adjustment direction; keys 
+                must match `axis_labels` property, values must be double. 
+                The overall scaling is unimportant, but at least one value 
+                must be non-zero.
 
         Returns:
             numpy.ndarray: Adjusted photospheric parameters.
@@ -595,7 +597,7 @@ class PhotGrid:
         Raises:
             KeyError: If `x` does not define all keys appearing in the
                 `axis_labels` property.
-            ValueError: If no valid `x` can be found, or if 'dx' is invalid.
+            ValueError: If no valid `x` can be found, or if `dx` is invalid.
         """
 
         x_vec = self._dict_to_x_vec(x)
@@ -604,4 +606,3 @@ class PhotGrid:
         x_adj = pyc._adjust_photgrid_x_vec(self._photgrid, x_vec, dx_vec) 
         
         return self._x_vec_to_dict(x_adj)
-    
