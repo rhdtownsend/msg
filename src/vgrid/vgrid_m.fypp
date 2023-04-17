@@ -643,8 +643,7 @@ contains
       integer              :: c_vec(self%rank)
       integer              :: r
       character(LABEL_LEN) :: label
-      real(RD)             :: x_min
-      real(RD)             :: x_max
+      real(RD)             :: x
       integer              :: c_lin
       real(RD)             :: x_bdy(2,self%rank)
       real(RD)             :: t(2,self%rank)
@@ -677,15 +676,20 @@ contains
          if (stat /= STAT_OK) return
       end if
 
-      ! Check whether x_vec is on a grid boundary; if so, check that
-      ! dx_vec isn't pointing outside the grid
+      ! If on a cell boundary, adjust c_vec so that dx_vec points into
+      ! the cell
 
       do r = 1, self%rank
 
-         call self%axes(r)%get_x_min(x_min)
-         call self%axes(r)%get_x_max(x_max)
+         call self%axes(r)%fetch(c_vec(r), x)
 
-         if (x_vec(r) == x_min .AND. dx_vec(r) < 0._RD) then
+         if (x_vec(r) == x) then
+            if (dx_vec(r) < 0._RD .OR. (dx_vec(r) == 0._RD .AND. c_vec(r) == self%shape(r))) then
+               c_vec(r) = c_vec(r) - 1
+            end if
+         end if
+
+         if (c_vec(r) < 1) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_AXIS_LO
                return
@@ -693,9 +697,7 @@ contains
                call self%axes(r)%get_label(label)
                @:ABORT('out-of-bounds (lo) on '//label//' axis')
             end if
-         end if
-               
-         if (x_vec(r) == x_max .AND. dx_vec(r) > 0._RD) then
+         elseif (c_vec(r) >= self%shape(r)) then
             if (PRESENT(stat)) then
                stat = STAT_OUT_OF_BOUNDS_AXIS_HI
                return
@@ -709,10 +711,6 @@ contains
 
       ! Move from cell to cell within the grid, updating x_adj and
       ! c_vec until a valid cell is found
-
-      print *, 'shape:', self%shape
-      print *, 'start:', c_vec
-      print *,' dx:  :', dx_vec
 
       x_adj = x_vec
 
@@ -751,7 +749,7 @@ contains
          ! Update x_adj and c_vec, being careful with rounding
 
          x_adj = x_adj + t(i(1),i(2))*dx_vec
-         
+
          do r = 1, self%rank
 
             if ((i(1) == 1 .AND. i(2) == r) .OR. x_adj(r) < x_bdy(1,r)) then
@@ -767,8 +765,6 @@ contains
             end if
 
          end do
-
-         print *,'updated:', c_vec
 
          ! Check if we've gone off the grid
 
@@ -848,8 +844,6 @@ contains
          endif
 
       end do
-
-      c_vec = MIN(c_vec, self%shape-1)
 
       ! Finish
 
@@ -1080,6 +1074,8 @@ contains
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
+
+      c_vec = MIN(c_vec, self%shape-1)
 
       ! See if the cell has sufficient data (i.e., all vertices
       ! defined) to do an interpolation

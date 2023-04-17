@@ -321,13 +321,15 @@ contains
 
    subroutine test_adjust_()
 
+      integer, parameter :: N = 6
+
       type(vgrid_t) :: vg
-      real(RD)      :: x_vec(2,5)
-      real(RD)      :: dx_vec(2,5)
-      real(RD)      :: x_adj(2,5)
-      real(RD)      :: x_adj_chk(2,5)
-      integer       :: stat(5)
-      integer       :: stat_chk(5)
+      real(RD)      :: x_vec(2,N)
+      real(RD)      :: dx_vec(2,N)
+      real(RD)      :: x_adj(2,N)
+      real(RD)      :: x_adj_chk(2,N)
+      integer       :: stat(N)
+      integer       :: stat_chk(N)
 
       print *, '  adjust_x_vec'
 
@@ -363,30 +365,39 @@ contains
          x_adj_chk(:,2) = [1.0_RD, 1.5_RD]
          stat_chk(2) = STAT_OK
 
-         ! Point needing adjustment in y-direction, starting
+         ! Point needing adjustment in x-direction, starting
          ! on grid boundary
 
          x_vec(:,3) = [1.5_RD, 2.0_RD]
-         dx_vec(:,3) = [0._RD, -1._RD]
+         dx_vec(:,3) = [-1._RD, 0._RD]
          
-         x_adj_chk(:,3) = [1.5_RD, 1.0_RD]
+         x_adj_chk(:,3) = [1.0_RD, 2.0_RD]
          stat_chk(3) = STAT_OK
+
+         ! Point needing adjustment in y-direction, starting
+         ! on grid boundary
+
+         x_vec(:,4) = [1.5_RD, 2.0_RD]
+         dx_vec(:,4) = [0._RD, -1._RD]
+         
+         x_adj_chk(:,4) = [1.5_RD, 1.0_RD]
+         stat_chk(4) = STAT_OK
 
          ! Point needing adjustment in both directions, starting on grid corner
 
-         x_vec(:,4) = [2.0_RD, 2.0_RD]
-         dx_vec(:,4) = [-2._RD, -1._RD]
+         x_vec(:,5) = [2.0_RD, 2.0_RD]
+         dx_vec(:,5) = [-2._RD, -1._RD]
          
-         x_adj_chk(:,4) = [1.0_RD, 1.5_RD]
-         stat_chk(4) = STAT_OK
+         x_adj_chk(:,5) = [1.0_RD, 1.5_RD]
+         stat_chk(5) = STAT_OK
 
          ! Point needing adjustment but not possible
 
-         x_vec(:,5) = [1.5_RD, 1.5_RD]
-         dx_vec(:,5) = [2._RD, 1._RD]
+         x_vec(:,6) = [1.5_RD, 1.5_RD]
+         dx_vec(:,6) = [2._RD, 1._RD]
          
-         x_adj_chk(:,5) = [1.0_RD, 1.5_RD]
-         stat_chk(5) = STAT_OUT_OF_BOUNDS_AXIS_HI
+         x_adj_chk(:,6) = [1.0_RD, 1.5_RD]
+         stat_chk(6) = STAT_OUT_OF_BOUNDS_AXIS_HI
 
          ! Finish
 
@@ -400,7 +411,7 @@ contains
 
          integer :: i
 
-         do i = 1, 5
+         do i = 1, N
             call vg%adjust_x_vec(x_vec(:,i), dx_vec(:,i), x_adj(:,i), stat(i))
          end do
 
@@ -419,7 +430,7 @@ contains
          integer  :: i
          real(RD) :: f_err(2)
 
-         do i = 1, 5
+         do i = 1, N
 
             if (stat(i) == stat_chk(i)) then
 
