@@ -22,6 +22,14 @@
    :param rank: Rank.
 
 		
+.. c:function:: void get_specgrid_shape(SpecGrid specgrid, int shape[])
+
+   Get the shape of the grid.
+
+   :param specgrid: Grid object.
+   :param rank: Shape.
+
+		
 .. c:function:: void get_specgrid_lam_min(SpecGrid specgrid, double *lam_min)
 
    Get the minimum wavelength of the grid.
@@ -178,3 +186,15 @@
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
 
+
+.. c:function:: void adjust_specgrid_x_vec(SpecGrid specgrid, double x_vec[], double dx_vec[], double x_adj[], Stat *stat)
+		
+   Adjust photospheric parameters in a specified direction, until 
+   they fall within a valid part of the grid.
+
+   :param specgrid: Grid object.
+   :param x_vec: Photospheric parameter values.
+   :param dx_vec: Photospheric parameter adjustment direction.
+   	  The overall scaling is unimportant, but at least one element must be non-zero.
+   :param x_adj: Adjusted photospheric parameter values.
+   :param stat: Status code (set to :c:expr:`NULL` if not required).

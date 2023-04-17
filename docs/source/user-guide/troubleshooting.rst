@@ -26,4 +26,3 @@ issue, please specify the following:
 * The operating system and architecture you are using (e.g., Mac OS 13.1 on Intel).
 * A brief description of the problem.
 * A narrative of the steps to reproduce the problem.
-

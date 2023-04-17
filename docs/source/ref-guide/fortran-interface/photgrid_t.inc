@@ -13,6 +13,13 @@
       :p integer rank [out]: Returned rank.
 
 
+   .. f:subroutine:: get_shape(shape)
+
+      Get the shape of the grid.
+
+      :p integer shape(:) [out]: Shape; length `rank`.
+
+
    .. f:subroutine:: get_axis(i, axis)
 
       Get an axis of the grid.
@@ -84,3 +91,15 @@
       :p real(RD) F [out]: Photometric flux.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.
+
+
+   .. f:subroutine:: adjust_x_vec(x_vec, dx_vec, x_adj, stat)
+
+      Adjust photospheric parameters in a specified direction, until 
+      they fall within a valid part of the grid.
+
+      :p real(RD) x_vec(:) [in]: Photospheric parameter values.
+      :p real(RD) dx_vec(:) [in]: Photospheric parameter adjustment direction. 
+            The overall scaling is unimportant, but at least one element must be non-zero.
+      :p real(RD) x_adj(:) [out]: Adjusted photospheric parameter values.
+      :o integer stat [out]: Status code.

@@ -10,7 +10,7 @@ This chapter discusses how MSG handles exceptions. These can arise in a variety 
 
 * Attempts to load grids from files that are missing or corrupt.
 * Attempts to interpolate at locations outside the bounds of a grid.
-* Attempts to interpolate at locations where grid data are missing (so-called *grid voids*).
+* Attempts to interpolate at locations where grid data are missing (so-called :ref:`grid voids <grid-voids>`).
 * Attempts to interpolate with incomplete specification of photospheric parameters.
 * Attempts to interpolate for invalid wavelength and/or angle parameters.
 

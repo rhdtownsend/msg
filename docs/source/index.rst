@@ -22,6 +22,7 @@ version 3.
    user-guide/data-files.rst
    user-guide/data-caching.ipynb
    user-guide/exception-handling.rst
+   user-guide/grid-voids.rst
    user-guide/troubleshooting.rst
    user-guide/contributing.rst
 
