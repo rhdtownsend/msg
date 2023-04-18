@@ -522,15 +522,26 @@ contains
 
       allocate(x_vecs(rank,n_smetas))
 
-      smeta_loop : do i = 1, n_smetas
+      do i = 1, n_smetas
          x_vecs(:,i) = smetas(i)%x_vec
-      end do smeta_loop
+      enddo
 
       ! Optimize it
+
+      allocate(mask(n_smetas))
 
       call optimize(x_vecs, mask)
 
       smetas = PACK(smetas, mask)
+
+      n_smetas = SIZE(smetas)
+
+      deallocate(x_vecs)
+      allocate(x_vecs(rank,n_smetas))
+
+      do i = 1, n_smetas
+         x_vecs(:,i) = smetas(i)%x_vec
+      enddo
 
       ! Construct the grid
 
