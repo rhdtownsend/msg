@@ -111,11 +111,14 @@ extlinks = {
 
 targets = {
     'tarball': f'https://github.com/rhdtownsend/msg/releases/download/v{version}/msg-{version}.tar.gz',
-    'mesa-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
-    'mad-sdk': 'http://www.astro.wisc.edu/~townsend/static.php?ref=madsdk'
+    'mesa-sdk': 'http://user.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
+    'mad-sdk': 'http://user.astro.wisc.edu/~townsend/static.php?ref=madsdk',
+    'grid-files': 'http://user.astro.wisc.edu/~townsend/static.php?ref=msg-grids',
+    'passband-files': 'http://user.astro.wisc.edu/~townsend/static.php?ref=msg-passbands'
 }
 
 rst_prolog = '\n'.join(['.. _{:s}: {:s}'.format(x, targets[x]) for x in targets])
+nbsphinx_prolog = rst_prolog
 
 # Add substitutions for sphinx_substitution_extensions
 

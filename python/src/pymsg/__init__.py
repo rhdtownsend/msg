@@ -315,7 +315,7 @@ class SpecGrid:
         Args:
             x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
-            dx (dict): Phtospheric parameter adjustment direction; keys 
+            dx (dict): Photospheric parameter adjustment direction; keys 
                 must match `axis_labels` property, values must be double. 
                 The overall scaling is unimportant, but at least one value 
                 must be non-zero.
@@ -586,7 +586,7 @@ class PhotGrid:
         Args:
             x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
-            dx (dict): Phtospheric parameter adjustment direction; keys 
+            dx (dict): Photospheric parameter adjustment direction; keys 
                 must match `axis_labels` property, values must be double. 
                 The overall scaling is unimportant, but at least one value 
                 must be non-zero.

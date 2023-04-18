@@ -28,5 +28,5 @@ intensity or flux grids), a number of options are available. The
 :ref:`data-files-importing` section explains how to import an existing
 grid; but if this lies beyond your technical expertise, then the MSG
 team will be happy to assist. Either way, if you want to make your
-data publicly available and listed in the :ref:`grid-files` chapter,
-then please :git:`open an issue <rhdtownsend/msg/issues>`.
+data publicly available and listed on the `grid files <grid-files_>`__
+web page, then please :git:`open an issue <rhdtownsend/msg/issues>`.

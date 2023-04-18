@@ -65,8 +65,9 @@ If you use MSG in your research, please cite the following papers:
 * Townsend Rich, Lopez Aaron, 2022, `Journal of Open-Source Software`, 8(81), 4602, `https://doi.org/10.21105/joss.04 <https://doi.org/10.21105/joss.04602>`__
 
 Be sure to also cite the source of the grid data that you're using
-with MSG. For instance, if you're working with one of the :ref:`CAP18
-grids <grid-files-CAP18>`, you should cite :ads_citet:`allende:2018`.
+with MSG. For instance, if you're working with one of the `CAP18 grids
+<http://user.astro.wisc.edu/~townsend/static.php?ref=msg-grids#CAP18_Grids>`__,
+you should cite :ads_citet:`allende:2018`.
 
 Development Team
 ================

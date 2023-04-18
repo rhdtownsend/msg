@@ -4,7 +4,7 @@
 Grid Voids
 **********
 
-This chapter explans the causes and workarounds for 'voids' ---
+This chapter explains the causes and workarounds for 'voids' ---
 regions of the photospheric parameter space spanned by a grid where MSG
 is unable to perform an interpolation. Attempts to interpolate in a
 void result in a `STAT_UNAVAILABLE_DATA` status code (Fortran and C),
@@ -15,7 +15,7 @@ Causes of Voids
 
 MSG's :ref:`tensor-product-interpolation` algorithm divides an
 :math:`N`-dimensional grid into subintervals. Each subinterval is an
-:math:`N`-dimentional :wiki:`hyperrectangle <Hyperrectangle>`; in one
+:math:`N`-dimensional :wiki:`hyperrectangle <Hyperrectangle>`; in one
 dimension, this is a line segment, in two a rectangle, and so on. To
 perform an interpolation in a given subinterval, MSG requires that all
 :math:`2^{N}` vertices (corners) of the subinterval have a spectral
@@ -27,7 +27,7 @@ The Hydrostatic Limit
 ---------------------
 
 Most spectral synthesis codes require that the underlying model
-atmosphere be in hydrostatic equilbrium(footnote) --- that is, the
+atmosphere be in hydrostatic equilibrium --- that is, the
 outward radiative acceleration in the atmosphere,
 
 .. math::
@@ -66,7 +66,7 @@ Convergence Limits
 
 Although the hydrostatic limit :math:numref:`eq:hydro-limit` places a hard
 lower bound on the surface gravity at a given effective temperature,
-in pratice the actual lower bound is somewhat larger. This is because
+in practice the actual lower bound is somewhat larger. This is because
 spectral synthesis codes tend to have difficulty converging to
 solutions that are close to the limit.
 
@@ -82,7 +82,7 @@ Parameter Adjustment
 
 One approach to mitigating the impact of voids is to adjust photospheric
 parameters until they fall within a defined part of the
-grid. Typically, one hopes that the adjutment has only a small effect
+grid. Typically, one hopes that the adjustment has only a small effect
 on the resulting interpolated spectrum.
 
 MSG provides routines to help with this adjustment; for spectral

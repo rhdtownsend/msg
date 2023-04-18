@@ -40,8 +40,8 @@ Obtaining Data
 
 MSG ships with a limited set of data files, sufficient to enable the
 :ref:`walkthroughs <walkthroughs>`. Additional files can be downloaded
-separately from the :ref:`grid-files` and :ref:`passband-files`
-appendices.
+separately from the `grid files <grid-files_>`__ and `passband files
+<passband-files_>`__ web pages.
 
 .. _data-files-importing:
 

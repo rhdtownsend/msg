@@ -42,7 +42,5 @@ version 3.
    :name: appendices
    :maxdepth: 2
 
-   appendices/grid-files.rst
-   appendices/passband-files.rst
    appendices/grid-tools.rst
    appendices/tensor-product-interpolation.rst
