@@ -17,15 +17,9 @@ The :command:`specint_to_specgrid` tool packages together multiple
 
    Name of output :f-schema:`specgrid` file.
 
-.. option:: <allow_dupes> (optional)
-
-   Flag governing handling of duplicate grid nodes in the manifest
-   file; set to :code:`T` to allow duplicates.
-
 The manifest file is a simple text file that lists all the
 :f-schema:`specint` files (one per line) that should be included in
 the grid. The axes and the topology of the grid are automatically
 determined by the labels attached to each :f-schema:`specint` file. If
-two files have identical labels, then the one appearing later in the
-manifest file is used if :option:`<allow_dupes>` is :code:`T`; otherwise, an
-error is thrown.
+two files have identical labels, then the one appearing first in the
+manifest file is used.
