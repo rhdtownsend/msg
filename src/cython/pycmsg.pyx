@@ -265,7 +265,7 @@ def _interp_specgrid_intensity(uintptr_t specgrid, double[:] x_vec, double mu, d
     interp_specgrid_intensity(<void *>specgrid, &x_vec[0], mu, n, &lam[0], &I[0], &stat, &deriv_vec[0])
     _handle_error(stat)
 
-    return I
+    return np.asarray(I)
 
 
 def _interp_specgrid_E_moment(uintptr_t specgrid, double[:] x_vec, int k, double[:] lam, bool[:] deriv_vec):
@@ -280,7 +280,7 @@ def _interp_specgrid_E_moment(uintptr_t specgrid, double[:] x_vec, int k, double
     interp_specgrid_E_moment(<void *>specgrid, &x_vec[0], k, n, &lam[0], &E[0], &stat, &deriv_vec[0])
     _handle_error(stat)
 
-    return E
+    return np.asarray(E)
 
 
 def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double[:] lam, bool[:] deriv_vec):
@@ -295,7 +295,7 @@ def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double
     interp_specgrid_D_moment(<void *>specgrid, &x_vec[0], l, n, &lam[0], &D[0], &stat, &deriv_vec[0])
     _handle_error(stat)
 
-    return D
+    return np.asarray(D)
 
 
 def _interp_specgrid_flux(uintptr_t specgrid, double[:] x_vec, double[:] lam, bool[:] deriv_vec):
@@ -310,7 +310,7 @@ def _interp_specgrid_flux(uintptr_t specgrid, double[:] x_vec, double[:] lam, bo
     interp_specgrid_flux(<void *>specgrid, &x_vec[0], n, &lam[0], &F[0], &stat, &deriv_vec[0])
     _handle_error(stat)
 
-    return F
+    return np.asarray(F)
 
 
 def _adjust_specgrid_x_vec(uintptr_t specgrid, double[:] x_vec, double[:] dx_vec):
