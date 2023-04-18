@@ -252,18 +252,25 @@ contains
 
       @:ASSERT_DEBUG(ALL(shape > 1), 'Degenerate axis')
 
-      @:ASSERT_DEBUG(SIZE(unique_indices(v_lin_seq)) == n_seq, 'Invalid v_lin_seq')
-
-      ! Set up the linear vertex mask
+      ! Set up the linear vertex mask and the linear-to-sequence
+      ! index map
 
       allocate(v_lin_mask(n_v_lin))
-
       v_lin_mask = .FALSE.
-      v_lin_mask(v_lin_seq) = .TRUE.
 
-      ! Set up the linear-to-sequence index map
+      allocate(v_seq_lin(n_v_lin))
+      v_seq_lin = 0
 
-      v_seq_lin = UNPACK([(v_seq, v_seq=1,n_seq)], v_lin_mask, 0)
+      do v_seq = 1, n_seq
+
+         v_lin = v_lin_seq(v_seq)
+
+         if (.NOT. v_lin_mask(v_lin)) then
+            v_lin_mask(v_lin) = .TRUE.
+            v_seq_lin(v_lin) = v_seq
+         end if
+
+      end do
 
       ! Initialize vgrid
 
@@ -815,7 +822,7 @@ contains
       character(LABEL_LEN) :: label
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
-      @:CHECK_BOUNDS(SIZE(j_vec), self%rank)
+      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
 
       ! Locate x_vec in the grid, returning the vector cell index
 
