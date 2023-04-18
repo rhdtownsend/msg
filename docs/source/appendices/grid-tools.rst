@@ -42,7 +42,16 @@ create :f-schema:`specgrid` and :f-schema:`photgrid` files:
    grid-tools/specint_to_specgrid.rst
    grid-tools/specgrid_to_photgrid.rst
 
-	
+Managing Grids
+--------------
+
+The following tools help with managing grid files:
+
+.. toctree::
+   :maxdepth: 2
+
+   grid-tools/inspect_grid.rst
+
 .. _creating-passbands:
 
 Creating Passband Files
@@ -54,3 +63,6 @@ The following tools create :f-schema:`passband` files:
    :maxdepth: 2
 
    grid-tools/make_passband.rst
+
+
+   

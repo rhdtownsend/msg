@@ -218,20 +218,22 @@ contains
       integer, intent(in)      :: v_lin_seq(:)
       type(vgrid_t)            :: vgrid
 
-      integer              :: rank
-      integer              :: r
-      integer              :: shape(SIZE(axes))
-      integer              :: n_v_lin
-      integer              :: n_c_lin
-      integer              :: n_seq
-      logical, allocatable :: v_lin_mask(:)
-      integer              :: v_seq
-      integer, allocatable :: v_seq_lin(:)
-      logical, allocatable :: c_lin_mask(:)
-      integer              :: c_lin
-      integer              :: c_vec(SIZE(axes))
-      integer              :: i
-      integer              :: v_lin
+      integer                   :: rank
+      integer                   :: r
+      integer                   :: shape(SIZE(axes))
+      integer                   :: n_v_lin
+      integer                   :: n_seq
+      logical                   :: mask(SIZE(axes))
+      type(axis_t), allocatable :: axes_nd(:)
+      integer                   :: n_c_lin
+      logical, allocatable      :: v_lin_mask(:)
+      integer                   :: v_seq
+      integer, allocatable      :: v_seq_lin(:)
+      logical, allocatable      :: c_lin_mask(:)
+      integer, allocatable      :: c_vec(:)
+      integer                   :: c_lin
+      integer                   :: i
+      integer                   :: v_lin
 
       ! Construct vgrid from the axes and sequence-to-linear index map
 
@@ -244,13 +246,21 @@ contains
       end do
 
       n_v_lin = PRODUCT(shape)
-      n_c_lin = PRODUCT(shape-1)
       n_seq = SIZE(v_lin_seq)
 
       @:ASSERT_DEBUG(MINVAL(v_lin_seq) >= 1, 'Invalid v_lin_seq')
       @:ASSERT_DEBUG(MAXVAL(v_lin_seq) <= n_v_lin, 'Invalid v_lin_seq')
 
-      @:ASSERT_DEBUG(ALL(shape > 1), 'Degenerate axis')
+      ! Strip out degenerate (length-1) axes
+
+      mask = shape > 1
+
+      axes_nd = PACK(axes, mask)
+
+      rank = COUNT(mask)
+      shape = PACK(shape, mask)
+
+      n_c_lin = PRODUCT(shape-1)
 
       ! Set up the linear vertex mask and the linear-to-sequence
       ! index map
@@ -274,7 +284,7 @@ contains
 
       ! Initialize vgrid
 
-      vgrid%axes = axes
+      vgrid%axes = axes_nd
 
       call MOVE_ALLOC(v_lin_mask, vgrid%v_lin_mask)
 
@@ -293,6 +303,7 @@ contains
       ! routines
 
       allocate(c_lin_mask(n_c_lin))
+      allocate(c_vec(rank))
 
       cell_loop: do c_lin = 1, n_c_lin
 
@@ -1461,6 +1472,10 @@ contains
       labels = ''
 
       vgrid = vgrid_t_(x_vecs, labels)
+
+      ! Update rank (to handle removal of degenerate axes)
+
+      call vgrid%get_rank(rank)
 
       ! Loop through cells of the grid
 
