@@ -216,9 +216,6 @@ contains
       
       ! Create the vgrid
 
-      write(OUTPUT_UNIT, 100) 'Building grid...'
-100   format(A)
-
       ! First, get the list of vertex coordinates
 
       n_smetas = SIZE(smetas)
@@ -231,6 +228,9 @@ contains
       enddo
 
       ! Optimize it
+
+      write(OUTPUT_UNIT, 100) 'Optimizing...'
+100   format(A)
 
       allocate(mask(n_smetas))
 
@@ -247,7 +247,10 @@ contains
          x_vecs(:,i) = smetas(i)%x_vec
       enddo
 
-      ! Construct the grid
+      write(OUTPUT_UNIT, 110) 'Number of spectra:', n_smetas
+110   format(2X,A,1X,I0)
+
+      ! Construct the vgrid
 
       vgrid = vgrid_t(x_vecs, labels)
 
@@ -263,6 +266,8 @@ contains
       specsource = hdf5_specsource_t(file_names, group_names, MAXVAL(smetas%lam_min), MINVAL(smetas%lam_max))
 
       ! Create specgrid
+
+      write(OUTPUT_UNIT, 100) 'Building specgrid...'
 
       specgrid = specgrid_t(specsource, vgrid)
 
