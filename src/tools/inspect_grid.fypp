@@ -1,0 +1,160 @@
+! Program : inspect_grid
+! Purpose : inspect a grid file
+!
+! Copyright 2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program inspect_grid
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: grid_file_name
+
+   type(hdf5io_t)   :: hdf5io
+   character(1024)  :: label
+   type(specgrid_t) :: specgrid
+   type(photgrid_t) :: photgrid
+   integer          :: stat
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 1, 'Syntax: inspect_specgrid grid_file_name')
+
+   call get_arg(1, grid_file_name)
+ 
+   ! Read & inspect the grid
+
+   hdf5io = hdf5io_t(grid_file_name, OPEN_FILE_RO)
+
+   call specgrid%read(hdf5io, stat)
+
+   if (stat == STAT_OK) then
+
+      write(OUTPUT_UNIT, 100) 'Type  :', 'specgrid'
+100   format(A,1X,A)
+
+      if (hdf5io%attr_exists('label')) then
+         call hdf5io%read_attr('label', label)
+      else
+         label = ''
+      end if
+
+      write(OUTPUT_UNIT, 110) 'Label :', TRIM(label)
+110   format(A,1X,A)
+
+      call hdf5io%final()
+
+      call inspect_specgrid_(specgrid)
+
+   else
+
+      call photgrid%read(hdf5io, stat)
+
+      write(OUTPUT_UNIT, 100) 'Type  :', 'photgrid'
+
+      if (hdf5io%attr_exists('label')) then
+         call hdf5io%read_attr('label', label)
+      else
+         label = ''
+      end if
+         
+      write(OUTPUT_UNIT, 110) 'Label :', TRIM(label)
+
+      call hdf5io%final()
+
+      call inspect_photgrid_(photgrid)
+
+   end if
+
+   ! Finish
+
+contains
+
+   #:for name, type in (('specgrid', 'specgrid_t'),  &
+                        ('photgrid', 'photgrid_t'))
+
+      subroutine inspect_${name}$_(grid)
+
+         type(${type}$), intent(in) :: grid
+
+         integer              :: rank
+         integer              :: r
+         type(axis_t)         :: axis
+         real(RD)             :: x_min
+         real(RD)             :: x_max
+         character(LABEL_LEN) :: label
+         #:if type == 'specgrid_t'
+            real(RD)             :: lam_min
+            real(RD)             :: lam_max
+         #:endif
+
+         ! Inspect the grid
+
+         call grid%get_rank(rank)
+
+         write(OUTPUT_UNIT, 110) 'Rank  :', rank
+110      format(A,1X,I0)
+
+         do r = 1, rank
+
+            call grid%get_axis(r, axis)
+
+            call axis%get_x_min(x_min)
+            call axis%get_x_max(x_max)
+
+            call axis%get_label(label)
+      
+            write(OUTPUT_UNIT, 120) 'Axis', r
+120         format(A,1X,I0)
+
+            write(OUTPUT_UNIT, 130) 'Label :', TRIM(label)
+130         format(3X,A,1X,A)
+
+            write(OUTPUT_UNIT, 140) 'Range :', x_min, '->', x_max
+140         format(3X,A,1X,F9.2,1X,A,1X,F9.2)
+
+         end do
+
+         #:if type == 'specgrid_t'
+      
+            call grid%get_lam_min(lam_min)
+            call grid%get_lam_max(lam_max)
+   
+            write(OUTPUT_UNIT, 150) 'Wavelength range:', lam_min, '->', lam_max
+150         format(A,1X,F9.2,1X,A,1X,F9.2)
+
+         #:endif
+
+         ! Finish
+
+         return
+
+      end subroutine inspect_${name}$_
+
+   #:endfor
+   
+end program inspect_grid

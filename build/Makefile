@@ -45,7 +45,7 @@ endif
 ifeq (${TOOLS},yes)
   EXEC_TARGETS := ${EXEC_TARGETS} ascii_to_specint synspec_to_specint ferre_to_specint \
                   specint_to_specint specgrid_to_photgrid specint_to_specgrid \
-                  make_bb_photgrid make_passband
+                  make_bb_photgrid make_passband inspect_grid
   ifneq (${FITS_LDFLAGS},)
     EXEC_TARGETS := ${EXEC_TARGETS} goettingen_to_specint
   endif
@@ -125,6 +125,10 @@ make_bb_photgrid_DEPS = forum_m msg_m
 make_passband_OBJS = make_passband.o
 make_passband_LIBS = libforum libmsg
 make_passband_DEPS = forum_m msg_m
+
+inspect_grid_OBJS = inspect_grid.o
+inspect_grid_LIBS = libforum libmsg
+inspect_grid_DEPS = forum_m msg_m
 
 utest_file_OBJS = utest_file.o utest_file_m.o
 utest_file_LIBS = libforum libmsg
