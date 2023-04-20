@@ -1,0 +1,126 @@
+! Module   : coelho_to_specint
+! Purpose  : create specint files from Coleho14 spectra files
+!
+! Copyright 2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program coelho_to_specint
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use tools_utils_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   character(:), allocatable :: fits_file_name
+   character(:), allocatable :: wave_type
+   character(:), allocatable :: specint_file_name
+
+   character(LABEL_LEN)        :: head_labels(6)
+   real(RD)                    :: head_values(6)
+   real(RD), allocatable       :: F(:)
+   character(LABEL_LEN)        :: axis_labels(4)
+   real(RD)                    :: axis_values(4)
+   class(range_t), allocatable :: range
+   integer                     :: n_lam
+   real(RD), allocatable       :: I(:,:)
+   type(limb_specint_t)        :: specint
+   type(hdf5io_t)              :: hdf5io
+   type(hdf5io_t)              :: hdf5io_labels
+   integer                     :: j
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 3, 'Syntax: coelho_to_specint fits_file_name wave_type specint_file_name')
+
+   call get_arg(1, fits_file_name)
+   call get_arg(2, wave_type)
+   call get_arg(3, specint_file_name)
+
+   ! Read data from the input file
+
+   head_labels = ['TEFF  ', 'LOG_G ', 'FEH   ',  &
+                  'AFE   ', 'CRVAL1', 'CDELT1']
+
+   call read_fits_file(fits_file_name, F, head_labels, head_values)
+
+   axis_labels =  ['Teff      ', 'log(g)    ', '[Fe/H]    ',  '[alpha/Fe]']
+   axis_values = head_values(1:4)
+
+   ! Set up the bin-averaged intensity
+
+   n_lam = SIZE(F)
+
+   allocate(I(1,n_lam-1))
+
+   I(1,:) = 0.5*(F(:n_lam-1) + F(2:))/PI
+
+   ! Set up the range
+
+   select case(wave_type)
+
+   case('linear')
+
+      associate (x_0 => head_values(5), &
+                 dx => head_values(6))
+        range = lin_range_t(x_0, dx, n_lam)
+      end associate
+
+   case('log10')
+      
+      associate (logx_0 => head_values(5)*LOG(10._RD), &
+                 dlogx => head_values(6)*LOG(10._RD))
+        range = log_range_t(logx_0, dlogx, n_lam)
+      end associate
+
+   case default
+
+      @:ABORT('Invalid wave_type')
+
+   end select
+
+   ! Create specint
+
+   specint = limb_specint_t(I, [1._RD], range, limb_t('CONST'), precise=.FALSE.)
+
+   ! Write it
+
+   hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
+
+   call specint%write(hdf5io)
+
+   hdf5io_labels = hdf5io_t(hdf5io, 'labels')
+
+   do j = 1, SIZE(axis_labels)
+      call hdf5io_labels%write_attr(axis_labels(j), axis_values(j))
+   end do
+
+   call hdf5io_labels%final()
+      
+   call hdf5io%final()
+
+   ! Finish
+
+end program coelho_to_specint

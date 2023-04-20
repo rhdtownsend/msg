@@ -47,7 +47,7 @@ ifeq (${TOOLS},yes)
                   specint_to_specint specgrid_to_photgrid specint_to_specgrid \
                   make_bb_photgrid make_passband inspect_grid
   ifneq (${FITS_LDFLAGS},)
-    EXEC_TARGETS := ${EXEC_TARGETS} goettingen_to_specint
+    EXEC_TARGETS := ${EXEC_TARGETS} goettingen_to_specint coelho_to_specint
   endif
 endif
 
@@ -94,9 +94,13 @@ ferre_to_specint_OBJS = ferre_to_specint.o
 ferre_to_specint_LIBS = libforum libmsg
 ferre_to_specint_DEPS = forum_m msg_m
 
-goettingen_to_specint_OBJS = goettingen_to_specint.o
+goettingen_to_specint_OBJS = goettingen_to_specint.o tools_utils_m.o
 goettingen_to_specint_LIBS = libforum libmsg
 goettingen_to_specint_DEPS = forum_m msg_m
+
+coelho_to_specint_OBJS = coelho_to_specint.o tools_utils_m.o
+coelho_to_specint_LIBS = libforum libmsg
+coelho_to_specint_DEPS = forum_m msg_m
 
 parse_wavelen_OBJS = parse_wavelen.o
 parse_wavelen_LIBS = libforum libmsg

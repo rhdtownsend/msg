@@ -24,6 +24,8 @@ program goettingen_to_specint
    use forum_m
    use msg_m
 
+   use tools_utils_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -36,16 +38,18 @@ program goettingen_to_specint
    character(:), allocatable :: wave_type
    character(:), allocatable :: specint_file_name
 
-   real(RD), allocatable             :: F(:)
-   character(LABEL_LEN), allocatable :: head_labels(:)
-   real(RD), allocatable             :: head_values(:)
-   integer                           :: n_lam
-   real(RD), allocatable             :: I(:,:)
-   class(range_t), allocatable       :: range
-   type(limb_specint_t)              :: specint
-   type(hdf5io_t)                    :: hdf5io
-   type(hdf5io_t)                    :: hdf5io_labels
-   integer                           :: j
+   character(LABEL_LEN)        :: head_labels(4)
+   real(RD)                    :: head_values(4)
+   real(RD), allocatable       :: F(:)
+   character(LABEL_LEN)        :: axis_labels(4)
+   real(RD)                    :: axis_values(4)
+   integer                     :: n_lam
+   real(RD), allocatable       :: I(:,:)
+   class(range_t), allocatable :: range
+   type(limb_specint_t)        :: specint
+   type(hdf5io_t)              :: hdf5io
+   type(hdf5io_t)              :: hdf5io_labels
+   integer                     :: j
 
    ! Read command-line arguments
 
@@ -56,16 +60,22 @@ program goettingen_to_specint
    call get_arg(3, specint_file_name)
 
    ! Read data from the input file
+ 
+   head_labels = ['PHXTEFF ', 'PHXLOGG ', 'PHXM_H  ', 'PHXALPHA']
 
    call read_fits_file(fits_file_name, F, head_labels, head_values)
 
-   ! Set up the bin-averaged intensity
+   axis_labels =  ['Teff      ', 'log(g)    ', '[Fe/H]    ',  '[alpha/Fe]']
+   axis_values = head_values
+
+   ! Set up the bin-averaged intensity (also converting from
+   ! erg/cm2/s/cm2 to erg/cm2/s/A)
 
    n_lam = SIZE(F)
 
    allocate(I(1,n_lam-1))
 
-   I(1,:) = 0.5*(F(:n_lam-1) + F(2:))/PI
+   I(1,:) = 0.5*(F(:n_lam-1) + F(2:))/PI*1E-8
 
    ! Set up the range
 
@@ -92,8 +102,8 @@ program goettingen_to_specint
 
    hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
-   do j = 1, SIZE(head_labels)
-      call hdf5io_labels%write_attr(head_labels(j), head_values(j))
+   do j = 1, SIZE(axis_labels)
+      call hdf5io_labels%write_attr(axis_labels(j), axis_values(j))
    end do
 
    call hdf5io_labels%final()
@@ -103,142 +113,6 @@ program goettingen_to_specint
    ! Finish
 
 contains
-
-   subroutine read_fits_file(file_name, data, head_labels, head_values)
-
-      character(*), intent(in)                         :: file_name
-      real(RD), allocatable, intent(out)               :: data(:)
-      character(*), allocatable, intent(out), optional :: head_labels(:)
-      real(RD), allocatable, intent(out), optional     :: head_values(:)
-
-      interface
-         subroutine FTGIOU(unit, status)
-            integer, intent(out)   :: unit
-            integer, intent(inout) :: status
-         end subroutine FTGIOU
-         subroutine FTDKOPN(unit, filename, rwmode, blocksize, status)
-            integer, intent(in)      :: unit
-            character(*), intent(in) :: filename
-            integer, intent(in)      :: rwmode
-            integer, intent(out)     :: blocksize
-            integer, intent(inout)   :: status
-         end subroutine FTDKOPN
-         subroutine FTGKYD(unit, keyword, keyval, comment, status)
-            import RD
-            integer, intent(in)       :: unit
-            character(*), intent(in)  :: keyword
-            real(RD), intent(out)     :: keyval
-            character(*), intent(out) :: comment
-            integer, intent(inout)    :: status
-         end subroutine FTGKYD
-         subroutine FTGKYJ(unit, keyword, keyval, comment, status)
-            integer, intent(in)       :: unit
-            character(*), intent(in)  :: keyword
-            integer, intent(out)      :: keyval
-            character(*), intent(out) :: comment
-            integer, intent(inout)    :: status
-         end subroutine FTGKYJ
-         subroutine FTGTVD(unit, group, fpixel, nelements, nullval, values, anyf, status)
-            import RD
-            integer, intent(in)    :: unit
-            integer, intent(in)    :: group
-            integer, intent(in)    :: fpixel
-            integer, intent(in)    :: nelements
-            real(RD), intent(in)   :: nullval
-            real(RD), intent(out)  :: values(*)
-            logical, intent(out)   :: anyf
-            integer, intent(inout) :: status
-         end subroutine FTGTVD
-      end interface
-
-      integer       :: unit
-      integer       :: buffersize
-      integer       :: status
-      character(80) :: comment
-      integer       :: naxis
-      integer       :: naxis1
-      integer       :: n
-      logical       :: anyf
-      real(RD)      :: Teff
-      real(RD)      :: logg
-      real(RD)      :: M_H
-      real(RD)      :: alpha
-
-      ! Open the file
-
-      status = 0
-
-      call FTGIOU(unit, status)      
-      @:ASSERT(status == 0,'error allocaring unit number')
-
-      call FTDKOPN(unit, file_name, 0, buffersize, status)
-      @:ASSERT(status == 0,'error opening file')
-
-      ! Determine the data size
-
-      call FTGKYJ(unit, 'NAXIS', naxis, comment, status)
-      @:ASSERT(status == 0,'error reading NAXIS keyword')
-
-      @:ASSERT(naxis == 1,'Invalid number of axes')
-
-      call FTGKYJ(unit, 'NAXIS1', naxis1, comment, status)
-      @:ASSERT(status == 0,'error reading NAXIS1 keyword')
-
-      ! Read the data
-
-      n = naxis1
-
-      allocate(data(n))
-
-      call FTGPVD(unit, 0, 1, n, 0._RD, data, anyf, status)
-      @:ASSERT(status == 0,'error reading data')
-      @:ASSERT(.NOT. anyf,'undefined values encountered in data')
-
-      ! Convert data from erg/s/cm^2/cm to erg/s/cm^2/A
-
-      data = data*1E-8_RD
-
-      ! If necessary, extract labels
-
-      if (PRESENT(head_labels) .AND. PRESENT(head_values)) then
-
-         call FTGKYd(unit, 'PHXTEFF', Teff, comment, status)
-         @:ASSERT(status == 0,'error reading PHXTEFF keyword')
-      
-         call FTGKYd(unit, 'PHXLOGG', logg, comment, status)
-         @:ASSERT(status == 0,'error reading PHXLOGG keyword')
-      
-         call FTGKYd(unit, 'PHXM_H', M_H, comment, status)
-         @:ASSERT(status == 0,'error reading PHXLOGG keyword')
-      
-         call FTGKYd(unit, 'PHXALPHA', alpha, comment, status)
-         @:ASSERT(status == 0,'error reading ALPHA keyword')
-
-         head_labels = [    &
-              'Teff      ', &
-              'log(g)    ', &
-              '[Fe/H]    ', &
-              '[alpha/Fe]']
-         head_values = [Teff, logg, M_H, alpha]
-
-      end if
-
-      ! Close the file
-
-      call FTCLOS(unit, status)
-      @:ASSERT(status == 0,'error closing file')
-
-      call FTFIOU(unit, status)
-      @:ASSERT(status == 0,'error releasing unit number')
-
-
-      ! Finish
-
-      return
-
-   end subroutine read_fits_file
-
-   !****
 
    subroutine create_range_medres_a1(range)
 

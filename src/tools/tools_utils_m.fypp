@@ -1,0 +1,156 @@
+! Module   : tools_utils_m.fypp
+! Purpose  : support routines for tools
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module tools_utils_m
+
+   ! Uses
+
+   use forum_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: read_fits_file
+
+   ! Routines
+
+contains
+
+   subroutine read_fits_file(file_name, data, head_labels, head_values)
+
+      character(*), intent(in)           :: file_name
+      real(RD), allocatable, intent(out) :: data(:)
+      character(*), intent(in), optional :: head_labels(:)
+      real(RD), intent(out), optional    :: head_values(:)
+
+      interface
+         subroutine FTGIOU(unit, status)
+            integer, intent(out)   :: unit
+            integer, intent(inout) :: status
+         end subroutine FTGIOU
+         subroutine FTDKOPN(unit, filename, rwmode, blocksize, status)
+            integer, intent(in)      :: unit
+            character(*), intent(in) :: filename
+            integer, intent(in)      :: rwmode
+            integer, intent(out)     :: blocksize
+            integer, intent(inout)   :: status
+         end subroutine FTDKOPN
+         subroutine FTGKYD(unit, keyword, keyval, comment, status)
+            import RD
+            integer, intent(in)       :: unit
+            character(*), intent(in)  :: keyword
+            real(RD), intent(out)     :: keyval
+            character(*), intent(out) :: comment
+            integer, intent(inout)    :: status
+         end subroutine FTGKYD
+         subroutine FTGKYJ(unit, keyword, keyval, comment, status)
+            integer, intent(in)       :: unit
+            character(*), intent(in)  :: keyword
+            integer, intent(out)      :: keyval
+            character(*), intent(out) :: comment
+            integer, intent(inout)    :: status
+         end subroutine FTGKYJ
+         subroutine FTGTVD(unit, group, fpixel, nelements, nullval, values, anyf, status)
+            import RD
+            integer, intent(in)    :: unit
+            integer, intent(in)    :: group
+            integer, intent(in)    :: fpixel
+            integer, intent(in)    :: nelements
+            real(RD), intent(in)   :: nullval
+            real(RD), intent(out)  :: values(*)
+            logical, intent(out)   :: anyf
+            integer, intent(inout) :: status
+         end subroutine FTGTVD
+      end interface
+
+      integer       :: unit
+      integer       :: buffersize
+      integer       :: status
+      character(80) :: comment
+      integer       :: naxis
+      integer       :: naxis1
+      integer       :: n
+      logical       :: anyf
+      integer       :: j
+
+      ! Open the file
+
+      status = 0
+
+      call FTGIOU(unit, status)      
+      @:ASSERT(status == 0,'error allocaring unit number')
+
+      call FTDKOPN(unit, file_name, 0, buffersize, status)
+      @:ASSERT(status == 0,'error opening file')
+
+      ! Determine the data size
+
+      call FTGKYJ(unit, 'NAXIS', naxis, comment, status)
+      @:ASSERT(status == 0,'error reading NAXIS keyword')
+
+      @:ASSERT(naxis == 1,'Invalid number of axes')
+
+      call FTGKYJ(unit, 'NAXIS1', naxis1, comment, status)
+      @:ASSERT(status == 0,'error reading NAXIS1 keyword')
+
+      ! Read the data
+
+      n = naxis1
+
+      allocate(data(n))
+
+      call FTGPVD(unit, 0, 1, n, 0._RD, data, anyf, status)
+      @:ASSERT(status == 0,'error reading data')
+      @:ASSERT(.NOT. anyf,'undefined values encountered in data')
+
+      ! If necessary, read additional header values
+
+      if (PRESENT(head_labels) .AND. PRESENT(head_values)) then
+
+         @:CHECK_BOUNDS(SIZE(head_labels), SIZE(head_values))
+
+         do j = 1, SIZE(head_labels)
+            call FTGKYd(unit, head_labels(j), head_values(j), comment, status)
+            @:ASSERT(status == 0,'error reading keyword')
+         end do
+
+      end if
+      
+      ! Close the file
+
+      call FTCLOS(unit, status)
+      @:ASSERT(status == 0,'error closing file')
+
+      call FTFIOU(unit, status)
+      @:ASSERT(status == 0,'error releasing unit number')
+
+      ! Finish
+
+      return
+
+   end subroutine read_fits_file
+
+end module tools_utils_m
