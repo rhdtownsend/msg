@@ -188,7 +188,6 @@ contains
       class(photint_t), pointer, intent(out) :: photint
       integer, intent(out), optional         :: stat
 
-      integer     :: j
       integer(ID) :: ssize
          
       ! Fetch the i'th photint

@@ -506,7 +506,6 @@ contains
       real(RD), allocatable :: lam(:)
       real(RD), allocatable :: P(:)
       real(RD)              :: c(self%n_b)
-      integer               :: i
 
       ! Filter the specint through the passband to yield photint
 
