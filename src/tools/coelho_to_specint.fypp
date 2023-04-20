@@ -75,7 +75,7 @@ program coelho_to_specint
 
    allocate(I(1,n_lam-1))
 
-   I(1,:) = 0.5*(F(:n_lam-1) + F(2:))/PI
+   I(1,:) = 0.5*(F(:n_lam-1) + F(2:))
 
    ! Set up the range
 
