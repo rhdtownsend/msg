@@ -1,0 +1,261 @@
+! Module   : c3k_specint
+! Purpose  : create specint files from C3K spectra files
+!
+! Copyright 2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+#:include 'hdf5io.inc'
+
+program c3k_to_specint
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use hdf5
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Parameter defintiions
+
+   integer, parameter :: CHAR_LEN = 256
+
+   ! Variables
+
+   character(:), allocatable :: c3k_file_name
+   character(:), allocatable :: specint_prefix
+
+   type(hdf5io_t)                    :: hdf5io
+   character(LABEL_LEN), allocatable :: labels(:)
+   real(RD), allocatable             :: x_vecs(:,:)
+   integer                           :: rank
+   real(RD), allocatable             :: spectra(:,:)
+   integer                           :: n_lam
+   integer                           :: n
+   class(range_t), allocatable       :: range
+   integer                           :: n_range
+   real(RD), allocatable             :: lam(:)
+   real(RD), allocatable             :: F(:)
+   real(RD), allocatable             :: I(:,:)
+   integer                           :: j
+   character(CHAR_LEN)               :: specint_file_name
+   type(hdf5io_t)                    :: hdf5io_specint
+   type(hdf5io_t)                    :: hdf5io_labels
+   integer                           :: r
+   type(limb_specint_t)              :: specint
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 2, 'Syntax: c3k_to_specint c3k_file_name specint_prefix')
+
+   call get_arg(1, c3k_file_name)
+   call get_arg(2, specint_prefix)
+
+   ! Open the input file
+
+   hdf5io = hdf5io_t(c3k_file_name, OPEN_FILE_RO)
+
+   ! Read photospheric parameters
+
+   call read_params(hdf5io, labels, x_vecs)
+
+   rank = SIZE(labels)
+
+   ! Read spectra
+   
+   call hdf5io%alloc_read_dset('spectra', spectra)
+
+   n_lam = SIZE(spectra, 1)
+   n = SIZE(spectra, 2)
+
+   ! Set up the wavelength range
+
+   call create_range(range)
+
+   call range%get_n(n_range)
+   @:ASSERT(n_range == n_lam, 'dimension mismatch')
+
+   allocate(lam(n_lam))
+   call range%unpack(lam)
+   
+   ! Process the spectra
+
+   allocate(F(n_lam))
+   allocate(I(1,n_lam-1))
+
+   spect_loop: do j = 1, n
+
+      write(specint_file_name, 100) specint_prefix, j, '.h5'
+100   format(A,I8.8,A)
+
+      ! Set up the bin-averaged intensity (also converting from
+      ! erg/cm2/s/Hz/sr to erg/cm2/s/A)
+
+      F = 4._RD*spectra(:,j)*C_LIGHT/(lam*1E-8_RD)**2*1E-8_RD
+
+      I(1,:) = 0.5_RD*(F(:n_lam-1) + F(2:))
+   
+      ! Create specint
+
+      specint = limb_specint_t(I, [1._RD], range, limb_t('CONST'), precise=.FALSE.)
+
+      ! Write it
+
+      hdf5io_specint = hdf5io_t(specint_file_name, CREATE_FILE)
+      
+      call specint%write(hdf5io_specint)
+
+      hdf5io_labels = hdf5io_t(hdf5io_specint, 'labels')
+
+      do r = 1, rank
+
+         select case(labels(r))
+         case('logt')
+            call hdf5io_labels%write_attr('Teff', 10**x_vecs(r,j))
+         case('logg')
+            call hdf5io_labels%write_attr('log(g)', x_vecs(r,j))
+         case('feh')
+            call hdf5io_labels%write_attr('[Fe/H]', x_vecs(r,j))
+         case('afe')
+            call hdf5io_labels%write_attr('[alpha/Fe]', x_vecs(r,j))
+         case default
+            @:ABORT('invalid label')
+         end select
+
+      end do
+
+      call hdf5io_labels%final()
+
+      call hdf5io_specint%final()
+
+   end do spect_loop
+
+   ! Finish
+
+   call hdf5io%final()
+
+contains
+
+   subroutine create_range(range)
+
+      class(range_t), allocatable, intent(out) :: range
+
+      ! Set up range (this may need updating if the C3K grids evolve)
+
+      range = comp_range_t([                                  &
+           log_range_t(LOG(100._RD), 0.5_RD/200._RD, 922),    &
+           log_range_t(LOG(1000._RD), 0.5_RD/500._RD, 1099),  &
+           log_range_t(LOG(3000._RD), 0.5_RD/3000._RD, 7224), &
+           log_range_t(LOG(10000._RD), 0.5_RD/500._RD, 917),  &
+           log_range_t(LOG(25000._RD), 0.5_RD/50._RD, 830)])
+
+      ! Finish
+
+      return
+
+   end subroutine create_range
+
+   !****
+
+   subroutine read_params(hdf5io, labels, x_vecs)
+
+      type(hdf5io_t), intent(inout)              :: hdf5io
+      character(*), allocatable, intent(out)     :: labels(:)
+      real(RD), allocatable, target, intent(out) :: x_vecs(:,:)
+
+      integer(HID_T)   :: group_id
+      integer(HID_T)   :: dset_id
+      integer          :: hdf_err
+      integer(HID_T)   :: space_id
+      integer(HSIZE_T) :: shape(1)
+      integer(HSIZE_T) :: max_shape(1)
+      integer          :: n
+      integer(HID_T)   :: file_type_id
+      integer          :: rank
+      integer          :: r
+      integer          :: namelen
+      integer(HID_T)   :: comp_type_id
+      integer(HID_T)   :: mem_type_id
+      integer(SIZE_T)  :: comp_size
+      type(C_PTR)      :: data_ptr
+      
+      ! Open the parameter dataset
+
+      call hdf5io%inquire(group_id=group_id)
+
+      @:HDF5_CALL(h5dopen_f, group_id, 'parameters', dset_id)
+
+      ! Get the size
+      
+      @:HDF5_CALL(h5dget_space_f, dset_id, space_id)
+      @:HDF5_CALL(h5sget_simple_extent_dims_f, space_id, shape, max_shape)
+      @:HDF5_CALL(h5sclose_f, space_id)
+
+      n = shape(1)
+
+      ! Get the file datatype
+
+      @:HDF5_CALL(h5dget_type_f, dset_id, file_type_id)
+
+      ! Extract the labels
+
+      @:HDF5_CALL(h5tget_nmembers_f, file_type_id, rank)
+      
+      allocate(labels(rank))
+
+      do r = 1, rank
+         @:HDF5_CALL(h5tget_member_name_f, file_type_id, r-1, labels(r), namelen)
+         labels(r) = labels(r)(1:namelen)
+      end do
+
+      ! Create the memory datatype
+
+      comp_type_id = h5kind_to_type(RD, H5_REAL_KIND)
+
+      @:HDF5_CALL(h5tget_size_f, comp_type_id, comp_size)
+      @:HDF5_CALL(h5tcreate_f, H5T_COMPOUND_F, INT(rank*comp_size, SIZE_T), mem_type_id)
+
+      do r = 1, rank
+         @:HDF5_CALL(h5tinsert_f, mem_type_id, labels(r), INT((r-1)*comp_size, SIZE_T), H5T_IEEE_F64LE)
+      end do
+
+      ! Read the data
+
+      allocate(x_vecs(rank,n))
+
+      data_ptr = C_LOC(x_vecs)
+
+      @:HDF5_CALL(h5dread_f, dset_id, mem_type_id, data_ptr)
+
+      ! Clean up
+
+      @:HDF5_CALL(h5tclose_f, mem_type_id)
+      @:HDF5_CALL(h5tclose_f, file_type_id)
+
+      @:HDF5_CALL(h5dclose_f, dset_id)
+
+      ! Finish
+
+      return
+
+   end subroutine read_params
+
+end program c3k_to_specint
+

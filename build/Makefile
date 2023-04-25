@@ -23,7 +23,7 @@ TOOLS ?= yes
 
 # Link string for FITS library
 # (leave undefined if not available)
-#FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
+FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
 
 # Targets
 
@@ -43,7 +43,7 @@ ifeq (${TESTS},yes)
 endif
 
 ifeq (${TOOLS},yes)
-  EXEC_TARGETS := ${EXEC_TARGETS} ascii_to_specint synspec_to_specint ferre_to_specint \
+  EXEC_TARGETS := ${EXEC_TARGETS} ascii_to_specint synspec_to_specint ferre_to_specint c3k_to_specint \
                   specint_to_specint specgrid_to_photgrid specint_to_specgrid \
                   make_bb_photgrid make_passband inspect_grid
   ifneq (${FITS_LDFLAGS},)
@@ -93,6 +93,10 @@ synspec_to_specint_DEPS = forum_m msg_m
 ferre_to_specint_OBJS = ferre_to_specint.o
 ferre_to_specint_LIBS = libforum libmsg
 ferre_to_specint_DEPS = forum_m msg_m
+
+c3k_to_specint_OBJS = c3k_to_specint.o
+c3k_to_specint_LIBS = libforum libmsg
+c3k_to_specint_DEPS = forum_m msg_m
 
 goettingen_to_specint_OBJS = goettingen_to_specint.o tools_utils_m.o
 goettingen_to_specint_LIBS = libforum libmsg

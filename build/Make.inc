@@ -173,7 +173,7 @@ ${PYC_TARGETS_} :
 
 ${EXEC_TARGETS} :
 	@echo LD $@
-	@${F9XC} ${F9XFLAGS} -o $@ $^ ${EXEC_LDFLAGS}
+	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} ${EXEC_LDFLAGS}
 
 ${DEP_TARGETS} : 
 	@echo DEPEND $(patsubst .%.d,%,$@) "->" $@
