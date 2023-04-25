@@ -145,7 +145,7 @@ contains
             call grid%get_lam_max(lam_max)
    
             write(OUTPUT_UNIT, 150) 'Wavelength range:', lam_min, '->', lam_max
-150         format(A,1X,F9.2,1X,A,1X,F9.2)
+150         format(A,1X,F11.2,1X,A,1X,F11.2)
 
          #:endif
 
