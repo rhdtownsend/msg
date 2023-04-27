@@ -225,6 +225,8 @@ contains
       integer                   :: n_seq
       logical                   :: mask(SIZE(axes))
       type(axis_t), allocatable :: axes_nd(:)
+      integer                   :: rank_nd
+      integer, allocatable      :: shape_nd(:)
       integer                   :: n_c_lin
       logical, allocatable      :: v_lin_mask(:)
       integer                   :: v_seq
@@ -257,10 +259,10 @@ contains
 
       axes_nd = PACK(axes, mask)
 
-      rank = COUNT(mask)
-      shape = PACK(shape, mask)
+      rank_nd = COUNT(mask)
+      shape_nd = PACK(shape, mask)
 
-      n_c_lin = PRODUCT(shape-1)
+      n_c_lin = PRODUCT(shape_nd-1)
 
       ! Set up the linear vertex mask and the linear-to-sequence
       ! index map
@@ -291,19 +293,19 @@ contains
       vgrid%v_lin_seq = v_lin_seq
       call MOVE_ALLOC(v_seq_lin, vgrid%v_seq_lin)
 
-      vgrid%shape = shape
-      vgrid%rank = rank
+      vgrid%shape = shape_nd
+      vgrid%rank = rank_nd
 
       vgrid%n_v_lin = n_v_lin
       vgrid%n_c_lin = n_c_lin
       vgrid%n_seq = n_seq
-      vgrid%n_stn = 4**rank
+      vgrid%n_stn = 4**rank_nd
 
       ! Initialize c_lin_mask last, to take advantage of indexing
       ! routines
 
       allocate(c_lin_mask(n_c_lin))
-      allocate(c_vec(rank))
+      allocate(c_vec(rank_nd))
 
       cell_loop: do c_lin = 1, n_c_lin
 
@@ -311,7 +313,7 @@ contains
 
          ! Iterate over corner vertices of the cell
 
-         do i = 1, 2**rank
+         do i = 1, 2**rank_nd
 
             v_lin = vgrid%v_lin_cnr_(i, c_vec)
 
@@ -1504,7 +1506,7 @@ contains
 
             end do
 
-         end if
+         endif
 
       end do
 
