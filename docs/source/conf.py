@@ -98,13 +98,13 @@ html_logo = 'msg-logo.png'
 
 # Set up Extlinks
 extlinks = {
-    'wiki': ('https://en.wikipedia.org/wiki/%s', ''),
-    'dict': ('https://en.wiktionary.org/wiki/%s', ''),
-    'netlib': ('https://www.netlib.org/%s', ''),
-    'git': ('https://github.com/%s', ''),
-    'repo': ('https://github.com/rhdtownsend/msg/blob/{:s}/%s'.format(branch), ''),
-    'grids': ('http://www.astro.wisc.edu/~townsend/resource/download/msg/grids/%s', ''),
-    'passbands': ('http://www.astro.wisc.edu/~townsend/resource/download/msg/passbands/%s', '')
+    'wiki': ('https://en.wikipedia.org/wiki/%s', None),
+    'dict': ('https://en.wiktionary.org/wiki/%s', None),
+    'netlib': ('https://www.netlib.org/%s', None),
+    'git': ('https://github.com/%s', None),
+    'repo': ('https://github.com/rhdtownsend/msg/blob/{:s}/%s'.format(branch), None),
+    'grids': ('http://www.astro.wisc.edu/~townsend/resource/download/msg/grids/%s', None),
+    'passbands': ('http://www.astro.wisc.edu/~townsend/resource/download/msg/passbands/%s', None)
 }
 
 # Set site-wide targets
