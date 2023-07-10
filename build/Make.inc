@@ -29,6 +29,10 @@ ifneq ($(MAKECMDGOALS),clean)
 
 endif
 
+# Make flags
+
+SHELL := /bin/bash
+
 # Preprocessor flags
 
 OPTS = DEBUG OMP FPE
