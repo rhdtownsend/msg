@@ -23,7 +23,7 @@ TOOLS ?= yes
 
 # Link string for FITS library
 # (leave undefined if not available)
-FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
+#FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
 
 # Targets
 
