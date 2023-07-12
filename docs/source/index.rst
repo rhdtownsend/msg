@@ -27,6 +27,14 @@ version 3.
    user-guide/contributing.rst
 
 .. toctree::
+   :caption: Cookbook
+   :name: cookbook
+   :maxdepth: 2
+
+   cookbook/isochrone-cmd/isochrone-cmd.ipynb
+   cookbook/spb-light-curve/spb-light-curve.ipynb
+
+.. toctree::
    :caption: Reference Guide
    :name: ref-guide
    :maxdepth: 2

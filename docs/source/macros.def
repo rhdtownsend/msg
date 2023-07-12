@@ -9,10 +9,12 @@ gram	{\rm g}
 erg	{\rm erg}
 dyne	{\rm dyn}
 second	{\rm s}
+year	{\rm yr}
 kelvin	{\rm K}
 radian	{\rm rad}
 sterad	{\rm sr}
 barye	{\rm Ba}
+Msun	{\rm M}_{\odot}
 diff	{\rm d}#1
 sderiv	\diff{#1}/\diff{#2}
 obs	{\rm o}

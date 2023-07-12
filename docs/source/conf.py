@@ -114,7 +114,10 @@ targets = {
     'mesa-sdk': 'http://user.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mad-sdk': 'http://user.astro.wisc.edu/~townsend/static.php?ref=madsdk',
     'grid-files': 'http://user.astro.wisc.edu/~townsend/static.php?ref=msg-grids',
-    'passband-files': 'http://user.astro.wisc.edu/~townsend/static.php?ref=msg-passbands'
+    'passband-files': 'http://user.astro.wisc.edu/~townsend/static.php?ref=msg-passbands',
+    'mesa': 'https://docs.mesastar.org/',
+    'gyre': 'https://gyre.readthedocs.io/',
+    'mist': 'https://waps.cfa.harvard.edu/MIST/'
 }
 
 rst_prolog = '\n'.join(['.. _{:s}: {:s}'.format(x, targets[x]) for x in targets])
@@ -127,6 +130,13 @@ rep_exts = {"version": version,
 
 for rep_ext_key, rep_ext_val in rep_exts.items():
     rst_prolog += "\n.. |{:s}| replace:: {:s}".format(rep_ext_key, rep_ext_val)
+
+# Add substitutions for en/em dashes
+
+rst_prolog += '''
+.. |--| unicode:: U+2013   .. en dash
+.. |---| unicode:: U+2014  .. em dash
+'''
 
 # Mathjax & Latex macros
 
@@ -187,6 +197,7 @@ napoleon_include_init_with_doc = True
 
 # Set up nbsphinx
 nbsphinx_execute = 'never'
+nbsphinx_prolog = rst_prolog
 
 # Spelling
 spelling_word_list_filename='spelling_wordlist.txt'

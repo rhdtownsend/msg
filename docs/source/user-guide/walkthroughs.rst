@@ -12,6 +12,6 @@ on calculating the spectrum and colors of :wiki:`Sirius`
 .. toctree::
    :maxdepth: 2
 
-   walkthroughs/python-walkthrough.rst
+   walkthroughs/python-walkthrough.ipynb
    walkthroughs/fortran-walkthrough.rst
    walkthroughs/c-walkthrough.rst

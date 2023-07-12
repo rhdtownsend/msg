@@ -3,7 +3,9 @@ goettingen
 grism
 Hermite
 i'th
+metallicity
 millimag
+odfnew
 photint
 photints
 photgrid
@@ -14,3 +16,4 @@ specints
 specgrid
 Strömgren
 synspec
+
