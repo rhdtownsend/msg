@@ -416,20 +416,22 @@ contains
          type(vgrid_t)             :: vgrid
          
          hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
+
+         call hdf5io_photsource%inquire(file_name=file_name, group_name=group_name)
+
          call hdf5io_photsource%read_attr('n', n)
+
          call hdf5io_photsource%final()
 
-         call hdf5io%inquire(file_name=file_name, group_name=group_name)
- 
-         group_names_len = LEN(group_name) + 1 + LEN(photint_group_name_(HUGE(0)))
+         group_names_len = LEN_TRIM(group_name) + 1 + LEN_TRIM(photint_group_name_(HUGE(0)))
 
-         allocate(character(LEN(file_name))::file_names(n))
+         allocate(character(LEN_TRIM(file_name))::file_names(n))
          allocate(character(group_names_len)::group_names(n))
 
          name_loop : do i = 1, n
 
-            file_names(i) = file_name
-            group_names(i) = group_name//'/'//photint_group_name_(i)
+            file_names(i) = TRIM(file_name)
+            group_names(i) = TRIM(group_name)//'/'//TRIM(photint_group_name_(i))
 
          end do name_loop
       
