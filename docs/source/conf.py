@@ -103,8 +103,9 @@ extlinks = {
     'netlib': ('https://www.netlib.org/%s', None),
     'git': ('https://github.com/%s', None),
     'repo': ('https://github.com/rhdtownsend/msg/blob/{:s}/%s'.format(branch), None),
-    'grids': ('http://www.astro.wisc.edu/~townsend/resource/download/msg/grids/%s', None),
-    'passbands': ('http://www.astro.wisc.edu/~townsend/resource/download/msg/passbands/%s', None)
+    'grids': ('http://user.astro.wisc.edu/~townsend/resource/download/msg/grids/%s', None),
+    'passbands': ('http://user.astro.wisc.edu/~townsend/resource/download/msg/passbands/%s', None),
+    'mad-star': ('http://user.astro.wisc.edu/~townsend/static.php?ref=%s', None)
 }
 
 # Set site-wide targets

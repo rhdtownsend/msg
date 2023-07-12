@@ -21,3 +21,9 @@ td {
 .grouptype {
     font-style: italic;
 }
+
+/* Fix padding after notebook cells */
+
+div.nbinput.container {
+  padding-bottom: 24px;
+}

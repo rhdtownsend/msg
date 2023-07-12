@@ -33,6 +33,7 @@ version 3.
 
    cookbook/isochrone-cmd/isochrone-cmd.ipynb
    cookbook/spb-light-curve/spb-light-curve.ipynb
+   cookbook/be-star-lpv/be-star-lpv.ipynb
 
 .. toctree::
    :caption: Reference Guide
