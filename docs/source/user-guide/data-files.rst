@@ -43,11 +43,11 @@ MSG ships with a limited set of data files in the
 :file:`$MSG_DIR/data` subdirectory, sufficient to enable the
 :ref:`walkthroughs <walkthroughs>`:
 
-* :file:`$MSG_DIR/data/grids/sg-demo.h5` is a :f-schema:`specgrid`
+* :file:`grids/sg-demo.h5` is a :f-schema:`specgrid`
   file based on a solar-metallicity `Kurucz
   <http://kurucz.harvard.edu/grids>`__ atmosphere grid (ap00k2odfnew),
   with intensity spectra synthesized using SYNSPEC :ads_citep:`hubeny:2017`.
-* :file:`$MSG_DIR/data/passbands/pb-Generic-Johnson.*-Vega.h5` are
+* :file:`passbands/pb-Generic-Johnson.*-Vega.h5` are
   :f-schema:`passband` files for the U, B and V filters of the Johnson
   photometric system.
   
