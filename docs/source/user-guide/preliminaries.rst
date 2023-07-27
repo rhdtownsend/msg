@@ -75,7 +75,8 @@ Development Team
 MSG remains under active development by the following team:
 
 * `Rich Townsend <http://www.astro.wisc.edu/~townsend>`__ (University of Wisconsin-Madison); project leader
-* `Aaron Lopez <http://github.com/aaronesque>`__
+
+If you are interested in contributing toward further development of MSG, please see the :ref:`contributing` chapter.
 
 Related Links
 =============
