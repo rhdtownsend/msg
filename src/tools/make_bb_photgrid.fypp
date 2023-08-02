@@ -21,7 +21,7 @@ program make_bb_photgrid
 
    ! Uses
 
-   use forum_m, PI_ => PI
+   use forum_m
    use msg_m
 
    use ISO_FORTRAN_ENV
@@ -42,6 +42,7 @@ program make_bb_photgrid
    real(RD)                  :: u
    character(:), allocatable :: law_str
    character(:), allocatable :: photgrid_file_name
+   real(RD)                  :: lambda
 
    integer                           :: n
    real(RD), allocatable             :: x_vecs(:,:)
@@ -61,7 +62,7 @@ program make_bb_photgrid
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 10, 'Syntax: make_bb_photgrid Teff_min Teff_max n_Teff logg_min logg_max n_logg n_mu u law_str photgrid_file_name')
+   @:ASSERT(n_arg() == 10 .OR. n_arg() == 11, 'Syntax: make_bb_photgrid Teff_min Teff_max n_Teff logg_min logg_max n_logg n_mu u law_str photgrid_file_name [lambda/A]')
 
    call get_arg(1, Teff_min)
    call get_arg(2, Teff_max)
@@ -76,6 +77,12 @@ program make_bb_photgrid
    call get_arg(9, law_str)
 
    call get_arg(10, photgrid_file_name)
+
+   if (n_arg() == 11) then
+      call get_arg(11, lambda)
+   else
+      lambda = 0._RD
+   end if
 
    ! Create the vertex coordinates
 
@@ -111,7 +118,7 @@ program make_bb_photgrid
    limb = limb_t(law_str)
 
    mu = [(REAL(i-1, RD)/(n_mu-1),i=1,n_mu)]
-   f_mu = (1._RD - u*(1._RD - mu))
+   f_mu = (1._RD - u*(1._RD - mu))/(1._RD - u/3._RD)
 
    ! Create photints
 
@@ -149,7 +156,14 @@ contains
 
       Teff = 10**x_vecs(1,v_seq)
 
-      I = SIGMA_STEFAN*Teff**4/(TWOPI*(1._RD/2._RD - u/6._RD)) * f_mu
+      if (lambda > 0._RD) then
+         associate (lambda => lambda*1E-8_RD)
+           I = 2._RD*H_PLANCK*C_LIGHT**2/lambda**5/ &
+                (EXP(H_PLANCK*C_LIGHT/(lambda*K_BOLTZMANN*Teff)) - 1._RD) * f_mu
+         end associate
+      else
+         I = (SIGMA_STEFAN/PI)*Teff**4 * f_mu
+      endif
 
       ! Construct the photint_t
 
