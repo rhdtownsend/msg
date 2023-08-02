@@ -67,7 +67,10 @@ contains
 
       ! Construct photsource with the array of photints
 
-      photsource%photints = photints
+      ! Use sourced allocation rather than assignment, to work around
+      ! gfortran PR 110877
+
+      allocate(photsource%photints, SOURCE=photints)
 
       photsource%n = SIZE(photints)
 
