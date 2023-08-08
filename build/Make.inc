@@ -11,7 +11,7 @@ endif
 
 # Check SDK version
 
-MINIMUM_VERSION = 22.6.1
+MINIMUM_VERSION = 23.7.2
 
 ifneq ($(MAKECMDGOALS),clean)
 
@@ -54,7 +54,7 @@ ifeq (${FPE},yes)
 endif
 
 ifeq (${DEBUG},yes)
-  FFLAGS := ${FFLAGS} -fcheck=all -Wall -Wno-unused-dummy-argument -Wno-maybe-uninitialized -finline-limit=0 -ggdb
+  FFLAGS := ${FFLAGS} -Og -ggdb -fcheck=all -Wall -Wno-unused-dummy-argument -Wno-maybe-uninitialized -finline-limit=0
 else
   FFLAGS := ${FFLAGS} -O2 -march=native
 endif
@@ -76,13 +76,17 @@ CC = gcc
 CFLAGS := -fPIC -I../src/include
 
 ifeq (${DEBUG},yes)
-  CFLAGS := ${CFLAGS} -ggdb
+  CFLAGS := ${CFLAGS} -Og -ggdb
 else
   CFLAGS := ${CFLAGS} -O2 -march=native -Wno-cpp
 endif
 
 ifeq (${PYTHON},yes)
   CFLAGS := ${CFLAGS} $(shell python3-config --includes) -I$(shell python3 -c 'import numpy; print(numpy.get_include())')
+endif
+
+ifeq ($(shell uname -s),Linux)
+  LDFLAGS:=${LDFLAGS} -Wl,--no-warn-execstack
 endif
 
 # Cython
