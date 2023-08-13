@@ -351,9 +351,9 @@ contains
 
          I(1,n_lam) = MAX(I(1,n_lam), 0._RD)
 
-         ! Convert from to ergs/s/cm**2/Hz/sr to ergs/s/cm**2/Angstrom/sr
+         ! Convert from Eddington flux to physical flux
 
-         I(1,n_lam) = I(1,n_lam)*C_LIGHT/(lam(n_lam)*1E-8_RD)**2*1E-8_RD
+         I(1,n_lam) = 4._RD*PI*I(1,n_lam)
 
       end do read_loop
 
