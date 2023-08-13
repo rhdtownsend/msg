@@ -73,9 +73,15 @@ program synspec_to_specint
    call get_arg(7, law_str)
    call get_arg(8, specint_file_name)
 
-   ! Set up the limb-darkening law
+   ! Set up the limb-darkening law & angle axis
 
-   limb = limb_t(law_str)
+   if (n_mu >= 2) then
+      limb = limb_t(law_str)
+      mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
+   else
+      limb = limb_t('CONST')
+      mu = [1._RD]
+   end if
 
    ! Read data from the synspec file
 
@@ -83,10 +89,6 @@ program synspec_to_specint
 
    @:ASSERT(lam_min >= lam_in(1),'out-of-bounds lam_min')
    @:ASSERT(lam_max <= lam_in(SIZE(lam_in)),'out-of-bounds lam_max')
-
-   ! Set up the angle axis
-
-   mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
 
    ! Set up the output wavelength axis (uniform resolution)
 
@@ -105,8 +107,6 @@ program synspec_to_specint
    write(OUTPUT_UNIT, *) 'output lam range:', lam(1), lam(n_lam)
 
    ! Bin the data onto this axis
-
-   allocate(I(n_mu,n_lam-1))
 
    call bin_data(lam_in, I_in, lam, I)
 
@@ -143,72 +143,21 @@ contains
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
 
-      integer              :: unit
-      real(RD)             :: H
+      integer, allocatable :: ind(:)
       integer              :: d_lam
       integer              :: n_lam
-      integer, allocatable :: ind(:)
       integer              :: i_lam
       integer              :: n_dup
 
-      ! Open the input file
+      ! Determine the type of file to read based on n_mu:
+      !  n_mu >= 2 -- intensity (SYNSPEC fort.10/fort.18 files)
+      !  n_mu < 2  -- flux (SYNSPEC fort.7 file)
 
-      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD')
-
-      ! Read in the wavelength and intensity data
-
-      d_lam = 1024
-
-      allocate(lam(d_lam))
-      allocate(I(n_mu,d_lam))
-
-      n_lam = 0
-
-      read_loop : do
-
-         n_lam = n_lam + 1
-
-         ! If necessary, expand arrays
-
-         if(n_lam > d_lam) then
-            d_lam = d_lam*2
-            call reallocate(lam, [d_lam])
-            call reallocate(I, [n_mu,d_lam])
-         endif
-
-         ! Read a block of data
-
-         read(unit, *, END=100) lam(n_lam), H
-         read(unit,*) I(:,n_lam)
-
-         ! Check for NaNs
-
-         if (ANY(IEEE_IS_NAN(I(:,n_lam)))) then
-            n_lam = n_lam - 1
-            cycle read_loop
-         end if
-
-         ! Reverse order
-
-         I(:,n_lam) = I(n_mu:1:-1,n_lam)
-
-         ! Convert from to ergs/s/cm**2/Hz/sr to ergs/s/cm**2/Angstrom/sr
-
-         I(:,n_lam) = I(:,n_lam)*C_LIGHT/(lam(n_lam)*1E-8_RD)**2*1E-8_RD
-
-      end do read_loop
-
-100   continue
-
-      close(unit)
-
-      n_lam = n_lam - 1
-      d_lam = n_lam
-
-      call reallocate(lam, [d_lam])
-      call reallocate(I, [n_mu,d_lam])
-
-      write(OUTPUT_UNIT, *) 'n_lam (as read) :', n_lam
+      if (n_mu >= 2) then
+         call read_data_int(file_name, n_mu, lam, I)
+      else
+         call read_data_flx(file_name, lam, I)
+      end if
 
       ! Sort the data by wavelength
 
@@ -220,6 +169,7 @@ contains
       ! Merge duplicate points
 
       n_lam = 1
+      d_lam = SIZE(lam)
 
       n_dup = 0
 
@@ -267,12 +217,172 @@ contains
 
    !****
 
+   subroutine read_data_int (file_name, n_mu, lam, I)
+
+      character(*), intent(in)           :: file_name
+      integer, intent(in)                :: n_mu
+      real(RD), allocatable, intent(out) :: lam(:)
+      real(RD), allocatable, intent(out) :: I(:,:)
+
+      integer              :: unit
+      real(RD)             :: H
+      integer              :: d_lam
+      integer              :: n_lam
+
+      ! Open the input file
+
+      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD')
+
+      ! Read in the wavelength and intensity data
+
+      d_lam = 1024
+
+      allocate(lam(d_lam))
+      allocate(I(n_mu,d_lam))
+
+      n_lam = 0
+
+      read_loop : do
+
+         n_lam = n_lam + 1
+
+         ! If necessary, expand arrays
+
+         if(n_lam > d_lam) then
+            d_lam = d_lam*2
+            call reallocate(lam, [d_lam])
+            call reallocate(I, [n_mu,d_lam])
+         endif
+
+         ! Read a block of data
+
+         read(unit, *, END=100) lam(n_lam), H
+         read(unit,*) I(:,n_lam)
+
+         ! Check for NaNs
+
+         if (ANY(IEEE_IS_NAN(I(:,n_lam)))) then
+            n_lam = n_lam - 1
+            cycle read_loop
+         end if
+
+         ! Reverse order
+
+         I(:,n_lam) = I(n_mu:1:-1,n_lam)
+
+         ! Suppress negative intensities
+
+         I(:,n_lam) = MAX(I(:,n_lam), 0._RD)
+
+         ! Convert from to ergs/s/cm**2/Hz/sr to ergs/s/cm**2/Angstrom/sr
+
+         I(:,n_lam) = I(:,n_lam)*C_LIGHT/(lam(n_lam)*1E-8_RD)**2*1E-8_RD
+
+      end do read_loop
+
+100   continue
+
+      close(unit)
+
+      n_lam = n_lam - 1
+      d_lam = n_lam
+
+      call reallocate(lam, [d_lam])
+      call reallocate(I, [n_mu,d_lam])
+
+      write(OUTPUT_UNIT, *) 'n_lam (as read) :', n_lam
+
+      ! Finish
+
+      return
+
+   end subroutine read_data_int
+
+   !****
+
+   subroutine read_data_flx (file_name, lam, I)
+
+      character(*), intent(in)           :: file_name
+      real(RD), allocatable, intent(out) :: lam(:)
+      real(RD), allocatable, intent(out) :: I(:,:)
+
+      integer              :: unit
+      real(RD)             :: H
+      integer              :: d_lam
+      integer              :: n_lam
+
+      ! Open the input file
+
+      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD')
+
+      ! Read in the wavelength and flux
+
+      d_lam = 1024
+
+      allocate(lam(d_lam))
+      allocate(I(1,d_lam))
+
+      n_lam = 0
+
+      read_loop : do
+
+         n_lam = n_lam + 1
+
+         ! If necessary, expand arrays
+
+         if(n_lam > d_lam) then
+            d_lam = d_lam*2
+            call reallocate(lam, [d_lam])
+            call reallocate(I, [n_mu,d_lam])
+         endif
+
+         ! Read a block of data
+
+         read(unit, *, END=100) lam(n_lam), I(1,n_lam)
+
+         ! Check for NaNs
+
+         if (IEEE_IS_NAN(I(1,n_lam))) then
+            n_lam = n_lam - 1
+            cycle read_loop
+         end if
+
+         ! Suppress negative fluxes
+
+         I(1,n_lam) = MAX(I(1,n_lam), 0._RD)
+
+         ! Convert from to ergs/s/cm**2/Hz/sr to ergs/s/cm**2/Angstrom/sr
+
+         I(1,n_lam) = I(1,n_lam)*C_LIGHT/(lam(n_lam)*1E-8_RD)**2*1E-8_RD
+
+      end do read_loop
+
+100   continue
+
+      close(unit)
+
+      n_lam = n_lam - 1
+      d_lam = n_lam
+
+      call reallocate(lam, [d_lam])
+      call reallocate(I, [1,d_lam])
+
+      write(OUTPUT_UNIT, *) 'n_lam (as read) :', n_lam
+
+      ! Finish
+
+      return
+
+   end subroutine read_data_flx
+
+   !****
+
    subroutine bin_data(lam_in, I_in, lam, I)
 
-      real(RD), intent(in)  :: lam_in(:)
-      real(RD), intent(in)  :: I_in(:,:)
-      real(RD), intent(in)  :: lam(:)
-      real(RD), intent(out) :: I(:,:)
+      real(RD), intent(in)               :: lam_in(:)
+      real(RD), intent(in)               :: I_in(:,:)
+      real(RD), intent(in)               :: lam(:)
+      real(RD), allocatable, intent(out) :: I(:,:)
 
       integer  :: n_mu
       integer  :: n_lam
@@ -280,12 +390,13 @@ contains
       integer  :: j
 
       @:CHECK_BOUNDS(SIZE(I_in, 2), SIZE(lam_in))
-      @:CHECK_BOUNDS(SIZE(I, 2), SIZE(lam)-1)
 
       ! Convert the piecewise-linear intensity data I_in(:,lam_in) to the binned data I(:,lam)
 
       n_mu = SIZE(I_in, 1)
       n_lam = SIZE(lam)
+
+      ALLOCATE(I(n_mu,n_lam-1))
 
       mu_loop : do j = 1, n_mu
 
