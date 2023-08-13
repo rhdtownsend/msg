@@ -351,7 +351,7 @@ contains
 
          I(1,n_lam) = MAX(I(1,n_lam), 0._RD)
 
-         ! Convert from Eddington flux to physical flux
+         ! Convert from Eddington flux to physical flux in ergs/s/cm**2/Angstrom
 
          I(1,n_lam) = 4._RD*PI*I(1,n_lam)
 
