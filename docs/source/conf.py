@@ -110,8 +110,13 @@ extlinks = {
 
 # Set site-wide targets
 
+if version == 'dev':
+    tarball = 'http://user.astro.wisc.edu/~townsend/resource/download/nightly/msg-dev.tar.gz'
+else:
+    tarball = f'https://github.com/rhdtownsend/msg/releases/download/v{version}/msg-{version}.tar.gz'
+
 targets = {
-    'tarball': f'https://github.com/rhdtownsend/msg/releases/download/v{version}/msg-{version}.tar.gz',
+    'tarball': tarball,
     'mesa-sdk': 'http://user.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mad-sdk': 'http://user.astro.wisc.edu/~townsend/static.php?ref=madsdk',
     'grid-files': 'http://user.astro.wisc.edu/~townsend/static.php?ref=msg-grids',
