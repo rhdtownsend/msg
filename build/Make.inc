@@ -198,10 +198,13 @@ ${DEP_TARGETS} :
 %.f90 .%.dpp : %.fypp
 	@./fypp_deps ${FYPPFLAGS} $< $*.f90 > .$*.dpp
 
-%.o %.mod : %.f90
+%.o : %.f90
 	@echo FC $<
 	@${F9XC} ${F9XFLAGS} -c $<
-	@if [[ -e $*.mod ]]; then touch $*.mod; fi
+
+%.mod : %.f90
+	@echo FC $<
+	@${F9XC} ${F9XFLAGS} -c $<
 
 %.c : %.pyx
 	@echo CYTHON $<
