@@ -113,7 +113,7 @@ program synspec_to_specint
  
    ! Create specint
 
-   specint = limb_specint_t(I, mu, range, limb)
+   specint = limb_specint_t(I, mu, range, limb, precise=.FALSE.)
 
    ! Write it (together with labels)
 
@@ -266,7 +266,7 @@ contains
          ! Read a block of data
 
          if (bin_file) then
-            read(unit, END=100) lam(n_lam), H, I(:,n_lam)
+            read(unit, END=100) lam(n_lam), I(:,n_lam)
          else
             read(unit, *, END=100) lam(n_lam), H
             read(unit,*) I(:,n_lam)
