@@ -80,6 +80,7 @@ program synspec_to_specint
       mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
    else
       limb = limb_t('CONST')
+      n_mu = 1
       mu = [1._RD]
    end if
 
@@ -109,7 +110,7 @@ program synspec_to_specint
    ! Bin the data onto this axis
 
    call bin_data(lam_in, I_in, lam, I)
-
+ 
    ! Create specint
 
    specint = limb_specint_t(I, mu, range, limb)
@@ -224,10 +225,10 @@ contains
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
 
-      integer              :: unit
-      real(RD)             :: H
-      integer              :: d_lam
-      integer              :: n_lam
+      integer  :: unit
+      real(RD) :: H
+      integer  :: d_lam
+      integer  :: n_lam
 
       ! Open the input file
 
@@ -306,10 +307,9 @@ contains
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
 
-      integer              :: unit
-      real(RD)             :: H
-      integer              :: d_lam
-      integer              :: n_lam
+      integer :: unit
+      integer :: d_lam
+      integer :: n_lam
 
       ! Open the input file
 
@@ -333,7 +333,7 @@ contains
          if(n_lam > d_lam) then
             d_lam = d_lam*2
             call reallocate(lam, [d_lam])
-            call reallocate(I, [n_mu,d_lam])
+            call reallocate(I, [1,d_lam])
          endif
 
          ! Read a block of data
@@ -343,6 +343,7 @@ contains
          ! Check for NaNs
 
          if (IEEE_IS_NAN(I(1,n_lam))) then
+            stop
             n_lam = n_lam - 1
             cycle read_loop
          end if
