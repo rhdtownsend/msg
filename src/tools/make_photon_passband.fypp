@@ -1,7 +1,7 @@
-! Module   : make_passband
-! Purpose  : create passband files from ASCII tables
+! Module   : make_photon_passband
+! Purpose  : create a photon-counting passband
 !
-! Copyright 2021-2022 Rich Townsend & The MSG Team
+! Copyright 2023 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -17,12 +17,14 @@
 
 #:include 'forum.inc'
 
-program make_passband
+program make_photon_passband
 
    ! Uses
 
    use forum_m
    use msg_m
+
+   use cubint_m
 
    use ISO_FORTRAN_ENV
 
@@ -32,53 +34,37 @@ program make_passband
 
    ! Variables
 
-   character(:), allocatable :: table_file_name
-   real(RD)                  :: F_0
+   real(RD)                  :: lam_min
+   real(RD)                  :: lam_max
    character(:), allocatable :: passband_file_name
 
-   integer               :: unit
-   integer               :: n
-   real(RD), allocatable :: lam(:)
-   real(RD), allocatable :: S(:)
-   integer               :: i
-   type(passband_t)      :: passband
-   type(hdf5io_t)        :: hdf5io
+   type(cubint_t)   :: cubint
+   real(RD)         :: Delta
+   real(RD)         :: F_0
+   type(passband_t) :: passband
+   type(hdf5io_t)   :: hdf5io
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: make_passband table_file_name F_0 passband_file_name')
+   @:ASSERT(n_arg() == 3, 'Syntax: make_photon_passband lam_min lam_max passband_file_name}')
 
-   call get_arg(1, table_file_name)
-   call get_arg(2, F_0)
+   call get_arg(1, lam_min)
+   call get_arg(2, lam_max)
    call get_arg(3, passband_file_name)
 
-   ! Read the table data
+   ! Create the cubic interpolant (a straight line)
 
-   open(NEWUNIT=unit, STATUS='OLD', FILE=table_file_name)
+   cubint = cubint_t([lam_min, lam_max], [lam_min, lam_max], [1._RD, 1._RD])
 
-   n = 0
+   ! Evaluate the normalizing flux
 
-   count_loop : do
-      read(unit, *, END=100)
-      n = n + 1
-   end do count_loop
+   Delta = cubint%integ(lam_max) - cubint%integ(lam_min)
 
-100 continue
-
-   rewind(unit)
-
-   allocate(lam(n))
-   allocate(S(n))
-
-   read_loop : do i = 1, n
-      read(unit, *) lam(i), S(i)
-   end do read_loop
-
-   close(unit)
+   F_0 = H_PLANCK*C_LIGHT*1E8_RD/Delta
 
    ! Create the passband
 
-   passband = passband_t(S, lam, F_0)
+   passband = passband_t(cubint, F_0)
 
    ! Write the passband_t
 
@@ -88,4 +74,4 @@ program make_passband
 
    ! Finish
 
-end program make_passband
+end program make_photon_passband

@@ -64,6 +64,6 @@ The following tools create :f-schema:`passband` files:
    :maxdepth: 2
 
    grid-tools/make_passband.rst
-
+   grid-tools/make_photon_passband.rst
 
    

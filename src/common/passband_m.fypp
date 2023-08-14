@@ -55,6 +55,7 @@ module passband_m
 
    interface passband_t
       module procedure passband_t_
+      module procedure passband_t_cubint_
    end interface passband_t
 
    ! Access specifiers
