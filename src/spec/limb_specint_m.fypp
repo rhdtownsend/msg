@@ -690,7 +690,7 @@ contains
       call hdf5io%write_attr('precise', self%precise)
 
       if (self%precise) then
-         call hdf5io%write_dset('c', REAL(self%c), comp_level=6)
+         call hdf5io%write_dset('c', REAL(self%c, RD), comp_level=6)
       else
          call hdf5io%write_dset('c', REAL(self%c, RS), comp_level=6)
       endif
