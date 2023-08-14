@@ -109,8 +109,8 @@ ifeq ($(shell uname -s),Darwin)
   PYC_LDFLAGS = -shared -install_name ${MSG_DIR}/python/$@ -undefined dynamic_lookup 
 else			   
   LIB_SUFFIX = .so
-  LIB_LDFLAGS = -shared -Wl,-rpath -Wl,${MSG_DIR}/lib
-  EXEC_LDFLAGS = -Wl,-rpath -Wl,${MSG_DIR}/lib ${FITS_LDFLAGS}
+  LIB_LDFLAGS = -Wl,--no-warn-execstack -shared -Wl,-rpath -Wl,${MSG_DIR}/lib
+  EXEC_LDFLAGS = -Wl,--no-warn-execstack -Wl,-rpath -Wl,${MSG_DIR}/lib ${FITS_LDFLAGS}
   PYC_SUFFIX = $(shell python3-config --extension-suffix)
   PYC_LDFLAGS = ${LIB_LDFLAGS}
 endif
