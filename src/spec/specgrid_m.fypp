@@ -318,7 +318,7 @@ contains
                                      ('E_moment', 'k', 'integer'), &
                                      ('D_moment', 'l', 'integer'))
 
-      subroutine interp_${name}$(self, x_vec, ${arg_var}$, lam, res, stat, deriv_vec)
+      subroutine interp_${name}$(self, x_vec, ${arg_var}$, lam, res, stat, deriv_vec, order)
 
          class(specgrid_t), target, intent(inout) :: self
          real(RD), intent(in)                     :: x_vec(:)
@@ -327,10 +327,11 @@ contains
          real(RD), intent(out)                    :: res(:)
          integer, intent(out), optional           :: stat
          logical, intent(in), optional            :: deriv_vec(:)
+         integer, intent(in), optional            :: order
 
          ! Interpolate ${name}$
 
-         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
+         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
 
          ! Finish
 
@@ -380,7 +381,7 @@ contains
 
    #:for name in ('flux',)
 
-      subroutine interp_${name}$(self, x_vec, lam, res, stat, deriv_vec)
+      subroutine interp_${name}$(self, x_vec, lam, res, stat, deriv_vec, order)
 
          class(specgrid_t), intent(inout) :: self
          real(RD), intent(in)             :: x_vec(:)
@@ -388,10 +389,11 @@ contains
          real(RD), intent(out)            :: res(:)
          integer, intent(out), optional   :: stat
          logical, intent(in), optional    :: deriv_vec(:)
+         integer, intent(in), optional    :: order
 
          ! Interpolate ${name}$
 
-         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec)
+         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
 
          ! Finish
 

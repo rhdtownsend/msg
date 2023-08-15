@@ -50,7 +50,7 @@
       :o integer stat [out]: Status code.
 
 
-   .. f:subroutine:: interp_intensity(x_vec, mu, I, stat, deriv_vec)
+   .. f:subroutine:: interp_intensity(x_vec, mu, I, stat, deriv_vec, order)
 
       Interpolate the photometric intensity, normalized to the zero-point flux.
 
@@ -59,9 +59,10 @@
       :p real(RD) I [out]: Photometric intensity (/sr).
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.
+      :o integer order [in]: Interpolation order (1 or 3).
 
 			 
-   .. f:subroutine:: interp_E_moment(x_vec, k, E, stat, deriv_vec)
+   .. f:subroutine:: interp_E_moment(x_vec, k, E, stat, deriv_vec, order)
 
       Interpolate the photometric E-moment, normalized to the zero-point flux.
 
@@ -70,9 +71,10 @@
       :p real(RD) E [out]: Photometric E-moment.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.
+      :o integer order [in]: Interpolation order (1 or 3).
 
 
-   .. f:subroutine:: interp_D_moment(x_vec, l, D, stat, deriv_vec)
+   .. f:subroutine:: interp_D_moment(x_vec, l, D, stat, deriv_vec, order)
 
       Interpolate the photometric D-moment, normalized to the zero-point flux.
 
@@ -81,9 +83,10 @@
       :p real(RD) D [out]: Photometric D-moment.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.
+      :o integer order [in]: Interpolation order (1 or 3).
 
 
-   .. f:subroutine:: interp_flux(x_vec, F, stat, deriv_vec)
+   .. f:subroutine:: interp_flux(x_vec, F, stat, deriv_vec, order)
 
       Interpolate the photometric flux, normalized to the zero-point flux.
 
@@ -91,6 +94,7 @@
       :p real(RD) F [out]: Photometric flux.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.
+      :o integer order [in]: Interpolation order (1 or 3).
 
 
    .. f:subroutine:: adjust_x_vec(x_vec, dx_vec, x_adj, stat)

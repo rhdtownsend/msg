@@ -132,7 +132,7 @@
    :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], Stat *stat, bool deriv_vec[])
+.. c:function:: void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], Stat *stat, bool deriv_vec[], int *order)
 
    Interpolate the spectroscopic intensity.
 
@@ -144,9 +144,10 @@
    :param I[n-1]: Spectroscopic intensity (erg/cm^2/s/Å/sr) in bins delineated by lam
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_E_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], Stat *stat, bool deriv_vec[])
+.. c:function:: void interp_specgrid_E_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], Stat *stat, bool deriv_vec[], int *order)
 
    Interpolate the spectroscopic intensity E-moment.
 
@@ -158,9 +159,10 @@
    :param D[n-1]: Spectroscopic intensity E-moment (erg/cm^2/s/Å) in bins delineated by lam
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_D_moment(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], Stat *stat, bool deriv_vec[])
+.. c:function:: void interp_specgrid_D_moment(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], Stat *stat, bool deriv_vec[], int *order)
 
    Interpolate the spectroscopic intensity D-moment.
 
@@ -172,9 +174,10 @@
    :param D[n-1]: Spectroscopic intensity D-moment (erg/cm^2/s/Å) in bins delineated by lam
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_flux(SpecGrid specgrid, double x_vec[], int n, double lam[], double F[], Stat *stat, bool deriv_vec[])
+.. c:function:: void interp_specgrid_flux(SpecGrid specgrid, double x_vec[], int n, double lam[], double F[], Stat *stat, bool deriv_vec[], int *order)
 		
    Interpolate the spectroscopic flux.
 
@@ -185,6 +188,7 @@
    :param F[n-1]: Spectroscopic flux (erg/cm^2/s/Å) in bins delineated by lam
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 
 .. c:function:: void adjust_specgrid_x_vec(SpecGrid specgrid, double x_vec[], double dx_vec[], double x_adj[], Stat *stat)

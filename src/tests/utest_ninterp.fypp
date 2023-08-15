@@ -1,7 +1,7 @@
-! Module  : utest_ncubic
-! Purpose : Unit testing for ncubic_m
+! Module  : utest_ninterp
+! Purpose : Unit testing for ninterp_m
 !
-! Copyright 2021-2022 Rich Townsend & The MSG Team
+! Copyright 2021-2023 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -17,11 +17,11 @@
 
 #:include 'forum.inc'
 
-program utest_ncubic
+program utest_ninterp
 
   ! Uses
 
-  use utest_ncubic_m
+  use utest_ninterp_m
 
   ! No implicit typing
 
@@ -29,8 +29,8 @@ program utest_ncubic
 
   ! Run the tests
 
-  print *,'Testing ncubic_m...'
+  print *,'Testing ninterp_m...'
 
   call test()
 
-end program utest_ncubic
+end program utest_ninterp

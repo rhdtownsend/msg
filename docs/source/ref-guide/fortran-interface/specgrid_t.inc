@@ -95,7 +95,7 @@
       :o integer stat [out]: Status code.
 
 
-   .. f:subroutine:: interp_intensity(x_vec, mu, lam, I, stat, deriv_vec)
+   .. f:subroutine:: interp_intensity(x_vec, mu, lam, I, stat, deriv_vec, order)
 
       Interpolate the spectroscopic intensity.
 
@@ -106,9 +106,10 @@
             bins delineated by lam; length LEN(lam)-1.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.
+      :o integer order [in]: Interpolation order (1 or 3).
 
 			 
-   .. f:subroutine:: interp_E_moment(x_vec, k, lam, E, stat, deriv_vec)
+   .. f:subroutine:: interp_E_moment(x_vec, k, lam, E, stat, deriv_vec, order)
 
       Interpolate the spectroscopic intensity E-moment.
 
@@ -119,9 +120,10 @@
             in bins delineated by lam; length LEN(lam)-1.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.
+      :o integer order [in]: Interpolation order (1 or 3).
 
 
-   .. f:subroutine:: interp_D_moment(x_vec, l, lam, D, stat, deriv_vec)
+   .. f:subroutine:: interp_D_moment(x_vec, l, lam, D, stat, deriv_vec, order)
 
       Interpolate the spectroscopic intensity D-moment.
 
@@ -132,9 +134,10 @@
             in bins delineated by lam; length LEN(lam)-1.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.
+      :o integer order [in]: Interpolation order (1 or 3).
 
 
-   .. f:subroutine:: interp_flux(x_vec, lam, I, stat, deriv_vec)
+   .. f:subroutine:: interp_flux(x_vec, lam, I, stat, deriv_vec, order)
 
       Interpolate the spectroscopic flux.
 
@@ -144,6 +147,7 @@
             bins delineated by lam; length LEN(lam)-1.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags.
+      :o integer order [in]: Interpolation order (1 or 3).
 
 			 
    .. f:subroutine:: adjust_x_vec(x_vec, dx_vec, x_adj, stat)

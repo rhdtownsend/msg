@@ -26,7 +26,7 @@ module vgrid_m
 
    use axis_m
    use file_m
-   use ncubic_m
+   use ninterp_m
    use stat_m
 
    #:if OMP is not None
@@ -437,7 +437,7 @@ contains
 
    !****
 
-   subroutine interp_0_(self, data_proc, x_vec, f_int, stat, vderiv)
+   subroutine interp_0_(self, data_proc, x_vec, f_int, stat, vderiv, order)
 
       class(vgrid_t), intent(in) :: self
       interface
@@ -452,6 +452,7 @@ contains
       real(RD), intent(out)          :: f_int
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: vderiv(:)
+      integer, intent(in), optional  :: order
 
       integer  :: c_vec(self%rank)
       logical  :: mask(self%n_stn)
@@ -478,7 +479,7 @@ contains
 
       ! Evaluate the kernels
 
-      call eval_deriv_kernel(self%rank, mask, vdelta, K_D, stat)
+      call eval_deriv_kernel(self%rank, mask, vdelta, K_D, stat, order)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
@@ -525,7 +526,7 @@ contains
 
    !****
 
-   subroutine interp_1_(self, data_proc, x_vec, f_int, stat, vderiv)
+   subroutine interp_1_(self, data_proc, x_vec, f_int, stat, vderiv, order)
 
       class(vgrid_t), intent(in) :: self
       interface
@@ -540,6 +541,7 @@ contains
       real(RD), intent(out)          :: f_int(:)
       integer, intent(out), optional :: stat
       logical, intent(in), optional  :: vderiv(:)
+      integer, intent(in), optional  :: order
 
       integer  :: c_vec(self%rank)
       logical  :: mask(self%n_stn)
@@ -576,7 +578,7 @@ contains
 
       ! Evaluate the kernels
 
-      call eval_deriv_kernel(self%rank, mask, vdelta, K_D, stat)
+      call eval_deriv_kernel(self%rank, mask, vdelta, K_D, stat, order)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if

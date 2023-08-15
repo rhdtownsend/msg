@@ -1,7 +1,7 @@
-! Module  : ncubic_m
-! Purpose : low-level N-dimensional cubic interpolation support routines
+! Module  : ninterp_m
+! Purpose : low-level N-dimensional interpolation support routines
 !
-! Copyright 2021-2022 Rich Townsend & The MSG Team
+! Copyright 2021-2023 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-module ncubic_m
+module ninterp_m
 
    ! Uses
 
@@ -42,14 +42,16 @@ module ncubic_m
 
 contains
 
-   subroutine eval_deriv_kernel(rank, mask, vdelta, K_D, stat)
+   subroutine eval_deriv_kernel(rank, mask, vdelta, K_D, stat, order)
 
       integer, intent(in)            :: rank
       logical, intent(in)            :: mask(:)
       real(RD), intent(in)           :: vdelta(:,:)
       real(RD), intent(out)          :: K_D(:,:)
       integer, intent(out), optional :: stat
+      integer, intent(in), optional  :: order
 
+      integer  :: order_
       integer  :: n_match
       integer  :: i
       integer  :: j
@@ -69,26 +71,29 @@ contains
       @:CHECK_BOUNDS(SIZE(K_D, 1), 4**rank)
       @:CHECK_BOUNDS(SIZE(K_D, 2), 4**rank)
 
+      if (PRESENT(order)) then
+         order_ = order
+      else
+         order_ = 3
+      end if
+
       ! Evaluate the kernel matrix K_D for setting up function values
       ! and derivatives. Given a vector F of function values on a
       ! 4**rank-point stencil, MATMUL(K_D, F) gives the function values
       ! and derivatives on the center 2**rank-point stencil
 
-      ! First, set up the per-dimension masks. The outer product of
-      ! these masks determines the rank-dimensional mask we are going to
-      ! use in constructing K_D. Out of all of the possible combinations
-      ! of per-dimension masks, the one that produces a rank-dimensional
-      ! mask that lies within the passed-in mask, AND with the most
-      ! points, is chosen.
+      ! First set up the rank-dimensional mask that defines which
+      ! stencil points will be used by K_D. This mask is built from
+      ! the inner product of per-dimension masks
 
       n_match = 0
 
-      do i = 1, 4**rank
+      select case(order_)
 
-         ! Extract bitfields from i
-         
-         bits_l = IBITS(i-1, rank, rank)
-         bits_r = IBITS(i-1, 0, rank)
+      case(1)
+
+         ! Linear case: set per-dimension masks to include only
+         ! interior points
 
          ! Accumulate the outer product of per-dimension masks
 
@@ -98,9 +103,9 @@ contains
 
             ! Set up the per-dimension mask
 
-            dim_mask_try(1,j) = BTEST(bits_l, j-1) 
+            dim_mask_try(1,j) = .FALSE.
             dim_mask_try(2:3,j) = .TRUE.
-            dim_mask_try(4,j) = BTEST(bits_r, j-1)
+            dim_mask_try(4,j) = .FALSE.
 
             ! Accumulate it
 
@@ -112,30 +117,82 @@ contains
 
          if (COUNT(mask_try .AND. .NOT. mask) == 0) then
 
-            ! If so, compare it to the current best match
+            dim_mask = dim_mask_try
 
-            n_match_try = COUNT(mask_try .AND. mask)
-
-            if (n_match_try > n_match) then
-
-               ! Replace best match
-
-               dim_mask = dim_mask_try
-
-               n_match = n_match_try
-
-            elseif (n_match_try == n_match) then
-
-               ! Merge with best match
-
-               dim_mask = dim_mask .AND. dim_mask_try
-
-            endif
+            n_match = COUNT(mask_try .AND. mask)
 
          endif
 
-      end do
+      case(3)
 
+         ! Cubic case: iterate over all possible combinations of
+         ! per-dimension mask, picking the one that produces a
+         ! rank-dimensional mask with the most number of points
+
+         do i = 1, 4**rank
+
+            ! Extract bitfields from i
+         
+            bits_l = IBITS(i-1, rank, rank)
+            bits_r = IBITS(i-1, 0, rank)
+
+            ! Accumulate the outer product of per-dimension masks
+
+            mask_try(1) = .TRUE.
+
+            do j = 1, rank
+
+               ! Set up the per-dimension mask
+
+               dim_mask_try(1,j) = BTEST(bits_l, j-1) 
+               dim_mask_try(2:3,j) = .TRUE.
+               dim_mask_try(4,j) = BTEST(bits_r, j-1)
+
+               ! Accumulate it
+
+               mask_try(1:4**j) = outer_prod_l_(mask_try(1:4**(j-1)), dim_mask_try(:,j))
+
+            end do
+
+            ! See if mask_try falls within mask
+
+            if (COUNT(mask_try .AND. .NOT. mask) == 0) then
+
+               ! If so, compare it to the current best match
+
+               n_match_try = COUNT(mask_try .AND. mask)
+
+               if (n_match_try > n_match) then
+
+                  ! Replace best match
+
+                  dim_mask = dim_mask_try
+
+                  n_match = n_match_try
+
+               elseif (n_match_try == n_match) then
+
+                  ! Merge with best match
+
+                  dim_mask = dim_mask .AND. dim_mask_try
+
+               endif
+
+            endif
+
+         end do
+
+      case default
+
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+
+      end select
+      
       ! Check that matches were found
 
       if (n_match == 0) then
@@ -469,4 +526,4 @@ contains
 
    end subroutine eval_interp_kernel
 
-end module ncubic_m
+end module ninterp_m

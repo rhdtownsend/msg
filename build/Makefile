@@ -36,7 +36,7 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq (${TESTS},yes)
-  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ncubic utest_vgrid utest_specgrid utest_photgrid
+  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_vgrid utest_specgrid utest_photgrid
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_specgrid
   EXEC_TARGETS := ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
@@ -63,7 +63,7 @@ endif
 libforum_OBJS = forum_m.o cinter_m.o const_m.o hdf5io_m.o kinds_m.o memory_m.o \
                 order_m.o system_m.o
 
-libmsg_OBJS = msg_m.o axis_m.o vgrid_m.o ncubic_m.o \
+libmsg_OBJS = msg_m.o axis_m.o vgrid_m.o ninterp_m.o \
               range_m.o range_sm.o comp_range_m.o lin_range_m.o log_range_m.o tab_range_m.o \
               specgrid_m.o speccache_m.o specsource_m.o hdf5_specsource_m.o specint_m.o specint_sm.o limb_specint_m.o \
               photgrid_m.o photcache_m.o photsource_m.o hdf5_photsource_m.o spec_photsource_m.o mem_photsource_m.o photint_m.o photint_sm.o limb_photint_m.o \
@@ -158,9 +158,9 @@ utest_cubint_OBJS = utest_cubint.o utest_cubint_m.o
 utest_cubint_LIBS = libforum libmsg
 utest_cubint_DEPS = forum_m cubint_m
 
-utest_ncubic_OBJS = utest_ncubic.o utest_ncubic_m.o
-utest_ncubic_LIBS = libforum libmsg
-utest_ncubic_DEPS = forum_m ncubic_m
+utest_ninterp_OBJS = utest_ninterp.o utest_ninterp_m.o
+utest_ninterp_LIBS = libforum libmsg
+utest_ninterp_DEPS = forum_m ninterp_m
 
 utest_vgrid_OBJS = utest_vgrid.o utest_vgrid_m.o
 utest_vgrid_LIBS = libforum libmsg

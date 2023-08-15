@@ -1,7 +1,7 @@
-! Module  : utest_ncubic_m
-! Purpose : Test implementations for utest_ncubic
+! Module  : utest_ninterp_m
+! Purpose : Test implementations for utest_ninterp
 !
-! Copyright 2021-2022 Rich Townsend & The MSG Team
+! Copyright 2021-2023 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -17,13 +17,13 @@
 
 #:include 'forum.inc'
 
-module utest_ncubic_m
+module utest_ninterp_m
 
   ! Uses
 
   use forum_m
 
-  use ncubic_m
+  use ninterp_m
 
   use ISO_FORTRAN_ENV
 
@@ -42,7 +42,8 @@ contains
    subroutine test()
 
       call test_derivs_()
-      call test_interp_()
+      call test_interp_cubic_()
+      call test_interp_linear_()
 
    end subroutine test
 
@@ -308,7 +309,7 @@ contains
 
    !****
 
-   subroutine test_interp_()
+   subroutine test_interp_cubic_()
 
       integer, parameter :: n_x = 8
       integer, parameter :: n_y = 10
@@ -328,15 +329,15 @@ contains
       real(RD) :: f(n_x_int,n_y_int,n_z_int)
       real(RD) :: f_chk(n_x_int,n_y_int,n_z_int)
 
-      print *,'  interpolation kernel'
+      print *,'  interpolation kernel (cubic)'
 
-      call interp_arrange_()
-      call interp_act_()
-      call interp_assert_()
+      call interp_cubic_arrange_()
+      call interp_cubic_act_()
+      call interp_cubic_assert_()
 
    contains      
       
-      subroutine interp_arrange_()
+      subroutine interp_cubic_arrange_()
 
          integer :: i
          integer :: j
@@ -385,11 +386,11 @@ contains
 
          return
 
-      end subroutine interp_arrange_
+      end subroutine interp_cubic_arrange_
 
       !****
   
-      subroutine interp_act_()
+      subroutine interp_cubic_act_()
 
          logical  :: mask(4**3)
          integer  :: i
@@ -404,8 +405,8 @@ contains
          real(RD) :: K_I(4**3)
          real(RD) :: D(4**3)
 
-         ! Evaluate Loop through the inner (non-edge) cells of the datacube,
-         ! evaluating the function & derivatives
+         ! Loop through the inner (non-edge) cells of the datacube,
+         ! evaluating the function
 
          mask = .TRUE.
 
@@ -455,11 +456,11 @@ contains
 
          return
 
-      end subroutine interp_act_
+      end subroutine interp_cubic_act_
 
       !****
       
-      subroutine interp_assert_()
+      subroutine interp_cubic_assert_()
 
          real(RD), parameter :: tol = 1.5E-13_RD
 
@@ -473,11 +474,182 @@ contains
             print *,'    FAIL f:', MAXVAL(ABS(f_err)), '>', tol
          end if
 
-      end subroutine interp_assert_
+      end subroutine interp_cubic_assert_
 
-   end subroutine test_interp_
+   end subroutine test_interp_cubic_
 
-   ! !****
+   !****
+
+   subroutine test_interp_linear_()
+
+      integer, parameter :: n_x = 8
+      integer, parameter :: n_y = 10
+      integer, parameter :: n_z = 12
+      integer, parameter :: n_over = 3
+      integer, parameter :: n_x_int = n_over*(n_x-3) + 1
+      integer, parameter :: n_y_int = n_over*(n_y-3) + 1
+      integer, parameter :: n_z_int = n_over*(n_z-3) + 1
+      
+      real(RD) :: x(n_x)
+      real(RD) :: y(n_y)
+      real(RD) :: z(n_z)
+      real(RD) :: x_int(n_x_int)
+      real(RD) :: y_int(n_y_int)
+      real(RD) :: z_int(n_z_int)
+      real(RD) :: f_in(n_x,n_y,n_z)
+      real(RD) :: f(n_x_int,n_y_int,n_z_int)
+      real(RD) :: f_chk(n_x_int,n_y_int,n_z_int)
+
+      print *,'  interpolation kernel (linear)'
+
+      call interp_linear_arrange_()
+      call interp_linear_act_()
+      call interp_linear_assert_()
+
+   contains      
+      
+      subroutine interp_linear_arrange_()
+
+         integer :: i
+         integer :: j
+         integer :: k
+         integer :: m
+
+         ! Set up the datacube
+
+         x = [(i-1,i=1,n_x)]
+         y = [(j-1,j=1,n_y)]**2
+         z = [(k-1,k=1,n_z)]**3
+
+         do i = 1, n_x
+            do j = 1, n_y
+               do k = 1, n_z
+                  call eval_trilinear_(x(i), y(j), z(k), f_in(i,j,k))
+               end do
+            end do
+         end do
+
+         ! Set up the interpolation abscissae
+
+         do i = 1, n_x-3
+            do m = 1, n_over
+               x_int(n_over*(i-1)+m) = x(i+1) + (x(i+2) - x(i+1))*(m-1)/n_over
+            end do
+         end do
+
+         do j = 1, n_y-3
+            do m = 1, n_over
+               y_int(n_over*(j-1)+m) = y(j+1) + (y(j+2) - y(j+1))*(m-1)/n_over
+            end do
+         end do
+
+         do k = 1, n_z-3
+            do m = 1, n_over
+               z_int(n_over*(k-1)+m) = z(k+1) + (z(k+2) - z(k+1))*(m-1)/n_over
+            end do
+         end do
+         
+         x_int(n_x_int) = x(n_x-1)
+         y_int(n_y_int) = y(n_y-1)
+         z_int(n_z_int) = z(n_z-1)
+
+         ! Finish
+
+         return
+
+      end subroutine interp_linear_arrange_
+
+      !****
+  
+      subroutine interp_linear_act_()
+
+         logical  :: mask(4**3)
+         integer  :: i
+         integer  :: j
+         integer  :: k
+         integer  :: i_
+         integer  :: j_
+         integer  :: k_
+         real(RD) :: vdelta(3,3)
+         real(RD) :: vu(3)
+         real(RD) :: K_D(4**3,4**3)
+         real(RD) :: K_I(4**3)
+         real(RD) :: D(4**3)
+
+         ! Loop through the inner (non-edge) cells of the datacube,
+         ! evaluating the function
+
+         mask = .TRUE.
+
+         do i_ = 1, n_x_int
+
+            call locate(x, x_int(i_), i)
+            if (x_int(i_) == x(i) .AND. i == n_x-1) i = i - 1
+
+            do j_ = 1, n_y_int
+
+               call locate(y, y_int(j_), j)
+               if (y_int(j_) == y(j) .AND. j == n_y-1) j = j - 1
+
+               do k_ = 1, n_z_int
+
+                  call locate(z, z_int(k_), k)
+                  if (z_int(k_) == z(k) .AND. k == n_z-1) k = k - 1
+
+                  ! Evaluate the kernels
+
+                  vu(1) = (x_int(i_) - x(i))/(x(i+1) - x(i))
+                  vu(2) = (y_int(j_) - y(j))/(y(j+1) - y(j))
+                  vu(3) = (z_int(k_) - z(k))/(z(k+1) - z(k))
+
+                  vdelta(:,1) = x(i:i+2) - x(i-1:i+1)
+                  vdelta(:,2) = y(j:j+2) - y(j-1:j+1)
+                  vdelta(:,3) = z(k:k+2) - z(k-1:k+1)
+
+                  call eval_deriv_kernel(3, mask, vdelta, K_D, order=1)
+                  call eval_interp_kernel(3, vu, vdelta, K_I)
+
+                  ! Evaluate the interpolated function
+
+                  D = MATMUL(K_D, PACK(f_in(i-1:i+2,j-1:j+2,k-1:k+2), .TRUE.))
+
+                  f(i_,j_,k_) = DOT_PRODUCT(K_I, D)
+
+                  ! Evaluate the check function
+
+                  call eval_trilinear_(x_int(i_), y_int(j_), z_int(k_), f_chk(i_,j_,k_))
+
+               end do
+            end do
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine interp_linear_act_
+
+      !****
+      
+      subroutine interp_linear_assert_()
+
+         real(RD), parameter :: tol = 1.5E-13_RD
+
+         real(RD), allocatable :: f_err(:,:,:)
+
+         f_err = (f - f_chk)/f_chk
+
+         if (ALL(ABS(f_err) < tol)) then
+            print *,'    PASS f'
+         else
+            print *,'    FAIL f:', MAXVAL(ABS(f_err)), '>', tol
+         end if
+
+      end subroutine interp_linear_assert_
+
+   end subroutine test_interp_linear_
+
+   !****
 
    subroutine eval_triquadratic_(x, y, z, f, df_dx, df_dy, df_dz, d2f_dxdy, d2f_dxdz, d2f_dydz, d3f_dxdydz)
 
@@ -525,4 +697,17 @@ contains
 
    end subroutine eval_triquadratic_
 
-end module utest_ncubic_m
+   !****
+
+   subroutine eval_trilinear_(x, y, z, f)
+
+      real(RD), intent(in)            :: x
+      real(RD), intent(in)            :: y
+      real(RD), intent(in)            :: z
+      real(RD), intent(out)           :: f
+
+      f = x*z + 2*x*y*z + 3*y*z + 4
+
+   end subroutine eval_trilinear_
+
+end module utest_ninterp_m

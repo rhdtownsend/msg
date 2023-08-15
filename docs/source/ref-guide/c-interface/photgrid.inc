@@ -93,7 +93,7 @@
    :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, int *stat, bool deriv_vec[])
+.. c:function:: void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, int *stat, bool deriv_vec[], int *order)
 
    Interpolate the photometric intensity, normalized to the zero-point flux.
 
@@ -103,9 +103,10 @@
    :param I: Photometric intensity (/sr).
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_photgrid_E_moment(PhotGrid photgrid, double x_vec[], int k, double *E, int *stat, bool deriv_vec[])
+.. c:function:: void interp_photgrid_E_moment(PhotGrid photgrid, double x_vec[], int k, double *E, int *stat, bool deriv_vec[], int *order)
 
    Interpolate the photometric intensity E-moment, normalized to the zero-point flux.
 
@@ -115,9 +116,10 @@
    :param D: Photometric intensity E-moment.
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 		  
 		
-.. c:function:: void interp_photgrid_D_moment(PhotGrid photgrid, double x_vec[], int l, double *D, int *stat, bool deriv_vec[])
+.. c:function:: void interp_photgrid_D_moment(PhotGrid photgrid, double x_vec[], int l, double *D, int *stat, bool deriv_vec[], int *order)
 
    Interpolate the photometric intensity D-moment, normalized to the zero-point flux.
 
@@ -127,9 +129,10 @@
    :param D: Photometric intensity D-moment.
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
-		  
-		
-.. c:function:: void interp_photgrid_flux(PhotGrid photgrid, double x_vec[], double *F, int *stat, bool deriv_vec[])
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
+
+
+.. c:function:: void interp_photgrid_flux(PhotGrid photgrid, double x_vec[], double *F, int *stat, bool deriv_vec[], int *order)
 
    Interpolate the photometric flux, normalized to the zero-point flux.
 
@@ -138,6 +141,7 @@
    :param F: Photometric flux.
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 
 .. c:function:: void adjust_photgrid_x_vec(PhotGrid photgrid, double x_vec[], double dx_vec[], double x_adj[], Stat *stat)

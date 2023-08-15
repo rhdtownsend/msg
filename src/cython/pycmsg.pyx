@@ -72,13 +72,13 @@ cdef extern from "cmsg.h":
 
     void interp_specgrid_intensity(void *specgrid, double x_vec[], double mu,
                                    int n, double lam[], double I[], Stat *stat,
-                                   bool deriv_vec[])
+                                   bool deriv_vec[], int *order)
     void interp_specgrid_E_moment(void *specgrid, double x_vec[], int k, int n,
-                                  double lam[], double E[], Stat *stat, bool deriv_vec[])
+                                  double lam[], double E[], Stat *stat, bool deriv_vec[], int *order)
     void interp_specgrid_D_moment(void *specgrid, double x_vec[], int l, int n,
-                                  double lam[], double D[], Stat *stat, bool deriv_vec[])
+                                  double lam[], double D[], Stat *stat, bool deriv_vec[], int *order)
     void interp_specgrid_flux(void *specgrid, double x_vec[], int n, double lam[],
-                              double F[], Stat *stat, bool deriv_vec[])
+                              double F[], Stat *stat, bool deriv_vec[], int *order)
     
     void adjust_specgrid_x_vec(void *specgrid, double x_vec[], double dx_vec[],
                                double x_adj[], Stat *stat)
@@ -102,13 +102,13 @@ cdef extern from "cmsg.h":
     void flush_photgrid_cache(void *photgrid)
 
     void interp_photgrid_intensity(void *photgrid, double x_vec[], double mu,
-                                   double *I, Stat *stat, bool deriv_vec[])
+                                   double *I, Stat *stat, bool deriv_vec[], int *order)
     void interp_photgrid_E_moment(void *photgrid, double x_vec[], int k, double *E,
-                                  Stat *stat, bool deriv_vec[])
+                                  Stat *stat, bool deriv_vec[], int *order)
     void interp_photgrid_D_moment(void *photgrid, double x_vec[], int l, double *D,
-                                  Stat *stat, bool deriv_vec[])
+                                  Stat *stat, bool deriv_vec[], int *order)
     void interp_photgrid_flux(void *photgrid, double x_vec[], double *F, Stat *stat,
-                              bool deriv_vec[])
+                              bool deriv_vec[], int *order)
 
     void adjust_photgrid_x_vec(void *photgrid, double x_vec[], double dx_vec[],
                                double x_adj[], Stat *stat)
@@ -253,7 +253,7 @@ def _flush_specgrid_cache(uintptr_t specgrid):
     flush_specgrid_cache(<void *>specgrid)
 
 
-def _interp_specgrid_intensity(uintptr_t specgrid, double[:] x_vec, double mu, double[:] lam, bool[:] deriv_vec):
+def _interp_specgrid_intensity(uintptr_t specgrid, double[:] x_vec, double mu, double[:] lam, bool[:] deriv_vec, int order):
 
     cdef double[:] I
     cdef Stat stat
@@ -262,13 +262,13 @@ def _interp_specgrid_intensity(uintptr_t specgrid, double[:] x_vec, double mu, d
 
     I = np.empty(n-1, dtype=np.double)
 
-    interp_specgrid_intensity(<void *>specgrid, &x_vec[0], mu, n, &lam[0], &I[0], &stat, &deriv_vec[0])
+    interp_specgrid_intensity(<void *>specgrid, &x_vec[0], mu, n, &lam[0], &I[0], &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
     return np.asarray(I)
 
 
-def _interp_specgrid_E_moment(uintptr_t specgrid, double[:] x_vec, int k, double[:] lam, bool[:] deriv_vec):
+def _interp_specgrid_E_moment(uintptr_t specgrid, double[:] x_vec, int k, double[:] lam, bool[:] deriv_vec, int order):
 
     cdef double[:] E
     cdef Stat stat
@@ -277,13 +277,13 @@ def _interp_specgrid_E_moment(uintptr_t specgrid, double[:] x_vec, int k, double
 
     E = np.empty(n-1, dtype=np.double)
 
-    interp_specgrid_E_moment(<void *>specgrid, &x_vec[0], k, n, &lam[0], &E[0], &stat, &deriv_vec[0])
+    interp_specgrid_E_moment(<void *>specgrid, &x_vec[0], k, n, &lam[0], &E[0], &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
     return np.asarray(E)
 
 
-def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double[:] lam, bool[:] deriv_vec):
+def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double[:] lam, bool[:] deriv_vec, int order):
 
     cdef double[:] D
     cdef Stat stat
@@ -292,13 +292,13 @@ def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double
 
     D = np.empty(n-1, dtype=np.double)
 
-    interp_specgrid_D_moment(<void *>specgrid, &x_vec[0], l, n, &lam[0], &D[0], &stat, &deriv_vec[0])
+    interp_specgrid_D_moment(<void *>specgrid, &x_vec[0], l, n, &lam[0], &D[0], &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
     return np.asarray(D)
 
 
-def _interp_specgrid_flux(uintptr_t specgrid, double[:] x_vec, double[:] lam, bool[:] deriv_vec):
+def _interp_specgrid_flux(uintptr_t specgrid, double[:] x_vec, double[:] lam, bool[:] deriv_vec, int order):
 
     cdef double[:] F
     cdef Stat stat
@@ -307,7 +307,7 @@ def _interp_specgrid_flux(uintptr_t specgrid, double[:] x_vec, double[:] lam, bo
 
     F = np.empty(n-1, dtype=np.double)
 
-    interp_specgrid_flux(<void *>specgrid, &x_vec[0], n, &lam[0], &F[0], &stat, &deriv_vec[0])
+    interp_specgrid_flux(<void *>specgrid, &x_vec[0], n, &lam[0], &F[0], &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
     return np.asarray(F)
@@ -424,45 +424,45 @@ def _flush_photgrid_cache(uintptr_t photgrid):
     flush_photgrid_cache(<void *>photgrid)
 
 
-def _interp_photgrid_intensity(uintptr_t photgrid, double[:] x_vec, double mu, bool[:] deriv_vec):
+def _interp_photgrid_intensity(uintptr_t photgrid, double[:] x_vec, double mu, bool[:] deriv_vec, int order):
 
     cdef double I
     cdef Stat stat
 
-    interp_photgrid_intensity(<void *>photgrid, &x_vec[0], mu, &I, &stat, &deriv_vec[0])
+    interp_photgrid_intensity(<void *>photgrid, &x_vec[0], mu, &I, &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
     return I
 
 
-def _interp_photgrid_E_moment(uintptr_t photgrid, double[:] x_vec, int k, bool[:] deriv_vec):
+def _interp_photgrid_E_moment(uintptr_t photgrid, double[:] x_vec, int k, bool[:] deriv_vec, int order):
 
     cdef double E
     cdef Stat stat
 
-    interp_photgrid_E_moment(<void *>photgrid, &x_vec[0], k, &E, &stat, &deriv_vec[0])
+    interp_photgrid_E_moment(<void *>photgrid, &x_vec[0], k, &E, &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
     return E
 
 
-def _interp_photgrid_D_moment(uintptr_t photgrid, double[:] x_vec, int l, bool[:] deriv_vec):
+def _interp_photgrid_D_moment(uintptr_t photgrid, double[:] x_vec, int l, bool[:] deriv_vec, int order):
 
     cdef double D
     cdef Stat stat
 
-    interp_photgrid_D_moment(<void *>photgrid, &x_vec[0], l, &D, &stat, &deriv_vec[0])
+    interp_photgrid_D_moment(<void *>photgrid, &x_vec[0], l, &D, &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
     return D
 
 
-def _interp_photgrid_flux(uintptr_t photgrid, double[:] x_vec, bool[:] deriv_vec):
+def _interp_photgrid_flux(uintptr_t photgrid, double[:] x_vec, bool[:] deriv_vec, int order):
 
     cdef double F
     cdef Stat stat
 
-    interp_photgrid_flux(<void *>photgrid, &x_vec[0], &F, &stat, &deriv_vec[0])
+    interp_photgrid_flux(<void *>photgrid, &x_vec[0], &F, &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
     return F

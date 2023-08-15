@@ -370,8 +370,8 @@ contains
 
       !****
 
-      subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, ${arg_var}$, res, &
-                                          stat, deriv_vec) bind(C, name='interp_photgrid_${name}$')
+      subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, ${arg_var}$, res, stat, &
+                                          deriv_vec, order) bind(C, name='interp_photgrid_${name}$')
 
          type(C_PTR), value        :: photgrid_ptr
          real(C_DOUBLE)            :: x_vec(*)
@@ -379,6 +379,7 @@ contains
          real(C_DOUBLE)            :: res
          integer(C_INT), optional  :: stat
          logical(C_BOOL), optional :: deriv_vec(*)
+         integer(C_INT), optional  :: order
 
          type(photgrid_t), pointer :: photgrid
          integer                   :: rank
@@ -392,9 +393,11 @@ contains
          call photgrid%get_rank(rank)
 
          if (PRESENT(deriv_vec)) then
-            call photgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, res, stat, LOGICAL(deriv_vec(1:rank)))
+            call photgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, res, stat, &
+                 deriv_vec=LOGICAL(deriv_vec(1:rank)), order=order)
          else
-            call photgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, res, stat)
+            call photgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, res, stat, &
+                 order=order)
          end if
 
          ! Finish
@@ -409,14 +412,15 @@ contains
       
    #:for name, var in (('flux', 'F'),)
 
-      subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, res, &
-                                          stat, deriv_vec) bind(C, name='interp_photgrid_${name}$')
+      subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, res, stat, &
+                                          deriv_vec, order) bind(C, name='interp_photgrid_${name}$')
 
          type(C_PTR), value        :: photgrid_ptr
          real(C_DOUBLE)            :: x_vec(*)
          real(C_DOUBLE)            :: res
          integer(C_INT), optional  :: stat
          logical(C_BOOL), optional :: deriv_vec(*)
+         integer(C_INT), optional  :: order
 
          type(photgrid_t), pointer :: photgrid
          integer                   :: rank
@@ -430,9 +434,11 @@ contains
          call photgrid%get_rank(rank)
 
          if (PRESENT(deriv_vec)) then
-            call photgrid%interp_${name}$(x_vec(1:rank), res, stat, LOGICAL(deriv_vec(1:rank)))
+            call photgrid%interp_${name}$(x_vec(1:rank), res, stat, &
+                 deriv_vec=LOGICAL(deriv_vec(1:rank)), order=order)
          else
-            call photgrid%interp_${name}$(x_vec(1:rank), res, stat)
+            call photgrid%interp_${name}$(x_vec(1:rank), res, stat, &
+                 order=order)
          end if
 
          ! Finish
