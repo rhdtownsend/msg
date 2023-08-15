@@ -180,7 +180,7 @@ class SpecGrid:
         pyc._flush_specgrid_cache(self._specgrid)
 
 
-    def intensity(self, x, mu, lam, deriv=None):
+    def intensity(self, x, mu, lam, deriv=None, order=3):
         r"""Evaluate the spectroscopic intensity.
 
         Args:
@@ -193,6 +193,8 @@ class SpecGrid:
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
 
         Returns:
             numpy.ndarray: Spectroscopic intensity (erg/cm^2/s/Å/sr) in
@@ -210,10 +212,10 @@ class SpecGrid:
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_specgrid_intensity(self._specgrid, x_vec, mu, lam,
-                                              deriv_vec)
+                                              deriv_vec, order)
 
     
-    def E_moment(self, x, k, lam, deriv=None):
+    def E_moment(self, x, k, lam, deriv=None, order=3):
         r"""Evaluate the spectroscopic intensity E-moment.
 
         Args:
@@ -225,6 +227,8 @@ class SpecGrid:
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
 
         Returns:
             numpy.ndarray: Spectroscopic intensity E-moment 
@@ -242,10 +246,10 @@ class SpecGrid:
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_specgrid_E_moment(self._specgrid, x_vec, k, lam,
-                                             deriv_vec)
+                                             deriv_vec, order)
 
     
-    def D_moment(self, x, l, lam, deriv=None):
+    def D_moment(self, x, l, lam, deriv=None, order=3):
         r"""Evaluate the spectroscopic intensity D-moment.
 
         Args:
@@ -257,6 +261,8 @@ class SpecGrid:
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
 
         Returns:
             numpy.ndarray: Spectroscopic intensity D-moment 
@@ -274,10 +280,10 @@ class SpecGrid:
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_specgrid_D_moment(self._specgrid, x_vec, l, lam,
-                                             deriv_vec)
+                                             deriv_vec, order)
 
     
-    def flux(self, x, lam, deriv=None):
+    def flux(self, x, lam, deriv=None, order=3):
         r"""Evaluate the spectroscopic flux.
 
         Args:
@@ -288,6 +294,8 @@ class SpecGrid:
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
 
         Returns:
             numpy.ndarray: Spectroscopic flux (erg/cm^2/s/Å) in bins 
@@ -305,7 +313,7 @@ class SpecGrid:
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
         return pyc._interp_specgrid_flux(self._specgrid, x_vec, lam,
-                                         deriv_vec)
+                                         deriv_vec, order)
 
     
     def adjust_x(self, x, dx):
@@ -459,7 +467,7 @@ class PhotGrid:
         pyc._flush_photgrid_cache(self._photgrid)
 
 
-    def intensity(self, x, mu, deriv=None):
+    def intensity(self, x, mu, deriv=None, order=3):
         r"""Evaluate the photometric intensity, normalized to the zero-
         point flux.
 
@@ -472,6 +480,8 @@ class PhotGrid:
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
 
         Returns:
             double: photometric intensity (/sr).
@@ -487,10 +497,10 @@ class PhotGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_photgrid_intensity(self._photgrid, x_vec, mu, deriv_vec)
+        return pyc._interp_photgrid_intensity(self._photgrid, x_vec, mu, deriv_vec, order)
 
     
-    def E_moment(self, x, k, deriv=None):
+    def E_moment(self, x, k, deriv=None, order=3):
         r"""Evaluate the photometric intensity E-moment, normalized to
         the zero-point flux.
 
@@ -502,6 +512,8 @@ class PhotGrid:
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
 
         Returns:
             double: photometric intensity E-moment.
@@ -520,7 +532,7 @@ class PhotGrid:
         return pyc._interp_photgrid_E_moment(self._photgrid, x_vec, k, deriv_vec)
 
     
-    def D_moment(self, x, l, deriv=None):
+    def D_moment(self, x, l, deriv=None, order=3):
         r"""Evaluate the photometric intensity D-moment, normalized to
         the zero-point flux.
 
@@ -532,6 +544,8 @@ class PhotGrid:
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
 
         Returns:
             double: photometric intensity D-moment.
@@ -547,10 +561,10 @@ class PhotGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_photgrid_D_moment(self._photgrid, x_vec, l, deriv_vec)
+        return pyc._interp_photgrid_D_moment(self._photgrid, x_vec, l, deriv_vec, order)
 
     
-    def flux(self, x, deriv=None):
+    def flux(self, x, deriv=None, order=3):
         r"""Evaluate the photometric flux, normalized to the zero-point
         flux.
 
@@ -561,6 +575,8 @@ class PhotGrid:
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
 
         Returns:
             double: photometric flux.
@@ -576,7 +592,7 @@ class PhotGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_photgrid_flux(self._photgrid, x_vec, deriv_vec)
+        return pyc._interp_photgrid_flux(self._photgrid, x_vec, deriv_vec, order)
 
 
     def adjust_x(self, x, dx):

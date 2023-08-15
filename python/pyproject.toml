@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pymsg"
-version = "dev"
+dynamic = ["version"]
 authors = [
   { name="Rich Townsend", email="rhtownsend@wisc.edu" },
 ]
@@ -17,3 +17,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
 ]
+
+[tool.hatch.version]
+path = "../src/lib/version.inc"
+pattern = "version = '(?P<version>.*)'"
