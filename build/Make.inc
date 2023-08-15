@@ -199,7 +199,7 @@ ${DEP_TARGETS} :
 	@./fypp_deps ${FYPPFLAGS} $< $*.f90 > .$*.dpp
 
 %_m.o %_m.mod : %_m.f90
-	@echo FC-M $<
+	@echo FC $<
 	@${F9XC} ${F9XFLAGS} -c $<
 
 %.o : %.f90
