@@ -225,22 +225,32 @@ contains
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
 
-      logical  :: bin_file
-      integer  :: unit
-      integer  :: iostat
-      real(RD) :: H
-      integer  :: d_lam
-      integer  :: n_lam
+      character(LEN=11) :: header
+      character(LEN=11) :: form
+      integer           :: unit
+      real(RD)          :: H
+      integer           :: d_lam
+      integer           :: n_lam
+
+      ! Determine the format of the input file
+
+      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM='UNFORMATTED')
+      read(unit) header
+      close(unit)
+
+      if (header == 'SYNSPEC INT') then
+         form = 'UNFORMATTED'
+      else
+         form = 'FORMATTED'
+      end if
 
       ! Open the input file
 
-      bin_file = .TRUE.
+      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM=form)
 
-      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=iostat)
-      if (iostat /= 0) then
-         bin_file = .FALSE.
-         open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM='FORMATTED')
-      endif
+      if (form == 'UNFORMATTED') then
+         read(unit) header
+      end if
 
       ! Read in the wavelength and intensity data
 
@@ -265,16 +275,17 @@ contains
 
          ! Read a block of data
 
-         if (bin_file) then
-            read(unit, END=100) lam(n_lam), I(:,n_lam)
-         else
+         select case(form)
+         case('UNFORMATTED')
+            read(unit, END=100) lam(n_lam), H, I(:,n_lam)
+         case('FORMATTED')
             read(unit, *, END=100) lam(n_lam), H
             read(unit,*) I(:,n_lam)
-         endif
+         end select
 
-         ! Check for NaNs
+         ! Check for negative/zero/NaN intensities
 
-         if (ANY(IEEE_IS_NAN(I(:,n_lam)))) then
+         if (ANY(I(:,n_lam) <= 0._RD) .OR. ANY(IEEE_IS_NAN(I(:,n_lam)))) then
             n_lam = n_lam - 1
             cycle read_loop
          end if
@@ -282,10 +293,6 @@ contains
          ! Reverse order
 
          I(:,n_lam) = I(n_mu:1:-1,n_lam)
-
-         ! Suppress negative intensities
-
-         I(:,n_lam) = MAX(I(:,n_lam), 0._RD)
 
          ! Convert from to ergs/s/cm**2/Hz/sr to ergs/s/cm**2/Angstrom/sr
 
@@ -319,21 +326,31 @@ contains
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
 
-      logical :: bin_file
-      integer :: unit
-      integer :: iostat
-      integer :: d_lam
-      integer :: n_lam
+      character(LEN=11) :: header
+      character(LEN=11) :: form
+      integer           :: unit
+      integer           :: d_lam
+      integer           :: n_lam
+
+      ! Determine the format of the input file
+
+      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM='UNFORMATTED')
+      read(unit) header
+      close(unit)
+
+      if (header == 'SYNSPEC FLX') then
+         form = 'UNFORMATTED'
+      else
+         form = 'FORMATTED'
+      end if
 
       ! Open the input file
 
-      bin_file = .TRUE.
+      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM=form)
 
-      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM='UNFORMATTED', IOSTAT=iostat)
-      if (iostat /= 0) then
-         bin_file = .FALSE.
-         open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM='FORMATTED')
-      endif
+      if (form == 'UNFORMATTED') then
+         read(unit) header
+      end if
 
       ! Read in the wavelength and flux
 
@@ -358,23 +375,19 @@ contains
 
          ! Read a block of data
 
-         if (bin_file) then
+         select case(form)
+         case('UNFORMATTED')
             read(unit, END=100) lam(n_lam), I(1,n_lam)
-         else
+         case('FORMATTED')
             read(unit, *, END=100) lam(n_lam), I(1,n_lam)
-         endif
+         end select
 
-         ! Check for NaNs
+         ! Check for zero/negative/NaN fluxes
 
-         if (IEEE_IS_NAN(I(1,n_lam))) then
-            stop
+         if (I(1,n_lam) <= 0._RD .OR. IEEE_IS_NAN(I(1,n_lam))) then
             n_lam = n_lam - 1
             cycle read_loop
          end if
-
-         ! Suppress negative fluxes
-
-         I(1,n_lam) = MAX(I(1,n_lam), 0._RD)
 
          ! Convert from Eddington flux to physical flux in ergs/s/cm**2/Angstrom
 
