@@ -1,7 +1,7 @@
 ! Module   : synspec_to_specint
 ! Purpose  : create a specint file from a synspec file
 !
-! Copyright 2021-2022 Rich Townsend & The MSG Team
+! Copyright 2021-2023 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -209,6 +209,8 @@ contains
       call reallocate(I, [n_mu,d_lam])
 
       write(OUTPUT_UNIT, *) 'n_lam (merged)  :', n_lam
+      write(OUTPUT_UNIT, *) 'lam_min (read)  :', lam(1)
+      write(OUTPUT_UNIT, *) 'lam_max (read)  :', lam(n_lam)
 
       ! Finish
 
@@ -283,12 +285,16 @@ contains
             read(unit,*) I(:,n_lam)
          end select
 
-         ! Check for negative/zero/NaN intensities
+         ! Check for NaN intensities
 
-         if (ANY(I(:,n_lam) <= 0._RD) .OR. ANY(IEEE_IS_NAN(I(:,n_lam)))) then
+         if (ANY(IEEE_IS_NAN(I(:,n_lam)))) then
             n_lam = n_lam - 1
             cycle read_loop
          end if
+
+         ! Fix negative intensities
+
+         I(:,n_lam) = MAX(I(:,n_lam), 0._RD)
 
          ! Reverse order
 
@@ -382,12 +388,16 @@ contains
             read(unit, *, END=100) lam(n_lam), I(1,n_lam)
          end select
 
-         ! Check for zero/negative/NaN fluxes
+         ! Check for NaN fluxes
 
-         if (I(1,n_lam) <= 0._RD .OR. IEEE_IS_NAN(I(1,n_lam))) then
+         if (IEEE_IS_NAN(I(1,n_lam))) then
             n_lam = n_lam - 1
             cycle read_loop
          end if
+
+         ! Fix negative fluxes
+
+         I(1,n_lam) = MAX(I(1,n_lam), 0._RD)
 
          ! Convert from Eddington flux to physical flux in ergs/s/cm**2/Angstrom
 
