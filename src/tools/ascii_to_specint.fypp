@@ -160,12 +160,16 @@ contains
 
       select case(lam_units)
       case('A')
+      case('micron')
+         lam = lam*1E4_RD
       case default
          @:ABORT('Invalid lam_units')
       end select
 
       select case(flux_units)
       case('erg/cm^2/s/A')
+      case('W/m^2/m')
+         F = F*1E-7_RD
       case default
          @:ABORT('Invalid flux_units')
       end select
