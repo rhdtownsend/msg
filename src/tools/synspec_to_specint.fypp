@@ -337,6 +337,7 @@ contains
       integer           :: unit
       integer           :: d_lam
       integer           :: n_lam
+      real(RD)          :: H
 
       ! Determine the format of the input file
 
@@ -383,25 +384,25 @@ contains
 
          select case(form)
          case('UNFORMATTED')
-            read(unit, END=100) lam(n_lam), I(1,n_lam)
+            read(unit, END=100) lam(n_lam), H
          case('FORMATTED')
-            read(unit, *, END=100) lam(n_lam), I(1,n_lam)
+            read(unit, *, END=100) lam(n_lam), H
          end select
 
          ! Check for NaN fluxes
 
-         if (IEEE_IS_NAN(I(1,n_lam))) then
+         if (IEEE_IS_NAN(H)) then
             n_lam = n_lam - 1
             cycle read_loop
          end if
 
          ! Fix negative fluxes
 
-         I(1,n_lam) = MAX(I(1,n_lam), 0._RD)
+         H = MAX(H, 0._RD)
 
-         ! Convert from Eddington flux to physical flux in ergs/s/cm**2/Angstrom
+         ! Convert from Eddington flux to equivalent intensity in ergs/s/cm**2/Angstrom/sr
 
-         I(1,n_lam) = 4._RD*PI*I(1,n_lam)
+         I(1,n_lam) = 4._RD*H
 
       end do read_loop
 
