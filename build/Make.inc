@@ -99,7 +99,7 @@ CYFLAGS = -I../src/include
 
 # Linking
 
-LDFLAGS = `hdf5_link` `lapack95_link`
+LDFLAGS := ${LDFLAGS} `hdf5_link` `lapack95_link`
 
 ifeq ($(shell uname -s),Darwin)
   LIB_SUFFIX = .dylib
