@@ -113,8 +113,8 @@ contains
 
    !****
       
-      subroutine load_photgrid_from_specgrid(specgrid_file_name, passband_file_name, &
-                                             photgrid, stat)
+   subroutine load_photgrid_from_specgrid(specgrid_file_name, passband_file_name, &
+                                          photgrid, stat)
 
       character(*), intent(in)       :: specgrid_file_name
       character(*), intent(in)       :: passband_file_name
