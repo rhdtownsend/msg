@@ -2,6 +2,6 @@
 #
 # Link script for MSG Fortran interface
 
-echo -Wl,-rpath -Wl,${MSG_DIR}/lib -L${MSG_DIR}/lib -lfmsg -lmsg
+echo -Wl,-rpath -Wl,${MSG_DIR}/lib -L${MSG_DIR}/lib -lfmsg -lmsg -lforum
 
 

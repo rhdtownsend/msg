@@ -2,4 +2,4 @@
 #
 # Link script for MSG Fortran low-level interface
 
-echo -Wl,-rpath -Wl,${MSG_DIR}/lib -L${MSG_DIR}/lib -lmsg
+echo -Wl,-rpath -Wl,${MSG_DIR}/lib -L${MSG_DIR}/lib -lmsg -lforum

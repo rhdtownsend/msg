@@ -1,73 +1,173 @@
 # File     : Make.inc
 # Purpose  : standard makefile rules, targets
 
-# Check MSG_DIR is set
+SHELL := /bin/bash
 
-ifneq ($(MAKECMDGOALS),clean)
-  ifeq (${MSG_DIR},) 
-    $(error Please set the MSG_DIR environment variable to point to the top-level MSG directory)
-  endif
-endif
-
-# Check SDK version
+#########
+# Checks
+#########
 
 MINIMUM_VERSION = 23.7.2
 
 ifneq ($(MAKECMDGOALS),clean)
 
-  VERSION_CHECK = $(shell ./check_sdk_version $(MINIMUM_VERSION))
+   VERSION_CHECK = $(shell ./check_sdk_version $(MINIMUM_VERSION))
 
-  ifneq ($(VERSION_CHECK),passed)
-    ifeq ($(VERSION_CHECK),SDK too old)
-      $(error Your MESA SDK installation is too old; please update to version $(MINIMUM_VERSION) or newer)
-    else ifeq ($(VERSION_CHECK),SDK not installed)
-      $(error MESA SDK is either not installed or not properly initialized)
-    else
-      $(error Could not determine MESA SDK availability)
+   ifneq ($(VERSION_CHECK),passed)
+      ifeq ($(VERSION_CHECK),SDK too old)
+         $(error Your MESA SDK installation is too old; please update to version $(MINIMUM_VERSION) or newer)
+      else ifeq ($(VERSION_CHECK),SDK not installed)
+         $(error MESA SDK is either not installed or not properly initialized)
+      else
+         $(error Could not determine MESA SDK availability)
+      endif
     endif
-  endif
+
+    ifeq (${MSG_DIR},) 
+        $(error Please set the MSG_DIR environment variable to point to the top-level MSG directory)
+    endif
 
 endif
 
-# Make flags
+############
+# Variables
+############
 
-SHELL := /bin/bash
+ifeq ($(shell uname -s),Darwin)
+   LIB_SUFFIX = .dylib
+   PYC_SUFFIX = $(shell python3-config --extension-suffix)
+else			   
+   LIB_SUFFIX = .so
+   PYC_SUFFIX = $(shell python3-config --extension-suffix)
+endif
 
-# Preprocessor flags
+BIN_DIR ?= ../bin
+LIB_DIR ?= ../lib
+INC_DIR ?= ../include
 
-OPTS = DEBUG OMP FPE
+DEPEND_DIR = .depend
 
-FYPPFLAGS:=${FYPPFLAGS} $(foreach subdir,$(subst :, ,${SUBDIRS}),-I${subdir}) $(foreach opt,${OPTS},$(if $(filter yes,${${opt}}),-D${opt}=1))
+BIN_FILES = $(BIN_TARGETS)
+LIB_FILES = $(addsuffix $(LIB_SUFFIX),$(LIB_TARGETS))
+PYC_FILES = $(addsuffix ${PYC_SUFFIX},${PYC_TARGETS})
 
-# Compiler settings
+ALL_SRCS = $(foreach target,$(BIN_TARGETS) $(LIB_TARGETS) $(PYC_TARGETS),$($(target)_SRCS) $($(target)_USES))
+
+ALL_DPPS = $(addprefix $(DEPEND_DIR)/,$(ALL_SRCS:%.fypp=%.dpp))
+ALL_DEPS = $(addprefix $(DEPEND_DIR)/,$(BIN_TARGETS:%=%.dep) $(LIB_TARGETS:%=%.dep))
+
+##########
+# Targets
+##########
+
+all : $(BIN_FILES) $(LIB_FILES) $(PYC_FILES)
+
+install : $(addprefix $(BIN_DIR)/,$(BIN_FILES)) \
+          $(addprefix $(LIB_DIR)/,$(LIB_FILES)) \
+          $(addprefix $(LIB_DIR)/,$(PYC_FILES)) \
+	  $(addprefix $(INC_DIR)/,$(INC_FILES))
+
+$(BIN_DIR)/% : %
+	@echo CP $* $@
+	@cp $< $@
+
+$(LIB_DIR)/% : %
+	@echo CP $* $@
+	@cp $< $@
+
+$(INC_DIR)/% : %
+	@echo CP $* $@
+	@cp $< $@
+
+$(DEPEND_DIR) :
+	mkdir -p $@
+
+clean : almostclean
+	rm -f $(DEPEND_DIR)/*
+
+almostclean :
+	rm -f $(BIN_FILES) $(LIB_FILES) $(PYC_FILES) $(INC_FILES) *.f90 *.mod *.smod *.o *.c
+
+.PHONY: all install clean almostclean
+
+.SUFFIXES:
+
+########
+# Paths
+########
+
+vpath %.fypp $(SRC_DIRS)
+vpath %.inc $(SRC_DIRS)
+vpath %.h $(SRC_DIRS)
+vpath %.pyx $(SRC_DIRS)
+
+#################
+# Preproccessing
+#################
+
+# Flags & files
+
+FPP = ./fypp_deps
+
+FPPFLAGS := $(FPPFLAGS) \
+	    --line-numbering \
+            $(addprefix -I,$(SRC_DIRS)) \
+	    $(addprefix -I,$(INC_DIR)) \
+            $(foreach opt,DEBUG OMP FPE,$(if $(filter yes,$($(opt))),-D$(opt)=1,-D$(opt)=0))
+
+ifeq ($(DEBUG),yes)
+   FPPFLAGS := $(FPPFLAGS) -DLOG_LEVEL=\'DEBUG\'
+else
+   FPPFLAGS := $(FPPFLAGS) -DLOG_LEVEL=\'INFO\'
+endif
+
+# Rules
+
+%.f90 : %.fypp | $(DEPEND_DIR)
+	@$(FPP) $(FPPFLAGS) -d $(DEPEND_DIR)/$*.dpp $< $@
+
+$(ALL_DPPS) : 
+
+# Include generated dependencies from .dpp files
+
+ifneq ($(MAKECMDGOALS),clean)
+   -include $(ALL_DPPS)
+endif
+
+############
+# Compiling
+############
 
 # Fortran
 
-export F9XC
+FC = gfortran
+MAKEDEP = awk -f makedepf08.awk
 
-F9XC = gfortran
+FFLAGS := $(FFLAGS) -I$(INC_DIR) -std=f2018 \
+          -finit-real=snan -fbacktrace -fmax-errors=25 -fPIC
 
-FFLAGS := ${FFLAGS} -finit-real=snan -fbacktrace -fmax-errors=25 -fPIC
-
-ifeq (${FPE},yes)
-  FFLAGS := ${FFLAGS} -ffpe-trap=invalid,overflow,zero
+ifeq ($(FPE),yes)
+   FFLAGS := $(FFLAGS) -ffpe-trap=invalid,overflow,zero
 endif
 
-ifeq (${DEBUG},yes)
-  FFLAGS := ${FFLAGS} -Og -ggdb -fcheck=all -Wall -Wno-unused-dummy-argument -Wno-maybe-uninitialized -finline-limit=0
+ifeq ($(DEBUG),yes)
+   FFLAGS := $(FFLAGS) -Og -ggdb -fcheck=all -Wall \
+             -Wno-unused-dummy-argument -Wno-maybe-uninitialized -finline-limit=0
 else
-  FFLAGS := ${FFLAGS} -O2 -march=native
+   FFLAGS := $(FFLAGS) -O2
 endif
 
-F9XFLAGS := ${F9XFLAGS} $(addprefix -I,${MODPATH}) ${FFLAGS} -std=f2018
-F77FLAGS := ${F77FLAGS} ${FFLAGS} -ffixed-form
-
-ifeq (${OMP},yes)
-  F9XFLAGS := ${F9XFLAGS} -fopenmp
-  F77FLAGS := ${F77FLAGS} -fopenmp
+ifeq ($(OMP),yes)
+   FFLAGS := $(FFLAGS) -fopenmp
 endif
 
-# C (mainly for Python extensions)
+ifeq ($(PORTABLE),yes)
+   FFLAGS := $(FFLAGS) -ffp-contract=off
+else
+   FFLAGS := $(FFLAGS) -march=native
+endif
+
+# C
 
 export CC
 
@@ -97,143 +197,72 @@ CYTHON = cython
 
 CYFLAGS = -I../src/include
 
-# Linking
+# Rules
 
-LDFLAGS := ${LDFLAGS} `hdf5_link` `lapack95_link`
+%.o : $(DEPEND_DIR)/%.anc
+	@echo FC $*
+	@$(FC)$ $(FFLAGS) -c $*.f90
 
-ifeq ($(shell uname -s),Darwin)
-  LIB_SUFFIX = .dylib
-  LIB_LDFLAGS = -shared -install_name ${MSG_DIR}/lib/$@
-  EXEC_LDFLAGS = ${FITS_LDFLAGS}
-  PYC_SUFFIX = $(shell python3-config --extension-suffix)
-  PYC_LDFLAGS = -shared -install_name ${MSG_DIR}/python/$@ -undefined dynamic_lookup 
-else			   
-  LIB_SUFFIX = .so
-  LIB_LDFLAGS = -Wl,--no-warn-execstack -shared -Wl,-rpath -Wl,${MSG_DIR}/lib
-  EXEC_LDFLAGS = -Wl,--no-warn-execstack -Wl,-rpath -Wl,${MSG_DIR}/lib ${FITS_LDFLAGS}
-  PYC_SUFFIX = $(shell python3-config --extension-suffix)
-  PYC_LDFLAGS = ${LIB_LDFLAGS}
-endif
-
-# Targets-related variables
-
-LIB_TARGETS_ = $(addsuffix ${LIB_SUFFIX},${LIB_TARGETS})
-PYC_TARGETS_ = $(addsuffix ${PYC_SUFFIX},${PYC_TARGETS})
-
-DEP_TARGETS = $(patsubst %,.%.d,${LIB_TARGETS} ${EXEC_TARGETS})
-
-MOD_TARGETS = $(patsubst lib%,%_m.mod,${LIB_TARGETS})
-INC_TARGETS = $(patsubst lib%,%.h,$(filter libc%,${LIB_TARGETS}))
-
-# Paths
-
-vpath %.fypp ${SUBDIRS}
-vpath %.inc ${SUBDIRS}
-vpath %.pyx ${SUBDIRS}
-vpath %.c ${SUBDIRS}
-vpath %.h ../src/include
-
-# Explicit rules
-
-.PHONY: all install lib-install pyc-install exec-install headers-install clean almostclean
-
-all : ${LIB_TARGETS_} ${PYC_TARGETS_} ${EXEC_TARGETS}
-
-install : lib-install pyc-install exec-install headers-install
-
-lib-install : ${LIB_TARGETS_}
-	@for t in $^; do \
-            echo CP $${t} ${LIBDIR}; \
-            cp $${t} ${LIBDIR}; \
-        done
-
-pyc-install : ${PYC_TARGETS_}
-	@for t in $^; do \
-            echo CP $${t} ${LIBDIR}; \
-            cp $${t} ${LIBDIR}; \
-        done
-
-exec-install : ${EXEC_TARGETS}
-	@for t in $^; do \
-            echo CP $${t} ${BINDIR}; \
-            cp $${t} ${BINDIR}; \
-        done
-
-headers-install : ${MOD_TARGETS} ${INC_TARGETS}
-	@for t in $^; do \
-            echo CP $${t} ${INCDIR}; \
-            cp $${t} ${INCDIR}; \
-        done
-
-clean : almostclean
-	rm -f .*.d .*.dpp
-
-almostclean :
-	rm -f ${LIB_TARGETS_} ${PYC_TARGETS_} ${EXEC_TARGETS} *.o *.mod *.smod *.f90 *.c
-
-${LIB_TARGETS_} :
-	@echo LD_LIB $@
-	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} ${LIB_LDFLAGS}
-
-${PYC_TARGETS_} :
-	@echo LD_PYC $@
-	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS} ${PYC_LDFLAGS}
-
-${EXEC_TARGETS} :
-	@echo LD $@
-	@${F9XC} ${F9XFLAGS} -o $@ $^ ${LDFLAGS} ${EXEC_LDFLAGS}
-
-${DEP_TARGETS} : 
-	@echo DEPEND $(patsubst .%.d,%,$@) "->" $@
-	@makedepf90 $(addprefix -d ,${EXTRA_DEPS}) -m %m.mod $^ > $@
-	@echo "include \$$(patsubst %.f90,.%.dpp,$^)" >> $@
-
-# Implicit rules
-
-%.o : %.mod
-%.o : %.c
-% : %.mod
-% : %.o
-
-%.f90 .%.dpp : %.fypp
-	@./fypp_deps ${FYPPFLAGS} $< $*.f90 > .$*.dpp
-
-%_m.o %_m.mod : %_m.f90
-	@echo FC $<
-	@${F9XC} ${F9XFLAGS} -c $<
-
-%.o : %.f90
-	@echo FC $<
-	@${F9XC} ${F9XFLAGS} -c $<
-
-%.c : %.pyx
-	@echo CYTHON $<
-	@$(CYTHON) $(CYFLAGS) -o $@ $<
+$(DEPEND_DIR)/%.anc : %.f90 | $(DEPEND_DIR)
+	@$(FC) $(FFLAGS) -fsyntax-only -c $*.f90
+	@touch $@
 
 %.o : %.c
 	@echo CC $<
 	@${CC} ${CFLAGS} -c $<
 
-%.d : EXTRA_DEPS = $(addsuffix .mod,${$*_DEPS})
+%.c : %.pyx
+	@echo CYTHON $<
+	@$(CYTHON) $(CYFLAGS) -o $@ $<
 
-.PRECIOUS : %.f90 %.c
+$(ALL_DEPS) : | $(DEPEND_DIR)
+	@echo MAKEDEP $* 
+	@$(MAKEDEP) $^ > $@
 
-# Macros
-
-strip_d = $(patsubst %.d,%,$(1))
-
-# Dependency handling
+# Include generated dependencies from .dep files
 
 ifneq ($(MAKECMDGOALS),clean)
--include ${DEP_TARGETS}
+   -include $(ALL_DEPS)
 endif
 
-.SECONDEXPANSION:
+##########
+# Linking
+##########
 
-${LIB_TARGETS_} : %${LIB_SUFFIX} : $${$$*_OBJS} $$(addsuffix ${LIB_SUFFIX},$${$$*_LIBS})
+ifeq ($(shell uname -s),Darwin)
+   LIB_LDFLAGS = -shared -install_name $(LIB_DIR)/$@
+   BIN_LDFLAGS = 
+   PYC_LDFLAGS = -shared -install_name ${MSG_DIR}/python/$@ -undefined dynamic_lookup 
+else			   
+   LIB_LDFLAGS = -Wl,--no-warn-execstack -shared -Wl,-rpath -Wl,$(LIB_DIR)
+   BIN_LDFLAGS = -Wl,--no-warn-execstack -Wl,-rpath -Wl,$(LIB_DIR)
+   PYC_LDFLAGS = -shared -install_name ${MSG_DIR}/python/$@ -undefined dynamic_lookup 
+endif
 
-${PYC_TARGETS_} : %${PYC_SUFFIX} : $${$$*_OBJS} $$(addsuffix ${LIB_SUFFIX},$${$$*_LIBS})
+# Rules
 
-${EXEC_TARGETS} : $$($$@_OBJS) $$(addsuffix ${LIB_SUFFIX},$${$$@_LIBS})
+$(BIN_FILES) :
+	@echo LD $@
+	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(BIN_LDFLAGS)
 
-${DEP_TARGETS} : .%.d : $$(subst .o,.f90,$${$$*_OBJS})
+$(LIB_FILES) :
+	@echo LD-LIB $@
+	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(LIB_LDFLAGS)
+
+${PYC_FILES} :
+	@echo LD_PYC $@
+	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS} ${PYC_LDFLAGS}
+
+#######################
+# Secondary Expansions
+#######################
+
+.SECONDEXPANSION :
+
+$(BIN_FILES) : % : $$(subst .fypp,.o,$$($$*_SRCS)) $$(addsuffix $(LIB_SUFFIX),$$($$*_LIBS))
+
+$(LIB_FILES) : %$(LIB_SUFFIX) : $$(subst .fypp,.o,$$($$*_SRCS)) $$(addsuffix $(LIB_SUFFIX),$$($$*_LIBS))
+
+$(PYC_FILES) : %$(PYC_SUFFIX) : $$(subst .c,.o,$$($$*_SRCS)) $$(addsuffix $(LIB_SUFFIX),$$($$*_LIBS))
+
+$(ALL_DEPS) : $(DEPEND_DIR)/%.dep : $$(subst .fypp,.f90,$$($$*_SRCS) $$($$*_USES))

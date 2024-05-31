@@ -6,6 +6,6 @@ if [[ $OSTYPE != 'darwin'* ]]; then
     EXTRA_ARGS=-lm
 fi
 
-echo -Wl,-rpath -Wl,${MSG_DIR}/lib -L${MSG_DIR}/lib -lcmsg -lmsg ${EXTRA_ARGS}
+echo -Wl,-rpath -Wl,${MSG_DIR}/lib -L${MSG_DIR}/lib -lcmsg -lmsg -lforum ${EXTRA_ARGS}
 
 

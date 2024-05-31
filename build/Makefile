@@ -27,9 +27,9 @@ TOOLS ?= yes
 
 # Targets
 
-LIB_TARGETS = libforum libmsg libfmsg libcmsg
-EXEC_TARGETS =
-PYC_TARGETS = 
+BIN_TARGETS = 
+LIB_TARGETS = libmsg libfmsg libcmsg
+PYC_TARGETS =
 
 ifeq ($(PYTHON),yes)
   PYC_TARGETS := pycmsg
@@ -39,162 +39,169 @@ ifeq (${TESTS},yes)
   UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_vgrid utest_specgrid utest_photgrid
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_specgrid
-  EXEC_TARGETS := ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
+  BIN_TARGETS := ${BIN_TARGETS} ${UTEST_TARGETS} ${STRESS_TARGETS} ${TIME_TARGETS}
 endif
 
 ifeq (${TOOLS},yes)
-  EXEC_TARGETS := ${EXEC_TARGETS} ascii_to_specint synspec_to_specint ferre_to_specint c3k_to_specint \
-                  specint_to_specint specgrid_to_photgrid specint_to_specgrid \
-                  make_bb_photgrid make_passband make_photon_passband inspect_grid
+  BIN_TARGETS := ${BIN_TARGETS} ascii_to_specint synspec_to_specint	\
+                 ferre_to_specint c3k_to_specint specint_to_specint	\
+                 specgrid_to_photgrid specint_to_specgrid		\
+                 make_bb_photgrid make_passband make_photon_passband	\
+                 inspect_grid
   ifneq (${FITS_LDFLAGS},)
-    EXEC_TARGETS := ${EXEC_TARGETS} goettingen_to_specint coelho_to_specint
+    BIN_TARGETS := ${BIN_TARGETS} goettingen_to_specint coelho_to_specint
   endif
 endif
 
-# Object lists & related variables
+# Source file lists & related variables
 #
-# libxxx_OBJS = object files required to compile libxxx
-# lbbxxx_DEPS = dependency that must be added to .libxxx.d file  
-#
-# prog_OBJS = object files required to compile prog
-# prog_LIBS = library files required to link prog
-# prog_DEPS = dependencies that must be added to .prog.d file
+# xxx_SRCS = source files required to compile xxx
+# xxx_USES = source files providing modules USE'd by xxx
+# xxx_LIBS = library files required to link xxx
 
-libforum_OBJS = forum_m.o cinter_m.o const_m.o hdf5io_m.o kinds_m.o memory_m.o \
-                order_m.o system_m.o
+libmsg_SRCS = msg_m.fypp axis_m.fypp vgrid_m.fypp ninterp_m.fypp	\
+              range_m.fypp range_sm.fypp comp_range_m.fypp		\
+              lin_range_m.fypp log_range_m.fypp tab_range_m.fypp	\
+              specgrid_m.fypp speccache_m.fypp specsource_m.fypp	\
+              hdf5_specsource_m.fypp specint_m.fypp specint_sm.fypp	\
+              limb_specint_m.fypp photgrid_m.fypp photcache_m.fypp	\
+              photsource_m.fypp hdf5_photsource_m.fypp			\
+              spec_photsource_m.fypp mem_photsource_m.fypp		\
+              photint_m.fypp photint_sm.fypp limb_photint_m.fypp	\
+              passband_m.fypp cubint_m.fypp stat_m.fypp file_m.fypp	\
+              fit_m.fypp limb_m.fypp math_m.fypp
 
-libmsg_OBJS = msg_m.o axis_m.o vgrid_m.o ninterp_m.o \
-              range_m.o range_sm.o comp_range_m.o lin_range_m.o log_range_m.o tab_range_m.o \
-              specgrid_m.o speccache_m.o specsource_m.o hdf5_specsource_m.o specint_m.o specint_sm.o limb_specint_m.o \
-              photgrid_m.o photcache_m.o photsource_m.o hdf5_photsource_m.o spec_photsource_m.o mem_photsource_m.o photint_m.o photint_sm.o limb_photint_m.o \
-              passband_m.o cubint_m.o stat_m.o file_m.o fit_m.o limb_m.o math_m.o
-libmsg_LIBS = libforum
-libmsg_DEPS = forum_m
+libfmsg_SRCS = fmsg_m.fypp
+libfmsg_USES = ${libmsg_SRCS}
+libfmsg_LIBS = libmsg
 
-libfmsg_OBJS = fmsg_m.o
-libfmsg_LIBS = libforum libmsg
-libfmsg_DEPS = forum_m msg_m
+libcmsg_SRCS = cmsg_m.fypp cmsg_spec_m.fypp cmsg_phot_m.fypp
+libcmsg_USES = ${libmsg_SRCS}
+libcmsg_LIBS = libmsg
 
-libcmsg_OBJS = cmsg_m.o cmsg_spec_m.o cmsg_phot_m.o
-libcmsg_LIBS = libforum libmsg
-libcmsg_DEPS = forum_m msg_m
+pycmsg_SRCS = pycmsg.c
+pycmsg_LIBS = libmsg libcmsg
 
-pycmsg_OBJS = pycmsg.o
-pycmsg_LIBS = libforum libmsg libcmsg
+ascii_to_specint_SRCS = ascii_to_specint.fypp
+ascii_to_specint_USES = ${libmsg_SRCS}
+ascii_to_specint_LIBS = libmsg
 
-ascii_to_specint_OBJS = ascii_to_specint.o
-ascii_to_specint_LIBS = libforum libmsg
-ascii_to_specint_DEPS = forum_m msg_m
+synspec_to_specint_SRCS = synspec_to_specint.fypp
+synspec_to_specint_USES = ${libmsg_SRCS}
+synspec_to_specint_LIBS = libmsg
 
-synspec_to_specint_OBJS = synspec_to_specint.o
-synspec_to_specint_LIBS = libforum libmsg
-synspec_to_specint_DEPS = forum_m msg_m
+ferre_to_specint_SRCS = ferre_to_specint.fypp
+ferre_to_specint_USES = ${libmsg_SRCS}
+ferre_to_specint_LIBS = libmsg
 
-ferre_to_specint_OBJS = ferre_to_specint.o
-ferre_to_specint_LIBS = libforum libmsg
-ferre_to_specint_DEPS = forum_m msg_m
+c3k_to_specint_SRCS = c3k_to_specint.fypp
+c3k_to_specint_USES = ${libmsg_SRCS}
+c3k_to_specint_LIBS = libmsg
 
-c3k_to_specint_OBJS = c3k_to_specint.o
-c3k_to_specint_LIBS = libforum libmsg
-c3k_to_specint_DEPS = forum_m msg_m
+goettingen_to_specint_SRCS = goettingen_to_specint.fypp tools_utils_m.fypp
+goettingen_to_specint_USES = ${libmsg_SRCS}
+goettingen_to_specint_LIBS = libmsg
 
-goettingen_to_specint_OBJS = goettingen_to_specint.o tools_utils_m.o
-goettingen_to_specint_LIBS = libforum libmsg
-goettingen_to_specint_DEPS = forum_m msg_m
+coelho_to_specint_SRCS = coelho_to_specint.fypp tools_utils_m.fypp
+coelho_to_specint_USES = ${libmsg_SRCS}
+coelho_to_specint_LIBS = libmsg
 
-coelho_to_specint_OBJS = coelho_to_specint.o tools_utils_m.o
-coelho_to_specint_LIBS = libforum libmsg
-coelho_to_specint_DEPS = forum_m msg_m
+parse_wavelen_SRCS = parse_wavelen.fypp
+parse_wavelen_USES = ${libmsg_SRCS}
+parse_wavelen_LIBS = libmsg
 
-parse_wavelen_OBJS = parse_wavelen.o
-parse_wavelen_LIBS = libforum libmsg
-parse_wavelen_DEPS = forum_m msg_m
+specint_to_specint_SRCS = specint_to_specint.fypp
+specint_to_specint_USES = ${libmsg_SRCS}
+specint_to_specint_LIBS = libmsg
 
-specint_to_specint_OBJS = specint_to_specint.o
-specint_to_specint_LIBS = libforum libmsg
-specint_to_specint_DEPS = forum_m msg_m
+specgrid_to_photgrid_SRCS = specgrid_to_photgrid.fypp
+specgrid_to_photgrid_USES = ${libmsg_SRCS}
+specgrid_to_photgrid_LIBS = libmsg
 
-specgrid_to_photgrid_OBJS = specgrid_to_photgrid.o
-specgrid_to_photgrid_LIBS = libforum libmsg
-specgrid_to_photgrid_DEPS = forum_m msg_m
+specint_to_specgrid_SRCS = specint_to_specgrid.fypp
+specint_to_specgrid_USES = ${libmsg_SRCS}
+specint_to_specgrid_LIBS = libmsg
 
-specint_to_specgrid_OBJS = specint_to_specgrid.o
-specint_to_specgrid_LIBS = libforum libmsg
-specint_to_specgrid_DEPS = forum_m msg_m
+make_photgrid_SRCS = make_photgrid.fypp
+make_photgrid_USES = ${libmsg_SRCS}
+make_photgrid_LIBS = libmsg
 
-make_photgrid_OBJS = make_photgrid.o
-make_photgrid_LIBS = libforum libmsg
-make_photgrid_DEPS = forum_m msg_m
+make_bb_photgrid_SRCS = make_bb_photgrid.fypp
+make_bb_photgrid_USES = ${libmsg_SRCS}
+make_bb_photgrid_LIBS = libmsg
 
-make_bb_photgrid_OBJS = make_bb_photgrid.o
-make_bb_photgrid_LIBS = libforum libmsg
-make_bb_photgrid_DEPS = forum_m msg_m
+make_passband_SRCS = make_passband.fypp
+make_passband_USES = ${libmsg_SRCS}
+make_passband_LIBS = libmsg
 
-make_passband_OBJS = make_passband.o
-make_passband_LIBS = libforum libmsg
-make_passband_DEPS = forum_m msg_m
+make_photon_passband_SRCS = make_photon_passband.fypp
+make_photon_passband_USES = ${libmsg_SRCS}
+make_photon_passband_LIBS = libmsg
 
-make_photon_passband_OBJS = make_photon_passband.o
-make_photon_passband_LIBS = libforum libmsg
-make_photon_passband_DEPS = forum_m msg_m
+inspect_grid_SRCS = inspect_grid.fypp
+inspect_grid_USES = ${libmsg_SRCS}
+inspect_grid_LIBS = libmsg
 
-inspect_grid_OBJS = inspect_grid.o
-inspect_grid_LIBS = libforum libmsg
-inspect_grid_DEPS = forum_m msg_m
+utest_file_SRCS = utest_file.fypp utest_file_m.fypp
+utest_file_USES = ${libmsg_SRCS}
+utest_file_LIBS = libmsg
 
-utest_file_OBJS = utest_file.o utest_file_m.o
-utest_file_LIBS = libforum libmsg
-utest_file_DEPS = forum_m file_m
+utest_fit_SRCS = utest_fit.fypp utest_fit_m.fypp
+utest_fit_USES = ${libmsg_SRCS}
+utest_fit_LIBS = libmsg
 
-utest_fit_OBJS = utest_fit.o utest_fit_m.o
-utest_fit_LIBS = libforum libmsg
-utest_fit_DEPS = forum_m fit_m
+utest_math_SRCS = utest_math.fypp utest_math_m.fypp
+utest_math_USES = ${libmsg_SRCS}
+utest_math_LIBS = libmsg
 
-utest_math_OBJS = utest_math.o utest_math_m.o
-utest_math_LIBS = libforum libmsg
-utest_math_DEPS = forum_m math_m
+utest_cubint_SRCS = utest_cubint.fypp utest_cubint_m.fypp
+utest_cubint_USES = ${libmsg_SRCS}
+utest_cubint_LIBS = libmsg
 
-utest_cubint_OBJS = utest_cubint.o utest_cubint_m.o
-utest_cubint_LIBS = libforum libmsg
-utest_cubint_DEPS = forum_m cubint_m
+utest_ninterp_SRCS = utest_ninterp.fypp utest_ninterp_m.fypp
+utest_ninterp_USES = ${libmsg_SRCS}
+utest_ninterp_LIBS = libmsg
 
-utest_ninterp_OBJS = utest_ninterp.o utest_ninterp_m.o
-utest_ninterp_LIBS = libforum libmsg
-utest_ninterp_DEPS = forum_m ninterp_m
+utest_vgrid_SRCS = utest_vgrid.fypp utest_vgrid_m.fypp
+utest_vgrid_USES = ${libmsg_SRCS}
+utest_vgrid_LIBS = libmsg
 
-utest_vgrid_OBJS = utest_vgrid.o utest_vgrid_m.o
-utest_vgrid_LIBS = libforum libmsg
-utest_vgrid_DEPS = forum_m vgrid_m stat_m
+utest_specgrid_SRCS = utest_specgrid.fypp utest_specgrid_m.fypp
+utest_specgrid_USES = ${libmsg_SRCS} ${libfmsg_SRCS}
+utest_specgrid_LIBS = libmsg libfmsg
 
-utest_specgrid_OBJS = utest_specgrid.o utest_specgrid_m.o
-utest_specgrid_LIBS = libforum libmsg libfmsg
-utest_specgrid_DEPS = forum_m fmsg_m
+utest_photgrid_SRCS = utest_photgrid.fypp utest_photgrid_m.fypp
+utest_photgrid_USES = ${libmsg_SRCS} ${libfmsg_SRCS}
+utest_photgrid_LIBS = libmsg libfmsg
 
-utest_photgrid_OBJS = utest_photgrid.o utest_photgrid_m.o
-utest_photgrid_LIBS = libforum libmsg libfmsg
-utest_photgrid_DEPS = forum_m fmsg_m
+stress_specgrid_SRCS = stress_specgrid.fypp
+stress_specgrid_USES = ${libmsg_SRCS} ${libfmsg_SRCS}
+stress_specgrid_LIBS = libmsg libfmsg
 
-stress_specgrid_OBJS = stress_specgrid.o
-stress_specgrid_LIBS = libforum libmsg libfmsg
-stress_specgrid_DEPS = forum_m fmsg_m
+stress_photgrid_SRCS = stress_photgrid.fypp
+stress_photgrid_USES = ${libmsg_SRCS} ${libfmsg_SRCS}
+stress_photgrid_LIBS = libmsg libfmsg
 
-stress_photgrid_OBJS = stress_photgrid.o
-stress_photgrid_LIBS = libforum libmsg libfmsg
-stress_photgrid_DEPS = forum_m fmsg_m
+time_specgrid_SRCS = time_specgrid.fypp
+time_specgrid_USES = ${libmsg_SRCS} ${libfmsg_SRCS}
+time_specgrid_LIBS = libmsg libfmsg
 
-time_specgrid_OBJS = time_specgrid.o
-time_specgrid_LIBS = libforum libmsg libfmsg
-time_specgrid_DEPS = forum_m fmsg_m
+# Directories
 
-# Search subdirs
+SRC_DIRS = $(addprefix ../src/, common cython include lib math phot \
+           range spec tests tools vgrid)
 
-GITMODS = forum
-SUBDIRS = $(filter-out ${GITMODS},$(wildcard ../src/*)) $(wildcard $(patsubst %,../src/%/src,${GITMODS}))
+MOD_PATH = ../include
 
-# Include other makefiles
+# Additional link flags
+
+LDFLAGS = `lapack_link` `hdf5_link` `lapack95_link` -L$(LIB_DIR) -lforum
+
+# Include standard rules
 
 include Make.inc
 
 # Additional dependencies
 
 pycmsg.o : cmsg.h
+

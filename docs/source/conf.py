@@ -19,13 +19,15 @@ sys.path.insert(0, os.path.abspath('exts'))
 
 import sphinx_rtd_theme
 
+
 # -- Project information -----------------------------------------------------
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
 version = 'dev'
-branch = 'master'
+branch = 'main'
 copyright = '2023, Rich Townsend & The MSG Team'
+
 
 # -- General configuration ---------------------------------------------------
 

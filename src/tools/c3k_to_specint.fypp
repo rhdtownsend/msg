@@ -16,8 +16,19 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #:include 'forum.inc'
-#:include 'hdf5io.inc'
 
+#:def HDF5_CALL(proc, *vars_pos, **vars_kw)
+   #:set vars = vars_pos + ['hdf_err'] + ['{:s}={:s}'.format(key, value) for key, value in vars_kw.items()]
+   #:set arg_list = '(' + ','.join(vars) + ')'
+   call ${proc}$${arg_list}$
+   if (hdf_err == -1) then
+      #:if defined('DEBUG')
+         call h5eprint_f(hdf_err)
+      #:endif
+      @:ABORT('error in call to ${proc}$')
+   endif
+#:enddef
+   
 program c3k_to_specint
 
    ! Uses
