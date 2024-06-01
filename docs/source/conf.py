@@ -24,7 +24,7 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = 'dev'
+version = '1.3+dev'
 branch = 'main'
 copyright = '2023, Rich Townsend & The MSG Team'
 
@@ -112,7 +112,7 @@ extlinks = {
 
 # Set site-wide targets
 
-if version == 'dev':
+if version.endswith('+dev'):
     tarball = 'http://user.astro.wisc.edu/~townsend/resource/download/nightly/msg-dev.tar.gz'
 else:
     tarball = f'https://github.com/rhdtownsend/msg/releases/download/v{version}/msg-{version}.tar.gz'
