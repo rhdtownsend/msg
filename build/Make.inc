@@ -236,7 +236,7 @@ ifeq ($(shell uname -s),Darwin)
 else			   
    LIB_LDFLAGS = -Wl,--no-warn-execstack -shared -Wl,-rpath -Wl,$(LIB_DIR)
    BIN_LDFLAGS = -Wl,--no-warn-execstack -Wl,-rpath -Wl,$(LIB_DIR)
-   PYC_LDFLAGS = -shared -install_name ${MSG_DIR}/python/$@ -undefined dynamic_lookup 
+   PYC_LDFLAGS = ${LIB_LDFLAGS}
 endif
 
 # Rules
