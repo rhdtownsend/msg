@@ -33,13 +33,13 @@ you'll also need the following components:
 Building MSG
 ============
 
-Download the `MSG source code <tarball_>`__, and unpack it
+Download the `MSG source code <tarball_url_>`__, and unpack it
 from the command line using the :command:`tar` utility:
 
 .. prompt:: bash
    :substitutions:
 
-   tar xf msg-|version|.tar.gz
+   tar xf |dist_dir|
 
 Set the :envvar:`MSG_DIR` environment variable with the path to the
 newly created source directory; this can be achieved, e.g., using the
@@ -48,7 +48,7 @@ newly created source directory; this can be achieved, e.g., using the
 .. prompt:: bash
    :substitutions:
 
-   export MSG_DIR=$(realpath msg-|version|)
+   export MSG_DIR=$(realpath |dist_dir|)
 
 Finally, compile MSG using the :command:`make` utility:
 

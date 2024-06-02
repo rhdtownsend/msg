@@ -7,7 +7,7 @@ Quick Start
 To get started with MSG, follow these simple steps:
 
 * Install the `MESA Software Development Kit <mesa-sdk_>`__.
-* Download the `MSG source code <tarball_>`__.
+* Download the `MSG source code <tarball_url_>`__.
 * Unpack the source code using the :command:`tar` utility.
 * Set the :envvar:`MSG_DIR` environment variable to point to the
   newly created source directory.

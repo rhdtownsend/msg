@@ -113,12 +113,16 @@ extlinks = {
 # Set site-wide targets
 
 if version.endswith('+dev'):
-    tarball = 'http://user.astro.wisc.edu/~townsend/resource/download/nightly/msg-dev.tar.gz'
+    dist_dir = 'msg-dev'
+    tarball = f'{dist_dir}.tar.gz'
+    tarball_url = f'http://user.astro.wisc.edu/~townsend/resource/download/nightly/{tarball}'
 else:
-    tarball = f'https://github.com/rhdtownsend/msg/releases/download/v{version}/msg-{version}.tar.gz'
+    dist_dir = 'msg-{version}'
+    tarball = f'{dist_dir}.tar.gz'
+    tarball_url = f'https://github.com/rhdtownsend/msg/releases/download/v{version}/{tarball}'
 
 targets = {
-    'tarball': tarball,
+    'tarball_url': tarball_url,
     'mesa-sdk': 'http://user.astro.wisc.edu/~townsend/static.php?ref=mesasdk',
     'mad-sdk': 'http://user.astro.wisc.edu/~townsend/static.php?ref=madsdk',
     'grid-files': 'http://user.astro.wisc.edu/~townsend/static.php?ref=msg-grids',
@@ -134,7 +138,9 @@ nbsphinx_prolog = rst_prolog
 # Add substitutions for sphinx_substitution_extensions
 
 rep_exts = {"version": version,
-            "author": author}
+            "author": author,
+            "dist_dir": dist_dir,
+            "tarball": tarball}
 
 for rep_ext_key, rep_ext_val in rep_exts.items():
     rst_prolog += "\n.. |{:s}| replace:: {:s}".format(rep_ext_key, rep_ext_val)
