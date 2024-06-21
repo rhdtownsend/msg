@@ -27,7 +27,7 @@ author = 'Rich Townsend & The MSG Team'
 version = '1.3+dev'
 release = version
 branch = 'main'
-copyright = '2023, Rich Townsend & The MSG Team'
+copyright = '2024, Rich Townsend & The MSG Team'
 
 
 # -- General configuration ---------------------------------------------------
@@ -118,7 +118,7 @@ if version.endswith('+dev'):
     tarball = f'{dist_dir}.tar.gz'
     tarball_url = f'http://user.astro.wisc.edu/~townsend/resource/download/nightly/{tarball}'
 else:
-    dist_dir = 'msg-{version}'
+    dist_dir = f'msg-{version}'
     tarball = f'{dist_dir}.tar.gz'
     tarball_url = f'https://github.com/rhdtownsend/msg/releases/download/v{version}/{tarball}'
 
@@ -197,9 +197,10 @@ email_automode = True
 
 # Set up intersphinx
 intersphinx_mapping = {
-    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'numpy': ('https://numpy.org/doc/stable', None),
     'matplotlib': ('https://matplotlib.org/stable/', None)
 }
+intersphinx_disabled_reftypes = ["std:doc"]
 
 # Set up autodoc
 autoclass_content = 'class'
