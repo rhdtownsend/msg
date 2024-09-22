@@ -99,6 +99,7 @@ almostclean :
 vpath %.fypp $(SRC_DIRS)
 vpath %.inc $(SRC_DIRS)
 vpath %.h $(SRC_DIRS)
+vpath %.c $(SRC_DIRS)
 vpath %.pyx $(SRC_DIRS)
 
 #################
