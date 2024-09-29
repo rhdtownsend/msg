@@ -42,18 +42,18 @@ MAKEFLAGS += --no-print-directory
 
 # Paths
 
-BIN_DIR = $(CURDIR)/bin
-LIB_DIR = $(CURDIR)/lib
-INC_DIR = $(CURDIR)/include
+BIN_DIR ?= $(CURDIR)/bin
+LIB_DIR ?= $(CURDIR)/lib
+INC_DIR ?= $(CURDIR)/include
+
 SRC_DIR = $(CURDIR)/src
+SRC_DIRS = $(addprefix $(SRC_DIR)/, common cython include lib math phot \
+           range spec tests tools vgrid)
 
 ifeq ($(FORUM),yes)
    FORUM_LIB_DIR = $(LIB_DIR)
    FORUM_INC_DIR = $(INC_DIR)
 endif
-
-SRC_DIRS = $(addprefix $(SRC_DIR)/, common cython include lib math phot \
-           range spec tests tools vgrid)
 
 # Rules
 
