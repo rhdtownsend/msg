@@ -31,6 +31,8 @@ BIN_TARGETS =
 LIB_TARGETS = libmsg libfmsg libcmsg
 PYC_TARGETS =
 
+INC_FILES = msg_m.mod fmsg_m.mod cmsg_m.mod
+
 ifeq ($(PYTHON),yes)
   PYC_TARGETS := pycmsg
 endif
