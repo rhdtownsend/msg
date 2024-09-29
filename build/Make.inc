@@ -1,13 +1,11 @@
 # File     : Make.inc
 # Purpose  : standard makefile rules, targets
 
-SHELL := /bin/bash
-
 #########
 # Checks
 #########
 
-MINIMUM_VERSION = 23.7.2
+MINIMUM_VERSION = 21.4.1
 
 ifneq ($(MAKECMDGOALS),clean)
 
@@ -21,11 +19,11 @@ ifneq ($(MAKECMDGOALS),clean)
       else
          $(error Could not determine MESA SDK availability)
       endif
-    endif
+   endif
 
-    ifeq (${MSG_DIR},) 
-        $(error Please set the MSG_DIR environment variable to point to the top-level MSG directory)
-    endif
+   ifeq ($(MSG_DIR),) 
+       $(error Please set the MSG_DIR environment variable to point to the top-level MSG directory)
+   endif
 
 endif
 
@@ -41,15 +39,13 @@ else
    PYC_SUFFIX = $(shell python3-config --extension-suffix)
 endif
 
-BIN_DIR ?= ../bin
-LIB_DIR ?= ../lib
-INC_DIR ?= ../include
-
 DEPEND_DIR = .depend
 
 BIN_FILES = $(BIN_TARGETS)
+
 LIB_FILES = $(addsuffix $(LIB_SUFFIX),$(LIB_TARGETS))
-PYC_FILES = $(addsuffix ${PYC_SUFFIX},${PYC_TARGETS})
+
+PYC_FILES = $(addsuffix $(PYC_SUFFIX),$(PYC_TARGETS))
 
 ALL_SRCS = $(foreach target,$(BIN_TARGETS) $(LIB_TARGETS) $(PYC_TARGETS),$($(target)_SRCS) $($(target)_USES))
 
@@ -61,11 +57,17 @@ ALL_DEPS = $(addprefix $(DEPEND_DIR)/,$(BIN_TARGETS:%=%.dep) $(LIB_TARGETS:%=%.d
 ##########
 
 all : $(BIN_FILES) $(LIB_FILES) $(PYC_FILES)
+	@:
 
 install : $(addprefix $(BIN_DIR)/,$(BIN_FILES)) \
           $(addprefix $(LIB_DIR)/,$(LIB_FILES)) \
           $(addprefix $(LIB_DIR)/,$(PYC_FILES)) \
-	  $(addprefix $(INC_DIR)/,$(INC_FILES))
+          $(addprefix $(INC_DIR)/,$(INC_FILES))
+	@:
+
+clean :
+	@rm -rf $(BIN_FILES) $(SLIB_FILES) \
+                $(INC_FILES) $(DEPEND_DIR) *.f90 *.mod *.smod *.o
 
 $(BIN_DIR)/% : %
 	@echo CP $* $@
@@ -80,15 +82,9 @@ $(INC_DIR)/% : %
 	@cp $< $@
 
 $(DEPEND_DIR) :
-	mkdir -p $@
+	@mkdir -p $@
 
-clean : almostclean
-	rm -f $(DEPEND_DIR)/*
-
-almostclean :
-	rm -f $(BIN_FILES) $(LIB_FILES) $(PYC_FILES) $(INC_FILES) *.f90 *.mod *.smod *.o *.c
-
-.PHONY: all install clean almostclean
+.PHONY: all install clean
 
 .SUFFIXES:
 
@@ -106,20 +102,17 @@ vpath %.pyx $(SRC_DIRS)
 # Preproccessing
 #################
 
-# Flags & files
+# Flags
 
-FPP = ./fypp_deps
+FPP = PYTHONPATH=$(MESASDK_ROOT)/lib/python ./fypp_deps
 
-FPPFLAGS := $(FPPFLAGS) \
-	    --line-numbering \
-            $(addprefix -I,$(SRC_DIRS)) \
-	    $(addprefix -I,$(INC_DIR)) \
+FPPFLAGS += --line-numbering $(addprefix -I,$(SRC_DIRS)) \
             $(foreach opt,DEBUG OMP FPE,$(if $(filter yes,$($(opt))),-D$(opt)=1,-D$(opt)=0))
 
 ifeq ($(DEBUG),yes)
-   FPPFLAGS := $(FPPFLAGS) -DLOG_LEVEL=\'DEBUG\'
+   FPPFLAGS += -DLOG_LEVEL=\'DEBUG\'
 else
-   FPPFLAGS := $(FPPFLAGS) -DLOG_LEVEL=\'INFO\'
+   FPPFLAGS += -DLOG_LEVEL=\'INFO\'
 endif
 
 # Rules
@@ -139,60 +132,57 @@ endif
 # Compiling
 ############
 
-# Fortran
+# Fortran flags
 
 FC = gfortran
+
 MAKEDEP = awk -f makedepf08.awk
 
-FFLAGS := $(FFLAGS) -I$(INC_DIR) -std=f2018 \
-          -finit-real=snan -fbacktrace -fmax-errors=25 -fPIC
+FFLAGS += -std=f2018 -finit-real=snan -fbacktrace -fmax-errors=25 -fPIC
 
 ifeq ($(FPE),yes)
-   FFLAGS := $(FFLAGS) -ffpe-trap=invalid,overflow,zero
+   FFLAGS += -ffpe-trap=invalid,overflow,zero
 endif
 
 ifeq ($(DEBUG),yes)
-   FFLAGS := $(FFLAGS) -Og -ggdb -fcheck=all -Wall \
-             -Wno-unused-dummy-argument -Wno-maybe-uninitialized -finline-limit=0
+   FFLAGS += -Og -ggdb -fcheck=all \
+             -Wall -Wno-unused-dummy-argument -Wno-maybe-uninitialized \
+             -finline-limit=0
 else
-   FFLAGS := $(FFLAGS) -O2
+   FFLAGS += -O2
 endif
 
 ifeq ($(OMP),yes)
-   FFLAGS := $(FFLAGS) -fopenmp
+   FFLAGS += -fopenmp
 endif
 
 ifeq ($(PORTABLE),yes)
-   FFLAGS := $(FFLAGS) -ffp-contract=off
+   FFLAGS += -ffp-contract=off
 else
-   FFLAGS := $(FFLAGS) -march=native
+   FFLAGS += -march=native
 endif
 
-# C
-
-export CC
+# C flags
 
 CC = gcc
 
-CFLAGS := -fPIC -I../src/include
+CFLAGS += -fPIC -I../src/include
 
-ifeq (${DEBUG},yes)
-  CFLAGS := ${CFLAGS} -Og -ggdb
+ifeq ($(DEBUG),yes)
+  CFLAGS += -Og -ggdb
 else
-  CFLAGS := ${CFLAGS} -O2 -march=native -Wno-cpp
+  CFLAGS += -O2 -march=native -Wno-cpp
 endif
 
-ifeq (${PYTHON},yes)
-  CFLAGS := ${CFLAGS} $(shell python3-config --includes) -I$(shell python3 -c 'import numpy; print(numpy.get_include())')
+ifeq ($(PYTHON),yes)
+  CFLAGS += $(shell python3-config --includes) -I$(shell python3 -c 'import numpy; print(numpy.get_include())')
 endif
 
 ifeq ($(shell uname -s),Linux)
-  LDFLAGS:=${LDFLAGS} -Wl,--no-warn-execstack
+  LDFLAGS += -Wl,--no-warn-execstack
 endif
 
-# Cython
-
-export CYTHON
+# Cython flags
 
 CYTHON = cython
 
@@ -202,7 +192,7 @@ CYFLAGS = -I../src/include
 
 %.o : $(DEPEND_DIR)/%.anc
 	@echo FC $*
-	@$(FC)$ $(FFLAGS) -c $*.f90
+	@$(FC) $(FFLAGS) -c $*.f90
 
 $(DEPEND_DIR)/%.anc : %.f90 | $(DEPEND_DIR)
 	@$(FC) $(FFLAGS) -fsyntax-only -c $*.f90
@@ -210,14 +200,14 @@ $(DEPEND_DIR)/%.anc : %.f90 | $(DEPEND_DIR)
 
 %.o : %.c
 	@echo CC $<
-	@${CC} ${CFLAGS} -c $<
+	@$(CC) $(CFLAGS) -c $<
 
 %.c : %.pyx
 	@echo CYTHON $<
 	@$(CYTHON) $(CYFLAGS) -o $@ $<
 
 $(ALL_DEPS) : | $(DEPEND_DIR)
-	@echo MAKEDEP $* 
+	@echo MAKEDEP $*
 	@$(MAKEDEP) $^ > $@
 
 # Include generated dependencies from .dep files
@@ -230,14 +220,16 @@ endif
 # Linking
 ##########
 
+# Flags
+
 ifeq ($(shell uname -s),Darwin)
    LIB_LDFLAGS = -shared -install_name $(LIB_DIR)/$@
-   BIN_LDFLAGS = 
-   PYC_LDFLAGS = -shared -install_name ${MSG_DIR}/python/$@ -undefined dynamic_lookup 
+   BIN_LDFLAGS =
+   PYC_LDFLAGS = -shared -install_name $(MSG_DIR)/python/$@ -undefined dynamic_lookup
 else			   
    LIB_LDFLAGS = -Wl,--no-warn-execstack -shared -Wl,-rpath -Wl,$(LIB_DIR)
    BIN_LDFLAGS = -Wl,--no-warn-execstack -Wl,-rpath -Wl,$(LIB_DIR)
-   PYC_LDFLAGS = ${LIB_LDFLAGS}
+   PYC_LDFLAGS = $(LIB_LDFLAGS)
 endif
 
 # Rules
@@ -250,9 +242,9 @@ $(LIB_FILES) :
 	@echo LD-LIB $@
 	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(LIB_LDFLAGS)
 
-${PYC_FILES} :
+$(PYC_FILES) :
 	@echo LD_PYC $@
-	@${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS} ${PYC_LDFLAGS}
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(PYC_LDFLAGS)
 
 #######################
 # Secondary Expansions

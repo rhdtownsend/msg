@@ -1,9 +1,19 @@
-# Python cache
-__pycache__
-.ipynb_checkpoints
+# .gitignore file for MSG
 
-# Emacs backup files
 *~
+*.o
+*.mod
 
-# MacOS caches
+bin
+lib
+include
+
+doc/*.log
+doc/*.aux
+doc/*.bbl
+doc/*.blg
+
+work/*
+
 .DS_Store
+__pycache__
