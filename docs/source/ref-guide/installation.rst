@@ -39,7 +39,7 @@ from the command line using the :command:`tar` utility:
 .. prompt:: bash
    :substitutions:
 
-   tar xf |dist_dir|
+   tar xf |tarball|
 
 Set the :envvar:`MSG_DIR` environment variable with the path to the
 newly created source directory; this can be achieved, e.g., using the
@@ -95,9 +95,8 @@ Custom Builds
 =============
 
 Custom builds of MSG can be created by setting certain environment
-variables, and/or variables in the file
-:file:`{$MSG_DIR}/src/build/Makefile`, to the value ``yes``. The
-following variables are currently supported:
+variables to the value ``yes``. The following variables are currently
+supported:
 
 DEBUG
   Enable debugging mode (default ``no``)
@@ -117,7 +116,7 @@ TEST
 TOOLS
   Enable building of development tools (default ``yes``)
 
-If a variable is not set, then its default value is assumed.
+If an environment variable is not set, then its default value is assumed.
 
 .. _github-access:
 

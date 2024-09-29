@@ -197,8 +197,7 @@ email_automode = True
 
 # Set up intersphinx
 intersphinx_mapping = {
-    'numpy': ('https://numpy.org/doc/stable', None),
-    'matplotlib': ('https://matplotlib.org/stable/', None)
+    'numpy': ('https://numpy.org/doc/stable', None)
 }
 intersphinx_disabled_reftypes = ["std:doc"]
 
