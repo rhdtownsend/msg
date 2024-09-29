@@ -15,17 +15,17 @@ ifeq ($(TESTS),yes)
   UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_vgrid utest_specgrid utest_photgrid
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_specgrid
-  BIN_TARGETS := $(BIN_TARGETS) $(UTEST_TARGETS) $(STRESS_TARGETS) $(TIME_TARGETS)
+  BIN_TARGETS += $(UTEST_TARGETS) $(STRESS_TARGETS) $(TIME_TARGETS)
 endif
 
 ifeq ($(TOOLS),yes)
-  BIN_TARGETS := $(BIN_TARGETS) ascii_to_specint synspec_to_specint	\
-                 ferre_to_specint c3k_to_specint specint_to_specint	\
+  BIN_TARGETS += ascii_to_specint synspec_to_specint ferre_to_specint	\
+                 c3k_to_specint specint_to_specint			\
                  specgrid_to_photgrid specint_to_specgrid		\
                  make_bb_photgrid make_passband make_photon_passband	\
                  inspect_grid
   ifneq ($(FITS_LDFLAGS),)
-    BIN_TARGETS := $(BIN_TARGETS) goettingen_to_specint coelho_to_specint
+    BIN_TARGETS += goettingen_to_specint coelho_to_specint
   endif
 endif
 
