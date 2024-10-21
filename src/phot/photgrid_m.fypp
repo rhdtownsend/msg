@@ -2,7 +2,7 @@
 ! Purpose : Define photgrid_t type, for representing photometric intensity
 !           grids
 !
-! Copyright 2021-2022 Rich Townsend & The MSG Team
+! Copyright 2021-2024 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -58,6 +58,7 @@ module photgrid_m
       #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
          procedure, public :: interp_${name}$
       #:endfor
+         procedure, public :: interp_irradiance
       procedure, public :: adjust_x_vec
       procedure, public :: read
       procedure, public :: write
@@ -263,6 +264,88 @@ contains
       end subroutine interp_${name}$
 
    #:endfor
+
+   !****
+
+   subroutine interp_irradiance(self, x_vec, mu, dA, d, res, stat, deriv_vec, order)
+
+      class(photgrid_t), target, intent(inout) :: self
+      real(RD), intent(in)                     :: x_vec(:,:)
+      real(RD), intent(in)                     :: mu(:)
+      real(RD), intent(in)                     :: dA(:)
+      real(RD), intent(in)                     :: d(:)
+      real(RD), intent(out)                    :: res
+      integer, intent(out), optional           :: stat
+      logical, intent(in), optional            :: deriv_vec(:)
+      integer, intent(in), optional            :: order
+
+      integer  :: i
+      real(RD) :: res_i
+
+      @:CHECK_BOUNDS(SIZE(mu), SIZE(x_vec, 2))
+      @:CHECK_BOUNDS(SIZE(dA), SIZE(x_vec, 2))
+      @:CHECK_BOUNDS(SIZE(d), SIZE(x_vec, 2))
+
+      ! Interpolate the irradiance
+
+      res = 0._RD
+
+      !$OMP PARALLEL DO REDUCTION(+:res)
+      do i = 1, SIZE(x_vec, 2)
+         call self%vgrid%interp(data_proc_, x_vec(:,i), res_i, stat, deriv_vec, order)
+         res = res + res_i*dA(i)/d(i)**2
+      end do
+      !$OMP END PARALLEL DO
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine data_proc_(v_seq, f, stat)
+
+         integer, intent(in)            :: v_seq
+         real(RD), intent(out)          :: f
+         integer, intent(out), optional :: stat
+
+         class(photint_t), pointer :: photint
+
+         !$OMP CRITICAL
+         call self%photcache%fetch(v_seq, fetch_proc_, photint, stat)
+         !$OMP END CRITICAL
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         call photint%interp_intensity(mu(i), f, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         !$OMP CRITICAL
+         call self%photcache%release(v_seq, stat)
+         !$OMP END CRITICAL
+
+         return
+
+      end subroutine data_proc_
+
+      subroutine fetch_proc_(i, photint, stat)
+
+         integer, intent(in)                        :: i
+         class(photint_t), allocatable, intent(out) :: photint
+         integer, intent(out), optional             :: stat
+
+         !$OMP CRITICAL
+         call self%photsource%fetch(i, photint, stat)
+         !$OMP END CRITICAL
+
+         return
+
+      end subroutine fetch_proc_
+
+   end subroutine interp_irradiance
 
    !****
 
