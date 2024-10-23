@@ -16,6 +16,9 @@ FORUM ?= yes
 # Enable debugging (with a performance penalty)
 DEBUG ?= no
 
+# Build & link against shared libraries
+SHARED ?= yes
+
 # Enable FPE checks
 FPE ?= yes
 

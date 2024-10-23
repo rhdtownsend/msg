@@ -32,10 +32,12 @@ endif
 ############
 
 ifeq ($(shell uname -s),Darwin)
-   LIB_SUFFIX = .dylib
+   STATIC_LIB_SUFFIX = .a
+   SHARED_LIB_SUFFIX = .dylib
    PYC_SUFFIX = $(shell python3-config --extension-suffix)
 else			   
-   LIB_SUFFIX = .so
+   STATIC_LIB_SUFFIX = .a
+   SHARED_LIB_SUFFIX = .so
    PYC_SUFFIX = $(shell python3-config --extension-suffix)
 endif
 
@@ -43,7 +45,16 @@ DEPEND_DIR = .depend
 
 BIN_FILES = $(BIN_TARGETS)
 
-LIB_FILES = $(addsuffix $(LIB_SUFFIX),$(LIB_TARGETS))
+STATIC_LIB_FILES = $(addsuffix $(STATIC_LIB_SUFFIX),$(LIB_TARGETS))
+SHARED_LIB_FILES = $(addsuffix $(SHARED_LIB_SUFFIX),$(LIB_TARGETS))
+
+ifeq ($(SHARED),yes)
+   LIB_FILES = $(STATIC_LIB_FILES) $(SHARED_LIB_FILES)
+   LIB_SUFFIX = $(SHARED_LIB_SUFFIX)
+else
+   LIB_FILES = $(STATIC_LIB_FILES)
+   LIB_SUFFIX = $(STATIC_LIB_SUFFIX)
+endif
 
 PYC_FILES = $(addsuffix $(PYC_SUFFIX),$(PYC_TARGETS))
 
@@ -66,7 +77,7 @@ install : $(addprefix $(BIN_DIR)/,$(BIN_FILES)) \
 	@:
 
 clean :
-	@rm -rf $(BIN_FILES) $(SLIB_FILES) \
+	@rm -rf $(BIN_FILES) $(LIB_FILES) \
                 $(INC_FILES) $(DEPEND_DIR) *.f90 *.mod *.smod *.o
 
 $(BIN_DIR)/% : %
@@ -106,8 +117,10 @@ vpath %.pyx $(SRC_DIRS)
 
 FPP = PYTHONPATH=$(MESASDK_ROOT)/lib/python ./fypp_deps
 
+FPPOPTS = DEBUG OMP FPE
+
 FPPFLAGS += --line-numbering $(addprefix -I,$(SRC_DIRS)) \
-            $(foreach opt,DEBUG OMP FPE,$(if $(filter yes,$($(opt))),-D$(opt)=1,-D$(opt)=0))
+            $(foreach opt,$(FPPOPTS),$(if $(filter yes,$($(opt))),-D$(opt)=1,-D$(opt)=0))
 
 ifeq ($(DEBUG),yes)
    FPPFLAGS += -DLOG_LEVEL=\'DEBUG\'
@@ -178,10 +191,6 @@ ifeq ($(PYTHON),yes)
   CFLAGS += $(shell python3-config --includes) -I$(shell python3 -c 'import numpy; print(numpy.get_include())')
 endif
 
-ifeq ($(shell uname -s),Linux)
-  LDFLAGS += -Wl,--no-warn-execstack
-endif
-
 # Cython flags
 
 CYTHON = cython
@@ -222,14 +231,24 @@ endif
 
 # Flags
 
+AR = ar
+
 ifeq ($(shell uname -s),Darwin)
-   LIB_LDFLAGS = -shared -install_name $(LIB_DIR)/$@
+   SHARED_LIB_LDFLAGS = -shared -install_name $(LIB_DIR)/$@
    BIN_LDFLAGS =
    PYC_LDFLAGS = -shared -install_name $(MSG_DIR)/python/$@ -undefined dynamic_lookup
+   ARFLAGS = -cr
 else			   
-   LIB_LDFLAGS = -Wl,--no-warn-execstack -shared -Wl,-rpath -Wl,$(LIB_DIR)
-   BIN_LDFLAGS = -Wl,--no-warn-execstack -Wl,-rpath -Wl,$(LIB_DIR)
+   SHARED_LIB_LDFLAGS = -shared -Wl,-rpath -Wl,$(LIB_DIR)
+   ifeq ($(SHARED),yes)
+      BIN_LDFLAGS = -Wl,-rpath -Wl,$(LIB_DIR)
+   endif
    PYC_LDFLAGS = $(LIB_LDFLAGS)
+   ARFLAGS = cr
+endif
+
+ifeq ($(shell uname -s),Linux)
+  LDFLAGS += -Wl,--no-warn-execstack
 endif
 
 # Rules
@@ -238,9 +257,13 @@ $(BIN_FILES) :
 	@echo LD $@
 	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(BIN_LDFLAGS)
 
-$(LIB_FILES) :
+$(STATIC_LIB_FILES) :
+	@echo AR-LIB $@
+	@$(AR) $(ARFLAGS) $@ $^
+
+$(SHARED_LIB_FILES) :
 	@echo LD-LIB $@
-	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(LIB_LDFLAGS)
+	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(SHARED_LIB_LDFLAGS)
 
 $(PYC_FILES) :
 	@echo LD_PYC $@
@@ -254,7 +277,9 @@ $(PYC_FILES) :
 
 $(BIN_FILES) : % : $$(subst .fypp,.o,$$($$*_SRCS)) $$(addsuffix $(LIB_SUFFIX),$$($$*_LIBS))
 
-$(LIB_FILES) : %$(LIB_SUFFIX) : $$(subst .fypp,.o,$$($$*_SRCS)) $$(addsuffix $(LIB_SUFFIX),$$($$*_LIBS))
+$(STATIC_LIB_FILES) : %$(STATIC_LIB_SUFFIX) : $$(subst .fypp,.o,$$($$*_SRCS))
+
+$(SHARED_LIB_FILES) : %$(SHARED_LIB_SUFFIX) : $$(subst .fypp,.o,$$($$*_SRCS)) $$(addsuffix $(SHARED_LIB_SUFFIX),$$($$*_LIBS))
 
 $(PYC_FILES) : %$(PYC_SUFFIX) : $$(subst .c,.o,$$($$*_SRCS)) $$(addsuffix $(LIB_SUFFIX),$$($$*_LIBS))
 
