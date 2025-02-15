@@ -60,23 +60,20 @@ endif
 
 # Rules
 
-all : install-forum
-	@$(MAKE) -C build
+install : build | $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
+	@$(MAKE) -C build $@
 
-install : all | $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
-	@$(MAKE) -C build install
+build : install-forum
+	@$(MAKE) -C build $@
 
 clean : clean-forum
-	@$(MAKE) -C build clean
+	@$(MAKE) -C build $@
 	@rm -rf $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
-
-test :
-	@$(MAKE) --no-print-directory -C test $@
 
 ifeq ($(FORUM),yes)
 
    install-forum : | $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
-	@$(MAKE) -C $(SRC_DIR)/forum install
+	@$(MAKE) -C $(SRC_DIR)/forum
 
    clean-forum :
 	@$(MAKE) -C $(SRC_DIR)/forum clean
@@ -90,7 +87,7 @@ else
 
 endif
 
-.PHONY: all install clean test install-forum clean-forum
+.PHONY: install build clean test install-forum clean-forum
 
 $(BIN_DIR) $(LIB_DIR) $(INC_DIR) :
 	@mkdir -p $@

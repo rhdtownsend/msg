@@ -67,18 +67,18 @@ ALL_DEPS = $(addprefix $(DEPEND_DIR)/,$(BIN_TARGETS:%=%.dep) $(LIB_TARGETS:%=%.d
 # Targets
 ##########
 
-all : $(BIN_FILES) $(LIB_FILES) $(PYC_FILES)
-	@:
-
 install : $(addprefix $(BIN_DIR)/,$(BIN_FILES)) \
           $(addprefix $(LIB_DIR)/,$(LIB_FILES)) \
           $(addprefix $(LIB_DIR)/,$(PYC_FILES)) \
           $(addprefix $(INC_DIR)/,$(INC_FILES))
 	@:
 
+build : $(BIN_FILES) $(LIB_FILES) $(PYC_FILES)
+	@:
+
 clean :
-	@rm -rf $(BIN_FILES) $(LIB_FILES) \
-                $(INC_FILES) $(DEPEND_DIR) *.f90 *.mod *.smod *.c *.o
+	@rm -f $(BIN_FILES) $(STATIC_LIB_FILES) $(SHARED_LIB_FILES) $(PYC_FILES) \
+               $(INC_FILES) $(DEPEND_DIR) *.f90 *.mod *.smod *.c *.o
 
 $(BIN_DIR)/% : %
 	@echo CP $* $@
@@ -95,7 +95,7 @@ $(INC_DIR)/% : %
 $(DEPEND_DIR) :
 	@mkdir -p $@
 
-.PHONY: all install clean
+.PHONY: install build clean
 
 .SUFFIXES:
 
