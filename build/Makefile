@@ -176,6 +176,4 @@ include Make.inc
 
 # Additional dependencies
 
-.PRECIOUS: pycmsg.c
-
 pycmsg.o : cmsg.h

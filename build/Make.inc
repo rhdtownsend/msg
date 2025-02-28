@@ -22,7 +22,14 @@ ifneq ($(MAKECMDGOALS),clean)
    endif
 
    ifeq ($(MSG_DIR),) 
-       $(error Please set the MSG_DIR environment variable to point to the top-level MSG directory)
+      $(error Please set the MSG_DIR environment variable to point to the top-level MSG directory)
+   endif
+
+   ifeq ($(PYTHON),yes)
+      CYTHON = $(shell which cython)
+      ifeq ($(CYTHON),)
+         $(error No cython found, consider installing with pip, conda, etc)
+      endif
    endif
 
 endif
@@ -78,7 +85,7 @@ build : $(BIN_FILES) $(LIB_FILES) $(PYC_FILES)
 
 clean :
 	@rm -rf $(BIN_FILES) $(STATIC_LIB_FILES) $(SHARED_LIB_FILES) $(PYC_FILES) \
-              	$(INC_FILES) $(DEPEND_DIR) *.f90 *.mod *.smod *.c *.o
+                $(INC_FILES) $(DEPEND_DIR) *.f90 *.mod *.smod *.c *.o
 
 $(BIN_DIR)/% : %
 	@echo CP $* $@
@@ -106,7 +113,6 @@ $(DEPEND_DIR) :
 vpath %.fypp $(SRC_DIRS)
 vpath %.inc $(SRC_DIRS)
 vpath %.h $(SRC_DIRS)
-vpath %.c $(SRC_DIRS)
 vpath %.pyx $(SRC_DIRS)
 
 #################
@@ -193,8 +199,6 @@ endif
 
 # Cython flags
 
-CYTHON = cython
-
 CYFLAGS = -I../src/include
 
 # Rules
@@ -208,11 +212,11 @@ $(DEPEND_DIR)/%.anc : %.f90 | $(DEPEND_DIR)
 	@touch $@
 
 %.o : %.c
-	@echo CC $<
+	@echo CC $*
 	@$(CC) $(CFLAGS) -c $<
 
 %.c : %.pyx
-	@echo CYTHON $<
+	@echo CYTHON $*
 	@$(CYTHON) $(CYFLAGS) -o $@ $<
 
 $(ALL_DEPS) : | $(DEPEND_DIR)
