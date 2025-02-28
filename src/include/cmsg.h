@@ -17,6 +17,12 @@
 
 #include "stdbool.h"
 
+// Workaround for later versions of numpy defining I
+
+#if defined(I)
+  #undef I
+#endif
+
 // enums etc
 
 typedef enum {
