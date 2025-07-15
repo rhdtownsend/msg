@@ -1,0 +1,59 @@
+! Submodule : vgrid_traversal_sm
+! Purpose   : Grid traversal routines for vgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (vgrid_m) vgrid_traverse_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure map
+
+      integer :: v_lin
+      integer :: v_seq
+
+      ! Apply the map_proc function to each unmasked vertex in the
+      ! grid
+
+      map_loop : do v_lin = 1, self%n_v_lin
+
+         if (self%v_lin_mask(v_lin)) then
+
+            v_seq = self%v_seq_lin(v_lin)
+
+            call map_proc(v_seq, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+         end if
+
+      end do map_loop
+
+      ! Finish
+
+      return
+
+   end procedure map
+
+end submodule vgrid_traverse_sm

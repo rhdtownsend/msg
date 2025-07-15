@@ -1,0 +1,237 @@
+! Submodule : vgrid_io_sm
+! Purpose   : Input/output routines for vgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (vgrid_m) vgrid_io_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure read
+
+      integer :: revision
+
+      ! Read the vgrid_t
+
+      call check_type(hdf5io, 'vgrid_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call hdf5io%read_attr('REVISION', revision)
+
+      select case(revision)
+      case(1)
+         call read_rev1_()
+      case(2)
+         call read_rev2_()
+      case(3)
+         call read_rev3_()
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_GROUP_REVISION
+            return
+         else
+            @:ABORT('invalid group revision')
+         end if
+      end select
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine read_rev1_()
+
+         integer                   :: rank
+         logical, allocatable      :: mask(:)
+         type(axis_t), allocatable :: axes(:)
+         integer                   :: r
+         type(hdf5io_t)            :: hdf5io_axis
+
+         call hdf5io%read_attr('rank', rank)
+
+         allocate(axes(rank))
+
+         axis_loop : do r = 1, rank
+            hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_rev1_(r))
+            call axes(r)%read(hdf5io_axis, stat)
+            call hdf5io_axis%final()
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+         end do axis_loop
+
+         call hdf5io%alloc_read_dset('mask', mask)
+
+         select type(self)
+         type is(vgrid_t)
+            self = vgrid_t_mask_(axes, mask)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
+
+      !****
+
+      function axis_group_name_rev1_(r) result (name)
+
+         integer, intent(in) :: r
+         character(256)      :: name
+
+         write(name, 100) r
+100      format('axes(',I0,')')
+
+      end function axis_group_name_rev1_
+
+      !****
+
+      subroutine read_rev2_()
+
+         integer                   :: rank
+         logical, allocatable      :: mask(:)
+         type(axis_t), allocatable :: axes(:)
+         integer                   :: r
+         type(hdf5io_t)            :: hdf5io_axis
+
+         call hdf5io%read_attr('rank', rank)
+
+         allocate(axes(rank))
+
+         axis_loop : do r = 1, rank
+            hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(r))
+            call axes(r)%read(hdf5io_axis, stat)
+            call hdf5io_axis%final()
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+         end do axis_loop
+
+         call hdf5io%alloc_read_dset('mask', mask)
+
+         select type(self)
+         type is(vgrid_t)
+            self = vgrid_t_mask_(axes, mask)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev2_
+
+      !****
+
+      subroutine read_rev3_()
+
+         integer                   :: rank
+         integer, allocatable      :: v_lin_seq(:)
+         type(axis_t), allocatable :: axes(:)
+         integer                   :: r
+         type(hdf5io_t)            :: hdf5io_axis
+
+         call hdf5io%read_attr('rank', rank)
+
+         allocate(axes(rank))
+
+         axis_loop : do r = 1, rank
+            hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(r))
+            call axes(r)%read(hdf5io_axis, stat)
+            call hdf5io_axis%final()
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+         end do axis_loop
+
+         call hdf5io%alloc_read_dset('v_lin_seq', v_lin_seq)
+
+         select type(self)
+         type is(vgrid_t)
+            self = vgrid_t_map_(axes, v_lin_seq)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev3_
+
+   end procedure read
+
+   !****
+
+   module procedure write
+
+      integer        :: r
+      type(hdf5io_t) :: hdf5io_axis
+
+      ! Write the vgrid
+
+      call hdf5io%write_attr('TYPE', 'vgrid_t')
+      call hdf5io%write_attr('REVISION', 3)
+
+      call hdf5io%write_attr('shape', self%shape)
+      call hdf5io%write_attr('rank', self%rank)
+
+      axis_loop: do r = 1, self%rank
+         hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(r))
+         call self%axes(r)%write(hdf5io_axis, stat)
+         call hdf5io_axis%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+      end do axis_loop
+
+      call hdf5io%write_dset('v_lin_seq', self%v_lin_seq)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure write
+
+   !****
+
+   function axis_group_name_(r) result (name)
+
+      integer, intent(in) :: r
+      character(256)      :: name
+
+      write(name, 100) r
+100   format('axes[',I0,']')
+
+   end function axis_group_name_
+
+end submodule vgrid_io_sm

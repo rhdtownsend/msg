@@ -1,0 +1,260 @@
+! Submodule : vgrid_construct_sm
+! Purpose   : Constructor routines for vgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (vgrid_m) vgrid_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure vgrid_t_coords_
+
+      integer                   :: rank
+      integer                   :: n_seq
+      real(RD), allocatable     :: x(:)
+      type(axis_t), allocatable :: axes(:)
+      integer                   :: r
+      integer, allocatable      :: v_lin_seq(:)
+      integer                   :: v_seq
+      integer                   :: p
+      integer                   :: i
+      integer                   :: n
+
+      @:CHECK_BOUNDS(SIZE(labels), SIZE(x_vecs, 1))
+
+      ! Construct vgrid from the supplied list of vertex coordinates
+      ! and axis labels
+
+      ! First, build the axes
+
+      rank = SIZE(labels)
+      n_seq = SIZE(x_vecs, 2)
+
+      allocate(x(n_seq))
+      allocate(axes(rank))
+
+      do r = 1, rank
+
+         x = x_vecs(r,:)
+
+         associate (u => unique_indices(x))
+           axes(r) = axis_t(x(u), labels(r))
+         end associate
+
+      end do
+
+      ! Create the vertex sequence-to-linear index map
+
+      allocate(v_lin_seq(n_seq))
+
+      do v_seq = 1, n_seq
+
+         ! Determine the linear index of the vertex
+
+         v_lin_seq(v_seq) = 1
+         p = 1
+
+         do r = 1, rank
+            call axes(r)%get_n(n)
+            call axes(r)%locate(x_vecs(r,v_seq), i)
+            v_lin_seq(v_seq) = v_lin_seq(v_seq) + (i-1)*p
+            p = p*n
+         end do
+
+      end do
+
+      ! Construct vgrid
+
+      vgrid = vgrid_t_map_(axes, v_lin_seq)
+
+      ! Finish
+
+      return
+
+   end procedure vgrid_t_coords_
+
+   !****
+
+   module procedure vgrid_t_map_
+
+      integer                   :: rank
+      integer                   :: r
+      integer                   :: shape(SIZE(axes))
+      integer                   :: n_v_lin
+      integer                   :: n_seq
+      logical                   :: mask(SIZE(axes))
+      type(axis_t), allocatable :: axes_nd(:)
+      integer                   :: rank_nd
+      integer, allocatable      :: shape_nd(:)
+      integer                   :: n_c_lin
+      logical, allocatable      :: v_lin_mask(:)
+      integer                   :: v_seq
+      integer, allocatable      :: v_seq_lin(:)
+      logical, allocatable      :: c_lin_mask(:)
+      integer, allocatable      :: c_vec(:)
+      integer                   :: c_lin
+      integer                   :: i
+      integer                   :: v_lin
+
+      ! Construct vgrid from the axes and sequence-to-linear index map
+
+      ! First, determine the shape
+
+      rank = SIZE(axes)
+
+      do r = 1, rank
+         call axes(r)%get_n(shape(r))
+      end do
+
+      n_v_lin = PRODUCT(shape)
+      n_seq = SIZE(v_lin_seq)
+
+      @:ASSERT_DEBUG(MINVAL(v_lin_seq) >= 1, 'Invalid v_lin_seq')
+      @:ASSERT_DEBUG(MAXVAL(v_lin_seq) <= n_v_lin, 'Invalid v_lin_seq')
+
+      ! Strip out degenerate (length-1) axes
+
+      mask = shape > 1
+
+      axes_nd = PACK(axes, mask)
+
+      rank_nd = COUNT(mask)
+      shape_nd = PACK(shape, mask)
+
+      n_c_lin = PRODUCT(shape_nd-1)
+
+      ! Set up the linear vertex mask and the linear-to-sequence
+      ! index map
+
+      allocate(v_lin_mask(n_v_lin))
+      v_lin_mask = .FALSE.
+
+      allocate(v_seq_lin(n_v_lin))
+      v_seq_lin = 0
+
+      do v_seq = 1, n_seq
+
+         v_lin = v_lin_seq(v_seq)
+
+         if (.NOT. v_lin_mask(v_lin)) then
+            v_lin_mask(v_lin) = .TRUE.
+            v_seq_lin(v_lin) = v_seq
+         end if
+
+      end do
+
+      ! Initialize vgrid
+
+      vgrid%axes = axes_nd
+
+      call MOVE_ALLOC(v_lin_mask, vgrid%v_lin_mask)
+
+      vgrid%v_lin_seq = v_lin_seq
+      call MOVE_ALLOC(v_seq_lin, vgrid%v_seq_lin)
+
+      vgrid%shape = shape_nd
+      vgrid%rank = rank_nd
+
+      vgrid%n_v_lin = n_v_lin
+      vgrid%n_c_lin = n_c_lin
+      vgrid%n_seq = n_seq
+      vgrid%n_stn = 4**rank_nd
+
+      ! Initialize c_lin_mask last, to take advantage of indexing
+      ! routines
+
+      allocate(c_lin_mask(n_c_lin))
+      allocate(c_vec(rank_nd))
+
+      cell_loop: do c_lin = 1, n_c_lin
+
+         c_vec = vgrid%cell_vector_(c_lin)
+
+         ! Iterate over corner vertices of the cell
+
+         do i = 1, 2**rank_nd
+
+            v_lin = vgrid%vert_linear_corner_(i, c_vec)
+
+            if (.NOT. vgrid%v_lin_mask(v_lin)) then
+               c_lin_mask(c_lin) = .FALSE.
+               cycle cell_loop
+            end if
+
+         end do
+
+         c_lin_mask(c_lin) = .TRUE.
+
+      end do cell_loop
+
+      call MOVE_ALLOC(c_lin_mask, vgrid%c_lin_mask)
+
+      ! Finish
+
+      return
+
+   end procedure vgrid_t_map_
+
+   !****
+
+   module procedure vgrid_t_mask_
+
+      integer              :: n_v_lin
+      integer              :: n_seq
+      integer, allocatable :: v_lin_seq(:)
+      integer              :: v_seq
+      integer              :: v_lin
+
+      ! Construct vgrid from the axes and occupancy mask. This is a
+      ! compatibility constructor for grids read in the "old" (rev <=
+      ! 2) format
+
+      ! Set up the vertex sequence-to-linear mask
+
+      n_v_lin = SIZE(mask)
+      n_seq = COUNT(mask)
+
+      allocate(v_lin_seq(n_seq))
+
+      v_seq = 0
+
+      do v_lin = 1, n_v_lin
+
+         if (mask(v_lin)) then
+            v_seq = v_seq + 1
+            v_lin_seq(v_seq) = v_lin
+         end if
+
+      end do
+
+      ! Construct vgrid
+
+      vgrid = vgrid_t_map_(axes, v_lin_seq)
+
+      ! Finish
+
+      return
+
+   end procedure vgrid_t_mask_
+
+end submodule vgrid_construct_sm

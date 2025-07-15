@@ -1,0 +1,217 @@
+! Module  : hermite_m
+! Purpose : Hermite basis functions
+!
+! Copyright 2021-2025 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module hermite_m
+
+   ! Uses
+
+   use forum_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Access specifiers
+
+   private
+
+   public :: hermite_00
+   public :: hermite_01
+   public :: hermite_10
+   public :: hermite_11
+
+   ! Procedures
+
+contains
+
+   pure function hermite_00(u, deriv) result(h_00)
+
+      real(RD), intent(in) :: u
+      logical, intent(in)  :: deriv
+      real(RD)             :: h_00
+
+      ! Set up the h_00 hermite basis function
+
+      if (deriv) then
+         h_00 = 6*u**2 - 6*u
+      else
+         h_00 = 2*u**3 - 3*u**2 + 1
+      endif
+
+      ! Finish
+
+      return
+
+   end function hermite_00
+
+   !****
+
+   function hermite_01(u, deriv) result(h_01)
+
+      real(RD), intent(in) :: u
+      logical, intent(in)  :: deriv
+      real(RD)             :: h_01
+
+      ! Set up the h_01 hermite basis function
+
+      if (deriv) then
+         h_01 = -6*u**2 + 6*u
+      else
+         h_01 = -2*u**3 + 3*u**2
+      endif
+
+      ! Finish
+
+      return
+
+   end function hermite_01
+
+   !****
+
+   function hermite_10(u, deriv) result(h_10)
+
+      real(RD), intent(in) :: u
+      logical, intent(in)  :: deriv
+      real(RD)             :: h_10
+
+      ! Set up the h_10 hermite basis function
+
+      if (deriv) then
+         h_10 = 3*u**2 - 4*u + 1
+      else
+         h_10 = u**3 - 2*u**2 + u
+      endif
+
+      ! Finish
+
+      return
+
+   end function hermite_10
+
+   !****
+
+   function hermite_11(u, deriv) result(h_11)
+
+      real(RD), intent(in) :: u
+      logical, intent(in)  :: deriv
+      real(RD)             :: h_11
+
+      ! Set up the h_11 hermite basis function
+
+      if (deriv) then
+         h_11 = 3*u**2 - 2*u
+      else
+         h_11 = u**3 - u**2
+      endif
+
+      ! Finish
+
+      return
+
+   end function hermite_11
+
+   ! pure function hermite_00(u, deriv) result(h_00)
+
+   !    real(RD), intent(in) :: u
+   !    logical, intent(in)  :: deriv
+   !    real(RD)             :: h_00
+
+   !    ! Set up the h_00 hermite basis function
+
+   !    if (deriv) then
+   !       h_00 = 6*u**2 - 6*u
+   !    else
+   !       h_00 = 2*u**3 - 3*u**2 + 1
+   !    endif
+
+   !    ! Finish
+
+   !    return
+
+   ! end function hermite_00
+
+   ! !****
+
+   ! function hermite_01(u, deriv) result(h_01)
+
+   !    real(RD), intent(in) :: u
+   !    logical, intent(in)  :: deriv
+   !    real(RD)             :: h_01
+
+   !    ! Set up the h_01 hermite basis function
+
+   !    if (deriv) then
+   !       h_01 = -6*u**2 + 6*u
+   !    else
+   !       h_01 = -2*u**3 + 3*u**2
+   !    endif
+
+   !    ! Finish
+
+   !    return
+
+   ! end function hermite_01
+
+   ! !****
+
+   ! function hermite_10(u, deriv) result(h_10)
+
+   !    real(RD), intent(in) :: u
+   !    logical, intent(in)  :: deriv
+   !    real(RD)             :: h_10
+
+   !    ! Set up the h_11 hermite basis function
+
+   !    if (deriv) then
+   !       h_10 = 3*u**2 - 2*u
+   !    else
+   !       h_10 = u**3 - u**2
+   !    endif
+
+   !    ! Finish
+
+   !    return
+
+   ! end function hermite_10
+
+   ! !****
+
+   ! function hermite_11(u, deriv) result(h_11)
+
+   !    real(RD), intent(in) :: u
+   !    logical, intent(in)  :: deriv
+   !    real(RD)             :: h_11
+
+   !    ! Set up the h_11 hermite basis function
+
+   !    if (deriv) then
+   !       h_11 = 3*u**2 - 4*u + 1
+   !    else
+   !       h_11 = u**3 - 2*u**2 + u
+   !    endif
+
+   !    ! Finish
+
+   !    return
+
+   ! end function hermite_11
+
+end module hermite_m

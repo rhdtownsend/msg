@@ -1,0 +1,222 @@
+! Submodule : vgrid_index_sm
+! Purpose   : Index transformation routines for vgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (vgrid_m) vgrid_index_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure cell_linear_
+
+      integer :: p
+      integer :: r
+
+      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
+
+      ! Calculate a linear cell index from a vector cell
+      ! index. Returns 0 if the cell is outside the grid
+
+      if (ALL(c_vec >= 1 .AND. c_vec <= self%shape-1)) then
+
+         c_lin = 1
+         p = 1
+
+         do r = 1, self%rank
+            c_lin = c_lin + (c_vec(r)-1)*p
+            p = p*(self%shape(r)-1)
+         end do
+
+      else
+
+         c_lin = 0
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure cell_linear_
+
+   !****
+
+   module procedure cell_vector_
+
+      integer :: p
+      integer :: q
+      integer :: r
+
+      ! Calculate a vector cell index from a linear cell
+      ! index. Returns 0 if the cell is outside the grid
+
+      if (c_lin >= 1 .AND. c_lin <= self%n_c_lin) then
+
+         p = PRODUCT(self%shape-1)
+         q = c_lin - 1
+
+         do r = self%rank, 1, -1
+            p = p/(self%shape(r)-1)
+            c_vec(r) = q/p + 1
+            q = q - (c_vec(r)-1)*p
+         end do
+
+      else
+
+         c_vec = 0
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure cell_vector_
+
+   !****
+
+   module procedure vert_linear_
+
+      integer :: p
+      integer :: r
+
+      @:CHECK_BOUNDS(SIZE(v_vec), self%rank)
+
+      ! Calculate a linear vertex index from a vector vertex
+      ! index. Returns 0 if the vertex is outside the grid
+
+      if (ALL(v_vec >= 1 .AND. v_vec <= self%shape)) then
+
+         v_lin = 1
+         p = 1
+
+         do r = 1, self%rank
+            v_lin = v_lin + (v_vec(r)-1)*p
+            p = p*self%shape(r)
+         end do
+
+      else
+
+         v_lin = 0
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure vert_linear_
+
+   !****
+
+   module procedure vert_vector_
+
+      integer :: p
+      integer :: q
+      integer :: r
+
+      ! Calculate a vector vertex index from a linear vertex
+      ! index. Returns 0 if the vertex is outside the grid
+
+      if (v_lin >= 1 .AND. v_lin <= self%n_v_lin) then
+
+         p = PRODUCT(self%shape)
+         q = v_lin - 1
+
+         do r = self%rank, 1, -1
+            p = p/self%shape(r)
+            v_vec(r) = q/p + 1
+            q = q - (v_vec(r)-1)*p
+         end do
+
+      else
+
+         v_vec = 0
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure vert_vector_
+
+   !****
+
+   module procedure vert_linear_corner_
+
+      integer :: r
+      integer :: v_vec(self%rank)
+
+      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
+
+      ! Calculate a linear vertex index from a corner index
+      ! (i=1,...,2**rank) and a vector cell index. Returns 0 if the
+      ! vertex is outside the grid
+
+      ! First calculate the vector vertex index
+
+      do r = 1, self%rank
+         v_vec(r) = c_vec(r) + IBITS(i-1, r-1, 1)
+      end do
+
+      ! Convert to a linear index
+
+      v_lin = self%vert_linear_(v_vec)
+
+      ! Finish
+
+      return
+
+   end procedure vert_linear_corner_
+
+   !****
+
+   module procedure vert_linear_stencil_
+
+      integer :: r
+      integer :: v_vec(self%rank)
+
+      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
+
+      ! Calculate a linear vertex index from a stencil index
+      ! (i=1,...,4**rank) and a vector cell index. Returns 0
+      ! if the vertex is outside the grid
+
+      ! First calculate the vector vertex index
+
+      do r = 1, self%rank
+         v_vec(r) = c_vec(r) + IBITS(i-1, 2*(r-1), 2) - 1
+      end do
+
+      ! Convert to a linear index
+
+      v_lin = self%vert_linear_(v_vec)
+
+      ! Finish
+
+      return
+
+   end procedure vert_linear_stencil_
+
+end submodule vgrid_index_sm
