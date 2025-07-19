@@ -1,0 +1,118 @@
+! Submodule : axis_locate_sm
+! Purpose   : Locator routines for axis_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (axis_m) axis_locate_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure fetch
+
+      ! Fetch an x value
+
+      if (i < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) on '//self%label//' axis')
+         endif
+      endif
+
+      if (i > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+            return
+         else
+            @:ABORT('out-of-bounds (hi) on '//self%label//' axis')
+         endif
+      endif
+
+      x = self%x(i)
+
+      ! Finish
+
+      return
+
+   end procedure fetch
+
+   !****
+
+   module procedure locate
+
+      ! Locate where along the axis x falls, returning the integer i
+      ! such that x(i) <= x < x(i+1)
+
+      call locate_(self%x, x, i)
+
+      if (i < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) on '//self%label//' axis')
+         end if
+      end if
+
+      if (i  > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+            return
+         else
+            @:ABORT('out-of-bounds (hi) on '//self%label//' axis')
+         end if
+      end if
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+   end procedure locate
+
+   !****
+
+   module procedure locate_u
+
+      ! Locate where along the axis x falls, returning the integer i
+      ! such that x(i) <= x < x(i+1) and u = (x - x(i))/(x(i+1) - x(i)).
+      ! The case when x == x(n) is special; then, i = n - 1 and u = 1
+
+      call self%locate(x, i, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      if (i == self%n) i = i - 1
+
+      u = (x - self%x(i))/(self%x(i+1) - self%x(i))
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure locate_u
+
+end submodule axis_locate_sm
