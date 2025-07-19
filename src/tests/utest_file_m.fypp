@@ -50,10 +50,11 @@ contains
 
    subroutine test_stat_()
 
-      integer, parameter :: n = 4
+      integer, parameter :: N = 4
 
-      integer :: stat(n)
-      integer :: stat_chk(n)
+      integer       :: stat(N)
+      integer       :: stat_chk(N)
+      character(32) :: stat_str(N)
 
       print *, '  exceptions'
 
@@ -72,9 +73,16 @@ contains
          ! Set status check values
 
          stat_chk(1) = STAT_FILE_NOT_FOUND
+         stat_str(1) = 'STAT_FILE_NOT_FOUND'
+
          stat_chk(2) = STAT_INVALID_FILE_TYPE
+         stat_str(2) = 'STAT_INVALID_FILE_TYPE'
+
          stat_chk(3) = STAT_OK
+         stat_str(3) = 'STAT_OK'
+
          stat_chk(4) = STAT_INVALID_GROUP_TYPE
+         stat_str(4) = 'STAT_INVALID_GROUP_TYPE'
          
          ! Finish
 
@@ -110,11 +118,11 @@ contains
 
          integer :: j
 
-         do j = 1, n
+         do j = 1, N
             if (stat(j) /= stat_chk(j)) then
-               print *,'    FAIL:', stat(j), stat_chk(j)
+               print *,'    FAIL ', TRIM(stat_str(j)), ' ', stat(j), '/=', stat_chk(j)
             else
-               print *,'    PASS:', stat(j)
+               print *,'    PASS ', TRIM(stat_str(j))
             end if
          end do
                
