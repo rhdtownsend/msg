@@ -42,12 +42,144 @@ contains
  
    subroutine test()
 
+      call test_stat_()
       call test_attr_()
       call test_map_()
       call test_interp_()
       call test_adjust_()
 
    end subroutine test
+
+   !****
+
+   subroutine test_stat_()
+
+      integer, parameter :: N = 5
+
+      type(vgrid_t) :: vg
+      integer       :: stat(N)
+      integer       :: stat_chk(N)
+      character(32) :: stat_str(N)
+      real(RD)      :: x_vec(2,N)
+      integer       :: order(N)
+
+      print *, '  exceptions'
+
+      call build_vgrid_(vg)
+
+      call stat_arrange_()
+      call stat_act_()
+      call stat_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine stat_arrange_()
+
+         integer  :: j
+
+         ! Set up default (good) params
+
+         x_vec(1,:) = 1.5_RD
+         x_vec(2,:) = 0.5_RD
+         order = 3
+
+         ! Now modify to create exceptional cases
+
+         !
+
+         stat_chk(1) = STAT_OK
+         stat_str(1) = 'STAT_OK'
+
+         !
+
+         x_vec(1,2) = -0.5_RD
+         stat_chk(2) = STAT_OUT_OF_BOUNDS_AXIS_LO
+         stat_str(2) = 'STAT_OUT_OF_BOUNDS_AXIS_LO'
+
+         !
+
+         x_vec(2,3) = 2.5_RD
+         stat_chk(3) = STAT_OUT_OF_BOUNDS_AXIS_HI
+         stat_str(3) = 'STAT_OUT_OF_BOUNDS_AXIS_HI'
+
+         !
+
+         x_vec(2,4) = 1.5_RD
+         stat_chk(4) = STAT_UNAVAILABLE_DATA
+         stat_str(4) = 'STAT_UNAVAILABLE_DATA'
+
+         !
+
+         order(5) = 2
+         stat_chk(5) = STAT_INVALID_ARGUMENT
+         stat_str(5) = 'STAT_INVALID_ARGUMENT'
+
+         ! Finish
+
+      end subroutine stat_arrange_
+
+      !****
+
+      subroutine stat_act_()
+
+         integer  :: j
+         real(RD) :: f
+
+         do j = 1, N
+
+            call vg%interp(data_proc_, x_vec(:,j), f, stat(j), order=order(j))
+
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine stat_act_
+
+      !****
+
+      subroutine data_proc_(v_seq, data, stat)
+
+         integer, intent(in)            :: v_seq
+         real(RD), intent(out)          :: data
+         integer, intent(out), optional :: stat
+
+         data = 0._RD
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         ! Finish
+
+         return
+
+      end subroutine data_proc_
+
+      !****
+
+      subroutine stat_assert_()
+
+         integer :: j
+
+         do j = 1, N
+            if (stat(j) /= stat_chk(j)) then
+               print *,'    FAIL ', TRIM(stat_str(j)), ' ', stat(j), '/=', stat_chk(j)
+            else
+               print *,'    PASS ', TRIM(stat_str(j))
+            end if
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine stat_assert_
+
+   end subroutine test_stat_
 
    !****
 
@@ -63,6 +195,8 @@ contains
 
       print *, '  attributes'
 
+      call build_vgrid_(vg)
+
       call attr_arrange_()
       call attr_act_()
       call attr_assert_()
@@ -75,7 +209,9 @@ contains
 
       subroutine attr_arrange_()
 
-         call build_vgrid_(vg)
+         rank_chk = 2
+         shape_chk = [3,3]
+         n_seq_chk = 8
 
          ! Finish
 
@@ -90,10 +226,6 @@ contains
          call vg%get_rank(rank)
          call vg%get_shape(shape)
          call vg%get_n_seq(n_seq)
-
-         rank_chk = 2
-         shape_chk = [3,3]
-         n_seq_chk = 8
 
          ! Finish
 
@@ -141,6 +273,8 @@ contains
 
       print *, '  map'
 
+      call build_vgrid_(vg)
+
       call map_arrange_()
       call map_act_()
       call map_assert_()
@@ -153,7 +287,7 @@ contains
 
       subroutine map_arrange_()
 
-         call build_vgrid_(vg)
+         mask_chk = .TRUE.
 
          ! Finish
 
@@ -168,8 +302,6 @@ contains
          mask = .FALSE.
 
          call vg%map(map_proc_)
-
-         mask_chk = .TRUE.
 
          ! Finish
 
@@ -224,6 +356,8 @@ contains
 
       print *, '  interp'
 
+      call build_vgrid_(vg)
+
       call interp_arrange_()
       call interp_act_()
       call interp_assert_()
@@ -235,8 +369,6 @@ contains
    contains
 
       subroutine interp_arrange_()
-
-         call build_vgrid_(vg)
 
          ! Set vertex values (f = 1+x+2*y)
 
