@@ -29,7 +29,7 @@ module utest_ninterp_m
 
   ! No implicit typing
 
-  implicit none
+  implicit none (type, external)
 
   ! Access specifiers
 
@@ -41,11 +41,142 @@ contains
  
    subroutine test()
 
+      call test_cont_()
       call test_derivs_()
       call test_interp_cubic_()
       call test_interp_linear_()
 
    end subroutine test
+
+   subroutine test_cont_()
+
+      integer, parameter :: N = 3
+
+      real(RD) :: f(16,N)
+      real(RD) :: edge_deltas(3,2,N)
+      real(RD) :: D(16,N)
+
+      print *,'  continuity'
+
+      call cont_arrange_()
+      call cont_act_()
+      call cont_assert_()
+
+   contains
+
+      subroutine cont_arrange_()
+
+         f(:,1) = [ &
+            0._RD, 0._RD, 0._RD, 0._RD, &
+            0._RD, 1._RD, 2._RD, 3._RD, &
+            0._RD, 3._RD, 5._RD, 7._RD, &
+            0._RD, 7._RD, 10._RD, 0._RD]
+
+         edge_deltas(:,1,1) = [1._RD, 2._RD, 3._RD]
+         edge_deltas(:,2,1) = [4._RD, 3._RD, 2._RD]
+
+         f(:,2) = [ &
+            0._RD, 0._RD, 0._RD, 0._RD, &
+            1._RD, 2._RD, 3._RD, 0._RD, &
+            3._RD, 5._RD, 7._RD, 0._RD, &
+            7._RD, 10._RD, 0._RD, 0._RD]
+
+         edge_deltas(:,1,2) = [2._RD, 3._RD, 4._RD]
+         edge_deltas(:,2,2) = [4._RD, 3._RD, 2._RD]
+
+         f(:,3) = [ &
+            0._RD, 1._RD, 2._RD, 3._RD, &
+            0._RD, 3._RD, 5._RD, 7._RD, &
+            0._RD, 7._RD, 10._RD, 0._RD, &
+            0._RD, 0._RD, 0._RD, 0._RD]
+
+         edge_deltas(:,1,3) = [1._RD, 2._RD, 3._RD]
+         edge_deltas(:,2,3) = [3._RD, 2._RD, 1._RD]
+
+      end subroutine cont_arrange_
+
+      !****
+
+      subroutine cont_act_()
+
+         integer  :: j
+         logical  :: cell_mask(16)
+         real(RD) :: data_kernel(16,16)
+
+         do j = 1, N
+
+            cell_mask = f(:,j) /= 0._RD
+
+            data_kernel = data_kernel_cubic(2, cell_mask, edge_deltas(:,:,j))
+
+            D(:,j) = MATMUL(data_kernel, f(:,j))
+
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine cont_act_
+
+      !****
+
+      subroutine cont_assert_()
+
+         integer       :: i
+         integer       :: k
+         character(32) :: str
+
+         ! Check data values
+
+         do i = 1, 4
+
+            k = 4*(i-1)
+
+            select case(i)
+            case(1)
+               str = 'f'
+            case(2)
+               str = 'df/dx'
+            case(3)
+               str = 'df/dy'
+            case(4)
+               str = 'd2f/dxdy'
+            end select
+
+            if (D(k+3,1) == D(k+1,3)) then
+               print *,'    PASS ', TRIM(str), D(k+3,1)
+            else
+               print *,'    FAIL ', TRIM(str), ':', D(k+3,1), '/=', D(k+1,3)
+            end if
+
+            if (D(k+4,1) == D(k+2,3)) then
+               print *,'    PASS ', TRIM(str), D(k+4,1)
+            else
+               print *,'    FAIL ', TRIM(str), ':', D(k+4,1), '/=', D(k+2,3)
+            end if
+
+            if (D(k+4,1) == D(k+3,2)) then
+               print *,'    PASS ', TRIM(str), D(k+4,1)
+            else
+               print *,'    FAIL ', TRIM(str), ':', D(k+4,1), '/=', D(k+3,2)
+            end if
+
+            if (D(k+2,1) == D(k+1,2)) then
+               print *,'    PASS ', TRIM(str), D(k+2,1)
+            else
+               print *,'    FAIL ', TRIM(str), ':', D(k+2,1), '/=', D(k+1,2)
+            end if
+
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine cont_assert_
+
+   end subroutine test_cont_
 
    !****
 
@@ -76,7 +207,7 @@ contains
       real(RD) :: d2f_dydz_chk(2,2,2,n_x-3,n_y-3,n_z-3)
       real(RD) :: d3f_dxdydz_chk(2,2,2,n_x-3,n_y-3,n_z-3)
 
-      print *,'  derivatives kernel'
+      print *,'  function and derivatives kernel'
 
       call derivs_arrange_()
       call derivs_act_()
@@ -118,12 +249,12 @@ contains
          integer  :: i
          integer  :: j
          integer  :: k
-         real(RD) :: vdelta(3,3)
-         real(RD) :: K_D(4**3,4**3)
+         real(RD) :: cell_deltas(3,3)
+         real(RD) :: data_kernel(4**3,4**3)
          real(RD) :: D(4**3)
          integer  :: l
-         integer  :: bits_l
-         integer  :: bits_r
+         integer  :: bits_p
+         integer  :: bits_d
          integer  :: i_
          integer  :: j_
          integer  :: k_
@@ -137,47 +268,47 @@ contains
             do j = 2, n_y-2
                do k = 2, n_z-2
 
-                  ! Evaluate the kernel
+                  ! Evaluate the data kernel
 
-                  vdelta(:,1) = x(i:i+2) - x(i-1:i+1)
-                  vdelta(:,2) = y(j:j+2) - y(j-1:j+1)
-                  vdelta(:,3) = z(k:k+2) - z(k-1:k+1)
+                  cell_deltas(:,1) = x(i:i+2) - x(i-1:i+1)
+                  cell_deltas(:,2) = y(j:j+2) - y(j-1:j+1)
+                  cell_deltas(:,3) = z(k:k+2) - z(k-1:k+1)
 
-                  call eval_deriv_kernel(3, mask, vdelta, K_D)
+                  data_kernel = data_kernel_cubic(3, mask, cell_deltas)
 
-                  ! Evaluate function and derivatives
+                  ! Evaluate the function and derivatives
 
-                  D = MATMUL(K_D, PACK(f_in(i-1:i+2,j-1:j+2,k-1:k+2), .TRUE.))
+                  D = MATMUL(data_kernel, PACK(f_in(i-1:i+2,j-1:j+2,k-1:k+2), .TRUE.))
 
                   ! Unpack derivatives
 
                   do l = 1, 4**3
 
                      ! Extract bitfields from l. Right bits (bits_l)
-                     ! encode position, left bits (bits_r) encode derivatives
+                     ! encode position, left bits (bits_p) encode derivatives
          
-                     bits_l = IBITS(l-1, 3, 3)
-                     bits_r = IBITS(l-1, 0, 3)
+                     bits_d = IBITS(l-1, 3, 3)
+                     bits_p = IBITS(l-1, 0, 3)
 
-                     if (BTEST(bits_r, 0)) then
+                     if (BTEST(bits_p, 0)) then
                         i_ = 2
                      else
                         i_ = 1
                      end if
 
-                     if (BTEST(bits_r, 1)) then
+                     if (BTEST(bits_p, 1)) then
                         j_ = 2
                      else
                         j_ = 1
                      end if
 
-                     if (BTEST(bits_r, 2)) then
+                     if (BTEST(bits_p, 2)) then
                         k_ = 2
                      else
                         k_ = 1
                      end if
                      
-                     select case(bits_l)
+                     select case(bits_d)
                      case(0)
                         f(i_,j_,k_,i-1,j-1,k-1) = D(l)
                      case(1)
@@ -195,7 +326,7 @@ contains
                      case(7)
                         d3f_dxdydz(i_,j_,k_,i-1,j-1,k-1) = D(l)
                      case default
-                        @:ABORT('invalid bits_l')
+                        @:ABORT('invalid bits_d')
                      end select
 
                   end do
@@ -399,10 +530,10 @@ contains
          integer  :: i_
          integer  :: j_
          integer  :: k_
-         real(RD) :: vdelta(3,3)
-         real(RD) :: vu(3)
-         real(RD) :: K_D(4**3,4**3)
-         real(RD) :: K_I(4**3)
+         real(RD) :: cell_deltas(3,3)
+         real(RD) :: u(3)
+         real(RD) :: data_kernel(4**3,4**3)
+         real(RD) :: interp_kernel(4**3)
          real(RD) :: D(4**3)
 
          ! Loop through the inner (non-edge) cells of the datacube,
@@ -425,24 +556,24 @@ contains
                   call locate(z, z_int(k_), k)
                   if (z_int(k_) == z(k) .AND. k == n_z-1) k = k - 1
 
-                  ! Evaluate the kernels
+                  ! Evaluate the data kernels
 
-                  vu(1) = (x_int(i_) - x(i))/(x(i+1) - x(i))
-                  vu(2) = (y_int(j_) - y(j))/(y(j+1) - y(j))
-                  vu(3) = (z_int(k_) - z(k))/(z(k+1) - z(k))
+                  u(1) = (x_int(i_) - x(i))/(x(i+1) - x(i))
+                  u(2) = (y_int(j_) - y(j))/(y(j+1) - y(j))
+                  u(3) = (z_int(k_) - z(k))/(z(k+1) - z(k))
 
-                  vdelta(:,1) = x(i:i+2) - x(i-1:i+1)
-                  vdelta(:,2) = y(j:j+2) - y(j-1:j+1)
-                  vdelta(:,3) = z(k:k+2) - z(k-1:k+1)
+                  cell_deltas(:,1) = x(i:i+2) - x(i-1:i+1)
+                  cell_deltas(:,2) = y(j:j+2) - y(j-1:j+1)
+                  cell_deltas(:,3) = z(k:k+2) - z(k-1:k+1)
 
-                  call eval_deriv_kernel(3, mask, vdelta, K_D)
-                  call eval_interp_kernel(3, vu, vdelta, K_I)
+                  data_kernel = data_kernel_cubic(3, mask, cell_deltas)
+                  interp_kernel = interp_kernel_cubic(3, u, cell_deltas, data_kernel)
 
                   ! Evaluate the interpolated function
 
-                  D = MATMUL(K_D, PACK(f_in(i-1:i+2,j-1:j+2,k-1:k+2), .TRUE.))
+                  D = PACK(f_in(i-1:i+2,j-1:j+2,k-1:k+2), .TRUE.)
 
-                  f(i_,j_,k_) = DOT_PRODUCT(K_I, D)
+                  f(i_,j_,k_) = DOT_PRODUCT(interp_kernel, D)
 
                   ! Evaluate the check function
 
@@ -489,7 +620,7 @@ contains
       integer, parameter :: n_x_int = n_over*(n_x-3) + 1
       integer, parameter :: n_y_int = n_over*(n_y-3) + 1
       integer, parameter :: n_z_int = n_over*(n_z-3) + 1
-      
+
       real(RD) :: x(n_x)
       real(RD) :: y(n_y)
       real(RD) :: z(n_z)
@@ -506,8 +637,8 @@ contains
       call interp_linear_act_()
       call interp_linear_assert_()
 
-   contains      
-      
+   contains
+
       subroutine interp_linear_arrange_()
 
          integer :: i
@@ -548,7 +679,7 @@ contains
                z_int(n_over*(k-1)+m) = z(k+1) + (z(k+2) - z(k+1))*(m-1)/n_over
             end do
          end do
-         
+
          x_int(n_x_int) = x(n_x-1)
          y_int(n_y_int) = y(n_y-1)
          z_int(n_z_int) = z(n_z-1)
@@ -560,7 +691,7 @@ contains
       end subroutine interp_linear_arrange_
 
       !****
-  
+
       subroutine interp_linear_act_()
 
          logical  :: mask(4**3)
@@ -570,11 +701,10 @@ contains
          integer  :: i_
          integer  :: j_
          integer  :: k_
-         real(RD) :: vdelta(3,3)
-         real(RD) :: vu(3)
-         real(RD) :: K_D(4**3,4**3)
-         real(RD) :: K_I(4**3)
-         real(RD) :: D(4**3)
+         real(RD) :: cell_deltas(3)
+         real(RD) :: u(3)
+         real(RD) :: interp_kernel(2**3)
+         real(RD) :: D(2**3)
 
          ! Loop through the inner (non-edge) cells of the datacube,
          ! evaluating the function
@@ -598,22 +728,17 @@ contains
 
                   ! Evaluate the kernels
 
-                  vu(1) = (x_int(i_) - x(i))/(x(i+1) - x(i))
-                  vu(2) = (y_int(j_) - y(j))/(y(j+1) - y(j))
-                  vu(3) = (z_int(k_) - z(k))/(z(k+1) - z(k))
+                  u(1) = (x_int(i_) - x(i))/(x(i+1) - x(i))
+                  u(2) = (y_int(j_) - y(j))/(y(j+1) - y(j))
+                  u(3) = (z_int(k_) - z(k))/(z(k+1) - z(k))
 
-                  vdelta(:,1) = x(i:i+2) - x(i-1:i+1)
-                  vdelta(:,2) = y(j:j+2) - y(j-1:j+1)
-                  vdelta(:,3) = z(k:k+2) - z(k-1:k+1)
-
-                  call eval_deriv_kernel(3, mask, vdelta, K_D, order=1)
-                  call eval_interp_kernel(3, vu, vdelta, K_I)
+                  interp_kernel = interp_kernel_linear(3, u, cell_deltas)
 
                   ! Evaluate the interpolated function
 
-                  D = MATMUL(K_D, PACK(f_in(i-1:i+2,j-1:j+2,k-1:k+2), .TRUE.))
+                  D = PACK(f_in(i:i+1,j:j+1,k:k+1), .TRUE.)
 
-                  f(i_,j_,k_) = DOT_PRODUCT(K_I, D)
+                  f(i_,j_,k_) = DOT_PRODUCT(interp_kernel, D)
 
                   ! Evaluate the check function
 
@@ -630,7 +755,7 @@ contains
       end subroutine interp_linear_act_
 
       !****
-      
+
       subroutine interp_linear_assert_()
 
          real(RD), parameter :: tol = 1.5E-13_RD
