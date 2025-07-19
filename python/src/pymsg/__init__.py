@@ -54,7 +54,7 @@ class SpecGrid:
 
         Raises:
             FileNotFound: If the the file cannot be found.
-            TypeError: If the file contains an incorrect datatype.
+            IOError: If the file contains invalid data.
         """
 
         self._specgrid = pyc._load_specgrid(file_name)
@@ -367,7 +367,7 @@ class PhotGrid:
 
         Raises:
             FileNotFound: If either file cannot be found.
-            TypeError: If either file contains an incorrect datatype.
+            IOError: If either file contains invalid data.
 
         """
 
