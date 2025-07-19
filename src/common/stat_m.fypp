@@ -45,6 +45,7 @@ module stat_m
       enumerator :: STAT_INVALID_FILE_TYPE
       enumerator :: STAT_INVALID_GROUP_TYPE
       enumerator :: STAT_INVALID_GROUP_REVISION
+      enumerator :: STAT_INVALID_DATASET_DIM
    end enum
 
    ! Access specifiers
@@ -66,5 +67,6 @@ module stat_m
    public :: STAT_INVALID_FILE_TYPE
    public :: STAT_INVALID_GROUP_TYPE
    public :: STAT_INVALID_GROUP_REVISION
+   public :: STAT_INVALID_DATASET_DIM
 
 end module stat_m

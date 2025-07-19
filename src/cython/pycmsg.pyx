@@ -46,7 +46,8 @@ cdef extern from "cmsg.h":
        STAT_FILE_NOT_FOUND,
        STAT_INVALID_FILE_TYPE,
        STAT_INVALID_GROUP_TYPE,
-       STAT_INVALID_GROUP_REVISION
+       STAT_INVALID_GROUP_REVISION,
+       STAT_INVALID_DATASET_DIM
 
     # specgrid
 
@@ -524,6 +525,8 @@ def _handle_error(stat):
         raise IOError('invalid group type')
     elif stat == STAT_INVALID_GROUP_REVISION:
         raise IOError('invalid group revision')
+    elif stat == STAT_INVALID_DATASET_DIM:
+        raise IOError('invalid dataset dimension')
     else:
         raise Exception(f'error with unknown stat code: {stat}')
 
