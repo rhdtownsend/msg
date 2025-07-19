@@ -1,0 +1,89 @@
+! Submodule : ninterp_linear_sm
+! Purpose   : Linear interpolation routines for ninterp_m
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (ninterp_m) ninterp_linear_sm
+
+   ! Uses
+
+   use basis_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure interp_kernel_linear
+
+      logical  :: deriv_(rank)
+      integer  :: i
+      integer  :: bits_p
+      integer  :: r
+
+      @:CHECK_BOUNDS(SIZE(u), rank)
+
+      @:CHECK_BOUNDS(SIZE(cell_deltas), rank)
+
+      if (PRESENT(deriv)) then
+         @:CHECK_BOUNDS(SIZE(deriv), rank)
+         deriv_ = deriv
+      else
+         deriv_ = .FALSE.
+      endif
+
+      ! Generate the kernel for linear interpolation of a function or
+      ! its first derivatives.  Given a vector F of function values on
+      ! a 2**rank-vertex grid, DOT_PRODUCT(interp_kernel, F) gives the
+      ! function or derivative value at the point defined by u
+
+      ! Evaluate the interpolation kernel
+
+      do i = 1, 2**rank
+
+         ! Use i to define position bits
+
+         bits_p = i - 1 ! position bits
+
+         ! Evaluate the outer product of linear basis functions
+
+         interp_kernel(i) = 1._RD
+
+         dim_loop : do r = 1, rank
+
+            if (BTEST(bits_p, r-1)) then
+               interp_kernel(i) = interp_kernel(i) * linear_1(u(r), deriv_(r))
+            else
+               interp_kernel(i) = interp_kernel(i) * linear_0(u(r), deriv_(r))
+            endif
+
+            if (deriv_(r)) interp_kernel(i) = interp_kernel(i)/cell_deltas(r)
+
+         end do dim_loop
+
+      end do
+
+      ! Finish
+
+      return
+
+   end procedure interp_kernel_linear
+
+end submodule ninterp_linear_sm

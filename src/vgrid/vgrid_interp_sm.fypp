@@ -30,12 +30,11 @@ contains
    module procedure interp_0_
 
       integer  :: c_vec(self%rank)
-      real(RD) :: u_vec(self%rank)
-      logical  :: stencil_mask(self%n_stn)
-      integer  :: index
-      real(RD) :: K_data(self%n_stn,self%n_stn)
-      real(RD) :: K_basis(self%n_stn)
-      real(RD) :: K(self%n_stn)
+      real(RD) :: u(self%rank)
+      real(RD) :: cell_deltas(3,self%rank)
+      logical  :: cell_mask(self%n_stn)
+      real(RD) :: data_kernel(self%n_stn,self%n_stn)
+      real(RD) :: interp_kernel(self%n_stn)
       real(RD) :: F
       integer  :: i
       integer  :: v_lin
@@ -47,23 +46,15 @@ contains
 
       ! Set up the interpolation
 
-      call setup_interp_(self, x_vec, c_vec, u_vec, stencil_mask, stat, order)
+      call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat, order)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      ! Evaluate the kernels
+      ! Evaluate the interpolation kernel
 
-      call identify_data_kernel(self%rank, stencil_mask, index, stat, order)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      call eval_data_kernel(self%rank, index, K_data)
-
-      call eval_basis_kernel(self%rank, u_vec, K_basis, vderiv)
-
-      K = MATMUL(K_basis, K_data)
+      data_kernel = data_kernel_cubic(self%rank, cell_mask, cell_deltas)
+      interp_kernel = interp_kernel_cubic(self%rank, u, cell_deltas, data_kernel, vderiv)
 
       ! Initialize f_int
 
@@ -73,7 +64,7 @@ contains
 
       do i = 1, self%n_stn
 
-         if (K(i) /= 0._RD) then
+         if (interp_kernel(i) /= 0._RD) then
 
             ! Evaluate data for this vertex
 
@@ -87,7 +78,7 @@ contains
 
             ! Add the contribution to f_int
 
-            f_int = f_int + K(i)*F
+            f_int = f_int + interp_kernel(i)*F
 
          end if
 
@@ -106,12 +97,11 @@ contains
    module procedure interp_1_
 
       integer  :: c_vec(self%rank)
-      real(RD) :: u_vec(self%rank)
-      logical  :: stencil_mask(self%n_stn)
-      integer  :: index
-      real(RD) :: K_data(self%n_stn,self%n_stn)
-      real(RD) :: K_basis(self%n_stn)
-      real(RD) :: K(self%n_stn)
+      real(RD) :: u(self%rank)
+      real(RD) :: cell_deltas(3,self%rank)
+      logical  :: cell_mask(self%n_stn)
+      real(RD) :: data_kernel(self%n_stn,self%n_stn)
+      real(RD) :: interp_kernel(self%n_stn)
       integer  :: n_m
       integer  :: i
       integer  :: v_lin
@@ -133,23 +123,15 @@ contains
 
       ! Set up the interpolation
 
-      call setup_interp_(self, x_vec, c_vec, u_vec, stencil_mask, stat, order)
+      call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat, order)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      ! Evaluate the kernels
+      ! Evaluate the interpolation kernel
 
-      call identify_data_kernel(self%rank, stencil_mask, index, stat, order)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      call eval_data_kernel(self%rank, index, K_data)
-
-      call eval_basis_kernel(self%rank, u_vec, K_basis, vderiv)
-
-      K = MATMUL(K_basis, K_data)
+      data_kernel = data_kernel_cubic(self%rank, cell_mask, cell_deltas)
+      interp_kernel = interp_kernel_cubic(self%rank, u, cell_deltas, data_kernel, vderiv)
 
       ! Initialize f_int
 
@@ -164,7 +146,7 @@ contains
 
       do i = 1, self%n_stn
 
-         if (K(i) /= 0._RD) then
+         if (interp_kernel(i) /= 0._RD) then
 
             ! Evaluate data for this node
 
@@ -194,13 +176,13 @@ contains
 
                m_b = MIN(m_b, n_m)
 
-               f_int(m_a:m_b) = f_int(m_a:m_b) + K(i)*F(m_a:m_b)
+               f_int(m_a:m_b) = f_int(m_a:m_b) + interp_kernel(i)*F(m_a:m_b)
 
                !$OMP END PARALLEL
 
             #:else
 
-               f_int = f_int + K(i)*F
+               f_int = f_int + interp_kernel(i)*F
 
             #:endif
 
@@ -388,53 +370,54 @@ contains
 
    !****
 
-   subroutine setup_interp_(vgrid, x_vec, c_vec, u_vec, stencil_mask, stat, order)
+   subroutine setup_interp_(vgrid, x_vec, c_vec, u, cell_mask, cell_deltas, stat, order)
 
       class(vgrid_t), intent(in)     :: vgrid
       real(RD), intent(in)           :: x_vec(:)
       integer, intent(out)           :: c_vec(:)
-      real(RD), intent(out)          :: u_vec(:)
-      logical, intent(out)           :: stencil_mask(:)
+      real(RD), intent(out)          :: u(:)
+      logical, intent(out)           :: cell_mask(:)
+      real(RD), intent(out)          :: cell_deltas(:,:)
       integer, intent(out), optional :: stat
       integer, intent(in), optional  :: order
 
       integer  :: c_lin
       integer  :: r
       logical  :: on_bdy(vgrid%rank)
+      integer  :: dc_vec(vgrid%rank)
       integer  :: a
-      integer  :: c_vec_adj(vgrid%rank)
-      integer  :: c_lin_adj
       integer  :: v_lin
       integer  :: i
       integer  :: j
+      real(RD) :: x(4)
 
       @:CHECK_BOUNDS(SIZE(x_vec), vgrid%rank)
+
       @:CHECK_BOUNDS(SIZE(c_vec), vgrid%rank)
-      @:CHECK_BOUNDS(SIZE(stencil_mask), vgrid%n_stn)
-      @:CHECK_BOUNDS(SIZE(u_vec), vgrid%rank)
+      @:CHECK_BOUNDS(SIZE(u), vgrid%rank)
+
+      @:CHECK_BOUNDS(SIZE(cell_deltas, 1), 3)
+      @:CHECK_BOUNDS(SIZE(cell_deltas, 2), vgrid%rank)
+
+      @:CHECK_BOUNDS(SIZE(cell_mask), vgrid%n_stn)
 
       ! Set up an interpolation. This consists of determining the following:
       !
-      ! c_vec -- the vector index of the cell containing x_vec
-      ! u_vec -- the vector fractional position within the cell
-      ! stencil_mask -- the stencil mask indicating which vertices of the cell are valid
+      ! c_vec         -- the vector index of the cell containing x_vec
+      ! u             -- the fractional coordinates within the cell
+      ! cell_mask     -- the mask indicating which of the 4**rank vertices in/adjacent to the cell are valid
+      ! cell_deltas   -- the spacings between the vertices
 
       ! Locate the initial interpolation cell
 
       do r = 1, vgrid%rank
 
-         call vgrid%axes(r)%locate_u(x_vec(r), u_vec(r), stat, order)
+         call vgrid%axes(r)%locate_u(x_vec(r), c_vec(r), u(r), stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
 
       end do
-
-      c_vec = FLOOR(u_vec)
-
-      where(c_vec == vgrid%shape)
-         c_vec = c_vec - 1
-      end where
 
       ! See if the cell has sufficient data (i.e., all vertices
       ! defined) to do an interpolation
@@ -448,7 +431,7 @@ contains
 
          ! First, determine which left boundary(ies) the point is on
 
-         on_bdy = c_vec == u_vec
+         on_bdy = u == 0._RD
 
          ! Iterate over adjacent cells
 
@@ -463,11 +446,11 @@ contains
                   if (.NOT. on_bdy(r)) cycle adjacent_loop
                   if (c_vec(r) == 1) cycle adjacent_loop
 
-                  c_vec_adj(r) = c_vec(r) - 1
+                  dc_vec(r) = -1
 
                else
 
-                  c_vec_adj(r) = c_vec(r)
+                  dc_vec(r) = 0
 
                end if
 
@@ -475,9 +458,9 @@ contains
 
             ! Check whether the adjacent cell will do
 
-            c_lin_adj = vgrid%cell_linear_(c_vec_adj)
+            c_lin = vgrid%cell_linear_(c_vec+dc_vec)
 
-            if (vgrid%c_lin_mask(c_lin_adj)) exit adjacent_loop
+            if (vgrid%c_lin_mask(c_lin)) exit adjacent_loop
 
          end do adjacent_loop
 
@@ -485,9 +468,10 @@ contains
 
          if (a < 2**vgrid%rank) then
 
-            ! Update the cell index
+            ! Update the cell index and fractional position
 
-            c_vec = c_vec_adj
+            c_vec = c_vec + dc_vec
+            u = u - dc_vec
 
          else
 
@@ -500,27 +484,45 @@ contains
 
          end if
 
+         @:ASSERT_DEBUG(ALL(u >= 0._RD .AND. u <= 1._RD), 'invalid u')
+
       endif
 
-      ! Set up the stencil mask
+      ! Set up cell_mask
 
       do i = 1, vgrid%n_stn
 
          v_lin = vgrid%vert_linear_stencil_(i, c_vec)
 
-         stencil_mask(i) = v_lin >= 1 .AND. v_lin <= vgrid%n_v_lin
+         cell_mask(i) = v_lin >= 1 .AND. v_lin <= vgrid%n_v_lin
 
-         if (stencil_mask(i)) then
-            stencil_mask(i) = stencil_mask(i) .AND. vgrid%v_lin_mask(v_lin)
+         if (cell_mask(i)) then
+            cell_mask(i) = cell_mask(i) .AND. vgrid%v_lin_mask(v_lin)
          end if
 
       end do
 
-      ! Update u_vec to reflect the fractional position within the cell
+      ! Set up cell_deltas
 
-      u_vec = u_vec - c_vec
+      do r = 1, vgrid%rank
 
-      @:ASSERT_DEBUG(ALL(u_vec >= 0._RD .AND. u_vec <= 1._RD), 'invalid u_vec')
+         do j = 1, 4
+
+            i = c_vec(r) + j - 2
+
+            if (i < 1) then
+               x(j) = -HUGE(0._RD)
+            elseif (i > vgrid%shape(r)) then
+               x(j) = HUGE(0._RD)
+            else
+               call vgrid%axes(r)%fetch(i, x(j))
+            endif
+
+         end do
+
+         cell_deltas(:,r) = x(2:4) - x(1:3)
+
+      end do
 
       ! Finish
 

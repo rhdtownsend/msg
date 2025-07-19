@@ -1,0 +1,504 @@
+! Submodule : ninterp_cubic_sm
+! Purpose   : Cubic interpolation support routines for ninterp_m
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (ninterp_m) ninterp_cubic_sm
+
+   ! Uses
+
+   use basis_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure data_kernel_cubic
+
+      integer  :: i
+      logical  :: vert_mask(3**rank)
+      logical  :: edge_masks(3,rank)
+      integer  :: r
+      real(RD) :: edge_func_kernels(3,rank)
+      real(RD) :: edge_delta(2)
+      real(RD) :: edge_deriv_kernels(3,rank)
+      real(RD) :: vert_kernel(2**rank,4**rank)
+
+      @:CHECK_BOUNDS(SIZE(cell_mask), 4**rank)
+
+      @:CHECK_BOUNDS(SIZE(cell_deltas, 1), 3)
+      @:CHECK_BOUNDS(SIZE(cell_deltas, 2), rank)
+
+      ! Generate the kernel for evaluating function values and
+      ! derivatives. Given a vector F of function values on a
+      ! 4**rank-vertex grid, MATMUL(data_kernel, F) gives the function
+      ! values and derivatives on the central 2**rank-vertex subgrid
+
+      do i = 1, 2**rank
+
+         ! Generate the kernel for the i'th vertex of the central
+         ! subgrid
+
+         vert_mask = vert_mask_(rank, cell_mask, i)
+         edge_masks = edge_masks_(rank, vert_mask)
+
+         do r = 1, rank
+
+            if (BTEST(i-1, r-1)) then
+               edge_delta = cell_deltas(2:3,r)
+            else
+               edge_delta = cell_deltas(1:2,r)
+            end if
+
+            edge_func_kernels(:,r) = edge_func_kernel_(edge_masks(:,r))
+            edge_deriv_kernels(:,r) = edge_deriv_kernel_(edge_masks(:,r), edge_delta)
+
+         end do
+
+         vert_kernel = vert_kernel_(rank, edge_func_kernels, edge_deriv_kernels, i)
+
+         ! Store it in the data kernel
+
+         data_kernel(i::2**rank,:) = vert_kernel
+
+      end do
+
+      ! Finish
+
+      return
+
+   end procedure data_kernel_cubic
+
+   !****
+
+   module procedure interp_kernel_cubic
+
+      logical  :: deriv_(rank)
+      integer  :: i
+      integer  :: bits_d
+      integer  :: bits_p
+      integer  :: r
+      real(RD) :: basis_kernel(4**rank)
+
+      @:CHECK_BOUNDS(SIZE(u), rank)
+
+      @:CHECK_BOUNDS(SIZE(cell_deltas, 1), 3)
+      @:CHECK_BOUNDS(SIZE(cell_deltas, 2), rank)
+
+      @:CHECK_BOUNDS(SIZE(data_kernel, 1), 4**rank)
+      @:CHECK_BOUNDS(SIZE(data_kernel, 2), 4**rank)
+
+      if (PRESENT(deriv)) then
+         @:CHECK_BOUNDS(SIZE(deriv), rank)
+         deriv_ = deriv
+      else
+         deriv_ = .FALSE.
+      endif
+
+      ! Generate the kernel for cubic interpolation of a function or
+      ! its first derivatives.  Given a vector F of function values on
+      ! a 4**rank-vertex grid, DOT_PRODUCT(interp_kernel, F) gives the
+      ! function or derivative value at the point defined by u
+
+      ! Evaluate the basis kernel
+
+      do i = 1, 4**rank
+
+         ! Use i to define position and derivative bits
+
+         bits_d = IBITS(i-1, rank, rank) ! derivative bits
+         bits_p = IBITS(i-1, 0, rank)    ! position bits
+
+         ! Evaluate the outer product of hermite basis functions
+
+         basis_kernel(i) = 1._RD
+
+         dim_loop : do r = 1, rank
+
+            if (BTEST(bits_p, r-1)) then
+               if (BTEST(bits_d, r-1)) then
+                  basis_kernel(i) = basis_kernel(i) * hermite_11(u(r), deriv_(r)) * cell_deltas(2,r)
+               else
+                  basis_kernel(i) = basis_kernel(i) * hermite_01(u(r), deriv_(r))
+               end if
+            else
+               if (BTEST(bits_d, r-1)) then
+                  basis_kernel(i) = basis_kernel(i) * hermite_10(u(r), deriv_(r)) * cell_deltas(2,r)
+               else
+                  basis_kernel(i) = basis_kernel(i) * hermite_00(u(r), deriv_(r))
+               end if
+            endif
+
+            if (deriv_(r)) basis_kernel(i) = basis_kernel(i)/cell_deltas(2,r)
+
+         end do dim_loop
+
+      end do
+
+      ! Combine the data and basis kernels to make the interpolation kernel
+
+      interp_kernel = MATMUL(basis_kernel, data_kernel)
+
+      ! Finish
+
+   end procedure interp_kernel_cubic
+
+   !****
+
+   function vert_mask_(rank, cell_mask, i) result(vert_mask)
+
+      integer, intent(in)  :: rank
+      logical, intent(in)  :: cell_mask(:)
+      integer, intent(in)  :: i
+      logical              :: vert_mask(3**rank)
+
+      integer :: r
+      logical :: pick_mask(4**rank)
+
+      @:CHECK_BOUNDS(SIZE(cell_mask), 4**rank)
+
+      ! Given a 4**rank cell mask, return a 3**rank mask for the i'th
+      ! vertex of the central 2**rank subgrid
+
+      ! Pick elements from cell_mask to make vert_mask
+
+      pick_mask(1) = .TRUE.
+
+      do r = 1, rank
+         if (BTEST(i-1, r-1)) then
+            pick_mask(1:4**r) = outer_prod_l_(pick_mask(1:4**(r-1)), [.FALSE., .TRUE., .TRUE., .TRUE.])
+         else
+            pick_mask(1:4**r) = outer_prod_l_(pick_mask(1:4**(r-1)), [.TRUE., .TRUE., .TRUE., .FALSE.])
+         end if
+      end do
+
+      vert_mask = PACK(cell_mask, pick_mask)
+
+      ! Finish
+
+      return
+
+   end function vert_mask_
+
+   !****
+
+   function edge_masks_(rank, vert_mask) result(edge_masks)
+
+      integer, intent(in)  :: rank
+      logical, intent(in)  :: vert_mask(:)
+      logical              :: edge_masks(3,rank)
+
+      integer :: r
+      integer :: i
+      integer :: bits_l
+      integer :: bits_r
+      logical :: trial_edge_masks(3,rank,4**rank)
+      logical :: trial_vert_mask(3**rank)
+      integer :: n_vert(4**rank)
+      integer :: n_vert_max
+
+      @:CHECK_BOUNDS(SIZE(vert_mask), 3**rank)
+
+      ! Given a 3**rank vertex mask, return a (3,rank) set of edge
+      ! masks whose outer product:
+      !
+      !    (i) lies within the vertex mask
+      !   (ii) contains the maximal number of vertices
+      !  (iii) satisfies the isotropy constraint
+
+      ! First, generate all possible sets of edge masks
+
+      do i = 1, 4**rank
+
+         ! Extract left- and right-vertex bits from i
+
+         bits_l = IBITS(i-1, rank, rank) ! left-vertex bits
+         bits_r = IBITS(i-1, 0, rank)    ! right-vertex bits
+
+         ! Generat the trial edge masks
+
+         do r = 1, rank
+            trial_edge_masks(:,r,i) = [BTEST(bits_l, r-1), .TRUE., BTEST(bits_r, r-1)]
+         end do
+
+         ! Generate the trial vertex mask
+
+         trial_vert_mask = .TRUE.
+
+         do r = 1, rank
+            trial_vert_mask(1:3**r) = outer_prod_l_(trial_vert_mask(1:3**(r-1)), trial_edge_masks(:,r,i))
+         end do
+
+         ! Check whether trial_vert_mask lies within vert_mask, and
+         ! if so, store the number of vertices. Store 0 if there are
+         ! points outside vert_mask
+
+         if (COUNT(trial_vert_mask .AND. .NOT. vert_mask) == 0) then
+            n_vert(i) = COUNT(trial_vert_mask)
+         else
+            n_vert(i) = 0
+         end if
+
+      end do
+
+      ! Combine the trial edge masks with the most vertices (this
+      ! implements the isotropy constraint)
+
+      n_vert_max = MAXVAL(n_vert)
+
+      @:ASSERT_DEBUG(n_vert_max >= 4, 'maximal number of vertices is too small')
+
+      edge_masks = .TRUE.
+
+      do i = 1, 4**rank
+         if (n_vert(i) == n_vert_max) then
+            edge_masks = edge_masks .AND. trial_edge_masks(:,:,i)
+         end if
+      end do
+
+      ! Finish
+
+      return
+
+   end function edge_masks_
+
+   !****
+
+   function edge_func_kernel_(edge_mask) result(edge_func_kernel)
+
+      logical, intent(in)   :: edge_mask(:)
+      real(RD)              :: edge_func_kernel(3)
+
+      @:CHECK_BOUNDS(SIZE(edge_mask), 3)
+
+      ! Given an edge mask, return the kernel for function evaluation
+
+      if (edge_mask(2)) then
+
+         edge_func_kernel = [0._RD, 1._RD, 0._RD]
+
+      else
+
+         @:ABORT('invalid edge_mask')
+
+      end if
+
+      ! Finish
+
+      return
+
+   end function edge_func_kernel_
+
+   !****
+
+   module function edge_deriv_kernel_(edge_mask, edge_delta) result(edge_deriv_kernel)
+
+      logical, intent(in)   :: edge_mask(:)
+      real(RD), intent(in)  :: edge_delta(:)
+      real(RD)              :: edge_deriv_kernel(3)
+
+      @:CHECK_BOUNDS(SIZE(edge_mask), 3)
+      @:CHECK_BOUNDS(SIZE(edge_delta), 2)
+
+      ! Given an edge mask, return the kernel for derivative
+      ! evaluation
+
+      if (ALL(edge_mask)) then
+
+         ! Three-point finite difference (equivalent to a parabolic
+         ! fit)
+
+         edge_deriv_kernel = (&
+            [-1._RD, 1._RD, 0._RD]*edge_delta(2)/edge_delta(1) + &
+            [0._RD, -1._RD, 1._RD]*edge_delta(1)/edge_delta(2)) / &
+            (edge_delta(1) + edge_delta(2))
+
+      elseif (ALL(edge_mask(1:2))) then
+
+         ! Two-point finite difference using left-hand points
+
+         edge_deriv_kernel = [-1._RD, 1._RD, 0._RD]/edge_delta(1)
+
+      elseif (ALL(edge_mask(2:3))) then
+
+         ! Two-point finite difference using right-hand points
+
+         edge_deriv_kernel = [0._RD, -1._RD, 1._RD]/edge_delta(2)
+
+      else
+
+         @:ABORT('invalid edge_mask')
+
+      end if
+
+      ! Finish
+
+      return
+
+   end function edge_deriv_kernel_
+
+   !****
+
+   function vert_kernel_(rank, edge_func_kernels, edge_deriv_kernels, i) result(vert_kernel)
+
+      integer, intent(in)   :: rank
+      real(RD), intent(out) :: edge_func_kernels(:,:)
+      real(RD), intent(out) :: edge_deriv_kernels(:,:)
+      integer, intent(in)   :: i
+      real(RD)              :: vert_kernel(2**rank,4**rank)
+
+      integer  :: j
+      integer  :: bits_d
+      integer  :: bits_p
+      integer  :: r
+      real(RD) :: edge_kernel(4)
+
+      @:CHECK_BOUNDS(SIZE(edge_func_kernels, 1), 3)
+      @:CHECK_BOUNDS(SIZE(edge_func_kernels, 2), rank)
+
+      @:CHECK_BOUNDS(SIZE(edge_deriv_kernels, 1), 3)
+      @:CHECK_BOUNDS(SIZE(edge_deriv_kernels, 2), rank)
+
+      @:CHECK_BOUNDS(SIZE(vert_kernel, 1), 2**rank)
+      @:CHECK_BOUNDS(SIZE(vert_kernel, 2), 4**rank)
+
+      ! Given sets of edge kernels for the i'th vertex, return the
+      ! 4**rank kernel for function and cross derivative evaluation
+
+      do j = 1, 2**rank
+
+         ! Set position and derivative bits from i and j
+
+         bits_d = j-1 ! derivative bits
+         bits_p = i-1 ! position bits
+
+         ! Accumulate the outer product of edge kernels
+
+         vert_kernel(j,1) = 1._RD
+
+         do r = 1, rank
+
+            ! Assemble a 4-point edge kernel from the appropriate
+            ! 3-point edge kernel
+
+            if (BTEST(bits_d, r-1)) then
+
+               if (BTEST(bits_p, r-1)) then
+
+                  edge_kernel(1) = 0._RD
+                  edge_kernel(2:4) = edge_deriv_kernels(:,r)
+
+               else
+
+                  edge_kernel(1:3) = edge_deriv_kernels(:,r)
+                  edge_kernel(4) = 0._RD
+
+               end if
+
+            else
+
+               if (BTEST(bits_p, r-1)) then
+
+                  edge_kernel(1) = 0._RD
+                  edge_kernel(2:4) = edge_func_kernels(:,r)
+
+               else
+
+                  edge_kernel(1:3) = edge_func_kernels(:,r)
+                  edge_kernel(4) = 0._RD
+
+               end if
+
+            end if
+
+            ! Accumulate it
+
+            vert_kernel(j,1:4**r) = outer_prod_r_(vert_kernel(j,1:4**(r-1)), edge_kernel)
+
+         end do
+
+      end do
+
+      ! Finish
+
+      return
+
+   end function vert_kernel_
+
+   !****
+
+   function outer_prod_r_(A, B) result(AB)
+
+      real(RD), intent(in) :: A(:)
+      real(RD), intent(in) :: B(:)
+      real(RD)             :: AB(SIZE(A)*SIZE(B))
+
+      integer :: i
+      integer :: n
+      integer :: m
+
+      ! Calculate the outer product between (flat) real arrays A and B
+
+      n = SIZE(A)
+      m = SIZE(B)
+
+      do i = 1, m
+
+         AB(n*(i-1)+1:n*i) = A*B(i)
+
+      end do
+
+      ! Finish
+
+      return
+
+   end function outer_prod_r_
+
+   !****
+
+   function outer_prod_l_(A, B) result(AB)
+
+      logical, intent(in) :: A(:)
+      logical, intent(in) :: B(:)
+      logical             :: AB(SIZE(A)*SIZE(B))
+
+      integer :: i
+      integer :: n
+      integer :: m
+
+      ! Calculate the outer product between (flat) logical arrays A and B
+
+      n = SIZE(A)
+      m = SIZE(B)
+
+      do i = 1, m
+
+         AB(n*(i-1)+1:n*i) = A .AND. B(i)
+
+      end do
+
+      ! Finish
+
+      return
+
+   end function outer_prod_l_
+
+end submodule ninterp_cubic_sm
