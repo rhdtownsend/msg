@@ -1,0 +1,309 @@
+! Module  : utest_axis_m
+! Purpose : Test implementations for utest_axis
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module utest_axis_m
+
+  ! Uses
+
+  use forum_m
+
+  use stat_m
+  use axis_m
+
+  use ISO_FORTRAN_ENV
+
+  ! No implicit typing
+
+  implicit none
+
+  ! Access specifiers
+
+  private
+
+  public :: test
+
+contains
+ 
+   subroutine test()
+
+      call test_stat_()
+      call test_attr_()
+      call test_locate_()
+
+   end subroutine test
+
+   !****
+
+   subroutine test_stat_()
+
+      integer, parameter :: N = 2
+
+      type(axis_t)  :: axis
+      real(RD)      :: x(N)
+      integer       :: stat(N)
+      integer       :: stat_chk(N)
+      character(32) :: stat_str(N)
+
+      print *, '  exceptions'
+
+      axis = axis_t([1._RD, 2._RD, 3._RD], 'x')
+
+      call stat_arrange_()
+      call stat_act_()
+      call stat_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine stat_arrange_()
+
+         x(1) = 0.5_RD
+         stat_chk(1) = STAT_OUT_OF_BOUNDS_AXIS_LO
+         stat_str(1) = 'STAT_OUT_OF_BOUNDS_AXIS_LO'
+
+         !
+
+         x(2) = 3.5_RD
+         stat_chk(2) = STAT_OUT_OF_BOUNDS_AXIS_HI
+         stat_str(2) = 'STAT_OUT_OF_BOUNDS_AXIS_HI'
+
+         ! Finish
+
+         return
+
+      end subroutine stat_arrange_
+
+      !****
+
+      subroutine stat_act_()
+
+         integer  :: j
+         integer  :: i
+         real(RD) :: u
+
+         do j = 1, N
+            call axis%locate_u(x(j), i, u, stat(j))
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine stat_act_
+
+      !****
+
+      subroutine stat_assert_()
+
+         integer :: j
+
+         do j = 1, N
+            if (stat(j) /= stat_chk(j)) then
+               print *,'    FAIL ', TRIM(stat_str(j)), ':', stat(j), '/=', stat_chk(j)
+            else
+               print *,'    PASS ', TRIM(stat_str(j))
+            end if
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine stat_assert_
+
+   end subroutine test_stat_
+
+   !****
+
+   subroutine test_attr_()
+
+      type(axis_t)         :: axis
+      integer              :: n
+      integer              :: n_chk
+      real(RD)             :: x_min
+      real(RD)             :: x_min_chk
+      real(RD)             :: x_max
+      real(RD)             :: x_max_chk
+      character(LABEL_LEN) :: label
+      character(LABEL_LEN) :: label_chk
+
+      print *, '  attributes'
+
+      axis = axis_t([1._RD, 2._RD, 3._RD], 'x')
+
+      call attr_arrange_()
+      call attr_act_()
+      call attr_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine attr_arrange_()
+
+         n_chk = 3
+         x_min_chk = 1._RD
+         x_max_chk = 3._RD
+         label_chk = 'x'
+
+         ! Finish
+
+         return
+
+      end subroutine attr_arrange_
+
+      !****
+
+      subroutine attr_act_()
+
+         call axis%get_n(n)
+         call axis%get_x_min(x_min)
+         call axis%get_x_max(x_max)
+         call axis%get_label(label)
+
+         ! Finish
+
+         return
+
+      end subroutine attr_act_
+
+      !****
+
+      subroutine attr_assert_()
+
+         if (n == n_chk) then
+            print *,'    PASS n'
+         else
+            print *,'    FAIL n:', n, '/=', n_chk
+         end if
+         
+         if (x_min == x_min_chk) then
+            print *,'    PASS x_min'
+         else
+            print *,'    FAIL x_min:', x_min, '/=', x_min_chk
+         end if
+
+         if (x_max == x_max_chk) then
+            print *,'    PASS x_max'
+         else
+            print *,'    FAIL x_max:', x_max, '/=', x_max_chk
+         end if
+
+         if (label == label_chk) then
+            print *,'    PASS label'
+         else
+            print *,'    FAIL label:', TRIM(label), ' /= ', TRIM(label_chk)
+         end if
+
+         ! Finish
+         
+         return
+
+      end subroutine attr_assert_
+
+   end subroutine test_attr_
+
+   !****
+
+   subroutine test_locate_()
+
+      integer, parameter :: N = 4
+
+      type(axis_t) :: axis
+      real(RD)     :: x(N)
+      integer      :: i(N)
+      integer      :: i_chk(N)
+      real(RD)     :: u(N)
+      real(RD)     :: u_chk(N)
+
+      print *, '  location'
+
+      call locate_arrange_()
+      call locate_act_()
+      call locate_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine locate_arrange_()
+
+         axis = axis_t([1._RD, 2._RD, 5._RD, 6._RD], 'x')
+
+         ! Set location values
+
+         x = [1._RD, 1.5_RD, 5.5_RD, 6._RD]
+
+         i_chk = [1, 1, 3, 3]
+         u_chk = [0._RD, 0.5_RD, 0.5_RD, 1._RD]
+
+         ! Finish
+
+         return
+
+      end subroutine locate_arrange_
+
+      !****
+
+      subroutine locate_act_()
+
+         integer :: j
+
+         do j = 1, N
+            call axis%locate_u(x(j), i(j), u(j))
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine locate_act_
+
+      !****
+
+      subroutine locate_assert_()
+
+         if (ALL(i == i_chk)) then
+            print *,'    PASS locate'
+         else
+            print *,'    FAIL locate: ', i, '/=', i_chk
+         end if
+         
+         if (ALL(u == u_chk)) then
+            print *,'    PASS locate_u'
+         else
+            print *,'    FAIL locate_u: ', u, '/=', u_chk
+         end if
+
+         ! Finish
+         
+         return
+
+      end subroutine locate_assert_
+
+   end subroutine test_locate_
+
+end module utest_axis_m
