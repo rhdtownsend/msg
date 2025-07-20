@@ -58,6 +58,21 @@ module ninterp_m
          real(RD)              :: data_kernel(4**rank,4**rank)
       end function data_kernel_cubic
 
+      module function data_kernel_cubic_cached(rank, cache) result(data_kernel)
+         implicit none (type, external)
+         integer, intent(in)   :: rank
+         real(RD), intent(in)  :: cache(:,:)
+         real(RD)              :: data_kernel(4**rank,4**rank)
+      end function data_kernel_cubic_cached
+
+      module function vertex_cache_cubic(rank, vert_mask, edge_deltas) result(cache)
+         implicit none (type, external)
+         integer, intent(in)  :: rank
+         logical, intent(in)  :: vert_mask(:)
+         real(RD), intent(in) :: edge_deltas(:,:)
+         real(RD)             :: cache(3*rank*2)
+      end function vertex_cache_cubic
+
       module function interp_kernel_cubic(rank, u, cell_deltas, data_kernel, deriv) result(interp_kernel)
          implicit none (type, external)
          integer, intent(in)           :: rank
@@ -80,6 +95,8 @@ module ninterp_m
 
    public :: interp_kernel_linear
    public :: data_kernel_cubic
+   public :: data_kernel_cubic_cached
+   public :: vertex_cache_cubic
    public :: interp_kernel_cubic
 
    ! Procedures
