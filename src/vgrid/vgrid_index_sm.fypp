@@ -163,60 +163,27 @@ contains
 
    !****
 
-   module procedure vert_linear_corner_
+   module procedure offset_vector_
 
-      integer :: r
-      integer :: v_vec(self%rank)
+     integer :: p
+     integer :: r
 
-      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
+     @:ASSERT_DEBUG(i >= 1 .AND. i <= n**self%rank)
 
-      ! Calculate a linear vertex index from a corner index
-      ! (i=1,...,2**rank) and a vector cell index. Returns 0 if the
-      ! vertex is outside the grid
+     ! Calculate the vector offset associated with the i'th position (i=1,...,n**rank)
+     ! in a nxnx..xn grid. i=1 corresponds to an offdet d_vec = (0,0,...)
 
-      ! First calculate the vector vertex index
+     p = i - 1
 
-      do r = 1, self%rank
-         v_vec(r) = c_vec(r) + IBITS(i-1, r-1, 1)
-      end do
+     do r = 1, self%rank
+        d_vec(r) = MODULO(p, n)
+        p = p/n
+     end do
 
-      ! Convert to a linear index
+     ! Finish
 
-      v_lin = self%vert_linear_(v_vec)
+     return
 
-      ! Finish
-
-      return
-
-   end procedure vert_linear_corner_
-
-   !****
-
-   module procedure vert_linear_stencil_
-
-      integer :: r
-      integer :: v_vec(self%rank)
-
-      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
-
-      ! Calculate a linear vertex index from a stencil index
-      ! (i=1,...,4**rank) and a vector cell index. Returns 0
-      ! if the vertex is outside the grid
-
-      ! First calculate the vector vertex index
-
-      do r = 1, self%rank
-         v_vec(r) = c_vec(r) + IBITS(i-1, 2*(r-1), 2) - 1
-      end do
-
-      ! Convert to a linear index
-
-      v_lin = self%vert_linear_(v_vec)
-
-      ! Finish
-
-      return
-
-   end procedure vert_linear_stencil_
+   end procedure offset_vector_
 
 end submodule vgrid_index_sm

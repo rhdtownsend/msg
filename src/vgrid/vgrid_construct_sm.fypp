@@ -183,18 +183,18 @@ contains
       ! Initialize c_lin_mask last, to take advantage of indexing
       ! routines
 
-      allocate(c_lin_mask(n_c_lin))
-      allocate(c_vec(rank_nd))
+      allocate(c_lin_mask(vgrid%n_c_lin))
+      allocate(c_vec(vgrid%rank))
 
-      cell_loop: do c_lin = 1, n_c_lin
+      cell_loop: do c_lin = 1, vgrid%n_c_lin
 
          c_vec = vgrid%cell_vector_(c_lin)
 
          ! Iterate over corner vertices of the cell
 
-         do i = 1, 2**rank_nd
+         do i = 1, 2**vgrid%rank
 
-            v_lin = vgrid%vert_linear_corner_(i, c_vec)
+            v_lin = vgrid%vert_linear_(c_vec + vgrid%offset_vector_(i, 2))
 
             if (.NOT. vgrid%v_lin_mask(v_lin)) then
                c_lin_mask(c_lin) = .FALSE.
@@ -208,6 +208,10 @@ contains
       end do cell_loop
 
       call MOVE_ALLOC(c_lin_mask, vgrid%c_lin_mask)
+
+      ! Set up the per-vertex cache
+
+      if (USE_VERT_CACHE) call setup_cache_(vgrid)
 
       ! Finish
 
@@ -256,5 +260,85 @@ contains
       return
 
    end procedure vgrid_t_mask_
+
+   !****
+
+   subroutine setup_cache_(vgrid)
+
+      type(vgrid_t), intent(inout) :: vgrid
+
+      integer  :: v_seq
+      integer  :: v_vec(vgrid%rank)
+      integer  :: v_vec_i(vgrid%rank)
+      integer  :: i
+      integer  :: v_lin
+      logical  :: vert_mask(3**vgrid%rank)
+      integer  :: r
+      integer  :: j
+      real(RD) :: x(3)
+      real(RD) :: edge_deltas(2,vgrid%rank)
+
+      ! For each sequential vertex, cache data to be used later by
+      ! data_kernel_cubic_cached
+
+      allocate(vgrid%vert_cache(3*vgrid%rank*2, vgrid%n_seq))
+
+      do v_seq = 1, vgrid%n_seq
+
+         v_vec = vgrid%vert_vector_(vgrid%v_lin_seq(v_seq))
+
+         ! Set up the vert_mask
+
+         do i = 1, 3**vgrid%rank
+
+            v_vec_i = v_vec - 1 + vgrid%offset_vector_(i, 3)
+
+            if (ALL(v_vec_i >= 1 .AND. v_vec_i <= vgrid%shape)) then
+
+               v_lin = vgrid%vert_linear_(v_vec_i)
+
+               vert_mask(i) = vgrid%v_lin_mask(v_lin)
+
+            else
+
+               vert_mask(i) = .FALSE.
+
+            end if
+
+         end do
+
+         ! Set up edge_deltas
+
+         do r = 1, vgrid%rank
+
+            do j = 1, 3
+
+               i = v_vec(r) + j - 2
+
+               if (i < 1) then
+                  x(j) = -HUGE(0._RD)
+               elseif (i > vgrid%shape(r)) then
+                  x(j) = HUGE(0._RD)
+               else
+                  call vgrid%axes(r)%fetch(i, x(j))
+               endif
+
+            end do
+
+            edge_deltas(:,r) = x(2:3) - x(1:2)
+
+         end do
+
+         ! Cache the data
+
+         vgrid%vert_cache(:,v_seq) = vertex_cache_cubic(vgrid%rank, vert_mask, edge_deltas)
+
+      end do
+
+      ! Finish
+
+      return
+
+   end subroutine setup_cache_
 
 end submodule vgrid_construct_sm
