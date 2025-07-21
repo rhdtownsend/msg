@@ -1,0 +1,88 @@
+! Submodule : limb_specint_construct_sm
+! Purpose   : Constructor routines for limb_specint_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_specint_m) limb_specint_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure limb_specint_t_
+
+      logical :: precise_
+      integer :: n_b
+      integer :: n_lam
+
+      if (PRESENT(precise)) then
+         precise_ = precise
+      else
+         precise_ = .TRUE.
+      endif
+
+      ! Construct specint from the supplied data
+
+      call limb%get_n(n_b)
+      call range%get_n(n_lam)
+
+      @:CHECK_BOUNDS(n_b, SIZE(c, 1))
+      @:CHECK_BOUNDS(n_lam, SIZE(c, 2)+1)
+
+      specint%c = c
+
+      allocate(specint%lam(n_lam))
+      call range%unpack(specint%lam)
+
+      specint%range = range
+      specint%limb = limb
+
+      specint%n_b = n_b
+      specint%n_lam = n_lam
+
+      specint%precise = precise_
+
+      ! Finish
+
+      return
+
+   end procedure limb_specint_t_
+
+   !****
+
+   module procedure limb_specint_t_fit_
+
+      real(RD), allocatable :: c(:,:)
+
+      ! Construct specint by fitting the supplied I(mu,lambda)
+      ! intensity data
+
+      call limb%fit_intensity(I, mu, c)
+
+      specint = limb_specint_t(c, range, limb, precise)
+
+      ! Finish
+
+      return
+
+   end procedure limb_specint_t_fit_
+
+ end submodule limb_specint_construct_sm

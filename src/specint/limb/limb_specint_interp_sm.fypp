@@ -1,0 +1,169 @@
+! Submodule : limb_specint_interp_sm
+! Purpose   : Interpolation routines for limb_specint_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_specint_m) limb_specint_interp_sm
+
+   ! Uses
+
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
+
+      module procedure interp_${name}$
+
+         real(RD) :: b(self%n_b)
+
+         ! Set up the basis functions
+
+         call self%limb%eval_${name}$_basis(${arg_var}$, b, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+
+         ! Do the interpolation
+
+         call self%interp_f_(b, lam, res, stat)
+
+         ! Finish
+
+         return
+
+      end procedure interp_${name}$
+
+   #:endfor
+
+   !****
+
+   #:for name, var in (('flux', 'F'),)
+
+      module procedure interp_${name}$
+
+         real(RD) :: b(self%n_b)
+
+         ! Set up the basis functions
+
+         call self%limb%eval_${name}$_basis(b, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+
+         ! Do the interpolation
+
+         call self%interp_f_(b, lam, res, stat)
+
+         ! Finish
+
+         return
+
+      end procedure interp_${name}$
+
+   #:endfor
+
+   !****
+
+   subroutine interp_f_(self, b, lam, f, stat)
+
+      class(limb_specint_t), intent(in) :: self
+      real(RD), intent(in)              :: b(:)
+      real(RD), intent(in)              :: lam(:)
+      real(RD), intent(out)             :: f(:)
+      integer, intent(out), optional    :: stat
+
+      integer  :: n_lam
+      integer  :: i
+      integer  :: j
+      real(RD) :: lam_a
+      real(RD) :: lam_b
+      real(RD) :: dlam
+
+      @:CHECK_BOUNDS(SIZE(b), self%n_b)
+      @:CHECK_BOUNDS(SIZE(f), SIZE(lam)-1)
+
+      ! Check lam is valid
+
+      n_lam = SIZE(lam)
+
+      if (lam(1) < self%lam(1)) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) lam')
+         endif
+      endif
+
+      if (lam(n_lam) > self%lam(self%n_lam)) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_HI
+            return
+         else
+            @:ABORT('out-of-bounds (hi) lam')
+         endif
+      endif
+
+      ! Perform the interpolation (conservative piecewise-constant
+      ! rebin)
+
+      i = 0
+
+      !$OMP PARALLEL DO PRIVATE(lam_a, lam_b, dlam) FIRSTPRIVATE(i) SCHEDULE(static)
+      out_loop: do j = 1, n_lam-1
+
+         if (i == 0) then
+            call locate(self%lam, lam(j), i)
+            if (i == self%n_lam) i = i - 1
+         end if
+
+         f(j) = 0._RD
+
+         dlam = lam(j+1) - lam(j)
+
+         in_loop: do
+
+            lam_a = MAX(self%lam(i), lam(j))
+            lam_b = MIN(self%lam(i+1), lam(j+1))
+
+            f(j) = f(j) + (lam_b - lam_a)/dlam*DOT_PRODUCT(b, self%c(:,i))
+
+            if (lam_b == self%lam(i+1)) i = i + 1
+            if (lam_b == lam(j+1)) exit in_loop
+
+         end do in_loop
+
+      end do out_loop
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   end subroutine interp_f_
+
+end submodule limb_specint_interp_sm

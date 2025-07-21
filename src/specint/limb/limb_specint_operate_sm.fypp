@@ -1,0 +1,205 @@
+! Submodule : limb_specint_operate_sm
+! Purpose   : Operation routines for limb_specint_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_specint_m) limb_specint_operate_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure subset
+
+      integer                     :: i_a
+      integer                     :: i_b
+      class(range_t), allocatable :: range
+
+      ! Subset specint
+
+      if (lam_max < lam_min) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      call locate(self%lam, lam_min, i_a, right=.FALSE.)
+      call locate(self%lam, lam_max, i_b, right=.TRUE.)
+
+      if (i_a < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) lam')
+         end if
+      end if
+
+      if (i_a > self%n_lam) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) lam')
+         end if
+      end if
+
+      call self%range%subset(i_a, i_b, range, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      specint = limb_specint_t(self%c(:,i_a:i_b-1), range, self%limb, self%precise)
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure subset
+
+   !****
+
+   module procedure rebin
+
+      integer               :: n_lam
+      real(RD), allocatable :: lam(:)
+      real(RD), allocatable :: c(:,:)
+      integer               :: p
+      real(RD)              :: b(self%n_b)
+
+      ! Rebin specint
+
+      call range%get_n(n_lam)
+
+      allocate(lam(n_lam))
+      allocate(c(self%n_b,n_lam-1))
+
+      call range%unpack(lam)
+
+      do p = 1, self%n_b
+
+         b = 0._RD
+         b(p) = 1._RD
+
+         call self%interp_f_(b, lam, c(p,:), stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do
+
+      specint = limb_specint_t(c, range, self%limb, self%precise)
+
+      ! Finish
+
+      return
+
+   end procedure rebin
+
+   !****
+
+   module procedure filter
+
+      real(RD)              :: lam_min
+      real(RD)              :: lam_max
+      real(RD)              :: lam_min_pb
+      real(RD)              :: lam_max_pb
+      integer               :: i_min
+      integer               :: i_max
+      integer               :: n_lam
+      real(RD), allocatable :: lam(:)
+      real(RD), allocatable :: P(:)
+      real(RD)              :: c(self%n_b)
+
+      ! Filter the specint through the passband to yield photint
+
+      ! First check that the spectrum is defined across the passband support
+
+      call self%get_lam_min(lam_min)
+      call self%get_lam_max(lam_max)
+
+      call passband%get_lam_min(lam_min_pb)
+      call passband%get_lam_max(lam_max_pb)
+
+      if (lam_min_pb < lam_min) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) lam')
+         endif
+      endif
+
+      if (lam_max_pb > lam_max) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_LAM_HI
+            return
+         else
+            @:ABORT('out-of-bounds (hi) lam')
+         endif
+      endif
+
+      ! Evaluate the coefficients
+
+      ! First, determine where the passband is located, and set up a
+      ! wavelength axis for the integration
+
+      call locate(self%lam, lam_min_pb, i_min)
+      call locate(self%lam, lam_max_pb, i_max, right=.TRUE.)
+
+      lam = self%lam(i_min:i_max)
+
+      n_lam = SIZE(lam)
+
+      lam(1) = lam_min_pb
+      lam(n_lam) = lam_max_pb
+
+      ! Construct the passthru function
+
+      P = passband%passthru(lam)
+
+      ! Integrate
+
+      c = MATMUL(self%c(:,i_min:i_max-1), P)
+
+      ! Construct the photint
+
+      select type(self)
+      type is(limb_specint_t)
+         photint = limb_photint_t(c, self%limb)
+      class default
+         @:ABORT('invalid type')
+      end select
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure filter
+
+end submodule limb_specint_operate_sm

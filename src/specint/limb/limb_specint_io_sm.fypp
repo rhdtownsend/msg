@@ -1,0 +1,169 @@
+! Submodule : limb_specint_io_sm
+! Purpose   : Input/output routines for limb_specint_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_specint_m) limb_specint_io_sm
+
+   ! Uses
+
+   use file_m
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   !****
+
+   module procedure read
+
+      integer :: revision
+
+      ! Read the limb_specint_t
+
+      call check_type(hdf5io, 'limb_specint_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call hdf5io%read_attr('REVISION', revision)
+
+      select case(revision)
+      case(1)
+         call read_rev1_(self, hdf5io, stat)
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_GROUP_REVISION
+            return
+         else
+            @:ABORT('invalid group revision')
+         end if
+      end select
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine read_rev1_(self, hdf5io, stat)
+
+         class(limb_specint_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)      :: hdf5io
+         integer, intent(out), optional     :: stat
+
+         logical                     :: precise
+         real(RD), allocatable       :: c(:,:)
+         type(hdf5io_t)              :: hdf5io_range
+         character(TYPE_LEN)         :: type
+         class(range_t), allocatable :: range
+         type(hdf5io_t)              :: hdf5io_limb
+         type(limb_t)                :: limb
+
+         call hdf5io%read_attr('precise', precise)
+
+         call hdf5io%alloc_read_dset('c', c)
+
+         hdf5io_range = hdf5io_t(hdf5io, 'range')
+
+         call hdf5io_range%read_attr('TYPE', type)
+         allocate(range, MOLD=range_t(type))
+
+         call range%read(hdf5io_range, stat)
+         call hdf5io_range%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         hdf5io_limb = hdf5io_t(hdf5io, 'limb')
+         call limb%read(hdf5io_limb, stat)
+         call hdf5io_limb%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         select type(self)
+         type is(limb_specint_t)
+            self = limb_specint_t(c, range, limb, precise)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
+
+   end procedure read
+
+   !****
+
+   module procedure write
+
+      real(RD)       :: lam_min
+      real(RD)       :: lam_max
+      type(hdf5io_t) :: hdf5io_range
+      type(hdf5io_t) :: hdf5io_limb
+
+      ! Write the limb_specint_t
+
+      call hdf5io%write_attr('TYPE', 'limb_specint_t')
+      call hdf5io%write_attr('REVISION', 1)
+
+      call self%get_lam_min(lam_min)
+      call self%get_lam_max(lam_max)
+
+      call hdf5io%write_attr('lam_min', lam_min)
+      call hdf5io%write_attr('lam_max', lam_max)
+
+      call hdf5io%write_attr('precise', self%precise)
+
+      if (self%precise) then
+         call hdf5io%write_dset('c', REAL(self%c, RD), comp_level=6)
+      else
+         call hdf5io%write_dset('c', REAL(self%c, RS), comp_level=6)
+      endif
+
+      hdf5io_range = hdf5io_t(hdf5io, 'range')
+      call self%range%write(hdf5io_range, stat)
+      call hdf5io_range%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
+      call self%limb%write(hdf5io_limb, stat)
+      call hdf5io_limb%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure write
+
+end submodule limb_specint_io_sm
