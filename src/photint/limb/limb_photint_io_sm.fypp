@@ -22,6 +22,7 @@ submodule (limb_photint_m) limb_photint_io_sm
    ! Uses
 
    use file_m
+   use stat_m
 
    ! No implicit typing
 

@@ -25,7 +25,6 @@ module limb_photint_m
    use forum_m
 
    use limb_m
-   use math_m
    use photint_m
 
    use ISO_FORTRAN_ENV
