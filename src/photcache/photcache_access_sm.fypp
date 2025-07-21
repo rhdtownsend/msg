@@ -29,6 +29,8 @@ contains
 
    module procedure fetch
 
+      #:if defined('GFORTRAN_PR121204')
+
       interface
          subroutine fetch_proc(i, photint, stat)
             use photint_m
@@ -37,6 +39,8 @@ contains
             integer, intent(out), optional             :: stat
          end subroutine fetch_proc
       end interface
+
+      #:endif
 
       integer(ID) :: ssize
 

@@ -33,6 +33,8 @@ contains
 
    module procedure fetch
 
+      #:if defined('GFORTRAN_PR121204')
+
       interface
          subroutine fetch_proc(i, specint, stat)
             use specint_m
@@ -41,6 +43,8 @@ contains
             integer, intent(out), optional             :: stat
          end subroutine fetch_proc
       end interface
+
+      #:endif
 
       integer                       :: j
       class(specint_t), allocatable :: specint_full
