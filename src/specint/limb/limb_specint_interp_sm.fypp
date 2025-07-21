@@ -39,6 +39,8 @@ contains
 
          real(RD) :: b(self%n_b)
 
+         @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
+
          ! Set up the basis functions
 
          call self%limb%eval_${name}$_basis(${arg_var}$, b, stat)
@@ -65,6 +67,8 @@ contains
       module procedure interp_${name}$
 
          real(RD) :: b(self%n_b)
+
+         @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
 
          ! Set up the basis functions
 

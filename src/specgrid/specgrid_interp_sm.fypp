@@ -33,6 +33,8 @@ contains
 
       module procedure interp_${name}$
 
+         @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
+
          ! Interpolate ${name}$
 
          call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
@@ -86,6 +88,8 @@ contains
    #:for name in ('flux',)
 
       module procedure interp_${name}$
+
+         @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
 
          ! Interpolate ${name}$
 
