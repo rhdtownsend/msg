@@ -19,6 +19,10 @@
 
 submodule (limb_specint_m) limb_specint_operate_sm
 
+   ! Uses
+
+   use stat_m
+
    ! No implicit typing
 
    implicit none (type, external)

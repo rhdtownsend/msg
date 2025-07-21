@@ -170,6 +170,11 @@ module speccache_m
          class(speccache_t), intent(inout) :: self
       end subroutine flush
 
+      module subroutine trim_(self)
+         implicit none (type, external)
+         class(speccache_t), intent(inout) :: self
+      end subroutine trim_
+
    end interface
 
    ! Access specifiers

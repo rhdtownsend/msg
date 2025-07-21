@@ -29,9 +29,6 @@ contains
 
    module procedure get_n
 
-      class(hdf5_specsource_t), intent(in) :: self
-      integer, intent(out)                 :: n
-
       ! Get n
 
       n = self%n

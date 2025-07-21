@@ -86,7 +86,7 @@ module limb_specint_m
          type(limb_specint_t)          :: specint
       end function limb_specint_t_
 
-      function limb_specint_t_fit_(I, mu, range, limb, precise) result(specint)
+      module function limb_specint_t_fit_(I, mu, range, limb, precise) result(specint)
          implicit none (type, external)
          real(RD), intent(in)          :: I(:,:)
          real(RD), intent(in)          :: mu(:)
@@ -152,11 +152,11 @@ module limb_specint_m
 
       module subroutine interp_D_moment(self, l, lam, res, stat)
          implicit none (type, external)
-         class(specint_t), intent(in)   :: self
-         integer intent(in)             :: l
-         real(RD), intent(in)           :: lam(:)
-         real(RD), intent(out)          :: res(:)
-         integer, intent(out), optional :: stat
+         class(limb_specint_t), intent(in) :: self
+         integer, intent(in)               :: l
+         real(RD), intent(in)              :: lam(:)
+         real(RD), intent(out)             :: res(:)
+         integer, intent(out), optional    :: stat
       end subroutine interp_D_moment
 
       module subroutine interp_flux(self, lam, res, stat)
@@ -166,6 +166,15 @@ module limb_specint_m
          real(RD), intent(out)             :: res(:)
          integer, intent(out), optional    :: stat
       end subroutine interp_flux
+
+      module subroutine interp_f_(self, b, lam, f, stat)
+         implicit none (type, external)
+         class(limb_specint_t), intent(in) :: self
+         real(RD), intent(in)              :: b(:)
+         real(RD), intent(in)              :: lam(:)
+         real(RD), intent(out)             :: f(:)
+         integer, intent(out), optional    :: stat
+      end subroutine interp_f_
 
    end interface
 
@@ -204,19 +213,19 @@ module limb_specint_m
 
    interface
 
-      module subroutine write(self, hdf5io, stat)
-         implicit none (type, external)
-         class(limb_specint_t), intent(in) :: self
-         type(hdf5io_t), intent(inout)     :: hdf5io
-         integer, intent(out), optional    :: stat
-      end interface
-
       module subroutine read(self, hdf5io, stat)
          implicit none (type, external)
          class(limb_specint_t), intent(out) :: self
          type(hdf5io_t), intent(inout)      :: hdf5io
          integer, intent(out), optional     :: stat
       end subroutine read
+
+      module subroutine write(self, hdf5io, stat)
+         implicit none (type, external)
+         class(limb_specint_t), intent(in) :: self
+         type(hdf5io_t), intent(inout)     :: hdf5io
+         integer, intent(out), optional    :: stat
+      end subroutine write
 
    end interface
 

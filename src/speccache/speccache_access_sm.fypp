@@ -154,7 +154,7 @@ contains
 
       ! Trim the cache
 
-      call self%trim_()
+      call trim_(self)
 
       ! Finish
 
@@ -164,7 +164,7 @@ contains
 
    !****
 
-   module procedure flush(self)
+   module procedure flush
 
       integer :: i
 
@@ -191,9 +191,7 @@ contains
 
    !****
 
-   subroutine trim_(self)
-
-      class(speccache_t), intent(inout) :: self
+   module procedure trim_
 
       integer     :: j
       integer     :: usage
@@ -231,6 +229,6 @@ contains
 
       return
 
-   end subroutine trim_
+   end procedure trim_
 
 end submodule speccache_access_sm

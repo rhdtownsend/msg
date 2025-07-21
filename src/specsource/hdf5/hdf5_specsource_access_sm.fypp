@@ -21,6 +21,7 @@ submodule (hdf5_specsource_m) hdf5_specsource_access_sm
 
    ! Uses
 
+   use file_m
    use stat_m
 
    ! No implicit typing

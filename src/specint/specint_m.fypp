@@ -100,7 +100,7 @@ module specint_m
          use forum_m
          import specint_t
          class(specint_t), intent(in)   :: self
-         integer intent(in)             :: l
+         integer, intent(in)            :: l
          real(RD), intent(in)           :: lam(:)
          real(RD), intent(out)          :: res(:)
          integer, intent(out), optional :: stat

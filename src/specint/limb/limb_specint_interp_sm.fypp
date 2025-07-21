@@ -87,13 +87,7 @@ contains
 
    !****
 
-   subroutine interp_f_(self, b, lam, f, stat)
-
-      class(limb_specint_t), intent(in) :: self
-      real(RD), intent(in)              :: b(:)
-      real(RD), intent(in)              :: lam(:)
-      real(RD), intent(out)             :: f(:)
-      integer, intent(out), optional    :: stat
+   module procedure interp_f_
 
       integer  :: n_lam
       integer  :: i
@@ -164,6 +158,6 @@ contains
 
       return
 
-   end subroutine interp_f_
+   end procedure interp_f_
 
 end submodule limb_specint_interp_sm
