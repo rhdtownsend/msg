@@ -40,7 +40,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(u), rank)
 
-      @:CHECK_BOUNDS(SIZE(cell_deltas), rank)
+      @:CHECK_BOUNDS(SIZE(edge_deltas), rank)
 
       if (PRESENT(deriv)) then
          @:CHECK_BOUNDS(SIZE(deriv), rank)
@@ -74,7 +74,7 @@ contains
                interp_kernel(i) = interp_kernel(i) * linear_0(u(r), deriv_(r))
             endif
 
-            if (deriv_(r)) interp_kernel(i) = interp_kernel(i)/cell_deltas(r)
+            if (deriv_(r)) interp_kernel(i) = interp_kernel(i)/edge_deltas(r)
 
          end do dim_loop
 

@@ -38,14 +38,13 @@ contains
       logical  :: edge_masks(3,rank)
       integer  :: r
       real(RD) :: edge_func_kernels(3,rank)
-      real(RD) :: edge_delta(2)
       real(RD) :: edge_deriv_kernels(3,rank)
       real(RD) :: vert_kernel(2**rank,4**rank)
 
       @:CHECK_BOUNDS(SIZE(cell_mask), 4**rank)
 
-      @:CHECK_BOUNDS(SIZE(cell_deltas, 1), 3)
-      @:CHECK_BOUNDS(SIZE(cell_deltas, 2), rank)
+      @:CHECK_BOUNDS(SIZE(edge_deltas, 1), 3)
+      @:CHECK_BOUNDS(SIZE(edge_deltas, 2), rank)
 
       ! Generate the kernel for evaluating function values and
       ! derivatives. Given a vector F of function values on a
@@ -62,14 +61,13 @@ contains
 
          do r = 1, rank
 
-            if (BTEST(i-1, r-1)) then
-               edge_delta = cell_deltas(2:3,r)
-            else
-               edge_delta = cell_deltas(1:2,r)
-            end if
-
             edge_func_kernels(:,r) = edge_func_kernel_(edge_masks(:,r))
-            edge_deriv_kernels(:,r) = edge_deriv_kernel_(edge_masks(:,r), edge_delta)
+
+            if (BTEST(i-1, r-1)) then
+               edge_deriv_kernels(:,r) = edge_deriv_kernel_(edge_masks(:,r), edge_deltas(2:3,r))
+            else
+               edge_deriv_kernels(:,r) = edge_deriv_kernel_(edge_masks(:,r), edge_deltas(1:2,r))
+            end if
 
          end do
 
@@ -172,8 +170,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(u), rank)
 
-      @:CHECK_BOUNDS(SIZE(cell_deltas, 1), 3)
-      @:CHECK_BOUNDS(SIZE(cell_deltas, 2), rank)
+      @:CHECK_BOUNDS(SIZE(edge_deltas), rank)
 
       @:CHECK_BOUNDS(SIZE(data_kernel, 1), 4**rank)
       @:CHECK_BOUNDS(SIZE(data_kernel, 2), 4**rank)
@@ -207,19 +204,19 @@ contains
 
             if (BTEST(bits_p, r-1)) then
                if (BTEST(bits_d, r-1)) then
-                  basis_kernel(i) = basis_kernel(i) * hermite_11(u(r), deriv_(r)) * cell_deltas(2,r)
+                  basis_kernel(i) = basis_kernel(i) * hermite_11(u(r), deriv_(r)) * edge_deltas(r)
                else
                   basis_kernel(i) = basis_kernel(i) * hermite_01(u(r), deriv_(r))
                end if
             else
                if (BTEST(bits_d, r-1)) then
-                  basis_kernel(i) = basis_kernel(i) * hermite_10(u(r), deriv_(r)) * cell_deltas(2,r)
+                  basis_kernel(i) = basis_kernel(i) * hermite_10(u(r), deriv_(r)) * edge_deltas(r)
                else
                   basis_kernel(i) = basis_kernel(i) * hermite_00(u(r), deriv_(r))
                end if
             endif
 
-            if (deriv_(r)) basis_kernel(i) = basis_kernel(i)/cell_deltas(2,r)
+            if (deriv_(r)) basis_kernel(i) = basis_kernel(i)/edge_deltas(r)
 
          end do dim_loop
 

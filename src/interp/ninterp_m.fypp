@@ -35,11 +35,11 @@ module ninterp_m
 
    interface
 
-      module function interp_kernel_linear(rank, u, cell_deltas, deriv) result(interp_kernel)
+      module function interp_kernel_linear(rank, u, edge_deltas, deriv) result(interp_kernel)
          implicit none (type, external)
          integer, intent(in)           :: rank
          real(RD), intent(in)          :: u(:)
-         real(RD), intent(in)          :: cell_deltas(:)
+         real(RD), intent(in)          :: edge_deltas(:)
          logical, intent(in), optional :: deriv(:)
          real(RD)                      :: interp_kernel(2**rank)
       end function interp_kernel_linear
@@ -50,11 +50,11 @@ module ninterp_m
 
    interface
 
-      module function data_kernel_cubic(rank, cell_mask, cell_deltas) result(data_kernel)
+      module function data_kernel_cubic(rank, cell_mask, edge_deltas) result(data_kernel)
          implicit none (type, external)
          integer, intent(in)   :: rank
          logical, intent(in)   :: cell_mask(:)
-         real(RD), intent(in)  :: cell_deltas(:,:)
+         real(RD), intent(in)  :: edge_deltas(:,:)
          real(RD)              :: data_kernel(4**rank,4**rank)
       end function data_kernel_cubic
 
@@ -73,11 +73,11 @@ module ninterp_m
          real(RD)             :: cache(3*rank*2)
       end function vertex_cache_cubic
 
-      module function interp_kernel_cubic(rank, u, cell_deltas, data_kernel, deriv) result(interp_kernel)
+      module function interp_kernel_cubic(rank, u, edge_deltas, data_kernel, deriv) result(interp_kernel)
          implicit none (type, external)
          integer, intent(in)           :: rank
          real(RD), intent(in)          :: u(:)
-         real(RD), intent(in)          :: cell_deltas(:,:)
+         real(RD), intent(in)          :: edge_deltas(:)
          real(RD), intent(in)          :: data_kernel(:,:)
          logical, intent(in), optional :: deriv(:)
          real(RD)                      :: interp_kernel(4**rank)
