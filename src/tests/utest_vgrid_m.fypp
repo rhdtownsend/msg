@@ -351,7 +351,8 @@ contains
       type(vgrid_t) :: vg
       real(RD)      :: f(8)
       real(RD)      :: x_vec(2,2)
-      real(RD)      :: f_in(2)
+      real(RD)      :: f_lin(2)
+      real(RD)      :: f_cub(2)
       real(RD)      :: f_chk(2)
 
       print *, '  interp'
@@ -398,8 +399,11 @@ contains
 
       subroutine interp_act_()
 
-         call vg%interp(data_proc_, x_vec(:,1), f_in(1))
-         call vg%interp(data_proc_, x_vec(:,2), f_in(2))
+         call vg%interp(data_proc_, x_vec(:,1), f_lin(1), order=1)
+         call vg%interp(data_proc_, x_vec(:,2), f_lin(2), order=1)
+
+         call vg%interp(data_proc_, x_vec(:,1), f_cub(1), order=3)
+         call vg%interp(data_proc_, x_vec(:,2), f_cub(2), order=3)
 
          ! Finish
 
@@ -433,14 +437,22 @@ contains
 
          real(RD) :: f_err(2)
 
-         f_err = (f_in - f_chk)/f_chk
+         f_err = (f_lin - f_chk)/f_chk
 
          if (ALL(ABS(f_err) < tol)) then
-            print *,'    PASS f'
+            print *,'    PASS linear'
          else
-            print *,'    FAIL f: ', MAXVAL(ABS(f_err)), '>', tol
+            print *,'    FAIL linear: ', MAXVAL(ABS(f_err)), '>', tol
          end if
          
+         f_err = (f_cub - f_chk)/f_chk
+
+         if (ALL(ABS(f_err) < tol)) then
+            print *,'    PASS cubic'
+         else
+            print *,'    FAIL cubic: ', MAXVAL(ABS(f_err)), '>', tol
+         end if
+
          ! Finish
          
          return

@@ -42,95 +42,191 @@ contains
 
       #:endif
 
-      integer  :: c_vec(self%rank)
-      real(RD) :: u(self%rank)
-      real(RD) :: cell_deltas(3,self%rank)
-      logical  :: cell_mask(self%n_stn)
-      integer  :: i
-      integer  :: v_vec(self%rank)
-      integer  :: v_lin
-      integer  :: v_seq
-      real(RD) :: cache(3*self%rank*2,2**self%rank)
-      real(RD) :: data_kernel(self%n_stn,self%n_stn)
-      real(RD) :: interp_kernel(self%n_stn)
-      real(RD) :: F
-      integer  :: i
-      integer  :: v_lin
-      integer  :: v_seq
+      integer :: order_
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
+      if (PRESENT(order)) then
+         order_ = order
+      else
+         order_ = 3
+      end if
+
       ! Interpolate a scalar value
 
-      ! Set up the interpolation
+      select case(order_)
+      case(1)
+         call interp_0_linear_()
+      case(3)
+         call interp_0_cubic_()
+      case default
 
-      call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat, order)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      ! Evaluate the interpolation kernel
-
-      if (USE_VERT_CACHE) then
-
-         do i = 1, 2**self%rank
-
-            v_vec = c_vec + self%offset_vector_(i, 2)
-            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
-
-            v_lin = self%vert_linear_(v_vec)
-            v_seq = self%v_seq_lin(v_lin)
-
-            cache(:,i) = self%vert_cache(:,v_seq)
-
-         end do
-
-         data_kernel = data_kernel_cubic_cached(self%rank, cache)
-
-      else
-
-         data_kernel = data_kernel_cubic(self%rank, cell_mask, cell_deltas)
-
-      end if
-
-      interp_kernel = interp_kernel_cubic(self%rank, u, cell_deltas, data_kernel, vderiv)
-
-      ! Initialize f_int
-
-      f_int = 0._RD
-
-      ! Now perform the interpolation
-
-      do i = 1, self%n_stn
-
-         if (interp_kernel(i) /= 0._RD) then
-
-            ! Evaluate data for this vertex
-
-            v_vec = c_vec - 1 + self%offset_vector_(i, 4)
-            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
-
-            v_lin = self%vert_linear_(v_vec)
-            v_seq = self%v_seq_lin(v_lin)
-
-            call data_proc(v_seq, F, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            endif
-
-            ! Add the contribution to f_int
-
-            f_int = f_int + interp_kernel(i)*F
-
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
          end if
 
-      end do
+      end select
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
+
+   contains
+
+      subroutine interp_0_linear_
+
+         integer  :: c_vec(self%rank)
+         real(RD) :: u(self%rank)
+         logical  :: cell_mask(4**self%rank)
+         real(RD) :: cell_deltas(3,self%rank)
+         real(RD) :: interp_kernel(2**self%rank)
+         real(RD) :: F
+         integer  :: i
+         integer  :: v_vec(self%rank)
+         integer  :: v_lin
+         integer  :: v_seq
+
+         ! Set up the interpolation
+
+         call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         ! Evaluate the interpolation kernel
+
+         interp_kernel = interp_kernel_linear(self%rank, u, cell_deltas(2,:), vderiv)
+
+         ! Initialize f_int
+
+         f_int = 0._RD
+
+         ! Now perform the interpolation
+
+         do i = 1, 2**self%rank
+
+            if (interp_kernel(i) /= 0._RD) then
+
+               ! Evaluate data for this vertex
+
+               v_vec = c_vec + self%offset_vector_(i, 2)
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+
+               v_lin = self%vert_linear_(v_vec)
+               v_seq = self%v_seq_lin(v_lin)
+
+               call data_proc(v_seq, F, stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               endif
+
+               ! Add the contribution to f_int
+
+               f_int = f_int + interp_kernel(i)*F
+
+            end if
+
+         end do
+
+         ! Finish
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine interp_0_linear_
+
+      !****
+
+      subroutine interp_0_cubic_
+
+         integer  :: c_vec(self%rank)
+         real(RD) :: u(self%rank)
+         real(RD) :: cell_deltas(3,self%rank)
+         logical  :: cell_mask(4**self%rank)
+         integer  :: i
+         integer  :: v_vec(self%rank)
+         integer  :: v_lin
+         integer  :: v_seq
+         real(RD) :: cache(3*self%rank*2,2**self%rank)
+         real(RD) :: data_kernel(4**self%rank,4**self%rank)
+         real(RD) :: interp_kernel(4**self%rank)
+         real(RD) :: F
+
+         ! Set up the interpolation
+
+         call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         ! Evaluate the interpolation kernel
+
+         if (USE_VERT_CACHE) then
+
+            do i = 1, 2**self%rank
+
+               v_vec = c_vec + self%offset_vector_(i, 2)
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+
+               v_lin = self%vert_linear_(v_vec)
+               v_seq = self%v_seq_lin(v_lin)
+
+               cache(:,i) = self%vert_cache(:,v_seq)
+
+            end do
+
+            data_kernel = data_kernel_cubic_cached(self%rank, cache)
+
+         else
+
+            data_kernel = data_kernel_cubic(self%rank, cell_mask, cell_deltas)
+
+         end if
+
+         interp_kernel = interp_kernel_cubic(self%rank, u, cell_deltas, data_kernel, vderiv)
+
+         ! Initialize f_int
+
+         f_int = 0._RD
+
+         ! Now perform the interpolation
+
+         do i = 1, 4**self%rank
+
+            if (interp_kernel(i) /= 0._RD) then
+
+               ! Evaluate data for this vertex
+
+               v_vec = c_vec - 1 + self%offset_vector_(i, 4)
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+
+               v_lin = self%vert_linear_(v_vec)
+               v_seq = self%v_seq_lin(v_lin)
+
+               call data_proc(v_seq, F, stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               endif
+
+               ! Add the contribution to f_int
+
+               f_int = f_int + interp_kernel(i)*F
+
+            end if
+
+         end do
+
+         ! Finish
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine interp_0_cubic_
 
    end procedure interp_0_
 
@@ -151,105 +247,239 @@ contains
 
       #:endif
 
-      integer  :: c_vec(self%rank)
-      real(RD) :: u(self%rank)
-      real(RD) :: cell_deltas(3,self%rank)
-      logical  :: cell_mask(self%n_stn)
-      real(RD) :: data_kernel(self%n_stn,self%n_stn)
-      real(RD) :: interp_kernel(self%n_stn)
-      integer  :: n_m
-      integer  :: i
-      integer  :: v_lin
-      integer  :: v_seq
-      real(RD) :: F(SIZE(f_int))
-      integer  :: m
-
-      #:if OMP is not None
-         integer :: num_threads
-         integer :: thread_num
-         integer :: block_size
-         integer :: m_a
-         integer :: m_b
-      #:endif
+      integer :: order_
 
       @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
 
-      ! Interpolate an array value
-
-      ! Set up the interpolation
-
-      call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat, order)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
+      if (PRESENT(order)) then
+         order_ = order
+      else
+         order_ = 3
       end if
 
-      ! Evaluate the interpolation kernel
+      ! Interpolate a scalar value
 
-      data_kernel = data_kernel_cubic(self%rank, cell_mask, cell_deltas)
-      interp_kernel = interp_kernel_cubic(self%rank, u, cell_deltas, data_kernel, vderiv)
+      select case(order_)
+      case(1)
+         call interp_1_linear_()
+      case(3)
+         call interp_1_cubic_()
+      case default
 
-      ! Initialize f_int
-
-      n_m = SIZE(f_int)
-
-      !$OMP PARALLEL DO
-      do m = 1, n_m
-         f_int(m) = 0._RD
-      end do
-
-      ! Now perform the interpolation
-
-      do i = 1, self%n_stn
-
-         if (interp_kernel(i) /= 0._RD) then
-
-            ! Evaluate data for this vertex
-
-            v_lin = self%vert_linear_(c_vec - 1 + self%offset_vector_(i, 4))
-            v_seq = self%v_seq_lin(v_lin)
-
-            call data_proc(v_seq, F, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            endif
-
-            ! Add the contribution to f_int
-
-            #:if OMP is not None
-
-               !$OMP PARALLEL PRIVATE(num_threads, block_size, thread_num, m_a, m_b)
-
-               num_threads = omp_get_num_threads()
-
-               block_size = n_m/num_threads
-               if (block_size*num_threads < n_m) block_size = block_size+1
-
-               thread_num = omp_get_thread_num()
-
-               m_a = thread_num*block_size + 1
-               m_b = thread_num*block_size + block_size
-
-               m_b = MIN(m_b, n_m)
-
-               f_int(m_a:m_b) = f_int(m_a:m_b) + interp_kernel(i)*F(m_a:m_b)
-
-               !$OMP END PARALLEL
-
-            #:else
-
-               f_int = f_int + interp_kernel(i)*F
-
-            #:endif
-
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
          end if
 
-      end do
+      end select
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
+
+   contains
+
+      subroutine interp_1_linear_()
+
+         integer  :: c_vec(self%rank)
+         real(RD) :: u(self%rank)
+         logical  :: cell_mask(4**self%rank)
+         real(RD) :: cell_deltas(3,self%rank)
+         real(RD) :: interp_kernel(2**self%rank)
+         integer  :: n_m
+         real(RD) :: F(SIZE(f_int))
+         integer  :: i
+         integer  :: v_lin
+         integer  :: v_seq
+         integer  :: m
+
+         #:if OMP is not None
+            integer :: num_threads
+            integer :: thread_num
+            integer :: block_size
+            integer :: m_a
+            integer :: m_b
+         #:endif
+
+         ! Set up the interpolation
+
+         call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         ! Evaluate the interpolation kernel
+
+         interp_kernel = interp_kernel_linear(self%rank, u, cell_deltas(2,:), vderiv)
+
+         ! Initialize f_int
+
+         n_m = SIZE(f_int)
+
+         !$OMP PARALLEL DO
+         do m = 1, n_m
+            f_int(m) = 0._RD
+         end do
+
+         ! Now perform the interpolation
+
+         do i = 1, 2**self%rank
+
+            if (interp_kernel(i) /= 0._RD) then
+
+               ! Evaluate data for this vertex
+
+               v_lin = self%vert_linear_(c_vec + self%offset_vector_(i, 2))
+               v_seq = self%v_seq_lin(v_lin)
+
+               call data_proc(v_seq, F, stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               endif
+
+               ! Add the contribution to f_int
+
+               #:if OMP is not None
+
+                  !$OMP PARALLEL PRIVATE(num_threads, block_size, thread_num, m_a, m_b)
+
+                  num_threads = omp_get_num_threads()
+
+                  block_size = n_m/num_threads
+                  if (block_size*num_threads < n_m) block_size = block_size+1
+
+                  thread_num = omp_get_thread_num()
+
+                  m_a = thread_num*block_size + 1
+                  m_b = thread_num*block_size + block_size
+
+                  m_b = MIN(m_b, n_m)
+
+                  f_int(m_a:m_b) = f_int(m_a:m_b) + interp_kernel(i)*F(m_a:m_b)
+
+                  !$OMP END PARALLEL
+
+               #:else
+
+                  f_int = f_int + interp_kernel(i)*F
+
+               #:endif
+
+            end if
+
+         end do
+
+         ! Finish
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine interp_1_linear_
+
+      !****
+
+      subroutine interp_1_cubic_()
+
+         integer  :: c_vec(self%rank)
+         real(RD) :: u(self%rank)
+         logical  :: cell_mask(4**self%rank)
+         real(RD) :: cell_deltas(3,self%rank)
+         real(RD) :: data_kernel(4**self%rank,4**self%rank)
+         real(RD) :: interp_kernel(4**self%rank)
+         integer  :: n_m
+         integer  :: i
+         integer  :: v_lin
+         integer  :: v_seq
+         real(RD) :: F(SIZE(f_int))
+         integer  :: m
+
+         #:if OMP is not None
+            integer :: num_threads
+            integer :: thread_num
+            integer :: block_size
+            integer :: m_a
+            integer :: m_b
+         #:endif
+
+         ! Set up the interpolation
+
+         call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         ! Evaluate the interpolation kernel
+
+         data_kernel = data_kernel_cubic(self%rank, cell_mask, cell_deltas)
+         interp_kernel = interp_kernel_cubic(self%rank, u, cell_deltas, data_kernel, vderiv)
+
+         ! Initialize f_int
+
+         n_m = SIZE(f_int)
+
+         !$OMP PARALLEL DO
+         do m = 1, n_m
+            f_int(m) = 0._RD
+         end do
+
+         ! Now perform the interpolation
+
+         do i = 1, 4**self%rank
+
+            if (interp_kernel(i) /= 0._RD) then
+
+               ! Evaluate data for this vertex
+
+               v_lin = self%vert_linear_(c_vec - 1 + self%offset_vector_(i, 4))
+               v_seq = self%v_seq_lin(v_lin)
+
+               call data_proc(v_seq, F, stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               endif
+
+               ! Add the contribution to f_int
+
+               #:if OMP is not None
+
+                  !$OMP PARALLEL PRIVATE(num_threads, block_size, thread_num, m_a, m_b)
+
+                  num_threads = omp_get_num_threads()
+
+                  block_size = n_m/num_threads
+                  if (block_size*num_threads < n_m) block_size = block_size+1
+
+                  thread_num = omp_get_thread_num()
+
+                  m_a = thread_num*block_size + 1
+                  m_b = thread_num*block_size + block_size
+
+                  m_b = MIN(m_b, n_m)
+
+                  f_int(m_a:m_b) = f_int(m_a:m_b) + interp_kernel(i)*F(m_a:m_b)
+
+                  !$OMP END PARALLEL
+
+               #:else
+
+                  f_int = f_int + interp_kernel(i)*F
+
+               #:endif
+
+            end if
+
+         end do
+
+         ! Finish
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine interp_1_cubic_
 
    end procedure interp_1_
 
@@ -425,7 +655,7 @@ contains
 
    !****
 
-   subroutine setup_interp_(vgrid, x_vec, c_vec, u, cell_mask, cell_deltas, stat, order)
+   subroutine setup_interp_(vgrid, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
 
       class(vgrid_t), intent(in)     :: vgrid
       real(RD), intent(in)           :: x_vec(:)
@@ -434,7 +664,6 @@ contains
       logical, intent(out)           :: cell_mask(:)
       real(RD), intent(out)          :: cell_deltas(:,:)
       integer, intent(out), optional :: stat
-      integer, intent(in), optional  :: order
 
       integer  :: c_lin
       integer  :: r
@@ -454,7 +683,7 @@ contains
       @:CHECK_BOUNDS(SIZE(cell_deltas, 1), 3)
       @:CHECK_BOUNDS(SIZE(cell_deltas, 2), vgrid%rank)
 
-      @:CHECK_BOUNDS(SIZE(cell_mask), vgrid%n_stn)
+      @:CHECK_BOUNDS(SIZE(cell_mask), 4**vgrid%rank)
 
       ! Set up an interpolation. This consists of determining the following:
       !
@@ -545,7 +774,7 @@ contains
 
       ! Set up cell_mask
 
-      do i = 1, vgrid%n_stn
+      do i = 1, 4**vgrid%rank
 
          v_lin = vgrid%vert_linear_(c_vec - 1 + vgrid%offset_vector_(i, 4))
 
