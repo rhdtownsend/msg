@@ -24,10 +24,8 @@ module hdf5_specsource_m
 
    use forum_m
 
-   use file_m
    use specint_m
    use specsource_m
-   use stat_m
 
    use ISO_FORTRAN_ENV
 
