@@ -54,11 +54,15 @@ INC_DIR ?= $(CURDIR)/include
 SRC_DIR = $(CURDIR)/src
 SRC_DIRS = $(addprefix $(SRC_DIR)/, axis common cython include interp lib limb math \
            range range/comp range/lin range/log range/tab \
+           specsource \
            photcache photgrid \
            photint photint/limb \
            photsource photsource/hdf5 photsource/mem photsource/spec \
            passband \
-           spec tests tools vgrid)
+           speccache specgrid \
+           specint specint/limb \
+           specsource specsource/hdf5 \
+           tests tools vgrid)
 
 ifeq ($(FORUM),yes)
    FORUM_LIB_DIR = $(LIB_DIR)
@@ -77,6 +81,9 @@ clean : clean-forum
 	@$(MAKE) -C build $@
 	@rm -rf $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
 
+check_src :
+	@$(MAKE) -C build $@
+
 ifeq ($(FORUM),yes)
 
    install-forum : | $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
@@ -94,7 +101,7 @@ else
 
 endif
 
-.PHONY: install build clean test install-forum clean-forum
+.PHONY: install build clean check_src install-forum clean-forum
 
 $(BIN_DIR) $(LIB_DIR) $(INC_DIR) :
 	@mkdir -p $@

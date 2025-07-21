@@ -1,0 +1,153 @@
+! Submodule : specgrid_interp_sm
+! Purpose   : Interpolation routines for specgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (specgrid_m) specgrid_interp_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
+
+      module procedure interp_${name}$
+
+         ! Interpolate ${name}$
+
+         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
+
+         ! Finish
+
+      contains
+
+         subroutine data_proc_(v_seq, f, stat)
+
+            integer, intent(in)            :: v_seq
+            real(RD), intent(out)          :: f(:)
+            integer, intent(out), optional :: stat
+
+            class(specint_t), pointer :: specint
+
+            call self%speccache%fetch(v_seq, fetch_proc_, specint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call specint%interp_${name}$(${arg_var}$, lam, f, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call self%speccache%release(v_seq, stat)
+
+            return
+
+         end subroutine data_proc_
+
+         subroutine fetch_proc_(i, specint, stat)
+
+            integer, intent(in)                        :: i
+            class(specint_t), allocatable, intent(out) :: specint
+            integer, intent(out), optional             :: stat
+
+            call self%specsource%fetch(i, specint, stat)
+
+            return
+
+         end subroutine fetch_proc_
+
+      end procedure interp_${name}$
+
+   #:endfor
+
+   !****
+
+   #:for name in ('flux',)
+
+      module procedure interp_${name}$
+
+         ! Interpolate ${name}$
+
+         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
+
+         ! Finish
+
+      contains
+
+         subroutine data_proc_(v_seq, f, stat)
+
+            integer, intent(in)            :: v_seq
+            real(RD), intent(out)          :: f(:)
+            integer, intent(out), optional :: stat
+
+            class(specint_t), pointer :: specint
+
+            call self%speccache%fetch(v_seq, fetch_proc_, specint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call specint%interp_${name}$(lam, f, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            call self%speccache%release(v_seq, stat)
+
+            return
+
+         end subroutine data_proc_
+
+         subroutine fetch_proc_(i, specint, stat)
+
+            integer, intent(in)                        :: i
+            class(specint_t), allocatable, intent(out) :: specint
+            integer, intent(out), optional             :: stat
+
+            call self%specsource%fetch(i, specint, stat)
+
+            return
+
+         end subroutine fetch_proc_
+
+      end procedure interp_${name}$
+
+   #:endfor
+
+   !****
+
+   module procedure adjust_x_vec
+
+      ! Adjust x_vec in the direction dx_vec, until it falls within a
+      ! valid cell
+
+      call self%vgrid%adjust_x_vec(x_vec, dx_vec, x_adj, stat)
+
+      ! Finish
+
+      return
+
+   end procedure adjust_x_vec
+
+end submodule specgrid_interp_sm

@@ -1,0 +1,61 @@
+! Submodule : specgrid_construct_sm
+! Purpose   : Constructor routines for specgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (specgrid_m) specgrid_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure specgrid_t_
+
+      integer  :: n
+      real(RD) :: lam_min
+      real(RD) :: lam_max
+      integer  :: n_seq
+
+      ! Construct specgrid from the supplied data
+
+      call specsource%get_n(n)
+      call specsource%get_lam_min(lam_min)
+      call specsource%get_lam_max(lam_max)
+
+      call vgrid%get_n_seq(n_seq)
+
+      @:CHECK_BOUNDS(n, n_seq)
+
+      specgrid%specsource = specsource
+      specgrid%speccache = speccache_t(n, lam_min, lam_max)
+
+      specgrid%vgrid = vgrid
+
+      specgrid%lam_min = lam_min
+      specgrid%lam_max = lam_max
+
+      ! Finish
+
+      return
+
+   end procedure specgrid_t_
+
+end submodule specgrid_construct_sm

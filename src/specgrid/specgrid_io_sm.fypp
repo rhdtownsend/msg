@@ -1,0 +1,229 @@
+! Submodule : specgrid_io_sm
+! Purpose   : Input/output routines for specgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (specgrid_m) specgrid_io_sm
+
+   ! Uses
+
+   use file_m
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure read
+
+      integer :: revision
+
+      ! Read the specgrid
+
+      call check_type(hdf5io, 'specgrid_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call hdf5io%read_attr('REVISION', revision)
+
+      select case(revision)
+      case(1)
+         call read_rev1_(self, hdf5io, stat)
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_GROUP_REVISION
+            return
+         else
+            @:ABORT('invalid group revision')
+         end if
+      end select
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine read_rev1_(self, hdf5io, stat)
+
+         class(specgrid_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+
+         type(hdf5io_t)            :: hdf5io_specsource
+         integer                   :: n
+         real(RD)                  :: lam_min
+         real(RD)                  :: lam_max
+         character(:), allocatable :: file_name
+         character(:), allocatable :: group_name
+         integer                   :: group_names_len
+         character(:), allocatable :: file_names(:)
+         character(:), allocatable :: group_names(:)
+         integer                   :: i
+         type(hdf5_specsource_t)   :: specsource
+         type(hdf5io_t)            :: hdf5io_vgrid
+         type(vgrid_t)             :: vgrid
+
+         hdf5io_specsource = hdf5io_t(hdf5io, 'specsource')
+
+         call hdf5io_specsource%inquire(file_name=file_name, group_name=group_name)
+
+         call hdf5io_specsource%read_attr('n', n)
+         call hdf5io_specsource%read_attr('lam_min', lam_min)
+         call hdf5io_specsource%read_attr('lam_max', lam_max)
+
+         call hdf5io_specsource%final()
+
+         group_names_len = LEN_TRIM(group_name) + 1 + LEN_TRIM(specint_group_name_(HUGE(0)))
+
+         allocate(character(LEN_TRIM(file_name))::file_names(n))
+         allocate(character(group_names_len)::group_names(n))
+
+         name_loop : do i = 1, n
+
+            file_names(i) = TRIM(file_name)
+            group_names(i) = TRIM(group_name)//'/'//TRIM(specint_group_name_(i))
+
+         end do name_loop
+
+         specsource = hdf5_specsource_t(file_names, group_names, lam_min, lam_max)
+
+         hdf5io_vgrid = hdf5io_t(hdf5io, 'vgrid')
+         call vgrid%read(hdf5io_vgrid, stat)
+         call hdf5io_vgrid%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         select type(self)
+         type is(specgrid_t)
+            self = specgrid_t(specsource, vgrid)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
+
+   end procedure read
+
+   !****
+
+   module procedure write
+
+      integer                   :: n
+      real(RD)                  :: lam_min
+      real(RD)                  :: lam_max
+      type(hdf5io_t)            :: hdf5io_specsource
+      integer                   :: i
+      class(specint_t), pointer :: specint
+      type(hdf5io_t)            :: hdf5io_specint
+      type(hdf5io_t)            :: hdf5io_vgrid
+
+      ! Write the specgrid
+
+      call hdf5io%write_attr('TYPE', 'specgrid_t')
+      call hdf5io%write_attr('REVISION', 1)
+
+      call self%vgrid%get_n_seq(n)
+      call self%speccache%get_lam_min(lam_min)
+      call self%speccache%get_lam_max(lam_max)
+
+      hdf5io_specsource = hdf5io_t(hdf5io, 'specsource')
+
+      call hdf5io_specsource%write_attr('n', n)
+      call hdf5io_specsource%write_attr('lam_min', lam_min)
+      call hdf5io_specsource%write_attr('lam_max', lam_max)
+
+      write_loop: do i = 1, n
+
+         call self%speccache%fetch(i, fetch_proc_, specint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+         hdf5io_specint = hdf5io_t(hdf5io_specsource, TRIM(specint_group_name_(i)))
+
+         call specint%write(hdf5io_specint, stat)
+
+         call hdf5io_specint%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+         call self%speccache%release(i, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+      end do write_loop
+
+      call hdf5io_specsource%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      hdf5io_vgrid = hdf5io_t(hdf5io, 'vgrid')
+      call self%vgrid%write(hdf5io_vgrid, stat)
+      call hdf5io_vgrid%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   contains
+
+      subroutine fetch_proc_(i, specint, stat)
+
+         integer, intent(in)                        :: i
+         class(specint_t), allocatable, intent(out) :: specint
+         integer, intent(out), optional             :: stat
+
+         call self%specsource%fetch(i, specint, stat)
+
+         return
+
+      end subroutine fetch_proc_
+
+   end procedure write
+
+   !****
+
+   function specint_group_name_(i) result(name)
+
+      integer, intent(in) :: i
+      character(256)      :: name
+
+      write(name, 100) i
+100   format('specints[',I0,']')
+
+   end function specint_group_name_
+
+end submodule specgrid_io_sm

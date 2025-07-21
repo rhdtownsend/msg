@@ -1,6 +1,11 @@
 # File     : Makefile
 # Purpose  : makefile for build subdir
 
+# Default rule in case make is invoked in current dir
+
+all:
+	make -C ..
+
 # Targets
 
 LIB_TARGETS = libmsg libfmsg libcmsg
@@ -63,6 +68,20 @@ photsource_SRCS = photsource_m.fypp \
                   spec_photsource_m.fypp spec_photsource_construct_sm.fypp \
                   spec_photsource_params_sm.fypp spec_photsource_access_sm.fypp
 
+speccache_SRCS = speccache_m.fypp speccache_construct_sm.fypp speccache_params_sm.fypp \
+                  speccache_access_sm.fypp
+
+specgrid_SRCS = specgrid_m.fypp specgrid_construct_sm.fypp specgrid_params_sm.fypp \
+                 specgrid_interp_sm.fypp specgrid_operate_sm.fypp specgrid_io_sm.fypp
+
+specint_SRCS = specint_m.fypp specint_sm.fypp \
+                limb_specint_m.fypp limb_specint_construct_sm.fypp limb_specint_params_sm.fypp \
+                limb_specint_interp_sm.fypp limb_specint_operate_sm.fypp limb_specint_io_sm.fypp
+
+specsource_SRCS = specsource_m.fypp \
+                   hdf5_specsource_m.fypp hdf5_specsource_construct_sm.fypp \
+                   hdf5_specsource_params_sm.fypp hdf5_specsource_access_sm.fypp
+
 limb_SRCS = limb_m.fypp limb_construct_sm.fypp limb_params_sm.fypp limb_basis_sm.fypp \
             limb_fit_sm.fypp limb_io_sm.fypp
 
@@ -79,14 +98,12 @@ range_SRCS = range_m.fypp range_sm.fypp \
              tab_range_m.fypp tab_range_construct_sm.fypp tab_range_params_sm.fypp \
              tab_range_operate_sm.fypp tab_range_io_sm.fypp
 
-
 libmsg_SRCS = msg_m.fypp \
               $(axis_SRCS) $(vgrid_SRCS) $(ninterp_SRCS) \
               $(photcache_SRCS) $(photgrid_SRCS) $(photint_SRCS) $(photsource_SRCS) \
+              $(speccache_SRCS) $(specgrid_SRCS) $(specint_SRCS) $(specsource_SRCS) \
               $(limb_SRCS) $(passband_SRCS) $(range_SRCS) \
-              specgrid_m.fypp speccache_m.fypp specsource_m.fypp	\
-              hdf5_specsource_m.fypp specint_m.fypp specint_sm.fypp	\
-              limb_specint_m.fypp cubint_m.fypp stat_m.fypp file_m.fypp	\
+              cubint_m.fypp stat_m.fypp file_m.fypp	\
               fit_m.fypp math_m.fypp
 
 libfmsg_SRCS = fmsg_m.fypp
@@ -219,6 +236,16 @@ LDFLAGS = `lapack_link` `hdf5_link` `lapack95_link` -L$(FORUM_LIB_DIR) -lforum
 # Include standard rules
 
 include Make.inc
+
+# Target for linting
+
+linter :
+        fortitude check --file-extensions=f90
+
+# Targets for source checking
+
+check_src:
+	@for src in $(libmsg_SRCS); do find ../$(SRC_DIRS) -name $$src | grep -q . || echo $$src MISSING; done
 
 # Additional dependencies
 
