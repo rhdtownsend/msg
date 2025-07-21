@@ -56,6 +56,7 @@ contains
       type(photgrid_t) :: pg
       integer          :: stat(n)
       integer          :: stat_chk(n)
+      character(32)    :: stat_str(n)
       real(RD)         :: x_vec(2,n)
       real(RD)         :: mu(n)
 
@@ -89,31 +90,37 @@ contains
          !
 
          stat_chk(1) = STAT_OK
+         stat_str(1) = 'STAT_OK'
 
          !
 
          call set_xvec(pg, ['Teff  ', 'log(g)'], [2000._RD, 4.00_RD], x_vec(:,2))
          stat_chk(2) = STAT_OUT_OF_BOUNDS_AXIS_LO
+         stat_str(2) = 'STAT_OUT_OF_BOUNDS_AXIS_LO'
 
          !
 
          call set_xvec(pg, ['Teff  ', 'log(g)'], [10000._RD, 6.00_RD], x_vec(:,3))
          stat_chk(3) = STAT_OUT_OF_BOUNDS_AXIS_HI
+         stat_str(3) = 'STAT_OUT_OF_BOUNDS_AXIS_HI'
 
          !
 
          mu(4) = -0.1_RD
          stat_chk(4) = STAT_OUT_OF_BOUNDS_MU_LO
+         stat_str(4) = 'STAT_OUT_OF_BOUNDS_MU_LO'
 
          !
 
          mu(5) = 1.1_RD
          stat_chk(5) = STAT_OUT_OF_BOUNDS_MU_HI
+         stat_str(5) = 'STAT_OUT_OF_BOUNDS_MU_HI'
 
          !
 
          call set_xvec(pg, ['Teff  ', 'log(g)'], [40000._RD, 2.00_RD], x_vec(:,6))
          stat_chk(6) = STAT_UNAVAILABLE_DATA
+         stat_str(6) = 'STAT_UNAVAILABLE_DATA'
 
          ! Finish
 
@@ -146,14 +153,14 @@ contains
 
          integer :: j
 
-         do j = 1, n
+         do j = 1, N
             if (stat(j) /= stat_chk(j)) then
-               print *,'    FAIL:', stat(j), '/=', stat_chk(j)
+               print *,'    FAIL ', TRIM(stat_str(j)), ' ', stat(j), '/=', stat_chk(j)
             else
-               print *,'    PASS'
+               print *,'    PASS ', TRIM(stat_str(j))
             end if
          end do
-               
+
          ! Finish
 
          return
