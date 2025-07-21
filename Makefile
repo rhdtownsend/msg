@@ -56,6 +56,7 @@ SRC_DIRS = $(addprefix $(SRC_DIR)/, axis common cython include interp lib limb m
            photcache photgrid \
            photint photint/limb \
            photsource photsource/hdf5 photsource/mem photsource/spec \
+           passband \
            range spec tests tools vgrid)
 
 ifeq ($(FORUM),yes)

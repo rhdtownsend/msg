@@ -1,0 +1,49 @@
+! Submodule : passband_passthru_sm
+! Purpose   : Pass-thru function routines for passband_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (passband_m) passband_passthru_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure passthru
+
+      integer               :: n_lam
+      real(RD), allocatable :: G(:)
+
+      ! Evaluate the passthru P = int_a^b S(lam) dlam / (D*F_0) for each interval lam[i,i+1]
+
+      n_lam = SIZE(lam)
+
+      G = self%cubint%integ(lam)
+
+      P = (G(2:n_lam) - G(1:n_lam-1))/(self%F_0*self%Delta)
+
+      ! Finish
+
+      return
+
+   end procedure passthru
+
+end submodule passband_passthru_sm

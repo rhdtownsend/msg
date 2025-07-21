@@ -1,0 +1,137 @@
+! Module  : passband_m
+! Purpose : define passband_t type, representing a photometric passband
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module passband_m
+
+   ! Uses
+
+   use forum_m
+
+   use cubint_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Derived-type definitions
+
+   type passband_t
+      private
+      type(cubint_t) :: cubint
+      real(RD)       :: F_0
+      real(RD)       :: Delta
+      real(RD)       :: lam_min
+      real(RD)       :: lam_max
+   contains
+      private
+      procedure, public :: get_lam_min
+      procedure, public :: get_lam_max
+      procedure, public :: passthru
+      procedure, public :: read
+      procedure, public :: write
+   end type passband_t
+
+   ! Interfaces
+
+   interface passband_t
+      module procedure passband_t_
+      module procedure passband_t_cubint_
+   end interface passband_t
+
+   ! In passband_construct_sm
+
+   interface
+
+      module function passband_t_(S, lam, F_0) result(passband)
+         implicit none (type, external)
+         real(RD), intent(in) :: S(:)
+         real(RD), intent(in) :: lam(:)
+         real(RD), intent(in) :: F_0
+         type(passband_t)     :: passband
+      end function passband_t_
+
+      module function passband_t_cubint_(cubint, F_0) result(passband)
+         implicit none (type, external)
+         type(cubint_t), intent(in) :: cubint
+         real(RD), intent(in)       :: F_0
+         type(passband_t)           :: passband
+      end function passband_t_cubint_
+
+   end interface
+
+   ! In passband_params_sm
+
+   interface
+
+      module subroutine get_lam_min(self, lam_min)
+         implicit none (type, external)
+         class(passband_t), intent(in) :: self
+         real(RD), intent(out)         :: lam_min
+      end subroutine get_lam_min
+
+      module subroutine get_lam_max(self, lam_max)
+         implicit none (type, external)
+         class(passband_t), intent(in) :: self
+         real(RD), intent(out)         :: lam_max
+      end subroutine get_lam_max
+
+   end interface
+
+   ! In passband_passthru_sm
+
+   interface
+
+      module function passthru(self, lam) result (P)
+         implicit none (type, external)
+         class(passband_t), intent(in) :: self
+         real(RD), intent(in)          :: lam(:)
+         real(RD), allocatable         :: P(:)
+      end function passthru
+
+   end interface
+
+   ! In passband_io_sm
+
+   interface
+
+      module subroutine read(self, hdf5io, stat)
+         implicit none (type, external)
+         class(passband_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine read
+
+      module subroutine write(self, hdf5io, stat)
+         implicit none (type, external)
+         class(passband_t), intent(in)  :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine write
+
+   end interface
+
+   ! Access specifiers
+
+   private
+
+   public :: passband_t
+
+end module passband_m

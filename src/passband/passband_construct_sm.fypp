@@ -1,0 +1,65 @@
+! Submodule : passband_construct_sm
+! Purpose   : Constructor routines for passband_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (passband_m) passband_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure passband_t_
+
+      @:CHECK_BOUNDS(SIZE(lam), SIZE(S))
+
+      ! Construct passband from the supplied data
+
+      passband = passband_t_cubint_(cubint_t(lam, S, 'SPLINE'), F_0)
+
+      ! Finish
+
+      return
+
+   end procedure passband_t_
+
+   !****
+
+   module procedure passband_t_cubint_
+
+      ! Construct passband from cubint
+
+      passband%cubint = cubint
+
+      call cubint%get_x_min(passband%lam_min)
+      call cubint%get_x_max(passband%lam_max)
+
+      passband%F_0 = F_0
+      passband%Delta = cubint%integ(passband%lam_max) - &
+                       cubint%integ(passband%lam_min)
+
+      ! Finish
+
+      return
+
+   end procedure passband_t_cubint_
+
+end submodule passband_construct_sm

@@ -1,0 +1,56 @@
+! Submodule : passband_params_sm
+! Purpose   : Parameter get/set routines for passband_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (passband_m) passband_params_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure get_lam_min
+
+      ! Get the wavelength-minimum
+
+      lam_min = self%lam_min
+
+      ! Finish
+
+      return
+
+   end procedure get_lam_min
+
+   !****
+
+   module procedure get_lam_max
+
+      ! Get the wavelength-maximum
+
+      lam_max = self%lam_max
+
+      ! Finish
+
+      return
+
+   end procedure get_lam_max
+
+end submodule passband_params_sm

@@ -66,10 +66,13 @@ photsource_SRCS = photsource_m.fypp \
 limb_SRCS = limb_m.fypp limb_construct_sm.fypp limb_params_sm.fypp limb_basis_sm.fypp \
             limb_fit_sm.fypp limb_io_sm.fypp
 
+passband_SRCS = passband_m.fypp passband_construct_sm.fypp passband_params_sm.fypp \
+                passband_passthru_sm.fypp passband_io_sm.fypp
+
 libmsg_SRCS = msg_m.fypp \
               $(axis_SRCS) $(vgrid_SRCS) $(ninterp_SRCS) \
               $(photcache_SRCS) $(photgrid_SRCS) $(photint_SRCS) $(photsource_SRCS) \
-              $(limb_SRCS) \
+              $(limb_SRCS) $(passband_SRCS) \
               range_m.fypp range_sm.fypp comp_range_m.fypp		\
               lin_range_m.fypp log_range_m.fypp tab_range_m.fypp	\
               specgrid_m.fypp speccache_m.fypp specsource_m.fypp	\
