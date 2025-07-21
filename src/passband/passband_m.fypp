@@ -77,7 +77,7 @@ module passband_m
 
    end interface
 
-   ! In passband_params_sm
+   ! In passband_attribs_sm
 
    interface
 

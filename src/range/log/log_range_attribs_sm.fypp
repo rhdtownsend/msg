@@ -1,5 +1,5 @@
-! Submodule : limb_photint_params_sm
-! Purpose   : Parameter get/set routines for limb_photint_t
+! Submodule : log_range_attribs_sm
+! Purpose   : Attribute get/set routines for log_range_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (limb_photint_m) limb_photint_params_sm
+submodule (log_range_m) log_range_attribs_sm
 
    ! No implicit typing
 
@@ -27,31 +27,53 @@ submodule (limb_photint_m) limb_photint_params_sm
 
 contains
 
-   module procedure get_precise
+   module procedure get_n
 
-      ! Get the precision flag
+      ! Get the size
 
-      precise = self%precise
+      n = self%n
 
       ! Finish
 
       return
 
-   end procedure get_precise
+   end procedure get_n
+
+   !****
+
+   module procedure get_x_min
+
+      ! Get the x-minimum
+
+      x_min = EXP(self%logx_0)
+
+      ! Finish
+
+      return
+
+   end procedure get_x_min
+
+   !****
+
+   module procedure get_x_max
+
+      ! Get the x-maximum
+
+      x_max = EXP(self%logx_0 + self%dlogx*(self%n-1))
+
+      ! Finish
+
+      return
+
+   end procedure get_x_max
 
    !****
 
    module procedure get_ssize
 
-      integer(ID) :: ssize_limb
-
       ! Get the storage size
 
-      call self%limb%get_ssize(ssize_limb)
-
-      ssize = STORAGE_SIZE(self)/8 +                 &
-              STORAGE_SIZE(self%c)/8*SIZE(self%c) +  &
-              ssize_limb
+      ssize = STORAGE_SIZE(self)/8
 
       ! Finish
 
@@ -59,4 +81,4 @@ contains
 
    end procedure get_ssize
 
-end submodule limb_photint_params_sm
+end submodule log_range_attribs_sm

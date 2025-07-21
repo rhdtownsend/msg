@@ -1,5 +1,5 @@
-! Submodule : log_range_params_sm
-! Purpose   : Parameter get/set routines for log_range_t
+! Submodule : limb_specint_attribs_sm
+! Purpose   : Attribute get/set routines for limb_specint_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (log_range_m) log_range_params_sm
+submodule (limb_specint_m) limb_specint_attribs_sm
 
    ! No implicit typing
 
@@ -27,53 +27,63 @@ submodule (log_range_m) log_range_params_sm
 
 contains
 
-   module procedure get_n
+   module procedure get_lam_min
 
-      ! Get the size
+      ! Get the minimum wavelength
 
-      n = self%n
+      lam_min = self%lam(1)
 
       ! Finish
 
       return
 
-   end procedure get_n
+   end procedure get_lam_min
 
    !****
 
-   module procedure get_x_min
+   module procedure get_lam_max
 
-      ! Get the x-minimum
+      ! Get the maximum wavelength
 
-      x_min = EXP(self%logx_0)
+      lam_max = self%lam(self%n_lam)
 
       ! Finish
 
       return
 
-   end procedure get_x_min
+   end procedure get_lam_max
 
    !****
 
-   module procedure get_x_max
+   module procedure get_precise
 
-      ! Get the x-maximum
+      ! Get the precision flag
 
-      x_max = EXP(self%logx_0 + self%dlogx*(self%n-1))
+      precise = self%precise
 
       ! Finish
 
       return
 
-   end procedure get_x_max
+   end procedure get_precise
 
    !****
 
    module procedure get_ssize
 
+      integer(ID) :: ssize_range
+      integer(ID) :: ssize_limb
+
       ! Get the storage size
 
-      ssize = STORAGE_SIZE(self)/8
+      call self%range%get_ssize(ssize_range)
+      call self%limb%get_ssize(ssize_limb)
+
+      ssize = STORAGE_SIZE(self)/8 +                    &
+              STORAGE_SIZE(self%c)/8*SIZE(self%c) +     &
+              STORAGE_SIZE(self%lam)/8*SIZE(self%lam) + &
+              ssize_range +                             &
+              ssize_limb
 
       ! Finish
 
@@ -81,4 +91,4 @@ contains
 
    end procedure get_ssize
 
-end submodule log_range_params_sm
+end submodule limb_specint_attribs_sm

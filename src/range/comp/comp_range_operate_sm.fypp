@@ -1,4 +1,4 @@
-! Submodule : comp_params_operate_sm
+! Submodule : comp_range_operate_sm
 ! Purpose   : Operation routines for comp_range_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team

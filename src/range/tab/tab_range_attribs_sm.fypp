@@ -1,5 +1,5 @@
-! Submodule : photcache_params_sm
-! Purpose   : Parameter get/set routines for photcache_t
+! Submodule : tab_range_attribs_sm
+! Purpose   : Attribute get/set routines for tab_range_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (photcache_m) photcache_params_sm
+submodule (tab_range_m) tab_range_attribs_sm
 
    ! No implicit typing
 
@@ -27,59 +27,59 @@ submodule (photcache_m) photcache_params_sm
 
 contains
 
-   module procedure get_limit
+   module procedure get_n
 
-      ! Get the memory usage limit
+      ! Get the size
 
-      limit = self%limit
+      n = self%n
 
       ! Finish
 
       return
 
-   end procedure get_limit
+   end procedure get_n
 
    !****
 
-   module procedure get_usage
+   module procedure get_x_min
 
-      ! Get the memory usage (megabytes)
+      ! Get the x-minimum
 
-      usage = self%ssize/(1024*1024)
+      x_min = self%x(1)
 
       ! Finish
 
       return
 
-   end procedure get_usage
+   end procedure get_x_min
 
    !****
 
-   module procedure set_limit
+   module procedure get_x_max
 
-      ! Set the memory usage limit
+      ! Get the x-maximum
 
-      if (limit < 0) then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_ARGUMENT
-            return
-         else
-            @:ABORT('invalid argument')
-         end if
-      end if
-
-      self%limit = limit
-
-      ! Trim the cache
-
-      call self%trim_()
+      x_max = self%x(self%n)
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
+      return
+
+   end procedure get_x_max
+
+   !****
+
+   module procedure get_ssize
+
+      ! Get the storage size
+
+      ssize = STORAGE_SIZE(self)/8 + &
+              STORAGE_SIZE(self%x)/8*SIZE(self%x)
+
+      ! Finish
 
       return
 
-   end procedure set_limit
+   end procedure get_ssize
 
-end submodule photcache_params_sm
+end submodule tab_range_attribs_sm

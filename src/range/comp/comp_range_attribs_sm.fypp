@@ -1,5 +1,5 @@
-! Submodule : lin_range_params_sm
-! Purpose   : Parameter get/set routines for lin_range_t
+! Submodule : comp_range_attribs_sm
+! Purpose   : Attribute get/set routines for comp_range_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (lin_range_m) lin_range_params_sm
+submodule (comp_range_m) comp_range_attribs_sm
 
    ! No implicit typing
 
@@ -31,7 +31,7 @@ contains
 
       ! Get the size
 
-      n = self%n
+      n = self%i_bdy(self%n_ranges+1)-1
 
       ! Finish
 
@@ -45,7 +45,7 @@ contains
 
       ! Get the x-minimum
 
-      x_min = self%x_0
+      call self%range_elements(1)%range%get_x_min(x_min)
 
       ! Finish
 
@@ -59,7 +59,7 @@ contains
 
       ! Get the x-maximum
 
-      x_max = self%x_0 + self%dx*(self%n-1)
+      call self%range_elements(self%n_ranges)%range%get_x_max(x_max)
 
       ! Finish
 
@@ -71,9 +71,22 @@ contains
 
    module procedure get_ssize
 
+      integer     :: j
+      integer(ID) :: ssize_range
+
       ! Get the storage size
 
-      ssize = STORAGE_SIZE(self)/8
+      ssize = STORAGE_SIZE(self)/8 +                                          &
+              STORAGE_SIZE(self%range_elements)/8*SIZE(self%range_elements) + &
+              STORAGE_SIZE(self%i_bdy)/8*SIZE(self%i_bdy)
+
+      ranges_loop: do j = 1, self%n_ranges
+
+         call self%range_elements(j)%range%get_ssize(ssize_range)
+
+         ssize = ssize + ssize_range
+
+      end do ranges_loop
 
       ! Finish
 
@@ -81,4 +94,4 @@ contains
 
    end procedure get_ssize
 
-end submodule lin_range_params_sm
+end submodule comp_range_attribs_sm

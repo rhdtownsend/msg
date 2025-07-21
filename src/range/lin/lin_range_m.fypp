@@ -71,7 +71,7 @@ module lin_range_m
 
    end interface
 
-   ! In lin_range_params_sm
+   ! In lin_range_attribs_sm
 
    interface
 

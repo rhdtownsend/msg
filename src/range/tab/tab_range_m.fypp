@@ -68,7 +68,7 @@ module tab_range_m
 
    end interface
 
-   ! In tab_range_params_sm
+   ! In tab_range_attribs_sm
 
    interface
 

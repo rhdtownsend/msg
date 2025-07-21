@@ -83,7 +83,7 @@ module limb_photint_m
 
    end interface
 
-   ! In limb_photint_params_sm
+   ! In limb_photint_attribs_sm
 
    interface
 

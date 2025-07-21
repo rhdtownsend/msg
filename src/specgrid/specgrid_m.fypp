@@ -95,7 +95,7 @@ module specgrid_m
 
    end interface
 
-   ! In specgrid_params_sm
+   ! In specgrid_attribs_sm
 
    interface
 

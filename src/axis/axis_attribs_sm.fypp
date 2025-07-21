@@ -1,5 +1,5 @@
-! Submodule : hdf5_photsource_params_sm
-! Purpose   : Parameter get/set routines for hdf5_photsource_t
+! Submodule : axis_attribs_sm
+! Purpose   : Attribute get/set routines for axis_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (hdf5_photsource_m) hdf5_photsource_params_sm
+submodule (axis_m) axis_attribs_sm
 
    ! No implicit typing
 
@@ -29,7 +29,7 @@ contains
 
    module procedure get_n
 
-      ! Get n
+      ! Get the axis length
 
       n = self%n
 
@@ -39,4 +39,46 @@ contains
 
    end procedure get_n
 
-end submodule hdf5_photsource_params_sm
+   !****
+
+   module procedure get_x_min
+
+      ! Get the axis minimum
+
+      x_min = self%x(1)
+
+      ! Finish
+
+      return
+
+   end procedure get_x_min
+
+   !****
+
+   module procedure get_x_max
+
+      ! Get the axis maximum
+
+      x_max = self%x(self%n)
+
+      ! Finish
+
+      return
+
+   end procedure get_x_max
+
+   !****
+
+   module procedure get_label
+
+      ! Get the axis label
+
+      label = self%label
+
+      ! Finish
+
+      return
+
+   end procedure get_label
+
+end submodule axis_attribs_sm

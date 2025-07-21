@@ -1,5 +1,5 @@
-! Submodule : vgrid_inquire_sm
-! Purpose   : Inquiry routines for vgrid_t
+! Submodule : photcache_attribs_sm
+! Purpose   : Attribute get/set routines for photcache_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (vgrid_m) vgrid_inquire_sm
+submodule (photcache_m) photcache_attribs_sm
 
    ! No implicit typing
 
@@ -27,60 +27,59 @@ submodule (vgrid_m) vgrid_inquire_sm
 
 contains
 
-   module procedure get_n_seq
+   module procedure get_limit
 
-      ! Get the number of sequential vertices
+      ! Get the memory usage limit
 
-      n_seq = self%n_seq
+      limit = self%limit
 
       ! Finish
 
       return
 
-   end procedure get_n_seq
+   end procedure get_limit
 
    !****
 
-   module procedure get_rank
+   module procedure get_usage
 
-      ! Get the rank
+      ! Get the memory usage (megabytes)
 
-      rank = self%rank
+      usage = self%ssize/(1024*1024)
 
       ! Finish
 
       return
 
-   end procedure get_rank
+   end procedure get_usage
 
    !****
 
-   module procedure get_shape
+   module procedure set_limit
 
-      @:CHECK_BOUNDS(SIZE(shape), self%rank)
+      ! Set the memory usage limit
 
-      ! Get the shape
+      if (limit < 0) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
 
-      shape = self%shape
+      self%limit = limit
 
-      ! Finish
+      ! Trim the cache
 
-      return
-
-   end procedure get_shape
-
-   !****
-
-   module procedure get_axis
-
-      ! Get the i'th axis
-
-      axis = self%axes(i)
+      call self%trim_()
 
       ! Finish
 
+      if (PRESENT(stat)) stat = STAT_OK
+
       return
 
-   end procedure get_axis
+   end procedure set_limit
 
-end submodule vgrid_inquire_sm
+end submodule photcache_attribs_sm

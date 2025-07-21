@@ -75,7 +75,7 @@ module axis_m
 
    end interface
 
-   ! In axis_inquire_sm
+   ! In axis_attribs_sm
 
    interface
 

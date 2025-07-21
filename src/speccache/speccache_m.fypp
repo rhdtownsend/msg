@@ -87,7 +87,7 @@ module speccache_m
 
    end interface
 
-   ! In speccache_params_sm
+   ! In speccache_attribs_sm
 
    interface
 

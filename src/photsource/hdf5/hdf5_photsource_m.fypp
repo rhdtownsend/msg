@@ -67,7 +67,7 @@ module hdf5_photsource_m
 
    end interface
 
-   ! In spec_photsource_params_sm
+   ! In spec_photsource_attribs_sm
 
    interface
 

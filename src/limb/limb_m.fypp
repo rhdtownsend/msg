@@ -79,7 +79,7 @@ module limb_m
 
    end interface
 
-   ! In limb_params_sm
+   ! In limb_attribs_sm
 
    interface
 

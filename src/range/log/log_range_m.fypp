@@ -70,7 +70,7 @@ module log_range_m
 
    end interface
 
-   ! In log_range_params_sm
+   ! In log_range_attribs_sm
 
    interface
 

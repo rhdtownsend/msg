@@ -1,5 +1,5 @@
-! Submodule : photgrid_params_sm
-! Purpose   : Parameter get/set routines for photgrid_t
+! Submodule : photgrid_attribs_sm
+! Purpose   : Attribute get/set routines for photgrid_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (photgrid_m) photgrid_params_sm
+submodule (photgrid_m) photgrid_attribs_sm
 
    ! No implicit typing
 
@@ -100,4 +100,4 @@ contains
 
    end procedure set_cache_limit
 
-end submodule photgrid_params_sm
+end submodule photgrid_attribs_sm

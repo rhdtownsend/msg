@@ -72,7 +72,7 @@ module hdf5_specsource_m
 
    end interface
 
-   ! In hdf5_specsource_params_sm
+   ! In hdf5_specsource_attribs_sm
 
    interface
 

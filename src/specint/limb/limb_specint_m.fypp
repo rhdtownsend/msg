@@ -98,7 +98,7 @@ module limb_specint_m
 
    end interface
 
-   ! In limb_specint_params_sm
+   ! In limb_specint_attribs_sm
 
    interface
 

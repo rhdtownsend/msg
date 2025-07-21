@@ -63,7 +63,7 @@ module mem_photsource_m
 
    end interface
 
-   ! In mem_photsource_params_m
+   ! In mem_photsource_attribs_sm
 
    interface
 

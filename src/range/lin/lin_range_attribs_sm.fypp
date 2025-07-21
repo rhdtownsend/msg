@@ -1,5 +1,5 @@
-! Submodule : axis_inquire_sm
-! Purpose   : Inquiry routines for axis_t
+! Submodule : lin_range_attribs_sm
+! Purpose   : Attribute get/set routines for lin_range_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (axis_m) axis_inquire_sm
+submodule (lin_range_m) lin_range_attribs_sm
 
    ! No implicit typing
 
@@ -29,7 +29,7 @@ contains
 
    module procedure get_n
 
-      ! Get the axis length
+      ! Get the size
 
       n = self%n
 
@@ -43,9 +43,9 @@ contains
 
    module procedure get_x_min
 
-      ! Get the axis minimum
+      ! Get the x-minimum
 
-      x_min = self%x(1)
+      x_min = self%x_0
 
       ! Finish
 
@@ -57,9 +57,9 @@ contains
 
    module procedure get_x_max
 
-      ! Get the axis maximum
+      ! Get the x-maximum
 
-      x_max = self%x(self%n)
+      x_max = self%x_0 + self%dx*(self%n-1)
 
       ! Finish
 
@@ -69,16 +69,16 @@ contains
 
    !****
 
-   module procedure get_label
+   module procedure get_ssize
 
-      ! Get the axis label
+      ! Get the storage size
 
-      label = self%label
+      ssize = STORAGE_SIZE(self)/8
 
       ! Finish
 
       return
 
-   end procedure get_label
+   end procedure get_ssize
 
-end submodule axis_inquire_sm
+end submodule lin_range_attribs_sm

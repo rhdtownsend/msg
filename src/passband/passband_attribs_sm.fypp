@@ -1,5 +1,5 @@
-! Submodule : lin_range_params_sm
-! Purpose   : Parameter get/set routines for lin_range_t
+! Submodule : passband_attribs_sm
+! Purpose   : Attribute get/set routines for passband_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (lin_range_m) lin_range_params_sm
+submodule (passband_m) passband_attribs_sm
 
    ! No implicit typing
 
@@ -27,4 +27,30 @@ submodule (lin_range_m) lin_range_params_sm
 
 contains
 
-end submodule lin_range_params_sm
+   module procedure get_lam_min
+
+      ! Get the wavelength-minimum
+
+      lam_min = self%lam_min
+
+      ! Finish
+
+      return
+
+   end procedure get_lam_min
+
+   !****
+
+   module procedure get_lam_max
+
+      ! Get the wavelength-maximum
+
+      lam_max = self%lam_max
+
+      ! Finish
+
+      return
+
+   end procedure get_lam_max
+
+end submodule passband_attribs_sm

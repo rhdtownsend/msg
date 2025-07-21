@@ -80,7 +80,7 @@ module photgrid_m
 
    end interface
 
-   ! In photgrid_params_sm
+   ! In photgrid_attribs_sm
 
    interface
 

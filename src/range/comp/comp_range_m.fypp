@@ -79,7 +79,7 @@ module comp_range_m
 
    end interface
 
-   ! In comp_range_params_sm
+   ! In comp_range_attribs_sm
 
    interface
 

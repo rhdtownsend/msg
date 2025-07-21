@@ -82,7 +82,7 @@ module photcache_m
 
    end interface
 
-   ! In photcache_params_sm
+   ! In photcache_attribs_sm
 
    interface
 

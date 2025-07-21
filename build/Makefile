@@ -40,62 +40,62 @@ endif
 # xxx_USES = source files providing modules USE'd by xxx
 # xxx_LIBS = library files required to link xxx
 
-axis_SRCS = axis_m.fypp axis_construct_sm.fypp axis_inquire_sm.fypp \
+axis_SRCS = axis_m.fypp axis_construct_sm.fypp axis_attribs_sm.fypp \
             axis_locate_sm.fypp axis_io_sm.fypp
 
 ninterp_SRCS = ninterp_m.fypp ninterp_linear_sm.fypp ninterp_cubic_sm.fypp \
                basis_m.fypp
 
 vgrid_SRCS = vgrid_m.fypp vgrid_construct_sm.fypp vgrid_index_sm.fypp \
-             vgrid_inquire_sm.fypp vgrid_interp_sm.fypp vgrid_traverse_sm.fypp \
+             vgrid_attribs_sm.fypp vgrid_interp_sm.fypp vgrid_traverse_sm.fypp \
              vgrid_io_sm.fypp
 
-photcache_SRCS = photcache_m.fypp photcache_construct_sm.fypp photcache_params_sm.fypp \
+photcache_SRCS = photcache_m.fypp photcache_construct_sm.fypp photcache_attribs_sm.fypp \
                  photcache_access_sm.fypp
 
-photgrid_SRCS = photgrid_m.fypp photgrid_construct_sm.fypp photgrid_params_sm.fypp \
+photgrid_SRCS = photgrid_m.fypp photgrid_construct_sm.fypp photgrid_attribs_sm.fypp \
                 photgrid_interp_sm.fypp photgrid_io_sm.fypp
 
 photint_SRCS = photint_m.fypp photint_sm.fypp \
-               limb_photint_m.fypp limb_photint_construct_sm.fypp limb_photint_params_sm.fypp \
+               limb_photint_m.fypp limb_photint_construct_sm.fypp limb_photint_attribs_sm.fypp \
                limb_photint_interp_sm.fypp limb_photint_io_sm.fypp
 
 photsource_SRCS = photsource_m.fypp \
                   hdf5_photsource_m.fypp hdf5_photsource_construct_sm.fypp \
-                  hdf5_photsource_params_sm.fypp hdf5_photsource_access_sm.fypp \
+                  hdf5_photsource_attribs_sm.fypp hdf5_photsource_access_sm.fypp \
                   mem_photsource_m.fypp mem_photsource_construct_sm.fypp \
-                  mem_photsource_params_sm.fypp mem_photsource_access_sm.fypp \
+                  mem_photsource_attribs_sm.fypp mem_photsource_access_sm.fypp \
                   spec_photsource_m.fypp spec_photsource_construct_sm.fypp \
-                  spec_photsource_params_sm.fypp spec_photsource_access_sm.fypp
+                  spec_photsource_attribs_sm.fypp spec_photsource_access_sm.fypp
 
-speccache_SRCS = speccache_m.fypp speccache_construct_sm.fypp speccache_params_sm.fypp \
+speccache_SRCS = speccache_m.fypp speccache_construct_sm.fypp speccache_attribs_sm.fypp \
                   speccache_access_sm.fypp
 
-specgrid_SRCS = specgrid_m.fypp specgrid_construct_sm.fypp specgrid_params_sm.fypp \
+specgrid_SRCS = specgrid_m.fypp specgrid_construct_sm.fypp specgrid_attribs_sm.fypp \
                  specgrid_interp_sm.fypp specgrid_operate_sm.fypp specgrid_io_sm.fypp
 
 specint_SRCS = specint_m.fypp specint_sm.fypp \
-                limb_specint_m.fypp limb_specint_construct_sm.fypp limb_specint_params_sm.fypp \
+                limb_specint_m.fypp limb_specint_construct_sm.fypp limb_specint_attribs_sm.fypp \
                 limb_specint_interp_sm.fypp limb_specint_operate_sm.fypp limb_specint_io_sm.fypp
 
 specsource_SRCS = specsource_m.fypp \
                    hdf5_specsource_m.fypp hdf5_specsource_construct_sm.fypp \
-                   hdf5_specsource_params_sm.fypp hdf5_specsource_access_sm.fypp
+                   hdf5_specsource_attribs_sm.fypp hdf5_specsource_access_sm.fypp
 
-limb_SRCS = limb_m.fypp limb_construct_sm.fypp limb_params_sm.fypp limb_basis_sm.fypp \
+limb_SRCS = limb_m.fypp limb_construct_sm.fypp limb_attribs_sm.fypp limb_basis_sm.fypp \
             limb_fit_sm.fypp limb_io_sm.fypp
 
-passband_SRCS = passband_m.fypp passband_construct_sm.fypp passband_params_sm.fypp \
+passband_SRCS = passband_m.fypp passband_construct_sm.fypp passband_attribs_sm.fypp \
                 passband_passthru_sm.fypp passband_io_sm.fypp
 
 range_SRCS = range_m.fypp range_sm.fypp \
-             comp_range_m.fypp comp_range_construct_sm.fypp comp_range_params_sm.fypp \
+             comp_range_m.fypp comp_range_construct_sm.fypp comp_range_attribs_sm.fypp \
              comp_range_operate_sm.fypp comp_range_io_sm.fypp \
-             lin_range_m.fypp lin_range_construct_sm.fypp lin_range_params_sm.fypp \
+             lin_range_m.fypp lin_range_construct_sm.fypp lin_range_attribs_sm.fypp \
              lin_range_operate_sm.fypp lin_range_io_sm.fypp \
-             log_range_m.fypp log_range_construct_sm.fypp log_range_params_sm.fypp \
+             log_range_m.fypp log_range_construct_sm.fypp log_range_attribs_sm.fypp \
              log_range_operate_sm.fypp log_range_io_sm.fypp \
-             tab_range_m.fypp tab_range_construct_sm.fypp tab_range_params_sm.fypp \
+             tab_range_m.fypp tab_range_construct_sm.fypp tab_range_attribs_sm.fypp \
              tab_range_operate_sm.fypp tab_range_io_sm.fypp
 
 libmsg_SRCS = msg_m.fypp \
