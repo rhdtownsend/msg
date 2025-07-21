@@ -1,0 +1,56 @@
+! Submodule : speccache_construct_sm
+! Purpose   : Constructor routines for speccache_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (speccache_m) speccache_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure speccache_t_
+
+      ! Construct speccache with n entries
+
+      allocate(speccache%specint_elements(n))
+
+      allocate(speccache%ref_counts(n))
+      speccache%ref_counts = 0
+
+      allocate(speccache%exp_counts(n))
+      speccache%exp_counts = 0
+
+      speccache%lam_min = lam_min
+      speccache%lam_max = lam_max
+
+      speccache%ssize = 0
+      speccache%limit = INITIAL_LIMIT
+
+      speccache%n = n
+
+      ! Finish
+
+      return
+
+   end procedure speccache_t_
+
+end submodule speccache_construct_sm

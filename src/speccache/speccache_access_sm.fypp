@@ -1,0 +1,236 @@
+! Submodule : speccache_access_sm
+! Purpose   : Access routines for speccache_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (speccache_m) speccache_access_sm
+
+   ! Uses
+
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure fetch
+
+      interface
+         subroutine fetch_proc(i, specint, stat)
+            use specint_m
+            integer, intent(in)                        :: i
+            class(specint_t), allocatable, intent(out) :: specint
+            integer, intent(out), optional             :: stat
+         end subroutine fetch_proc
+      end interface
+
+      integer                       :: j
+      class(specint_t), allocatable :: specint_full
+      real(RD)                      :: lam_min
+      real(RD)                      :: lam_max
+      integer(ID)                   :: ssize
+
+      ! Fetch the i'th specint
+
+      if (i < 0 .OR. i > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      ! Check if the entry is already present
+
+      if (self%ref_counts(i) > 0) then
+
+         ! Present and referenced; increment the reference counter
+
+         self%ref_counts(i) = self%ref_counts(i) + 1
+
+      elseif (self%exp_counts(i) > 0) then
+
+         ! Present but not referenced; set the reference and expiry
+         ! counters
+
+         self%ref_counts(i) = 1
+         self%exp_counts(i) = 0
+
+      else
+
+         ! Fetch the specint
+
+         call fetch_proc(i, specint_full, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         call specint_full%get_lam_min(lam_min)
+         call specint_full%get_lam_min(lam_max)
+
+         if (lam_min < self%lam_min .OR. lam_max > self%lam_max) then
+
+            call specint_full%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+         else
+
+            self%specint_elements(i)%specint = specint_full
+
+         endif
+
+         ! Update the storage size
+
+         call self%specint_elements(i)%specint%get_ssize(ssize)
+
+         self%ssize = self%ssize + ssize
+
+         ! Set the reference and expiry counters
+
+         self%ref_counts(i) = 1
+         self%exp_counts(i) = 0
+
+      end if
+
+      ! Set up the return pointer
+
+      specint => self%specint_elements(i)%specint
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure fetch
+
+   !****
+
+   module procedure release
+
+      ! Release the i'th specint
+
+      if (i < 0 .OR. i > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      if (self%ref_counts(i) > 0) then
+
+         ! Decrement the reference counter
+
+         self%ref_counts(i) = self%ref_counts(i) - 1
+
+         ! If it's reached zero, set the expiry counter
+
+         if (self%ref_counts(i) == 0) self%exp_counts(i) = MAXVAL(self%exp_counts) + 1
+
+      end if
+
+      ! Trim the cache
+
+      call self%trim_()
+
+      ! Finish
+
+      return
+
+   end procedure release
+
+   !****
+
+   module procedure flush(self)
+
+      integer :: i
+
+      ! Flush the cache
+
+      flush_loop : do i = 1, self%n
+
+         if (self%exp_counts(i) > 0 .OR. self%ref_counts(i) > 0) then
+            deallocate(self%specint_elements(i)%specint)
+         end if
+
+      end do flush_loop
+
+      self%ref_counts = 0
+      self%exp_counts = 0
+
+      self%ssize = 0
+
+      ! Finish
+
+      return
+
+   end procedure flush
+
+   !****
+
+   subroutine trim_(self)
+
+      class(speccache_t), intent(inout) :: self
+
+      integer     :: j
+      integer     :: usage
+      integer(ID) :: ssize
+
+      ! Trim the cache so that its memory usage is smaller than limit
+
+      trim_loop : do
+
+         ! Check usage
+
+         call self%get_usage(usage)
+
+         if (usage <= self%limit) exit trim_loop
+
+         ! Find the unreferenced entry with the smallest expiry time
+
+         j = MINLOC(self%exp_counts, DIM=1, mask=self%ref_counts == 0 .AND. self%exp_counts > 0)
+
+         ! Deallocate it
+
+         call self%specint_elements(j)%specint%get_ssize(ssize)
+
+         deallocate(self%specint_elements(j)%specint)
+
+         self%ssize = self%ssize - ssize
+
+         ! Update expiry counter
+
+         self%exp_counts(j) = 0
+
+      end do trim_loop
+
+      ! Finish
+
+      return
+
+   end subroutine trim_
+
+end submodule speccache_access_sm
