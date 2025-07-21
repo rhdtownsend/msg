@@ -1,0 +1,757 @@
+! Module  : ninterp_m
+! Purpose : Low-level routines for uniform-grid N-dimensional interpolation
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module ninterp_m
+
+   ! Uses
+
+   use forum_m
+
+   use hermite_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Access specifiers
+
+   private
+
+   public :: identify_data_kernel
+   public :: eval_data_kernel
+   public :: eval_data_kernel_fixed
+   public :: eval_basis_kernel
+
+   ! Procedures
+
+contains
+
+   subroutine generate_vertex_mask_(rank, cell_mask, i, vert_mask)
+
+      integer, intent(in)  :: rank
+      logical, intent(in)  :: cell_mask(:)
+      integer, intent(in)  :: i
+      logical, intent(out) :: vert_mask(:)
+
+      logical :: pack_mask(4**rank)
+      integer :: r
+
+      @:CHECK_BOUNDS(SIZE(cell_mask), 4**rank)
+      @:CHECK_BOUNDS(SIZE(vert_mask), 3**rank)
+
+      ! Generate the 2**rank vertex mask for the i'th interior
+      ! verttex of the cell mask
+
+      ! Use inner products to do the generation
+
+      pack_mask(1) = .TRUE.
+
+      do r = 1, rank
+         if (BTEST(i-1, r-1)) then
+            pack_mask(1:4**r) = outer_prod_l_(pack_mask(1:4**(r-1)), [.FALSE., .TRUE., .TRUE., .TRUE.])
+         else
+            pack_mask(1:4**r) = outer_prod_l_(pack_mask(1:4**(r-1)), [.TRUE., .TRUE., .TRUE., .FALSE.])
+         end if
+      end do
+
+      vert_mask = PACK(cell_mask, mask=pack_mask)
+
+      ! Finish
+
+      return
+
+   end subroutine generate_vertex_mask_
+
+   !****
+
+   subroutine generate_edge_masks_(rank, vert_mask, edge_masks, stat, order)
+
+      integer, intent(in)            :: rank
+      logical, intent(in)            :: vert_mask(:)
+      logical, intent(out)           :: edge_masks(:,:)
+      integer, intent(out), optional :: stat
+      integer, intent(in), optional  :: order
+
+      integer :: order_
+      integer :: r
+      integer :: i
+      integer :: bits_l
+      integer :: bits_r
+      logical :: trial_edge_masks(3,rank,4**rank)
+      logical :: trial_vert_mask(3**rank)
+      integer :: n_vert(4**rank)
+      integer :: n_vert_max
+
+      @:CHECK_BOUNDS(SIZE(vert_mask), 3**rank)
+
+      @:CHECK_BOUNDS(SIZE(edge_masks, 1), 3)
+      @:CHECK_BOUNDS(SIZE(edge_masks, 2), rank)
+
+      if (PRESENT(order)) then
+         order_ = order
+      else
+         order_ = 3
+      end if
+
+      ! Generate the edge masks whose outer product (i) yields the
+      ! maximal number of vertices within the vertex mask, and (ii)
+      ! satisfies isotropy constraints
+
+      select case(order_)
+
+      case(1)
+
+         ! Linear case --- only one possible set of edge masks
+
+         do r = 1, rank
+            edge_masks(:,r) = [.FALSE., .TRUE., .FALSE.]
+         end do
+
+      case(3)
+
+         ! Cubic case --- generate all possible sets of edge masks,
+         ! and pick the combination whose outer product yields the
+         ! most vertices within the vertex mask
+
+         do i = 1, 4**rank
+
+            ! Extract left- and right-vertex bits
+
+            bits_l = IBITS(i-1, rank, rank) ! left-vertex bits
+            bits_r = IBITS(i-1, 0, rank)    ! right-vertex bits
+
+            ! Generat the trial edge masks
+
+            do r = 1, rank
+               trial_edge_masks(:,r,i) = [BTEST(bits_l, r-1), .TRUE., BTEST(bits_r, r-1)]
+            end do
+
+            ! Generate the trial vertex mask
+
+            trial_vert_mask = .TRUE.
+
+            do r = 1, rank
+               trial_vert_mask(1:3**r) = outer_prod_l_(trial_vert_mask(1:3**(r-1)), trial_edge_masks(:,r,i))
+            end do
+
+            ! Check whether trial_vert_mask lies within vert_mask, and
+            ! if so, store the number of vertices
+
+            if (COUNT(trial_vert_mask .AND. .NOT. vert_mask) == 0) then
+               n_vert(i) = COUNT(trial_vert_mask)
+            end if
+
+         end do
+
+         ! Combine the trial edge masks with the most vertices (this
+         ! implements the isotropy constraint)
+
+         n_vert_max = MAXVAL(n_vert)
+
+         edge_masks = .TRUE.
+
+         do i = 1, 4**rank
+            if (n_vert(i) == n_vert_max) then
+               edge_masks = edge_masks .AND. trial_edge_masks(:,:,i)
+            end if
+         end do
+
+      case default
+
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+
+      end select
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine generate_edge_masks_
+
+   !****
+
+   subroutine identify_data_kernel(rank, stencil_mask, index, stat, order)
+
+      integer, intent(in)            :: rank
+      logical, intent(in)            :: stencil_mask(:)
+      integer, intent(out)           :: index
+      integer, intent(out), optional :: stat
+      integer, intent(in), optional  :: order
+
+      integer :: order_
+      logical :: trial_mask(4**rank)
+      integer :: n_vert(4**rank)
+      integer :: i
+      integer :: n_vert_max
+
+      @:CHECK_BOUNDS(SIZE(stencil_mask), 4**rank)
+
+      if (PRESENT(order)) then
+         order_ = order
+      else
+         order_ = 3
+      end if
+
+      ! Given a stencil mask, identify the index of the data kernel to
+      ! use. The index is determined by looping over all possible
+      ! trial masks formed by generate_trial_mask_(), and choosing the
+      ! one that:
+      !
+      ! (i) only uses vertices within the stencil mask
+      ! (ii) uses the most number of these vertices
+
+      select case(order_)
+
+      case(1)
+
+         ! Linear case -- only the central points of the stencil mask
+         ! are needed, corresponding to index 1
+
+         index = 1
+
+      case(3)
+
+         ! Cubic case. First count the number of vertices used by each
+         ! trial mask (ignoring those trial masks with vertices
+         ! outside the stencil mask)
+
+         n_vert = 0
+
+         do i = 1, 4**rank
+
+            call generate_trial_mask_(rank, i, trial_mask)
+
+            if (COUNT(trial_mask .AND. .NOT. stencil_mask) == 0) then
+               n_vert(i) = COUNT(trial_mask)
+            end if
+
+         end do
+
+         ! Pick the trial mask with the most vertices. When there is a
+         ! tie, then combine the indices with bitwise ands
+
+         n_vert_max = MAXVAL(n_vert)
+
+         index = 4**rank
+
+         do i = 1, 4**rank
+            if (n_vert(i) == n_vert_max) index = IAND(index-1, i-1) + 1
+         end do
+
+      case default
+
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+
+      end select
+
+      ! Check that index is valid, by re-generate the chosen trial
+      ! mask (this is necessary to pick up specific failure modes --
+      ! for instance, when there are insufficient vertices even for
+      ! linear interpolation)
+
+      call generate_trial_mask_(rank, index, trial_mask)
+
+      if (COUNT(trial_mask .AND. .NOT. stencil_mask) /= 0) then
+
+         if (PRESENT(stat)) then
+            stat = STAT_UNAVAILABLE_DATA
+            return
+         else
+            @:ABORT('unavailable data')
+         endif
+
+      endif
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+   end subroutine identify_data_kernel
+
+   !****
+
+   subroutine generate_trial_mask_(rank, index, trial_mask)
+
+      integer, intent(in)  :: rank
+      integer, intent(in)  :: index
+      logical, intent(out) :: trial_mask(:)
+
+      integer :: bits_l
+      integer :: bits_r
+      integer :: j
+      logical :: dim_mask(4)
+
+      @:CHECK_BOUNDS(SIZE(trial_mask), 4**rank)
+
+      ! Generate a trial mask through inner products of per-dimension
+      ! masks, under the control of the bits of index
+
+      ! Extract left- and right-point bits
+
+      bits_l = IBITS(index-1, rank, rank) ! left-point bits
+      bits_r = IBITS(index-1, 0, rank)    ! right-point bits
+
+      !
+
+      trial_mask(1) = .TRUE.
+
+      do j = 1, rank
+
+         ! Set up the per-dimension mask
+
+         dim_mask(1) = BTEST(bits_l, j-1)
+         dim_mask(2:3) = .TRUE.
+         dim_mask(4) = BTEST(bits_r, j-1)
+
+         ! Accumulate it
+
+         trial_mask(1:4**j) = outer_prod_l_(trial_mask(1:4**(j-1)), dim_mask)
+
+      end do
+
+      ! Finish
+
+      return
+
+   end subroutine generate_trial_mask_
+
+   !****
+
+   subroutine eval_data_kernel(rank, index, K_data)
+
+      integer, intent(in)   :: rank
+      integer, intent(in)   :: index
+      real(RD), intent(out) :: K_data(:,:)
+
+      integer  :: bits_l
+      integer  :: bits_r
+      integer  :: j
+      logical  :: dim_mask(4,rank)
+      integer  :: i
+      integer  :: bits_p
+      integer  :: bits_d
+      real(RD) :: dim_K(4)
+
+      @:CHECK_BOUNDS(SIZE(K_data, 1), 4**rank)
+      @:CHECK_BOUNDS(SIZE(K_data, 2), 4**rank)
+
+      ! Evaluate the kernel matrix K_data for setting up function and
+      ! derivative data. Given a vector F of function values on a
+      ! 4**rank-point stencil, MATMUL(K_data, F) gives the function
+      ! values and derivatives on the center 2**rank-point stencil
+      !
+      ! The index identifies which kernal matrix to evaluate
+
+      ! Extract left- and right-point bits
+
+      bits_l = IBITS(index-1, rank, rank) ! left-point bits
+      bits_r = IBITS(index-1, 0, rank)    ! right-point bits
+
+      ! Set up the per-dimension masks
+
+      do j = 1, rank
+
+         dim_mask(1,j) = BTEST(bits_l, j-1)
+         dim_mask(2:3,j) = .TRUE.
+         dim_mask(4,j) = BTEST(bits_r, j-1)
+
+      end do
+
+      ! Now build the kernel matrix row-by-row
+
+      row_loop: do i = 1, 4**rank
+
+         ! Extract position and derivative bits
+
+         bits_d = IBITS(i-1, rank, rank) ! derivative bits
+         bits_p = IBITS(i-1, 0, rank)    ! position bits
+
+         ! Accumulate the outer product of per-dimension kernels
+
+         K_data(i,1) = 1._RD
+
+         dim_loop : do j = 1, rank
+
+            ! Set up the per-dimension kernel
+
+            if (BTEST(bits_p, j-1)) then
+
+               if (BTEST(bits_d, j-1)) then
+
+                  dim_K(1) = 0
+                  dim_K(2:4) = dim_deriv_kernel_(dim_mask(2:4,j))
+
+               else
+
+                  dim_K = [0,0,1,0]
+
+               endif
+
+            else
+
+               if (BTEST(bits_d, j-1)) then
+
+                  dim_K(1:3) = dim_deriv_kernel_(dim_mask(1:3,j))
+                  dim_K(4) = 0
+
+               else
+
+                  dim_K = [0,1,0,0]
+
+               endif
+
+            end if
+
+            ! Accumulate it
+
+            K_data(i,1:4**j) = outer_prod_r_(K_data(i,1:4**(j-1)), dim_K)
+
+         end do dim_loop
+
+      end do row_loop
+
+      ! Finish
+
+      return
+
+   contains
+
+      function dim_deriv_kernel_(mask) result(K)
+
+         logical, intent(in)  :: mask(:)
+         real(RD)             :: K(3)
+
+         @:CHECK_BOUNDS(SIZE(mask), 3)
+
+         ! Set up a 3-point kernel for derivative evaluation along a
+         ! single dimension
+
+         if (mask(1) .AND. mask(3)) then
+
+            K = 0.5_RD*[-1, 0, 1]
+
+         elseif (mask(1) .AND. mask(2)) then
+
+            K = [-1,1,0]
+
+         elseif (mask(2) .AND. mask(3)) then
+
+            K = [0,-1,1]
+
+         else
+
+            @:ABORT('invalid mask')
+
+         endif
+
+         ! Finish
+
+         return
+
+      end function dim_deriv_kernel_
+
+   end subroutine eval_data_kernel
+
+   !****
+
+   subroutine eval_data_kernel_fixed(rank, cell_mask, K_data, stat, order)
+
+      integer, intent(in)   :: rank
+      logical, intent(in)   :: cell_mask(:)
+      real(RD), intent(out) :: K_data(:,:)
+      integer, intent(out), optional :: stat
+      integer, intent(in), optional :: order
+
+      logical  :: vert_masks(3**rank,2**rank)
+      integer  :: i
+      integer  :: bits_d
+      integer  :: bits_p
+      logical  :: edge_masks(3,rank)
+      integer  :: j
+      real(RD) :: dim_K(4)
+
+      @:CHECK_BOUNDS(SIZE(cell_mask), 4**rank)
+
+      @:CHECK_BOUNDS(SIZE(K_data, 1), 4**rank)
+      @:CHECK_BOUNDS(SIZE(K_data, 2), 4**rank)
+
+      ! Evaluate the kernel matrix K_data for setting up function and
+      ! derivative data. Given a vector F of function values on a
+      ! 4**rank-point stencil, MATMUL(K_data, F) gives the function
+      ! values and derivatives on the center 2**rank-point stencil
+
+      ! Generate the vertex masks
+
+      do i = 1, 2**rank
+         call generate_vertex_mask_(rank, cell_mask, i, vert_masks(:,i))
+      end do
+
+      ! Loop over rows of the kernel
+
+      row_loop: do i = 1, 4**rank
+
+         ! Extract position and derivative bits
+
+         bits_d = IBITS(i-1, rank, rank) ! derivative bits
+         bits_p = IBITS(i-1, 0, rank)    ! position bits
+
+         ! Generate the vertex mask
+
+         !call generate_vertex_mask_(rank, cell_mask, bits_p+1, vert_mask)
+
+         ! if (i <= 4) then
+         !    print *,'for pos = ', i
+         !    print *,'   cell_mask', cell_mask
+         !    print *,'   vert_mask', vert_mask
+         ! end if
+
+         ! Generate the edge masks
+
+         call generate_edge_masks_(rank, vert_masks(:,bits_p+1), edge_masks, stat, order)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         ! Accumulate the outer product of per-dimension kernels
+
+         K_data(i,1) = 1._RD
+
+         dim_loop : do j = 1, rank
+
+            ! Set up the edge kernel
+
+            if (BTEST(bits_p, j-1)) then
+
+               if (BTEST(bits_d, j-1)) then
+
+                  dim_K(1) = 0
+                  dim_K(2:4) = dim_deriv_kernel_(edge_masks(:,j))
+
+               else
+
+                  dim_K = [0,0,1,0]
+
+               endif
+
+            else
+
+               if (BTEST(bits_d, j-1)) then
+
+                  dim_K(1:3) = dim_deriv_kernel_(edge_masks(:,j))
+                  dim_K(4) = 0
+
+               else
+
+                  dim_K = [0,1,0,0]
+
+               endif
+
+            end if
+
+            ! Accumulate it
+
+            K_data(i,1:4**j) = outer_prod_r_(K_data(i,1:4**(j-1)), dim_K)
+
+         end do dim_loop
+
+      end do row_loop
+
+      ! Finish
+
+      return
+
+   contains
+
+      function dim_deriv_kernel_(mask) result(K)
+
+         logical, intent(in)  :: mask(:)
+         real(RD)             :: K(3)
+
+         @:CHECK_BOUNDS(SIZE(mask), 3)
+
+         ! Set up a 3-point kernel for derivative evaluation along a
+         ! single dimension
+
+         if (mask(1) .AND. mask(3)) then
+
+            K = 0.5_RD*[-1, 0, 1]
+
+         elseif (mask(1) .AND. mask(2)) then
+
+            K = [-1,1,0]
+
+         elseif (mask(2) .AND. mask(3)) then
+
+            K = [0,-1,1]
+
+         else
+
+            @:ABORT('invalid mask')
+
+         endif
+
+         ! Finish
+
+         return
+
+      end function dim_deriv_kernel_
+
+   end subroutine eval_data_kernel_fixed
+
+   !****
+
+   subroutine eval_basis_kernel(rank, vu, K_basis, vderiv)
+
+      integer, intent(in)           :: rank
+      real(RD), intent(in)          :: vu(:)
+      real(RD), intent(out)         :: K_basis(:)
+      logical, intent(in), optional :: vderiv(:)
+
+      logical  :: vderiv_(rank)
+      integer  :: i
+      integer  :: bits_d
+      integer  :: bits_p
+      integer  :: j
+
+      @:CHECK_BOUNDS(SIZE(vu), rank)
+
+      @:CHECK_BOUNDS(SIZE(K_basis), 4**rank)
+
+      if (PRESENT(vderiv)) then
+         @:CHECK_BOUNDS(SIZE(vderiv), rank)
+         vderiv_ = vderiv
+      else
+         vderiv_ = .FALSE.
+      endif
+
+      ! Evaluate the kernel vector K_I for interpolating. Given a vector
+      ! D of function values and derivatives on a 2**rank-point stencil,
+      ! DOT_PRODUCT(K_basis, D) gives the interpolant at normalized position
+      ! vu in the stencil.
+
+      do i = 1, 4**rank
+
+         ! Extract position and derivative bits
+
+         bits_d = IBITS(i-1, rank, rank) ! derivative bits
+         bits_p = IBITS(i-1, 0, rank)    ! position bits
+
+         ! Evaluate the product of the basis function for each
+         ! dimension
+
+         K_basis(i) = 1._RD
+
+         dim_loop : do j = 1, rank
+
+            if (BTEST(bits_p, j-1)) then
+               if (BTEST(bits_d, j-1)) then
+                  K_basis(i) = K_basis(i) * hermite_11(vu(j), vderiv_(j))
+               else
+                  K_basis(i) = K_basis(i) * hermite_01(vu(j), vderiv_(j))
+               end if
+            else
+               if (BTEST(bits_d, j-1)) then
+                  K_basis(i) = K_basis(i) * hermite_10(vu(j), vderiv_(j))
+               else
+                  K_basis(i) = K_basis(i) * hermite_00(vu(j), vderiv_(j))
+               end if
+            endif
+
+         end do dim_loop
+
+      end do
+
+      ! Finish
+
+   end subroutine eval_basis_kernel
+
+   !****
+
+   function outer_prod_r_(A, B) result(AB)
+
+      real(RD), intent(in) :: A(:)
+      real(RD), intent(in) :: B(:)
+      real(RD)             :: AB(SIZE(A)*SIZE(B))
+
+      integer :: i
+      integer :: n
+      integer :: m
+
+      ! Calculate the outer product between (flat) real arrays A and B
+
+      n = SIZE(A)
+      m = SIZE(B)
+
+      do i = 1, m
+
+         AB(n*(i-1)+1:n*i) = A*B(i)
+
+      end do
+
+      ! Finish
+
+      return
+
+   end function outer_prod_r_
+
+   !****
+
+   function outer_prod_l_(A, B) result(AB)
+
+      logical, intent(in) :: A(:)
+      logical, intent(in) :: B(:)
+      logical             :: AB(SIZE(A)*SIZE(B))
+
+      integer :: i
+      integer :: n
+      integer :: m
+
+      ! Calculate the outer product between (flat) logical arrays A and B
+
+      n = SIZE(A)
+      m = SIZE(B)
+
+      do i = 1, m
+
+         AB(n*(i-1)+1:n*i) = A .AND. B(i)
+
+      end do
+
+      ! Finish
+
+      return
+
+   end function outer_prod_l_
+
+end module ninterp_m

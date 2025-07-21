@@ -80,8 +80,7 @@ contains
 
          integer  :: c_vec(self%rank)
          real(RD) :: u(self%rank)
-         logical  :: cell_mask(4**self%rank)
-         real(RD) :: cell_deltas(3,self%rank)
+         real(RD) :: edge_deltas(self%rank)
          real(RD) :: interp_kernel(2**self%rank)
          real(RD) :: F
          integer  :: i
@@ -89,16 +88,16 @@ contains
          integer  :: v_lin
          integer  :: v_seq
 
-         ! Set up the interpolation
+         ! Locate the cell
 
-         call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
+         call locate_cell_(self, x_vec, c_vec, u, edge_deltas, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
 
          ! Evaluate the interpolation kernel
 
-         interp_kernel = interp_kernel_linear(self%rank, u, cell_deltas(2,:), vderiv)
+         interp_kernel = interp_kernel_linear(self%rank, u, edge_deltas, vderiv)
 
          ! Initialize f_int
 
@@ -145,8 +144,7 @@ contains
 
          integer  :: c_vec(self%rank)
          real(RD) :: u(self%rank)
-         real(RD) :: cell_deltas(3,self%rank)
-         logical  :: cell_mask(4**self%rank)
+         real(RD) :: edge_deltas(self%rank)
          integer  :: i
          integer  :: v_vec(self%rank)
          integer  :: v_lin
@@ -156,38 +154,30 @@ contains
          real(RD) :: interp_kernel(4**self%rank)
          real(RD) :: F
 
-         ! Set up the interpolation
+         ! Locate the cell
 
-         call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
+         call locate_cell_(self, x_vec, c_vec, u, edge_deltas, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
 
          ! Evaluate the interpolation kernel
 
-         if (USE_VERT_CACHE) then
+         do i = 1, 2**self%rank
 
-            do i = 1, 2**self%rank
+            v_vec = c_vec + self%offset_vector_(i, 2)
+            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
 
-               v_vec = c_vec + self%offset_vector_(i, 2)
-               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+            v_lin = self%vert_linear_(v_vec)
+            v_seq = self%v_seq_lin(v_lin)
 
-               v_lin = self%vert_linear_(v_vec)
-               v_seq = self%v_seq_lin(v_lin)
+            cache(:,i) = self%vert_cache(:,v_seq)
 
-               cache(:,i) = self%vert_cache(:,v_seq)
+         end do
 
-            end do
+         data_kernel = data_kernel_cubic_cached(self%rank, cache)
 
-            data_kernel = data_kernel_cubic_cached(self%rank, cache)
-
-         else
-
-            data_kernel = data_kernel_cubic(self%rank, cell_mask, cell_deltas)
-
-         end if
-
-         interp_kernel = interp_kernel_cubic(self%rank, u, cell_deltas, data_kernel, vderiv)
+         interp_kernel = interp_kernel_cubic(self%rank, u, edge_deltas, data_kernel, vderiv)
 
          ! Initialize f_int
 
@@ -285,12 +275,12 @@ contains
 
          integer  :: c_vec(self%rank)
          real(RD) :: u(self%rank)
-         logical  :: cell_mask(4**self%rank)
-         real(RD) :: cell_deltas(3,self%rank)
+         real(RD) :: edge_deltas(self%rank)
          real(RD) :: interp_kernel(2**self%rank)
          integer  :: n_m
          real(RD) :: F(SIZE(f_int))
          integer  :: i
+         integer  :: v_vec(self%rank)
          integer  :: v_lin
          integer  :: v_seq
          integer  :: m
@@ -303,16 +293,16 @@ contains
             integer :: m_b
          #:endif
 
-         ! Set up the interpolation
+         ! Locate the cell
 
-         call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
+         call locate_cell_(self, x_vec, c_vec, u, edge_deltas, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
 
          ! Evaluate the interpolation kernel
 
-         interp_kernel = interp_kernel_linear(self%rank, u, cell_deltas(2,:), vderiv)
+         interp_kernel = interp_kernel_linear(self%rank, u, edge_deltas, vderiv)
 
          ! Initialize f_int
 
@@ -331,7 +321,10 @@ contains
 
                ! Evaluate data for this vertex
 
-               v_lin = self%vert_linear_(c_vec + self%offset_vector_(i, 2))
+               v_vec = c_vec + self%offset_vector_(i, 4)
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+
+               v_lin = self%vert_linear_(v_vec)
                v_seq = self%v_seq_lin(v_lin)
 
                call data_proc(v_seq, F, stat)
@@ -385,14 +378,15 @@ contains
 
          integer  :: c_vec(self%rank)
          real(RD) :: u(self%rank)
-         logical  :: cell_mask(4**self%rank)
-         real(RD) :: cell_deltas(3,self%rank)
+         real(RD) :: edge_deltas(self%rank)
+         integer  :: i
+         integer  :: v_vec(self%rank)
+         integer  :: v_lin
+         integer  :: v_seq
+         real(RD) :: cache(3*self%rank*2,2**self%rank)
          real(RD) :: data_kernel(4**self%rank,4**self%rank)
          real(RD) :: interp_kernel(4**self%rank)
          integer  :: n_m
-         integer  :: i
-         integer  :: v_lin
-         integer  :: v_seq
          real(RD) :: F(SIZE(f_int))
          integer  :: m
 
@@ -404,17 +398,30 @@ contains
             integer :: m_b
          #:endif
 
-         ! Set up the interpolation
+         ! Locate the cell
 
-         call setup_interp_(self, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
+         call locate_cell_(self, x_vec, c_vec, u, edge_deltas, stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if
 
          ! Evaluate the interpolation kernel
 
-         data_kernel = data_kernel_cubic(self%rank, cell_mask, cell_deltas)
-         interp_kernel = interp_kernel_cubic(self%rank, u, cell_deltas, data_kernel, vderiv)
+         do i = 1, 2**self%rank
+
+            v_vec = c_vec + self%offset_vector_(i, 2)
+            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+
+            v_lin = self%vert_linear_(v_vec)
+            v_seq = self%v_seq_lin(v_lin)
+
+            cache(:,i) = self%vert_cache(:,v_seq)
+
+         end do
+
+         data_kernel = data_kernel_cubic_cached(self%rank, cache)
+
+         interp_kernel = interp_kernel_cubic(self%rank, u, edge_deltas, data_kernel, vderiv)
 
          ! Initialize f_int
 
@@ -433,7 +440,10 @@ contains
 
                ! Evaluate data for this vertex
 
-               v_lin = self%vert_linear_(c_vec - 1 + self%offset_vector_(i, 4))
+               v_vec = c_vec - 1 + self%offset_vector_(i, 4)
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+
+               v_lin = self%vert_linear_(v_vec)
                v_seq = self%v_seq_lin(v_lin)
 
                call data_proc(v_seq, F, stat)
@@ -655,44 +665,32 @@ contains
 
    !****
 
-   subroutine setup_interp_(vgrid, x_vec, c_vec, u, cell_mask, cell_deltas, stat)
+   subroutine locate_cell_(vgrid, x_vec, c_vec, u, edge_deltas, stat)
 
       class(vgrid_t), intent(in)     :: vgrid
       real(RD), intent(in)           :: x_vec(:)
       integer, intent(out)           :: c_vec(:)
       real(RD), intent(out)          :: u(:)
-      logical, intent(out)           :: cell_mask(:)
-      real(RD), intent(out)          :: cell_deltas(:,:)
+      real(RD), intent(out)          :: edge_deltas(:)
       integer, intent(out), optional :: stat
 
-      integer  :: c_lin
       integer  :: r
+      integer  :: c_lin
       logical  :: on_bdy(vgrid%rank)
       integer  :: dc_vec(vgrid%rank)
       integer  :: a
-      integer  :: v_lin
-      integer  :: i
-      integer  :: j
-      real(RD) :: x(4)
+      real(RD) :: x_a
+      real(RD) :: x_b
 
       @:CHECK_BOUNDS(SIZE(x_vec), vgrid%rank)
-
       @:CHECK_BOUNDS(SIZE(c_vec), vgrid%rank)
       @:CHECK_BOUNDS(SIZE(u), vgrid%rank)
+      @:CHECK_BOUNDS(SIZE(edge_deltas), vgrid%rank)
 
-      @:CHECK_BOUNDS(SIZE(cell_deltas, 1), 3)
-      @:CHECK_BOUNDS(SIZE(cell_deltas, 2), vgrid%rank)
+      ! Locate a suitable interpolation cell that contains x_vec in
+      ! its interior, or on one or more of its boundaries
 
-      @:CHECK_BOUNDS(SIZE(cell_mask), 4**vgrid%rank)
-
-      ! Set up an interpolation. This consists of determining the following:
-      !
-      ! c_vec         -- the vector index of the cell containing x_vec
-      ! u             -- the fractional coordinates within the cell
-      ! cell_mask     -- the mask indicating which of the 4**rank vertices in/adjacent to the cell are valid
-      ! cell_deltas   -- the spacings between the vertices
-
-      ! Locate the initial interpolation cell
+      ! First, locate the initial cell
 
       do r = 1, vgrid%rank
 
@@ -772,48 +770,21 @@ contains
 
       @:ASSERT_DEBUG(ALL(u >= 0._RD .AND. u <= 1._RD), 'invalid u')
 
-      ! Set up cell_mask
-
-      do i = 1, 4**vgrid%rank
-
-         v_lin = vgrid%vert_linear_(c_vec - 1 + vgrid%offset_vector_(i, 4))
-
-         cell_mask(i) = v_lin >= 1! .AND. v_lin <= vgrid%n_v_lin
-
-         if (cell_mask(i)) then
-            cell_mask(i) = cell_mask(i) .AND. vgrid%v_lin_mask(v_lin)
-         end if
-
-      end do
-
-      ! Set up cell_deltas
+      ! Set up edge_deltas using the cell dimensions
 
       do r = 1, vgrid%rank
 
-         do j = 1, 4
+         call vgrid%axes(r)%fetch(c_vec(r), x_a)
+         call vgrid%axes(r)%fetch(c_vec(r)+1, x_b)
 
-            i = c_vec(r) + j - 2
-
-            if (i < 1) then
-               x(j) = -HUGE(0._RD)
-            elseif (i > vgrid%shape(r)) then
-               x(j) = HUGE(0._RD)
-            else
-               call vgrid%axes(r)%fetch(i, x(j))
-            endif
-
-         end do
-
-         cell_deltas(:,r) = x(2:4) - x(1:3)
+         edge_deltas(r) = x_b - x_a
 
       end do
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
-
       return
 
-   end subroutine setup_interp_
+   end subroutine locate_cell_
 
 end submodule vgrid_interp_sm

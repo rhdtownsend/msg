@@ -44,11 +44,10 @@ module vgrid_m
    type vgrid_t
       private
       type(axis_t), allocatable :: axes(:)
-      real(RD), allocatable     :: vert_cache(:,:) ! Per-vertex cache
-      logical, allocatable      :: v_lin_mask(:)   ! Linear vertex mask
-      logical, allocatable      :: c_lin_mask(:)   ! Linear cell mask
-      integer, allocatable      :: v_seq_lin(:)    ! Vertex linear-to_sequence map
-      integer, allocatable      :: v_lin_seq(:)    ! Vertex sequence-to-linear map
+      logical, allocatable      :: v_lin_mask(:) ! Linear vertex mask
+      logical, allocatable      :: c_lin_mask(:) ! Linear cell mask
+      integer, allocatable      :: v_seq_lin(:)  ! Vertex sequence-to-linear map
+      integer, allocatable      :: v_lin_seq(:)  ! Vertex linear-to-sequance map
       integer, allocatable      :: shape(:)
       integer                   :: rank
       integer                   :: n_v_lin       ! Number of linear vertices
@@ -70,7 +69,8 @@ module vgrid_m
       procedure         :: cell_vector_
       procedure         :: vert_linear_
       procedure         :: vert_vector_
-      procedure         :: offset_vector_
+      procedure         :: vert_linear_corner_
+      procedure         :: vert_linear_stencil_
       procedure, public :: read
       procedure, public :: write
    end type vgrid_t
@@ -213,40 +213,42 @@ module vgrid_m
    interface
 
       module function cell_linear_(self, c_vec) result(c_lin)
-         implicit none (type, external)
          class(vgrid_t), intent(in) :: self
          integer, intent(in)        :: c_vec(:)
          integer                    :: c_lin
       end function cell_linear_
 
       module function cell_vector_(self, c_lin) result(c_vec)
-         implicit none (type, external)
          class(vgrid_t), intent(in) :: self
          integer, intent(in)        :: c_lin
          integer                    :: c_vec(self%rank)
       end function cell_vector_
 
       module function vert_linear_(self, v_vec) result(v_lin)
-         implicit none (type, external)
          class(vgrid_t), intent(in) :: self
          integer, intent(in)        :: v_vec(:)
          integer                    :: v_lin
       end function vert_linear_
 
       module function vert_vector_(self, v_lin) result(v_vec)
-         implicit none (type, external)
          class(vgrid_t), intent(in) :: self
          integer, intent(in)        :: v_lin
          integer                    :: v_vec(self%rank)
       end function vert_vector_
 
-      module function offset_vector_(self, i, n) result(d_vec)
-         implicit none (type, external)
+      module function vert_linear_corner_(self, i, c_vec) result(v_lin)
          class(vgrid_t), intent(in) :: self
          integer, intent(in)        :: i
-         integer, intent(in)        :: n
-         integer                    :: d_vec(self%rank)
-      end function offset_vector_
+         integer, intent(in)        :: c_vec(:)
+         integer                    :: v_lin
+      end function vert_linear_corner_
+
+      module function vert_linear_stencil_(self, i, c_vec) result(v_lin)
+         class(vgrid_t), intent(in) :: self
+         integer, intent(in)        :: i
+         integer, intent(in)        :: c_vec(:)
+         integer                    :: v_lin
+      end function vert_linear_stencil_
 
    end interface
 
@@ -333,7 +335,7 @@ contains
 
             do i = 1, 2**rank
 
-               v_lin = vgrid%vert_linear_(c_vec + vgrid%offset_vector_(i, 2))
+               v_lin = vgrid%vert_linear_corner_(i, c_vec)
                v_seq = vgrid%v_seq_lin(v_lin)
 
                ! Update the mask

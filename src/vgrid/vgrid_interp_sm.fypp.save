@@ -1,0 +1,533 @@
+! Submodule : vgrid_interp_sm
+! Purpose   : Interpolation routines for vgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (vgrid_m) vgrid_interp_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure interp_0_
+
+      integer  :: c_vec(self%rank)
+      real(RD) :: u_vec(self%rank)
+      logical  :: stencil_mask(self%n_stn)
+      integer  :: index
+      real(RD) :: K_data(self%n_stn,self%n_stn)
+      real(RD) :: K_basis(self%n_stn)
+      real(RD) :: K(self%n_stn)
+      real(RD) :: F
+      integer  :: i
+      integer  :: v_lin
+      integer  :: v_seq
+
+      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
+
+      ! Interpolate a scalar value
+
+      ! Set up the interpolation
+
+      call setup_interp_(self, x_vec, c_vec, u_vec, stencil_mask, stat, order)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Evaluate the kernels
+
+      call identify_data_kernel(self%rank, stencil_mask, index, stat, order)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call eval_data_kernel(self%rank, index, K_data)
+
+      call eval_basis_kernel(self%rank, u_vec, K_basis, vderiv)
+
+      K = MATMUL(K_basis, K_data)
+
+      ! Initialize f_int
+
+      f_int = 0._RD
+
+      ! Now perform the interpolation
+
+      do i = 1, self%n_stn
+
+         if (K(i) /= 0._RD) then
+
+            ! Evaluate data for this vertex
+
+            v_lin = self%vert_linear_stencil_(i, c_vec)
+            v_seq = self%v_seq_lin(v_lin)
+
+            call data_proc(v_seq, F, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+            ! Add the contribution to f_int
+
+            f_int = f_int + K(i)*F
+
+         end if
+
+      end do
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure interp_0_
+
+   !****
+
+   module procedure interp_1_
+
+      integer  :: c_vec(self%rank)
+      real(RD) :: u_vec(self%rank)
+      logical  :: stencil_mask(self%n_stn)
+      integer  :: index
+      real(RD) :: K_data(self%n_stn,self%n_stn)
+      real(RD) :: K_basis(self%n_stn)
+      real(RD) :: K(self%n_stn)
+      integer  :: n_m
+      integer  :: i
+      integer  :: v_lin
+      integer  :: v_seq
+      real(RD) :: F(SIZE(f_int))
+      integer  :: m
+
+      #:if OMP is not None
+         integer :: num_threads
+         integer :: thread_num
+         integer :: block_size
+         integer :: m_a
+         integer :: m_b
+      #:endif
+
+      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
+
+      ! Interpolate an array value
+
+      ! Set up the interpolation
+
+      call setup_interp_(self, x_vec, c_vec, u_vec, stencil_mask, stat, order)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Evaluate the kernels
+
+      call identify_data_kernel(self%rank, stencil_mask, index, stat, order)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call eval_data_kernel(self%rank, index, K_data)
+
+      call eval_basis_kernel(self%rank, u_vec, K_basis, vderiv)
+
+      K = MATMUL(K_basis, K_data)
+
+      ! Initialize f_int
+
+      n_m = SIZE(f_int)
+
+      !$OMP PARALLEL DO
+      do m = 1, n_m
+         f_int(m) = 0._RD
+      end do
+
+      ! Now perform the interpolation
+
+      do i = 1, self%n_stn
+
+         if (K(i) /= 0._RD) then
+
+            ! Evaluate data for this node
+
+            v_lin = self%vert_linear_stencil_(i, c_vec)
+            v_seq = self%v_seq_lin(v_lin)
+
+            call data_proc(v_seq, F, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+            ! Add the contribution to f_int
+
+            #:if OMP is not None
+
+               !$OMP PARALLEL PRIVATE(num_threads, block_size, thread_num, m_a, m_b)
+
+               num_threads = omp_get_num_threads()
+
+               block_size = n_m/num_threads
+               if (block_size*num_threads < n_m) block_size = block_size+1
+
+               thread_num = omp_get_thread_num()
+
+               m_a = thread_num*block_size + 1
+               m_b = thread_num*block_size + block_size
+
+               m_b = MIN(m_b, n_m)
+
+               f_int(m_a:m_b) = f_int(m_a:m_b) + K(i)*F(m_a:m_b)
+
+               !$OMP END PARALLEL
+
+            #:else
+
+               f_int = f_int + K(i)*F
+
+            #:endif
+
+         end if
+
+      end do
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure interp_1_
+
+   !****
+
+   module procedure adjust_x_vec
+
+      integer              :: r
+      integer              :: c_vec(self%rank)
+      character(LABEL_LEN) :: label
+      real(RD)             :: x
+      integer              :: c_lin
+      real(RD)             :: x_bdy(2,self%rank)
+      real(RD)             :: t(2,self%rank)
+      integer              :: i(2)
+
+      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
+      @:CHECK_BOUNDS(SIZE(dx_vec), self%rank)
+      @:CHECK_BOUNDS(SIZE(x_adj), self%rank)
+
+      ! Adjust x_vec in the direction dx_vec, until it falls within a
+      ! valid cell (one with c_lin_mask set)
+
+      ! Check the direction vector
+
+      if (ALL(dx_vec == 0._RD)) then
+
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('dx_vec cannot be null')
+         end if
+
+      end if
+
+      ! Determine the starting cell
+
+      do r = 1, self%rank
+
+         call self%axes(r)%locate(x_vec(r), c_vec(r), stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do
+
+      ! If on a cell boundary, adjust c_vec so that dx_vec points into
+      ! the cell
+
+      do r = 1, self%rank
+
+         call self%axes(r)%fetch(c_vec(r), x)
+
+         if (x_vec(r) == x) then
+            if (dx_vec(r) < 0._RD .OR. (dx_vec(r) == 0._RD .AND. c_vec(r) == self%shape(r))) then
+               c_vec(r) = c_vec(r) - 1
+            end if
+         end if
+
+         if (c_vec(r) < 1) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+               return
+            else
+               call self%axes(r)%get_label(label)
+               @:ABORT('out-of-bounds (lo) on '//label//' axis')
+            end if
+         elseif (c_vec(r) >= self%shape(r)) then
+            if (PRESENT(stat)) then
+               stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+               return
+            else
+               call self%axes(r)%get_label(label)
+               @:ABORT('out-of-bounds (hi) on '//label//' axis')
+            end if
+         end if
+
+      end do
+
+      ! Move from cell to cell within the grid, updating x_adj and
+      ! c_vec until a valid cell is found
+
+      x_adj = x_vec
+
+      do
+
+         c_lin = self%cell_linear_(c_vec)
+
+         ! Finish if the cell is valid
+
+         if (self%c_lin_mask(c_lin)) exit
+
+         ! Get the bounds of the current cell
+
+         do r = 1, self%rank
+            call self%axes(r)%fetch(c_vec(r), x_bdy(1,r))
+            call self%axes(r)%fetch(c_vec(r)+1, x_bdy(2,r))
+         end do
+
+         !  Find the intersections of the ray x = x_adj + t*dx_vec with
+         !  these bounds
+
+         where (dx_vec /= 0._RD)
+            t(1,:) = (x_bdy(1,:) - x_adj)/dx_vec
+            t(2,:) = (x_bdy(2,:) - x_adj)/dx_vec
+         elsewhere
+            t(1,:) = SIGN(HUGE(0._RD), x_bdy(1,:)-x_vec)
+            t(2,:) = SIGN(HUGE(0._RD), x_bdy(2,:)-x_vec)
+         end where
+
+         ! Choose the first intersection along the ray (t > 0)
+
+         i = MINLOC(t, t > 0._RD)
+
+         @:ASSERT(ALL(i /= 0), 'No intersection found')
+
+         ! Update x_adj and c_vec, being careful with rounding
+
+         x_adj = x_adj + t(i(1),i(2))*dx_vec
+
+         do r = 1, self%rank
+
+            if ((i(1) == 1 .AND. i(2) == r) .OR. x_adj(r) < x_bdy(1,r)) then
+
+               x_adj(r) = x_bdy(1,r)
+               c_vec(r) = c_vec(r) - 1
+
+            elseif ((i(1) == 2 .AND. i(2) == r) .OR. x_adj(r) > x_bdy(2,r)) then
+
+               x_adj(r) = x_bdy(2,r)
+               c_vec(r) = c_vec(r) + 1
+
+            end if
+
+         end do
+
+         ! Check if we've gone off the grid
+
+         do r = 1, self%rank
+
+            if (c_vec(r) < 1) then
+               if (PRESENT(stat)) then
+                  stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+                  return
+               else
+                  call self%axes(r)%get_label(label)
+                  @:ABORT('out-of-bounds (lo) on '//label//' axis')
+               endif
+            endif
+
+            if (c_vec(r) >= self%shape(r)) then
+               if (PRESENT(stat)) then
+                  stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+                  return
+               else
+                  call self%axes(r)%get_label(label)
+                  @:ABORT('out-of-bounds (hi) on '//label//' axis')
+               endif
+            endif
+
+         end do
+
+      end do
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure adjust_x_vec
+
+   !****
+
+   subroutine setup_interp_(vgrid, x_vec, c_vec, u_vec, stencil_mask, stat, order)
+
+      class(vgrid_t), intent(in)     :: vgrid
+      real(RD), intent(in)           :: x_vec(:)
+      integer, intent(out)           :: c_vec(:)
+      real(RD), intent(out)          :: u_vec(:)
+      logical, intent(out)           :: stencil_mask(:)
+      integer, intent(out), optional :: stat
+      integer, intent(in), optional  :: order
+
+      integer  :: c_lin
+      integer  :: r
+      logical  :: on_bdy(vgrid%rank)
+      integer  :: a
+      integer  :: c_vec_adj(vgrid%rank)
+      integer  :: c_lin_adj
+      integer  :: v_lin
+      integer  :: i
+      integer  :: j
+
+      @:CHECK_BOUNDS(SIZE(x_vec), vgrid%rank)
+      @:CHECK_BOUNDS(SIZE(c_vec), vgrid%rank)
+      @:CHECK_BOUNDS(SIZE(stencil_mask), vgrid%n_stn)
+      @:CHECK_BOUNDS(SIZE(u_vec), vgrid%rank)
+
+      ! Set up an interpolation. This consists of determining the following:
+      !
+      ! c_vec -- the vector index of the cell containing x_vec
+      ! u_vec -- the vector fractional position within the cell
+      ! stencil_mask -- the stencil mask indicating which vertices of the cell are valid
+
+      ! Locate the initial interpolation cell
+
+      do r = 1, vgrid%rank
+
+         call vgrid%axes(r)%locate_u(x_vec(r), u_vec(r), stat, order)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do
+
+      c_vec = FLOOR(u_vec)
+
+      where(c_vec == vgrid%shape)
+         c_vec = c_vec - 1
+      end where
+
+      ! See if the cell has sufficient data (i.e., all vertices
+      ! defined) to do an interpolation
+
+      c_lin = vgrid%cell_linear_(c_vec)
+
+      if (.NOT. vgrid%c_lin_mask(c_lin)) then
+
+         ! If not, and if the point is on the left boundary(s) of the
+         ! cell, try adjusting c_vec toward the origin
+
+         ! First, determine which left boundary(ies) the point is on
+
+         on_bdy = c_vec == u_vec
+
+         ! Iterate over adjacent cells
+
+         adjacent_loop : do a = 1, 2**vgrid%rank-1
+
+            ! Set up the vector index for the adjacent cell
+
+            do r = 1, vgrid%rank
+
+               if (BTEST(a, r-1)) then
+
+                  if (.NOT. on_bdy(r)) cycle adjacent_loop
+                  if (c_vec(r) == 1) cycle adjacent_loop
+
+                  c_vec_adj(r) = c_vec(r) - 1
+
+               else
+
+                  c_vec_adj(r) = c_vec(r)
+
+               end if
+
+            end do
+
+            ! Check whether the adjacent cell will do
+
+            c_lin_adj = vgrid%cell_linear_(c_vec_adj)
+
+            if (vgrid%c_lin_mask(c_lin_adj)) exit adjacent_loop
+
+         end do adjacent_loop
+
+         ! Check whether a suitable adjacent cell was found
+
+         if (a < 2**vgrid%rank) then
+
+            ! Update the cell index
+
+            c_vec = c_vec_adj
+
+         else
+
+            if (PRESENT(stat)) then
+               stat = STAT_UNAVAILABLE_DATA
+               return
+            else
+               @:ABORT('unavailable data')
+            endif
+
+         end if
+
+      endif
+
+      ! Set up the stencil mask
+
+      do i = 1, vgrid%n_stn
+
+         v_lin = vgrid%vert_linear_stencil_(i, c_vec)
+
+         stencil_mask(i) = v_lin >= 1 .AND. v_lin <= vgrid%n_v_lin
+
+         if (stencil_mask(i)) then
+            stencil_mask(i) = stencil_mask(i) .AND. vgrid%v_lin_mask(v_lin)
+         end if
+
+      end do
+
+      ! Update u_vec to reflect the fractional position within the cell
+
+      u_vec = u_vec - c_vec
+
+      @:ASSERT_DEBUG(ALL(u_vec >= 0._RD .AND. u_vec <= 1._RD), 'invalid u_vec')
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end subroutine setup_interp_
+
+end submodule vgrid_interp_sm

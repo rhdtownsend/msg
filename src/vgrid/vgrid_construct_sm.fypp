@@ -211,7 +211,7 @@ contains
 
       ! Set up the per-vertex cache
 
-      if (USE_VERT_CACHE) call setup_cache_(vgrid)
+      call setup_cache_(vgrid)
 
       ! Finish
 
