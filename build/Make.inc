@@ -134,6 +134,8 @@ else
    FPPFLAGS += -DLOG_LEVEL=\'INFO\'
 endif
 
+FPPFLAGS += -DGFORTRAN_PR121204=1 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=121204
+
 # Rules
 
 %.f90 : %.fypp | $(DEPEND_DIR)

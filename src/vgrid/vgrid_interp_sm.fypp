@@ -29,6 +29,19 @@ contains
 
    module procedure interp_0_
 
+      #:if defined('GFORTRAN_PR121204')
+
+      interface
+         subroutine data_proc(v_seq, data, stat)
+            use forum_m
+            integer, intent(in)            :: v_seq
+            real(RD), intent(out)          :: data
+            integer, intent(out), optional :: stat
+         end subroutine data_proc
+      end interface
+
+      #:endif
+
       integer  :: c_vec(self%rank)
       real(RD) :: u(self%rank)
       real(RD) :: cell_deltas(3,self%rank)
@@ -124,6 +137,19 @@ contains
    !****
 
    module procedure interp_1_
+
+      #:if defined('GFORTRAN_PR121204')
+
+      interface
+         subroutine data_proc(v_seq, data, stat)
+            use forum_m
+            integer, intent(in)            :: v_seq
+            real(RD), intent(out)          :: data(:)
+            integer, intent(out), optional :: stat
+         end subroutine data_proc
+      end interface
+
+      #:endif
 
       integer  :: c_vec(self%rank)
       real(RD) :: u(self%rank)
