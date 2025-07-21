@@ -51,20 +51,21 @@ contains
 
    subroutine test_stat_()
 
-      integer, parameter :: n = 8
-      integer, parameter :: n_lam = 501
+      integer, parameter :: N = 8
+      integer, parameter :: N_LAM = 501
 
       type(specgrid_t) :: sg
-      integer          :: stat(n)
-      integer          :: stat_chk(n)
-      real(RD)         :: lam(n_lam,n)
-      real(RD)         :: x_vec(2,n)
-      real(RD)         :: mu(n)
+      integer          :: stat(N)
+      integer          :: stat_chk(N)
+      character(32)    :: stat_str(N)
+      real(RD)         :: lam(N_LAM,N)
+      real(RD)         :: x_vec(2,N)
+      real(RD)         :: mu(N)
 
       print *, '  exceptions'
 
       call load_specgrid('sg-demo.h5', sg)
-      
+
       call stat_arrange_()
       call stat_act_()
       call stat_assert_()
@@ -82,8 +83,8 @@ contains
 
          ! Set up default (good) params
 
-         do j = 1, n
-            lam(:,j) = [((3000._RD*(n_lam-i) + 7000._RD*(i-1))/(n_lam-1), i=1,n_lam)]
+         do j = 1, N
+            lam(:,j) = [((3000._RD*(N_LAM-i) + 7000._RD*(i-1))/(N_LAM-1), i=1,N_LAM)]
             call set_xvec(sg, ['Teff  ', 'log(g)'], [10000._RD, 4.00_RD], x_vec(:,j))
             mu(j) = 0.5_RD
          end do
@@ -93,41 +94,49 @@ contains
          !
 
          stat_chk(1) = STAT_OK
+         stat_str(1) = 'STAT_OK'
 
          !
 
          call set_xvec(sg, ['Teff  ', 'log(g)'], [2000._RD, 4.00_RD], x_vec(:,2))
          stat_chk(2) = STAT_OUT_OF_BOUNDS_AXIS_LO
+         stat_str(2) = 'STAT_OUT_OF_BOUNDS_AXIS_LO'
 
          !
 
          call set_xvec(sg, ['Teff  ', 'log(g)'], [10000._RD, 6.00_RD], x_vec(:,3))
          stat_chk(3) = STAT_OUT_OF_BOUNDS_AXIS_HI
+         stat_str(3) = 'STAT_OUT_OF_BOUNDS_AXIS_HI'
 
          !
 
          lam(1,4) = 2000._RD
          stat_chk(4) = STAT_OUT_OF_BOUNDS_LAM_LO
+         stat_str(4) = 'STAT_OUT_OF_BOUNDS_LAM_LO'
 
          !
 
          lam(n_lam,5) = 10000._RD
          stat_chk(5) = STAT_OUT_OF_BOUNDS_LAM_HI
+         stat_str(5) = 'STAT_OUT_OF_BOUNDS_LAM_HI'
 
          !
 
          mu(6) = -0.1_RD
          stat_chk(6) = STAT_OUT_OF_BOUNDS_MU_LO
+         stat_str(6) = 'STAT_OUT_OF_BOUNDS_MU_LO'
 
          !
 
          mu(7) = 1.1_RD
          stat_chk(7) = STAT_OUT_OF_BOUNDS_MU_HI
+         stat_str(7) = 'STAT_OUT_OF_BOUNDS_MU_HI'
 
          !
 
          call set_xvec(sg, ['Teff  ', 'log(g)'], [40000._RD, 2.00_RD], x_vec(:,8))
          stat_chk(8) = STAT_UNAVAILABLE_DATA
+         stat_str(8) = 'STAT_UNAVAILABLE_DATA'
 
          ! Finish
 
@@ -142,7 +151,7 @@ contains
          integer  :: j
          real(RD) :: I(n_lam-1)
 
-         do j = 1, n
+         do j = 1, N
 
             call sg%interp_intensity(x_vec(:,j), mu(j), lam(:,j), I, stat(j))
 
@@ -160,14 +169,14 @@ contains
 
          integer :: j
 
-         do j = 1, n
+         do j = 1, N
             if (stat(j) /= stat_chk(j)) then
-               print *,'    FAIL:', stat(j), '/=', stat_chk(j)
+               print *,'    FAIL ', TRIM(stat_str(j)), ' ', stat(j), '/=', stat_chk(j)
             else
-               print *,'    PASS'
+               print *,'    PASS ', TRIM(stat_str(j))
             end if
          end do
-               
+
          ! Finish
 
          return
