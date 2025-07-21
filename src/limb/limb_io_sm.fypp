@@ -1,0 +1,140 @@
+! Submodule : limb_io_sm
+! Purpose   : Input/output routines for limb_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_m) limb_io_sm
+
+   ! Uses
+
+   use file_m
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure read
+
+      integer :: revision
+
+      ! Read the limb_t
+
+      call check_type(hdf5io, 'limb_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call hdf5io%read_attr('REVISION', revision)
+
+      select case(revision)
+      case(1)
+         call read_rev1_(self, hdf5io, stat)
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_GROUP_REVISION
+            return
+         else
+            @:ABORT('invalid group revision')
+         end if
+      end select
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine read_rev1_(self, hdf5io, stat)
+
+         class(limb_t), intent(out)     :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+
+         character(STR_LEN) :: law_str
+
+         call hdf5io%read_attr('law', law_str)
+
+         select type(self)
+         type is(limb_t)
+            self = limb_t(law_str)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
+
+   end procedure read
+
+   !****
+
+   module procedure write
+
+      ! Write the limb_t
+
+      call hdf5io%write_attr('TYPE', 'limb_t')
+      call hdf5io%write_attr('REVISION', 1)
+
+      call hdf5io%write_attr('law', id_to_str_(self%law_id))
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure write
+
+   !****
+
+   function id_to_str_(law_id) result(law_str)
+
+      integer, intent(in) :: law_id
+      character(STR_LEN)  :: law_str
+
+      ! Convert the law id into a string
+
+      select case (law_id)
+      case (CONST_LAW)
+         law_str = 'CONST'
+      case (LINEAR_LAW)
+         law_str = 'LINEAR'
+      case (SQRT_LAW)
+         law_str = 'SQRT'
+      case (QUAD_LAW)
+         law_str = 'QUAD'
+      case (CLARET_LAW)
+         law_str = 'CLARET'
+      case default
+         @:ABORT('invalid law_id')
+      end select
+
+      ! Finish
+
+      return
+
+   end function id_to_str_
+
+end submodule limb_io_sm

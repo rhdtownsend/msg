@@ -1,0 +1,129 @@
+! Submodule : limb_fit_sm
+! Purpose   : Fitting routines for limb_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_m) limb_fit_sm
+
+   ! Uses
+
+   use fit_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure fit_intensity_0_
+
+      real(RD), allocatable :: I_(:,:)
+      real(RD), allocatable :: c_(:,:)
+
+      ! Fit the limb-darkening law to the intensity data
+
+      allocate(I_(SIZE(I), 1))
+
+      I_(:,1) = I
+
+      call self%fit_intensity(I_, mu, c_)
+
+      c = c_(:,1)
+
+      ! Finish
+
+      return
+
+   end procedure fit_intensity_0_
+
+   !****
+
+   module procedure fit_intensity_1_
+
+      integer               :: n_mu
+      integer               :: n_k
+      integer               :: k
+      real(RD)              :: y(SIZE(I, 1),SIZE(I, 2))
+      real(RD), allocatable :: a(:,:)
+
+      @:CHECK_BOUNDS(SIZE(I, 1), SIZE(mu))
+
+      ! Fit the limb-darkening law to the intensity data. The fit is
+      ! constrained to pass through I(mu=1)
+
+      n_mu = SIZE(I, 1)
+      n_k = SIZE(I, 2)
+
+      if (self%n > 1) then
+
+         ! Set up the fit data
+
+         y_loop : do k = 1, n_k
+            y(:,k) = 1._RD - I(:,k)/I(n_mu,k)
+         end do y_loop
+
+         ! Fit the a-coefficients
+
+         allocate(a(self%n-1,n_k))
+
+         call gls_fit(mu, y, f_, a)
+
+         ! Tranform to c-coefficients
+
+         allocate(c(self%n,n_k))
+
+         c_loop : do k = 1, n_k
+            c(1,k) = I(n_mu,k)
+            c(2:,k) = -I(n_mu,k)*a(:,k)
+         end do c_loop
+
+      else
+
+         ! When self%n == 1, no fitting is (or can be) done; just copy
+         ! over the normal intensity
+
+         allocate(c(1,n_k))
+
+         c(1,:) = I(n_mu,:)
+
+      endif
+
+      ! Finish
+
+      return
+
+   contains
+
+      function f_ (mu, n)
+
+         real(RD), intent(in) :: mu
+         integer, intent(in)  :: n
+         real(RD)             :: f_(n)
+
+         real(RD) :: b(n+1)
+
+         call self%eval_intensity_basis(mu, b)
+
+         f_ = b(2:)
+
+      end function f_
+
+   end procedure fit_intensity_1_
+
+end submodule limb_fit_sm

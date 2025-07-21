@@ -1,0 +1,87 @@
+! Submodule : limb_construct_sm
+! Purpose   : Constructor routines for limb_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_m) limb_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure limb_t_
+
+      ! Construct limb from the supplied data
+
+      limb%law_id = str_to_id_(law_str)
+
+      select case (limb%law_id)
+      case (CONST_LAW)
+         limb%n = 1
+      case (LINEAR_LAW)
+         limb%n = 2
+      case (SQRT_LAW)
+         limb%n = 3
+      case (QUAD_LAW)
+         limb%n = 3
+      case (CLARET_LAW)
+         limb%n = 5
+      case default
+         @:ABORT('invalid law_id')
+      end select
+
+      ! Finish
+
+      return
+
+   end procedure limb_t_
+
+   !****
+
+   function str_to_id_(law_str) result(law_id)
+
+      character(*), intent(in) :: law_str
+      integer                  :: law_id
+
+      ! Convert the string into a law id
+
+      select case (law_str)
+      case ('CONST')
+         law_id = CONST_LAW
+      case ('LINEAR')
+         law_id = LINEAR_LAW
+      case ('SQRT')
+         law_id = SQRT_LAW
+      case ('QUAD')
+         law_id = QUAD_LAW
+      case ('CLARET')
+         law_id = CLARET_LAW
+      case default
+         @:ABORT('invalid law_str')
+      end select
+
+      ! Finish
+
+      return
+
+   end function str_to_id_
+
+end submodule limb_construct_sm

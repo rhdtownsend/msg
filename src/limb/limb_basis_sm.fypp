@@ -1,0 +1,315 @@
+! Submodule : limb_basis_sm
+! Purpose   : Basis-function routines for limb_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_m) limb_basis_sm
+
+   ! Uses
+
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure eval_intensity_basis
+
+      @:CHECK_BOUNDS(SIZE(b), self%n)
+
+      ! Evaluate the intensity basis functions
+
+      if (mu < 0._RD) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_MU_LO
+            return
+         else
+            @:ABORT('out-of-bounds (lo) mu')
+         endif
+      endif
+
+      if (mu > 1._RD) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_MU_HI
+            return
+         else
+            @:ABORT('out-of-bounds (hi) mu')
+         endif
+      endif
+
+      select case (self%law_id)
+      case (CONST_LAW)
+         b = [      &
+              1._RD &
+              ]
+      case (LINEAR_LAW)
+         b = [           &
+              1._RD,     &
+              mu - 1._RD &
+              ]
+      case (SQRT_LAW)
+         b = [                  &
+              1._RD,            &
+              sqrt(mu) - 1._RD, &
+              mu - 1._RD        &
+              ]
+      case (QUAD_LAW)
+         b = [              &
+              1._RD,        &
+              mu - 1._RD,   &
+              mu**2 - 1._RD &
+              ]
+      case (CLARET_LAW)
+         b = [                     &
+              1._RD,               &
+              sqrt(mu) - 1._RD,    &
+              mu - 1._RD,          &
+              sqrt(mu)*mu - 1._RD, &
+              mu**2 - 1._RD        &
+              ]
+      case default
+         @:ABORT('invalid law')
+      end select
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   end procedure eval_intensity_basis
+
+   !****
+
+   module procedure eval_E_moment_basis
+
+      @:CHECK_BOUNDS(SIZE(b), self%n)
+
+      ! Evaluate the E (Eddington) moment basis functions
+
+      if (k < 0) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         endif
+      endif
+
+      select case (self%law_id)
+      case (CONST_LAW)
+         b = [                &
+              E_ks_(k, 0._RD) &
+              ]
+      case (LINEAR_LAW)
+         b = [                                  &
+              E_ks_(k, 0._RD),                  &
+              E_ks_(k, 1._RD) - E_ks_(k, 0._RD) &
+              ]
+      case (SQRT_LAW)
+         b = [                                    &
+              E_ks_(k, 0._RD),                    &
+              E_ks_(k, 0.5_RD) - E_ks_(k, 0._RD), &
+              E_ks_(k, 1._RD) - E_ks_(k, 0._RD)   &
+              ]
+      case (QUAD_LAW)
+         b = [                                   &
+              E_ks_(k, 0._RD),                   &
+              E_ks_(k, 1._RD) - E_ks_(k, 0._RD), &
+              E_ks_(k, 2._RD) - E_ks_(k, 0._RD)  &
+              ]
+      case (CLARET_LAW)
+         b = [                                    &
+              E_ks_(k, 0._RD),                    &
+              E_ks_(k, 0.5_RD) - E_ks_(k, 0._RD), &
+              E_ks_(k, 1._RD) - E_ks_(k, 0._RD),  &
+              E_ks_(k, 1.5_RD) - E_ks_(k, 0._RD), &
+              E_ks_(k, 2._RD) - E_ks_(k, 0._RD)   &
+              ]
+      case default
+         @:ABORT('invalid law')
+      end select
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   contains
+
+      function E_ks_(k, s) result(E)
+
+         integer, intent(in)  :: k
+         real(RD), intent(in) :: s
+         real(RD)             :: E
+
+         ! Evaluate the integral 1/2 mu^(s+k) from 0 to 1
+
+         E = 0.5_RD/(s + k + 1)
+
+         ! Finish
+
+         return
+
+      end function E_ks_
+
+   end procedure eval_E_moment_basis
+
+   !****
+
+   module procedure eval_D_moment_basis
+
+      @:CHECK_BOUNDS(SIZE(b), self%n)
+
+      ! Evaluate the D (differential flux function) moment basis
+      ! functions
+
+      if (l < 0) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         endif
+      endif
+
+      select case (self%law_id)
+      case (CONST_LAW)
+         b = [                &
+              D_ls_(l, 1._RD) &
+              ]
+      case (LINEAR_LAW)
+         b = [                                  &
+              D_ls_(l, 1._RD),                  &
+              D_ls_(l, 2._RD) - D_ls_(l, 1._RD) &
+              ]
+      case (SQRT_LAW)
+         b = [                                    &
+              D_ls_(l, 1._RD),                    &
+              D_ls_(l, 1.5_RD) - D_ls_(l, 1._RD), &
+              D_ls_(l, 2._RD) - D_ls_(l, 1._RD)   &
+              ]
+      case (QUAD_LAW)
+         b = [                                   &
+              D_ls_(l, 1._RD),                   &
+              D_ls_(l, 2._RD) - D_ls_(l, 1._RD), &
+              D_ls_(l, 3._RD) - D_ls_(l, 1._RD)  &
+              ]
+      case (CLARET_LAW)
+         b = [                                    &
+              D_ls_(l, 1._RD),                    &
+              D_ls_(l, 1.5_RD) - D_ls_(l, 1._RD), &
+              D_ls_(l, 2._RD) - D_ls_(l, 1._RD),  &
+              D_ls_(l, 2.5_RD) - D_ls_(l, 1._RD), &
+              D_ls_(l, 3._RD) - D_ls_(l, 1._RD)   &
+              ]
+      case default
+         @:ABORT('invalid law')
+      end select
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   contains
+
+      function D_ls_(l, s) result(D)
+
+         integer, intent(in)  :: l
+         real(RD), intent(in) :: s
+         real(RD)             :: D
+
+         integer :: l_0
+         integer :: m
+
+         ! Evaluate the integral mu^s Pl(mu) from 0 to 1, using the
+         ! expressions (42-44) from Townsend (2003)
+
+         l_0 = MOD(l, 2)
+
+         D = 1._RD/(1._RD + s + l_0)
+
+         do m = l_0, l-2, 2
+            D = (s - m)/(s + m + 3._RD)*D
+         end do
+
+         ! Finish
+
+         return
+
+      end function D_ls_
+
+   end procedure eval_D_moment_basis
+
+   !****
+
+   module procedure eval_flux_basis
+
+      @:CHECK_BOUNDS(SIZE(b), self%n)
+
+      ! Evaluate the flux basis functions
+
+      select case (self%law_id)
+      case (CONST_LAW)
+         b = TWOPI*[      &
+              1._RD/2._RD &
+              ]
+      case (LINEAR_LAW)
+         b = TWOPI*[       &
+              1._RD/2._RD, &
+              -1._RD/6._RD &
+              ]
+      case (SQRT_LAW)
+         b = TWOPI*[         &
+              1._RD/2._RD,   &
+              -1._RD/10._RD, &
+              -1._RD/6._RD   &
+              ]
+      case (QUAD_LAW)
+         b = TWOPI*[        &
+              1._RD/2._RD,  &
+              -1._RD/6._RD, &
+              -1._RD/4._RD  &
+              ]
+      case (CLARET_LAW)
+         b = TWOPI*[         &
+              1._RD/2._RD,   &
+              -1._RD/10._RD, &
+              -1._RD/6._RD,  &
+              -3._RD/14._RD, &
+              -1._RD/4._RD   &
+              ]
+      case default
+         @:ABORT('invalid law')
+      end select
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      ! Finish
+
+      return
+
+   end procedure eval_flux_basis
+
+end submodule limb_basis_sm

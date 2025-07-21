@@ -52,7 +52,7 @@ photgrid_SRCS = photgrid_m.fypp photgrid_construct_sm.fypp photgrid_params_sm.fy
                 photgrid_interp_sm.fypp photgrid_io_sm.fypp
 
 photint_SRCS = photint_m.fypp photint_sm.fypp \
-               limb_photint_m.fypp limb_photint_construct_sm.fypp limb_photint_inquire_sm.fypp \
+               limb_photint_m.fypp limb_photint_construct_sm.fypp limb_photint_params_sm.fypp \
                limb_photint_interp_sm.fypp limb_photint_io_sm.fypp
 
 photsource_SRCS = photsource_m.fypp \
@@ -63,9 +63,13 @@ photsource_SRCS = photsource_m.fypp \
                   spec_photsource_m.fypp spec_photsource_construct_sm.fypp \
                   spec_photsource_params_sm.fypp spec_photsource_access_sm.fypp
 
+limb_SRCS = limb_m.fypp limb_construct_sm.fypp limb_params_sm.fypp limb_basis_sm.fypp \
+            limb_fit_sm.fypp limb_io_sm.fypp
+
 libmsg_SRCS = msg_m.fypp \
               $(axis_SRCS) $(vgrid_SRCS) $(ninterp_SRCS) \
               $(photcache_SRCS) $(photgrid_SRCS) $(photint_SRCS) $(photsource_SRCS) \
+              $(limb_SRCS) \
               range_m.fypp range_sm.fypp comp_range_m.fypp		\
               lin_range_m.fypp log_range_m.fypp tab_range_m.fypp	\
               specgrid_m.fypp speccache_m.fypp specsource_m.fypp	\
@@ -74,7 +78,7 @@ libmsg_SRCS = msg_m.fypp \
               photsource_m.fypp hdf5_photsource_m.fypp			\
               spec_photsource_m.fypp mem_photsource_m.fypp		\
               passband_m.fypp cubint_m.fypp stat_m.fypp file_m.fypp	\
-              fit_m.fypp limb_m.fypp math_m.fypp
+              fit_m.fypp math_m.fypp
 
 libfmsg_SRCS = fmsg_m.fypp
 libfmsg_USES = $(libmsg_SRCS)

@@ -1,0 +1,185 @@
+! Module  : limb_m
+! Purpose : define limb_t type, providing basis functions and fitting
+!           for limb-darkening laws
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module limb_m
+
+   ! Uses
+
+   use forum_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Parameter definitions
+
+   integer, parameter :: CONST_LAW = 1
+   integer, parameter :: LINEAR_LAW = 2
+   integer, parameter :: SQRT_LAW = 3
+   integer, parameter :: QUAD_LAW = 4
+   integer, parameter :: CLARET_LAW = 5
+
+   integer, parameter :: STR_LEN = 16
+
+   ! Derived-type definitions
+
+   type limb_t
+      private
+      integer :: law_id = -1
+      integer :: n
+   contains
+      private
+      procedure, public :: get_n
+      procedure, public :: get_ssize
+      procedure, public :: eval_intensity_basis
+      procedure, public :: eval_flux_basis
+      procedure, public :: eval_E_moment_basis
+      procedure, public :: eval_D_moment_basis
+      procedure         :: fit_intensity_0_
+      procedure         :: fit_intensity_1_
+      generic, public   :: fit_intensity => fit_intensity_0_, fit_intensity_1_
+      procedure, public :: read
+      procedure, public :: write
+   end type limb_t
+
+   ! Interfaces
+
+   interface limb_t
+      module procedure limb_t_
+   end interface limb_t
+
+   ! In limb_construct_sm
+
+   interface
+
+      module function limb_t_(law_str) result (limb)
+         implicit none (type, external)
+         character(*), intent(in) :: law_str
+         type(limb_t)             :: limb
+      end function limb_t_
+
+   end interface
+
+   ! In limb_params_sm
+
+   interface
+
+      module subroutine get_n(self, n)
+         implicit none (type, external)
+         class(limb_t), intent(in) :: self
+         integer, intent(out)      :: n
+      end subroutine get_n
+
+      module subroutine get_ssize(self, ssize)
+         implicit none (type, external)
+         class(limb_t), intent(in) :: self
+         integer(ID), intent(out)  :: ssize
+      end subroutine get_ssize
+
+   end interface
+
+   ! In limb_basis_sm
+
+   interface
+
+      module subroutine eval_intensity_basis(self, mu, b, stat)
+         implicit none (type, external)
+         class(limb_t), intent(in)      :: self
+         real(RD), intent(in)           :: mu
+         real(RD)                       :: b(:)
+         integer, intent(out), optional :: stat
+      end subroutine eval_intensity_basis
+
+      module subroutine eval_E_moment_basis(self, k, b, stat)
+         implicit none (type, external)
+         class(limb_t), intent(in)      :: self
+         integer, intent(in)            :: k
+         real(RD)                       :: b(:)
+         integer, intent(out), optional :: stat
+      end subroutine eval_E_moment_basis
+
+      module subroutine eval_D_moment_basis(self, l, b, stat)
+         implicit none (type, external)
+         class(limb_t), intent(in)      :: self
+         integer, intent(in)            :: l
+         real(RD)                       :: b(:)
+         integer, intent(out), optional :: stat
+      end subroutine eval_D_moment_basis
+
+      module subroutine eval_flux_basis(self, b, stat)
+         implicit none (type, external)
+         class(limb_t), intent(in)      :: self
+         real(RD)                       :: b(:)
+         integer, intent(out), optional :: stat
+      end subroutine eval_flux_basis
+
+   end interface
+
+   ! In limb_fit_sm
+
+   interface
+
+      module subroutine fit_intensity_0_ (self, I, mu, c)
+         implicit none (type, external)
+         class(limb_t), intent(in)          :: self
+         real(RD), intent(in)               :: I(:)
+         real(RD), intent(in)               :: mu(:)
+         real(RD), allocatable, intent(out) :: c(:)
+      end subroutine fit_intensity_0_
+
+      module subroutine fit_intensity_1_ (self, I, mu, c)
+         implicit none (type, external)
+         class(limb_t), intent(in)          :: self
+         real(RD), intent(in)               :: I(:,:)
+         real(RD), intent(in)               :: mu(:)
+         real(RD), allocatable, intent(out) :: c(:,:)
+      end subroutine fit_intensity_1_
+
+   end interface
+
+   ! In limb_io_sm
+
+   interface
+
+      module subroutine read(self, hdf5io, stat)
+         implicit none (type, external)
+         class(limb_t), intent(out)     :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine read
+
+      module subroutine write(self, hdf5io, stat)
+         implicit none (type, external)
+         class(limb_t), intent(in)      :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine write
+
+   end interface
+
+   ! Access specifiers
+
+   private
+
+   public :: limb_t
+
+end module limb_m
