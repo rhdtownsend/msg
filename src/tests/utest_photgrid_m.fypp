@@ -51,14 +51,14 @@ contains
 
    subroutine test_stat_()
 
-      integer, parameter :: n = 6
+      integer, parameter :: N = 6
 
       type(photgrid_t) :: pg
-      integer          :: stat(n)
-      integer          :: stat_chk(n)
-      character(32)    :: stat_str(n)
-      real(RD)         :: x_vec(2,n)
-      real(RD)         :: mu(n)
+      integer          :: stat(N)
+      integer          :: stat_chk(N)
+      character(32)    :: stat_str(N)
+      real(RD)         :: x_vec(2,N)
+      real(RD)         :: mu(N)
 
       print *, '  exceptions'
 
@@ -80,7 +80,7 @@ contains
 
          ! Set up default (good) params
 
-         do j = 1, n
+         do j = 1, N
             call set_xvec(pg, ['Teff  ', 'log(g)'], [10000._RD, 4.00_RD], x_vec(:,j))
             mu(j) = 0.5_RD
          end do
@@ -135,7 +135,7 @@ contains
          integer  :: j
          real(RD) :: I
 
-         do j = 1, n
+         do j = 1, N
 
             call pg%interp_intensity(x_vec(:,j), mu(j), I, stat(j))
 
