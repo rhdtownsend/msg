@@ -1,0 +1,159 @@
+! Module  : comp_range_m
+! Purpose : define comp_range_t type, representing a composite of other
+!           ranges
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module comp_range_m
+
+   ! Uses
+
+   use forum_m
+   
+   use range_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Derived-type definitions
+
+   type, extends(range_t) :: comp_range_t
+      private
+      type(range_element_t), allocatable :: range_elements(:)
+      integer, allocatable               :: i_bdy(:)
+      integer                            :: n_ranges
+   contains
+      private
+      procedure, public :: get_n
+      procedure, public :: get_x_min
+      procedure, public :: get_x_max
+      procedure, public :: get_ssize
+      procedure, public :: unpack
+      procedure, public :: subset
+      procedure, public :: read
+      procedure, public :: write
+   end type comp_range_t
+
+   type :: range_element_t
+      class(range_t), allocatable :: range
+   end type range_element_t
+
+   ! Interfaces
+
+   interface comp_range_t
+      module procedure comp_range_t_
+   end interface comp_range_t
+
+   ! In comp_range_construct_sm
+
+   interface
+
+      module function comp_range_t_(ranges) result(range)
+         implicit none (type, external)
+         class(range_t), intent(in) :: ranges(:)
+         type(comp_range_t)         :: range
+      end function comp_range_t_
+
+      module function comp_range_t_elements_(range_elements) result(range)
+         implicit none (type, external)
+         type(range_element_t), intent(in) :: range_elements(:)
+         type(comp_range_t)                :: range
+      end function comp_range_t_elements_
+
+   end interface
+
+   ! In comp_range_params_sm
+
+   interface
+
+      module subroutine get_n(self, n)
+         implicit none (type, external)
+         class(comp_range_t), intent(in) :: self
+         integer, intent(out)            :: n
+      end subroutine get_n
+
+      module subroutine get_x_min(self, x_min)
+         implicit none (type, external)
+         class(comp_range_t), intent(in) :: self
+         real(RD), intent(out)           :: x_min
+      end subroutine get_x_min
+
+      module subroutine get_x_max(self, x_max)
+         implicit none (type, external)
+         class(comp_range_t), intent(in) :: self
+         real(RD), intent(out)           :: x_max
+      end subroutine get_x_max
+
+      module subroutine get_ssize(self, ssize)
+         implicit none (type, external)
+         class(comp_range_t), intent(in) :: self
+         integer(ID), intent(out)        :: ssize
+      end subroutine get_ssize
+
+   end interface
+
+   ! In comp_range_operate_sm
+
+   interface
+
+      module subroutine unpack(self, x)
+         implicit none (type, external)
+         class(comp_range_t), intent(in) :: self
+         real(RD), intent(out)           :: x(:)
+      end subroutine unpack
+
+      module subroutine subset(self, i_a, i_b, range, stat)
+         implicit none (type, external)
+         class(comp_range_t), intent(in)          :: self
+         integer, intent(in)                      :: i_a
+         integer, intent(in)                      :: i_b
+         class(range_t), allocatable, intent(out) :: range
+         integer, intent(out), optional           :: stat
+      end subroutine subset
+
+   end interface
+
+   ! In comp_range_io_sm
+
+   interface
+
+      module subroutine read(self, hdf5io, stat)
+         implicit none (type, external)
+         class(comp_range_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)    :: hdf5io
+         integer, intent(out), optional   :: stat
+      end subroutine read
+
+      module subroutine write(self, hdf5io, stat)
+         implicit none (type, external)
+         class(comp_range_t), intent(in) :: self
+         type(hdf5io_t), intent(inout)   :: hdf5io
+         integer, intent(out), optional  :: stat
+      end subroutine write
+
+   end interface
+
+   ! Access specifiers
+
+   private
+
+   public :: comp_range_t
+
+end module comp_range_m

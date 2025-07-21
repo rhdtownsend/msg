@@ -1,0 +1,156 @@
+! Submodule : comp_range_io_sm
+! Purpose   : Input/output routines for comp_range_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (comp_range_m) comp_range_io_sm
+
+   ! Uses
+
+   use file_m
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure read
+
+      integer :: revision
+
+      ! Read the range
+
+      call check_type(hdf5io, 'comp_range_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call hdf5io%read_attr('REVISION', revision)
+
+      select case(revision)
+      case(1)
+         call read_rev1_(self, hdf5io, stat)
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_GROUP_REVISION
+            return
+         else
+            @:ABORT('invalid group revision')
+         end if
+      end select
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine read_rev1_(self, hdf5io, stat)
+
+         class(comp_range_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)    :: hdf5io
+         integer, intent(out), optional   :: stat
+
+         integer                            :: n_ranges
+         type(range_element_t), allocatable :: range_elements(:)
+         type(hdf5io_t)                     :: hdf5io_range
+         integer                            :: j
+         character(TYPE_LEN)                :: type
+
+         call hdf5io%read_attr('n_ranges', n_ranges)
+
+         allocate(range_elements(n_ranges))
+
+         ranges_loop : do j = 1, n_ranges
+
+            hdf5io_range = hdf5io_t(hdf5io, range_group_name_(j))
+
+            call hdf5io_range%read_attr('TYPE', type)
+            allocate(range_elements(j)%range, MOLD=range_t(type))
+
+            call range_elements(j)%range%read(hdf5io_range, stat)
+
+            call hdf5io_range%final()
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+         end do ranges_loop
+
+         select type(self)
+         type is (comp_range_t)
+            self = comp_range_t_elements_(range_elements)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
+
+   end procedure read
+
+   !****
+
+   module procedure write
+
+      integer        :: j
+      type(hdf5io_t) :: hdf5io_range
+
+      ! Write the range
+
+      call hdf5io%write_attr('TYPE', 'comp_range_t')
+      call hdf5io%write_attr('REVISION', 1)
+
+      call hdf5io%write_attr('n_ranges', self%n_ranges)
+
+      ranges_loop : do j = 1, self%n_ranges
+
+         hdf5io_range = hdf5io_t(hdf5io, range_group_name_(j))
+         call self%range_elements(j)%range%write(hdf5io_range, stat)
+         call hdf5io_range%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+      end do ranges_loop
+
+      ! Finish
+
+      return
+
+   end procedure write
+
+   !****
+
+   function range_group_name_(i) result(name)
+
+      integer, intent(in) :: i
+      character(256)      :: name
+
+      write(name, 100) i
+100   format('ranges[',I0,']')
+
+   end function range_group_name_
+
+end submodule comp_range_io_sm

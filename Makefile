@@ -53,11 +53,12 @@ INC_DIR ?= $(CURDIR)/include
 
 SRC_DIR = $(CURDIR)/src
 SRC_DIRS = $(addprefix $(SRC_DIR)/, axis common cython include interp lib limb math \
+           range range/comp range/lin range/log range/tab \
            photcache photgrid \
            photint photint/limb \
            photsource photsource/hdf5 photsource/mem photsource/spec \
            passband \
-           range spec tests tools vgrid)
+           spec tests tools vgrid)
 
 ifeq ($(FORUM),yes)
    FORUM_LIB_DIR = $(LIB_DIR)

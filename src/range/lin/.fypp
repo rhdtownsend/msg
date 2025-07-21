@@ -1,0 +1,133 @@
+! Submodule : params_operate_sm
+! Purpose   : Operation routines for range_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (range_m) range_operate_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure unpack
+
+      integer :: j
+
+      @:CHECK_BOUNDS(SIZE(x), self%i_bdy(self%n_ranges+1)-1)
+
+      ! Unpack the range into the array
+
+      ranges_loop: do j = 1, self%n_ranges
+
+         associate (i_a => self%i_bdy(j), &
+                    i_b => self%i_bdy(j+1)-1)
+           call self%range_elements(j)%range%unpack(x(i_a:i_b))
+         end associate
+      end do ranges_loop
+
+      ! Finish
+
+      return
+
+   end procedure unpack
+
+   !****
+
+   module procedure subset
+
+      integer                            :: j_a
+      integer                            :: j_b
+      integer                            :: n_ranges
+      type(range_element_t), allocatable :: range_elements(:)
+      integer                             :: j
+      integer                             :: k_a
+      integer                             :: k_b
+
+      ! Subset the range
+
+      if (i_a < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_RANGE_LO
+            return
+         else
+            @:ABORT('out of bounds (lo) range')
+         end if
+      end if
+
+      if (i_b > self%i_bdy(self%n_ranges+1)-1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_RANGE_HI
+            return
+         else
+            @:ABORT('out of bounds (hi) range')
+         end if
+      end if
+
+      if (i_b < i_a) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      ! First determine where in ranges i_a and i_b are located
+
+      call locate(self%i_bdy, i_a, j_a)
+      call locate(self%i_bdy, i_b, j_b)
+
+      @:ASSERT(j_a >= 1,'out-of-bounds')
+      @:ASSERT(j_b <= self%n_ranges,'out-of-bounds')
+
+      ! Create the subset
+
+      n_ranges = j_b - j_a + 1
+
+      allocate(range_elements(n_ranges))
+
+      ranges_loop : do j = j_a, j_b
+
+         if (j == j_a) then
+            k_a = i_a - self%i_bdy(j) + 1
+         else
+            k_a = 1
+         end if
+
+         if (j == j_b) then
+            k_b = i_b - self%i_bdy(j) + 1
+         else
+            k_b = self%i_bdy(j+1) - self%i_bdy(j)
+         end if
+
+         call self%range_elements(j)%range%subset(k_a, k_b, range_elements(j-j_a+1)%range)
+
+      end do ranges_loop
+
+      range = range_t_elements_(range_elements)
+
+      ! Finish
+
+      return
+
+   end procedure subset
+
+end submodule range_operate_sm

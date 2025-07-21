@@ -1,0 +1,100 @@
+! Submodule : comp_range_construct_sm
+! Purpose   : Constructor routines for comp_range_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (comp_range_m) comp_range_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure comp_range_t_
+
+      type(range_element_t) :: range_elements(SIZE(ranges))
+      integer               :: j
+
+      ! Construct range from the ranges
+
+      do j = 1, SIZE(range_elements)
+         ! Straight assignment here seems to trigger a segfault with gfortran
+         allocate(range_elements(j)%range, SOURCE=ranges(j))
+      end do
+
+      range = comp_range_t_elements_(range_elements)
+
+      ! Finish
+
+      return
+
+   end procedure comp_range_t_
+
+   !****
+
+   module procedure comp_range_t_elements_
+
+      integer  :: n_ranges
+      integer  :: n
+      real(RD) :: x_min
+      real(RD) :: x_max
+      real(RD) :: x_max_prev
+      integer  :: j
+
+      ! Construct range from the range elements
+
+      n_ranges = SIZE(range_elements)
+
+      @:ASSERT(n_ranges >= 1,'insufficient data')
+
+      range%range_elements = range_elements
+
+      allocate(range%i_bdy(n_ranges+1))
+
+      range%i_bdy(1) = 1
+
+      call range_elements(1)%range%get_n(n)
+      call range_elements(1)%range%get_x_max(x_max)
+
+      do j = 2, n_ranges
+
+         range%i_bdy(j) = range%i_bdy(j-1) + n
+
+         x_max_prev = x_max
+
+         call range_elements(j)%range%get_n(n)
+         call range_elements(j)%range%get_x_min(x_min)
+         call range_elements(j)%range%get_x_max(x_max)
+
+         @:ASSERT(x_min > x_max_prev,'overlapping ranges')
+
+      end do
+
+      range%i_bdy(n_ranges+1) = range%i_bdy(n_ranges) + n
+
+      range%n_ranges = n_ranges
+
+      ! Finish
+
+      return
+
+   end procedure comp_range_t_elements_
+
+end submodule comp_range_construct_sm

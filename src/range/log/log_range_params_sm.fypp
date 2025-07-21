@@ -1,0 +1,84 @@
+! Submodule : log_range_params_sm
+! Purpose   : Parameter get/set routines for log_range_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (log_range_m) log_range_params_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure get_n
+
+      ! Get the size
+
+      n = self%n
+
+      ! Finish
+
+      return
+
+   end procedure get_n
+
+   !****
+
+   module procedure get_x_min
+
+      ! Get the x-minimum
+
+      x_min = EXP(self%logx_0)
+
+      ! Finish
+
+      return
+
+   end procedure get_x_min
+
+   !****
+
+   module procedure get_x_max
+
+      ! Get the x-maximum
+
+      x_max = EXP(self%logx_0 + self%dlogx*(self%n-1))
+
+      ! Finish
+
+      return
+
+   end procedure get_x_max
+
+   !****
+
+   module procedure get_ssize
+
+      ! Get the storage size
+
+      ssize = STORAGE_SIZE(self)/8
+
+      ! Finish
+
+      return
+
+   end procedure get_ssize
+
+end submodule log_range_params_sm

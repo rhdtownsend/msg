@@ -1,0 +1,97 @@
+! Submodule : comp_params_io_sm
+! Purpose   : Parameter get/set routines for comp_range_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (comp_range_m) comp_range_params_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure get_n
+
+      ! Get the size
+
+      n = self%i_bdy(self%n_ranges+1)-1
+
+      ! Finish
+
+      return
+
+   end procedure get_n
+
+   !****
+
+   module procedure get_x_min
+
+      ! Get the x-minimum
+
+      call self%range_elements(1)%range%get_x_min(x_min)
+
+      ! Finish
+
+      return
+
+   end procedure get_x_min
+
+   !****
+
+   module procedure get_x_max
+
+      ! Get the x-maximum
+
+      call self%range_elements(self%n_ranges)%range%get_x_max(x_max)
+
+      ! Finish
+
+      return
+
+   end procedure get_x_max
+
+   !****
+
+   module procedure get_ssize
+
+      integer     :: j
+      integer(ID) :: ssize_range
+
+      ! Get the storage size
+
+      ssize = STORAGE_SIZE(self)/8 +                                          &
+              STORAGE_SIZE(self%range_elements)/8*SIZE(self%range_elements) + &
+              STORAGE_SIZE(self%i_bdy)/8*SIZE(self%i_bdy)
+
+      ranges_loop: do j = 1, self%n_ranges
+
+         call self%range_elements(j)%range%get_ssize(ssize_range)
+
+         ssize = ssize + ssize_range
+
+      end do ranges_loop
+
+      ! Finish
+
+      return
+
+   end procedure get_ssize
+
+end submodule comp_range_params_sm

@@ -1,0 +1,91 @@
+! Submodule : tab_range_operate_sm
+! Purpose   : Operation routines for tab_range_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (tab_range_m) tab_range_operate_sm
+
+   ! Uses
+
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   !****
+
+   module procedure unpack
+
+      @:CHECK_BOUNDS(SIZE(x), self%n)
+
+      ! Unpack the range into the array
+
+      x = self%x
+
+      ! Finish
+
+      return
+
+   end procedure unpack
+
+   !****
+
+   module procedure subset
+
+      ! Subset the range
+
+      if (i_a < 1) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_RANGE_LO
+            return
+         else
+            @:ABORT('out of bounds (lo) range')
+         end if
+      end if
+
+      if (i_b > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_OUT_OF_BOUNDS_RANGE_HI
+            return
+         else
+            @:ABORT('out of bounds (hi) range')
+         end if
+      end if
+
+      if (i_b < i_a) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      range = tab_range_t(self%x(i_a:i_b))
+
+      ! Finish
+
+      return
+
+   end procedure subset
+
+end submodule tab_range_operate_sm
