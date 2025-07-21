@@ -1,0 +1,50 @@
+! Submodule : hdf5_specsource_construct_sm
+! Purpose   : Constructor routines for hdf5_specsource_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (hdf5_specsource_m) hdf5_specsource_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure hdf5_specsource_t_
+
+      @:CHECK_BOUNDS(SIZE(group_names), SIZE(file_names))
+
+      ! Construct specsource with a list of file and group names
+
+      specsource%file_names = file_names
+      specsource%group_names = group_names
+
+      specsource%lam_min = lam_min
+      specsource%lam_max = lam_max
+
+      specsource%n = SIZE(file_names)
+
+      ! Finish
+
+      return
+
+   end procedure hdf5_specsource_t_
+
+end submodule hdf5_specsource_construct_sm

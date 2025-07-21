@@ -1,0 +1,72 @@
+! Submodule : hdf5_specsource_access_sm
+! Purpose   : Access routines for hdf5_specsource_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (hdf5_specsource_m) hdf5_specsource_access_sm
+
+   ! Uses
+
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure fetch
+
+      type(hdf5io_t)      :: hdf5io
+      type(hdf5io_t)      :: hdf5io_specint
+      character(TYPE_LEN) :: type
+
+      ! Fetch the specint from the file
+
+      if (i < 0 .OR. i > self%n) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
+            return
+         else
+            @:ABORT('invalid argument')
+         end if
+      end if
+
+      call open_file(self%file_names(i), hdf5io, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      hdf5io_specint = hdf5io_t(hdf5io, self%group_names(i))
+
+      call hdf5io_specint%read_attr('TYPE', type)
+      allocate(specint, MOLD=specint_t(type))
+
+      call specint%read(hdf5io_specint, stat)
+
+      call hdf5io_specint%final()
+      call hdf5io%final()
+
+      ! Finish
+
+      return
+
+   end procedure fetch
+
+end submodule hdf5_specsource_access_sm

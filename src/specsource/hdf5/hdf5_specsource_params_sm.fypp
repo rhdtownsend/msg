@@ -1,0 +1,64 @@
+! Submodule : hdf5_specsource_params_sm
+! Purpose   : Paramter get/set routines for hdf5_specsource_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (hdf5_specsource_m) hdf5_specsource_params_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure get_n
+
+      class(hdf5_specsource_t), intent(in) :: self
+      integer, intent(out)                 :: n
+
+      ! Get n
+
+      n = self%n
+
+      ! Finish
+
+      return
+
+   end procedure get_n
+
+   !****
+
+   #:for name, type in (('lam_min', 'real(RD)'), &
+                        ('lam_max', 'real(RD)'))
+
+      module procedure get_${name}$
+
+         ! Get ${name}$
+
+         ${name}$ = self%${name}$
+
+         ! Finish
+
+         return
+
+      end procedure get_${name}$
+
+   #:endfor
+
+end submodule hdf5_specsource_params_sm

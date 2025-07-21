@@ -33,7 +33,7 @@ module hdf5_specsource_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Derived-type definitions
 
@@ -59,122 +59,63 @@ module hdf5_specsource_m
       module procedure hdf5_specsource_t_
    end interface hdf5_specsource_t
 
+   ! In hdf5_specsource_construct_sm
+
+   interface
+
+      module function hdf5_specsource_t_(file_names, group_names, lam_min, lam_max) result(specsource)
+         implicit none (type, external)
+         character(*), intent(in) :: file_names(:)
+         character(*), intent(in) :: group_names(:)
+         real(RD), intent(in)     :: lam_min
+         real(RD), intent(in)     :: lam_max
+         type(hdf5_specsource_t)  :: specsource
+      end function hdf5_specsource_t_
+
+   end interface
+
+   ! In hdf5_specsource_params_sm
+
+   interface
+
+      module subroutine get_n(self, n)
+         implicit none (type, external)
+         class(hdf5_specsource_t), intent(in) :: self
+         integer, intent(out)                 :: n
+      end subroutine get_n
+
+      module subroutine get_lam_min(self, lam_min)
+         implicit none (type, external)
+         class(hdf5_specsource_t), intent(in) :: self
+         real(RD), intent(out)                :: lam_min
+      end subroutine get_lam_min
+
+      module subroutine get_lam_max(self, lam_max)
+         implicit none (type, external)
+         class(hdf5_specsource_t), intent(in) :: self
+         real(RD), intent(out)                :: lam_max
+      end subroutine get_lam_max
+
+   end interface
+
+   ! In hdf5_specsource_access_sm
+
+   interface
+
+      module subroutine fetch(self, i, specint, stat)
+         implicit none (type, external)
+         class(hdf5_specsource_t), intent(in)       :: self
+         integer, intent(in)                        :: i
+         class(specint_t), allocatable, intent(out) :: specint
+         integer, intent(out), optional             :: stat
+      end subroutine fetch
+
+   end interface
+
    ! Access specifiers
 
    private
 
    public :: hdf5_specsource_t
-
-contains
-
-   function hdf5_specsource_t_(file_names, group_names, lam_min, lam_max) result(specsource)
-
-      character(*), intent(in) :: file_names(:)
-      character(*), intent(in) :: group_names(:)
-      real(RD), intent(in)     :: lam_min
-      real(RD), intent(in)     :: lam_max
-      type(hdf5_specsource_t)  :: specsource
-
-      @:CHECK_BOUNDS(SIZE(group_names), SIZE(file_names))
-
-      ! Construct specsource with a list of file and group names
-
-      specsource%file_names = file_names
-      specsource%group_names = group_names
-
-      specsource%lam_min = lam_min
-      specsource%lam_max = lam_max
-
-      specsource%n = SIZE(file_names)
-
-      ! Finish
-
-      return
-
-   end function hdf5_specsource_t_
-
-   !****
-
-   subroutine get_n(self, n)
-
-      class(hdf5_specsource_t), intent(in) :: self
-      integer, intent(out)                 :: n
-
-      ! Get n
-
-      n = self%n
-
-      ! Finish
-
-      return
-
-   end subroutine get_n
-
-   !****
-
-   #:for name, type in (('lam_min', 'real(RD)'), &
-                        ('lam_max', 'real(RD)'))
-                        
-      subroutine get_${name}$(self, ${name}$)
-
-         class(hdf5_specsource_t), intent(in) :: self
-         ${type}$, intent(out)                :: ${name}$
-
-         ! Get ${name}$
-
-         ${name}$ = self%${name}$
-
-         ! Finish
-
-         return
-
-      end subroutine get_${name}$
-
-   #:endfor
-
-   !****
-
-   subroutine fetch(self, i, specint, stat)
-
-      class(hdf5_specsource_t), intent(in)       :: self
-      integer, intent(in)                        :: i
-      class(specint_t), allocatable, intent(out) :: specint
-      integer, intent(out), optional             :: stat
-
-      type(hdf5io_t)      :: hdf5io
-      type(hdf5io_t)      :: hdf5io_specint
-      character(TYPE_LEN) :: type
-
-      ! Fetch the specint from the file
-
-      if (i < 0 .OR. i > self%n) then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_ARGUMENT
-            return
-         else
-            @:ABORT('invalid argument')
-         end if
-      end if
-
-      call open_file(self%file_names(i), hdf5io, stat)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
-
-      hdf5io_specint = hdf5io_t(hdf5io, self%group_names(i))
-
-      call hdf5io_specint%read_attr('TYPE', type)
-      allocate(specint, MOLD=specint_t(type))
-
-      call specint%read(hdf5io_specint, stat)
-
-      call hdf5io_specint%final()
-      call hdf5io%final()
-
-      ! Finish
-
-      return
-
-   end subroutine fetch
 
 end module hdf5_specsource_m
