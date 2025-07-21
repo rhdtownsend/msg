@@ -27,7 +27,6 @@ module limb_photint_m
    use limb_m
    use math_m
    use photint_m
-   use stat_m
 
    use ISO_FORTRAN_ENV
 
@@ -85,7 +84,7 @@ module limb_photint_m
 
    end interface
 
-   ! In limb_photint_inquire
+   ! In limb_photint_params_sm
 
    interface
 

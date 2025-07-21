@@ -1,5 +1,5 @@
-! Submodule : limb_photint_inquire_sm
-! Purpose   : Inquiry routines for limb_photint_t
+! Submodule : limb_photint_params_sm
+! Purpose   : Parameter get/set routines for limb_photint_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (limb_photint_m) limb_photint_inquire_sm
+submodule (limb_photint_m) limb_photint_params_sm
 
    ! No implicit typing
 
@@ -59,4 +59,4 @@ contains
 
    end procedure get_ssize
 
-end submodule limb_photint_inquire_sm
+end submodule limb_photint_params_sm
