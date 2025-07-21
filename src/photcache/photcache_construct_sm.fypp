@@ -1,0 +1,53 @@
+! Submodule : photcache_construct_sm
+! Purpose   : Constructor routines for photcache_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (photcache_m) photcache_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure photcache_t_
+
+      ! Construct photcache with n entries
+
+      allocate(photcache%photint_elements(n))
+
+      allocate(photcache%ref_counts(n))
+      photcache%ref_counts = 0
+
+      allocate(photcache%exp_counts(n))
+      photcache%exp_counts = 0
+
+      photcache%ssize = 0
+      photcache%limit = INITIAL_LIMIT
+
+      photcache%n = n
+
+      ! Finish
+
+      return
+
+   end procedure photcache_t_
+
+end submodule photcache_construct_sm

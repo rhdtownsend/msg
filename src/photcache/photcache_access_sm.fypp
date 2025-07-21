@@ -1,8 +1,7 @@
-! Module  : photcache_m
-! Purpose : Define photache_t type, for representing a cached
-!           table of photint_t's
+! Submodule : photcache_access_sm
+! Purpose   : Access routines for photcache_t
 !
-! Copyright 2022 Rich Townsend & The MSG Team
+! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -18,165 +17,18 @@
 
 #:include 'forum.inc'
 
-module photcache_m
-
-   ! Uses
-
-   use forum_m
-
-   use photint_m
-   use photsource_m
-   use stat_m
-
-   use ISO_FORTRAN_ENV
+submodule (photcache_m) photcache_access_sm
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
-   ! Parameter definitions
-
-   integer(ID), parameter :: INITIAL_LIMIT = 128
-
-   ! Derived-type definitions
-
-   type :: photcache_t
-      private
-      class(photsource_t), allocatable     :: photsource
-      type(photint_element_t), allocatable :: photint_elements(:)
-      integer, allocatable                 :: ref_counts(:)
-      integer, allocatable                 :: exp_counts(:)
-      integer(ID)                          :: ssize
-      integer                              :: limit
-      integer                              :: n
-   contains
-      private
-      procedure, public :: get_limit
-      procedure, public :: get_usage
-      procedure, public :: set_limit
-      procedure, public :: fetch
-      procedure, public :: release
-      procedure, public :: flush
-      procedure         :: trim_
-   end type photcache_t
-
-   type :: photint_element_t
-      class(photint_t), allocatable :: photint
-   end type photint_element_t
-
-   ! Interfaces
-
-   interface photcache_t
-      module procedure photcache_t_
-   end interface photcache_t
-
-   ! Access specifiers
-
-   private
-
-   public :: photcache_t
+   ! Procedures
 
 contains
 
-   function photcache_t_(n) result(photcache)
+   module procedure fetch
 
-      integer, intent(in) :: n
-      type(photcache_t)   :: photcache
-
-      ! Construct photcache with n entries
-
-      allocate(photcache%photint_elements(n))
-
-      allocate(photcache%ref_counts(n))
-      photcache%ref_counts = 0
-
-      allocate(photcache%exp_counts(n))
-      photcache%exp_counts = 0
-
-      photcache%ssize = 0
-      photcache%limit = INITIAL_LIMIT
-
-      photcache%n = n
-
-      ! Finish
-
-      return
-
-   end function photcache_t_
-
-   !****
-
-   subroutine get_limit(self, limit)
-
-      class(photcache_t), intent(in) :: self
-      integer, intent(out)           :: limit
-         
-      ! Get the memory usage limit
-
-      limit = self%limit
-
-      ! Finish
-
-      return
-
-   end subroutine get_limit
-
-   !****
-
-   subroutine get_usage(self, usage)
-
-      class(photcache_t), intent(in) :: self
-      integer, intent(out)           :: usage
-         
-      ! Get the memory usage (megabytes)
-
-      usage = self%ssize/(1024*1024)
-
-      ! Finish
-
-      return
-
-   end subroutine get_usage
-
-   !****
-
-   subroutine set_limit(self, limit, stat)
-
-      class(photcache_t), intent(inout) :: self
-      integer, intent(in)               :: limit
-      integer, intent(out), optional    :: stat
-
-      ! Set the memory usage limit
-
-      if (limit < 0) then
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_ARGUMENT
-            return
-         else
-            @:ABORT('invalid argument')
-         end if
-      end if
-
-      self%limit = limit
-
-      ! Trim the cache
-
-      call self%trim_()
-         
-      ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
-
-      return
-
-   end subroutine set_limit
-
-   !****
-
-   subroutine fetch(self, i, fetch_proc, photint, stat)
-
-      class(photcache_t), target, intent(inout) :: self
-      integer, intent(in)                       :: i
       interface
          subroutine fetch_proc(i, photint, stat)
             use photint_m
@@ -185,11 +37,9 @@ contains
             integer, intent(out), optional             :: stat
          end subroutine fetch_proc
       end interface
-      class(photint_t), pointer, intent(out) :: photint
-      integer, intent(out), optional         :: stat
 
       integer(ID) :: ssize
-         
+
       ! Fetch the i'th photint
 
       if (i < 0 .OR. i > self%n) then
@@ -216,7 +66,7 @@ contains
 
          self%ref_counts(i) = 1
          self%exp_counts(i) = 0
-            
+
       else
 
          ! Fetch the photint
@@ -249,15 +99,11 @@ contains
 
       return
 
-   end subroutine fetch
+   end procedure fetch
 
    !****
 
-   subroutine release(self, i, stat)
-
-      class(photcache_t), target, intent(inout) :: self
-      integer, intent(in)                       :: i
-      integer, intent(out), optional            :: stat
+   module procedure release
 
       ! Release the i'th photint
 
@@ -279,7 +125,7 @@ contains
          ! If it's reached zero, set the expiry counter
 
          if (self%ref_counts(i) == 0) self%exp_counts(i) = MAXVAL(self%exp_counts) + 1
-         
+
       end if
 
       ! Trim the cache
@@ -290,13 +136,11 @@ contains
 
       return
 
-   end subroutine release
+   end procedure release
 
    !****
 
-   subroutine flush(self)
-
-      class(photcache_t), intent(inout) :: self
+   module procedure flush
 
       integer :: i
 
@@ -319,13 +163,11 @@ contains
 
       return
 
-   end subroutine flush
+   end procedure flush
 
    !****
 
-   subroutine trim_(self)
-
-      class(photcache_t), intent(inout) :: self
+   module procedure trim_
 
       integer     :: j
       integer     :: usage
@@ -363,6 +205,6 @@ contains
 
       return
 
-   end subroutine trim_
+   end procedure trim_
 
-end module photcache_m
+end submodule photcache_access_sm

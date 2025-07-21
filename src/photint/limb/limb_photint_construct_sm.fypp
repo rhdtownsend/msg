@@ -1,0 +1,78 @@
+! Submodule : limb_photint_construct_sm
+! Purpose   : Constructor routines for limb_photint_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_photint_m) limb_photint_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure limb_photint_t_data_
+
+      logical :: precise_
+      integer :: n_b
+
+      if (PRESENT(precise)) then
+         precise_ = precise
+      else
+         precise_ = .TRUE.
+      end if
+
+      ! Construct photint from the supplied data
+
+      call limb%get_n(n_b)
+
+      @:CHECK_BOUNDS(SIZE(c), n_b)
+
+      photint%limb = limb
+      photint%c = c
+
+      photint%n_b = n_b
+
+      photint%precise = precise_
+
+      ! Finish
+
+      return
+
+   end procedure limb_photint_t_data_
+
+   !****
+
+   module procedure limb_photint_t_fit_
+
+      real(RD), allocatable :: c(:)
+
+      ! Construct photint by fitting the supplied I(mu) intensity data
+
+      call limb%fit_intensity(I, mu, c)
+
+      photint = limb_photint_t_data_(c, limb, precise)
+
+      ! Finish
+
+      return
+
+   end procedure limb_photint_t_fit_
+
+end submodule limb_photint_construct_sm

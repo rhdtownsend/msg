@@ -1,0 +1,136 @@
+! Submodule : limb_photint_inquire_sm
+! Purpose   : Input/output routines for limb_photint_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_photint_m) limb_photint_io_sm
+
+   ! Uses
+
+   use file_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure read
+
+      integer :: revision
+
+      ! Read the limb_photint_t
+
+      call check_type(hdf5io, 'limb_photint_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call hdf5io%read_attr('REVISION', revision)
+
+      select case(revision)
+      case(1)
+         call read_rev1_(self, hdf5io, stat)
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_GROUP_REVISION
+            return
+         else
+            @:ABORT('invalid group revision')
+         end if
+      end select
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine read_rev1_(self, hdf5io, stat)
+
+         class(limb_photint_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)      :: hdf5io
+         integer, intent(out), optional     :: stat
+
+         logical               :: precise
+         real(RD), allocatable :: c(:)
+         type(hdf5io_t)        :: hdf5io_limb
+         type(limb_t)          :: limb
+
+         call hdf5io%read_attr('precise', precise)
+
+         call hdf5io%alloc_read_dset('c', c)
+
+         hdf5io_limb = hdf5io_t(hdf5io, 'limb')
+         call limb%read(hdf5io_limb, stat)
+         call hdf5io_limb%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         select type(self)
+         type is(limb_photint_t)
+            self = limb_photint_t(c, limb, precise)
+         class default
+            @:ABORT('incalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
+
+   end procedure read
+
+   !****
+
+   module procedure write
+
+      type(hdf5io_t) :: hdf5io_limb
+
+      ! Write the limb_photint_t
+
+      call hdf5io%write_attr('TYPE', 'limb_photint_t')
+      call hdf5io%write_attr('REVISION', 1)
+
+      call hdf5io%write_attr('precise', self%precise)
+
+      if (self%precise) then
+         call hdf5io%write_dset('c', REAL(self%c, RD))
+      else
+         call hdf5io%write_dset('c', REAL(self%c, RS))
+      endif
+
+      hdf5io_limb = hdf5io_t(hdf5io, 'limb')
+      call self%limb%write(hdf5io_limb, stat)
+      call hdf5io_limb%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure write
+
+end submodule limb_photint_io_sm

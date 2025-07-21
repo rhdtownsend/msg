@@ -1,0 +1,242 @@
+! Module  : photgrid_m
+! Purpose : Define photgrid_t type, for representing photometric intensity
+!           grids
+!
+! Copyright 2021-2024 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module photgrid_m
+
+   ! Uses
+   
+   use forum_m
+
+   use axis_m
+   use photcache_m
+   use photsource_m
+   use vgrid_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Derived-type definitions
+
+   type :: photgrid_t
+      private
+      class(photsource_t), allocatable :: photsource
+      type(photcache_t)                :: photcache
+      type(vgrid_t)                    :: vgrid
+   contains
+      private
+      procedure, public :: get_rank
+      procedure, public :: get_shape
+      procedure, public :: get_axis
+      procedure, public :: get_cache_limit
+      procedure, public :: get_cache_usage 
+      procedure, public :: set_cache_limit
+      procedure, public :: flush_cache
+      procedure, public :: interp_intensity
+      procedure, public :: interp_E_moment
+      procedure, public :: interp_D_moment
+      procedure, public :: interp_irradiance
+      procedure, public :: interp_flux
+      procedure, public :: adjust_x_vec
+      procedure, public :: read
+      procedure, public :: write
+   end type photgrid_t
+
+   ! Interfaces
+
+   interface photgrid_t
+      module procedure photgrid_t_
+   end interface photgrid_t
+
+   ! In photgrid_construct_sm
+
+   interface
+
+      module function photgrid_t_(photsource, vgrid) result (photgrid)
+         implicit none (type, external)
+         class(photsource_t), intent(in) :: photsource
+         type(vgrid_t), intent(in)       :: vgrid
+         type(photgrid_t)                :: photgrid
+      end function photgrid_t_
+
+   end interface
+
+   ! In photgrid_params_sm
+
+   interface
+
+      module subroutine get_rank(self, rank)
+         implicit none (type, external)
+         class(photgrid_t), intent(in) :: self
+         integer, intent(out)          :: rank
+      end subroutine get_rank
+
+      module subroutine get_shape(self, shape)
+         implicit none (type, external)
+         class(photgrid_t), intent(in) :: self
+         integer, intent(out)          :: shape(:)
+      end subroutine get_shape
+
+      module subroutine get_axis(self, i, axis)
+         implicit none (type, external)
+         class(photgrid_t), intent(in) :: self
+         integer, intent(in)           :: i
+         type(axis_t), intent(out)     :: axis
+      end subroutine get_axis
+
+      module subroutine get_cache_limit(self, cache_limit)
+         implicit none (type, external)
+         class(photgrid_t), intent(in) :: self
+         integer, intent(out)          :: cache_limit
+      end subroutine get_cache_limit
+
+      module subroutine get_cache_usage(self, cache_usage)
+         implicit none (type, external)
+         class(photgrid_t), intent(in) :: self
+         integer, intent(out)          :: cache_usage
+      end subroutine get_cache_usage
+
+      module subroutine set_cache_limit(self, cache_limit, stat)
+         implicit none (type, external)
+         class(photgrid_t), intent(inout) :: self
+         integer, intent(in)              :: cache_limit
+         integer, intent(out), optional   :: stat
+      end subroutine set_cache_limit
+
+   end interface
+
+   ! In photgrid_interp_sm
+
+   interface
+
+      module subroutine interp_intensity(self, x_vec, mu, res, stat, deriv_vec, order)
+         implicit none (type, external)
+         class(photgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:)
+         real(RD), intent(in)                     :: mu
+         real(RD), intent(out)                    :: res
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
+         integer, intent(in), optional            :: order
+      end subroutine interp_intensity
+
+      module subroutine interp_E_moment(self, x_vec, k, res, stat, deriv_vec, order)
+         implicit none (type, external)
+         class(photgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:)
+         integer, intent(in)                      :: k
+         real(RD), intent(out)                    :: res
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
+         integer, intent(in), optional            :: order
+      end subroutine interp_E_moment
+
+      module subroutine interp_D_moment(self, x_vec, l, res, stat, deriv_vec, order)
+         implicit none (type, external)
+         class(photgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:)
+         integer, intent(in)                      :: l
+         real(RD), intent(out)                    :: res
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
+         integer, intent(in), optional            :: order
+      end subroutine interp_D_moment
+
+      module subroutine interp_flux(self, x_vec, res, stat, deriv_vec, order)
+         implicit none (type, external)
+         class(photgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:)
+         real(RD), intent(out)                    :: res
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
+         integer, intent(in), optional            :: order
+      end subroutine interp_flux
+
+      module subroutine interp_irradiance(self, x_vec, mu, dA, d, res, stat, deriv_vec, order)
+         implicit none (type, external)
+         class(photgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:,:)
+         real(RD), intent(in)                     :: mu(:)
+         real(RD), intent(in)                     :: dA(:)
+         real(RD), intent(in)                     :: d(:)
+         real(RD), intent(out)                    :: res
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
+         integer, intent(in), optional            :: order
+      end subroutine interp_irradiance
+
+      module subroutine adjust_x_vec(self, x_vec, dx_vec, x_adj, stat)
+         implicit none (type, external)
+         class(photgrid_t), intent(in)  :: self
+         real(RD), intent(in)           :: x_vec(:)
+         real(RD), intent(in)           :: dx_vec(:)
+         real(RD), intent(out)          :: x_adj(:)
+         integer, intent(out), optional :: stat
+      end subroutine adjust_x_vec
+
+   end interface
+
+   ! In photgrid_io_sm
+
+   interface
+
+      module subroutine read(self, hdf5io, stat)
+         implicit none (type, external)
+         class(photgrid_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine read
+
+      module subroutine write(self, hdf5io, stat)
+         implicit none (type, external)
+         class(photgrid_t), intent(inout) :: self
+         type(hdf5io_t), intent(inout)    :: hdf5io
+         integer, intent(out), optional   :: stat
+      end subroutine write
+
+   end interface
+
+   ! Access specifiers
+
+   private
+
+   public :: photgrid_t
+
+   ! Procedures
+   
+contains
+
+   subroutine flush_cache(self)
+
+      class(photgrid_t), intent(inout) :: self
+
+      ! Flush the cache
+
+      call self%photcache%flush()
+
+      ! Finish
+
+      return
+
+   end subroutine flush_cache
+
+end module photgrid_m

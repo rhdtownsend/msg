@@ -1,0 +1,219 @@
+! Submodule : photgrid_io_sm
+! Purpose   : Input/output routines for photgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (photgrid_m) photgrid_io_sm
+
+   ! Uses
+
+   use file_m
+   use hdf5_photsource_m
+   use photint_m
+   use stat_m
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure read
+
+      integer :: revision
+
+      ! Read the photgrid
+
+      call check_type(hdf5io, 'photgrid_t', stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      call hdf5io%read_attr('REVISION', revision)
+
+      select case(revision)
+      case(1)
+         call read_rev1_(self, hdf5io, stat)
+      case default
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_GROUP_REVISION
+            return
+         else
+            @:ABORT('invalid group revision')
+         end if
+      end select
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine read_rev1_(self, hdf5io, stat)
+
+         class(photgrid_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+
+         type(hdf5io_t)            :: hdf5io_photsource
+         integer                   :: n
+         character(:), allocatable :: file_name
+         character(:), allocatable :: group_name
+         integer                   :: group_names_len
+         character(:), allocatable :: file_names(:)
+         character(:), allocatable :: group_names(:)
+         integer                   :: i
+         type(hdf5_photsource_t)   :: photsource
+         type(hdf5io_t)            :: hdf5io_vgrid
+         type(vgrid_t)             :: vgrid
+
+         hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
+
+         call hdf5io_photsource%inquire(file_name=file_name, group_name=group_name)
+
+         call hdf5io_photsource%read_attr('n', n)
+
+         call hdf5io_photsource%final()
+
+         group_names_len = LEN_TRIM(group_name) + 1 + LEN_TRIM(photint_group_name_(HUGE(0)))
+
+         allocate(character(LEN_TRIM(file_name))::file_names(n))
+         allocate(character(group_names_len)::group_names(n))
+
+         name_loop : do i = 1, n
+
+            file_names(i) = TRIM(file_name)
+            group_names(i) = TRIM(group_name)//'/'//TRIM(photint_group_name_(i))
+
+         end do name_loop
+
+         photsource = hdf5_photsource_t(file_names, group_names)
+
+         hdf5io_vgrid = hdf5io_t(hdf5io, 'vgrid')
+         call vgrid%read(hdf5io_vgrid, stat)
+         call hdf5io_vgrid%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         select type(self)
+         type is(photgrid_t)
+            self = photgrid_t(photsource, vgrid)
+         class default
+            @:ABORT('invalid type')
+         end select
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end subroutine read_rev1_
+
+   end procedure read
+
+   !****
+
+   module procedure write
+
+      integer                   :: n
+      type(hdf5io_t)            :: hdf5io_photsource
+      integer                   :: i
+      class(photint_t), pointer :: photint
+      type(hdf5io_t)            :: hdf5io_photint
+      type(hdf5io_t)            :: hdf5io_vgrid
+
+      ! Write the photgrid
+
+      call hdf5io%write_attr('TYPE', 'photgrid_t')
+      call hdf5io%write_attr('REVISION', 1)
+
+      call self%vgrid%get_n_seq(n)
+
+      hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
+
+      call hdf5io_photsource%write_attr('n', n)
+
+      write_loop: do i = 1, n
+
+         call self%photcache%fetch(i, fetch_proc_, photint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+         hdf5io_photint = hdf5io_t(hdf5io_photsource, photint_group_name_(i))
+         call photint%write(hdf5io_photint, stat)
+         call hdf5io_photint%final()
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+         call self%photcache%release(i, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) exit write_loop
+         end if
+
+      end do write_loop
+
+      call hdf5io_photsource%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      hdf5io_vgrid = hdf5io_t(hdf5io, 'vgrid')
+      call self%vgrid%write(hdf5io_vgrid, stat)
+      call hdf5io_vgrid%final()
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   contains
+
+      subroutine fetch_proc_(i, photint, stat)
+
+         integer, intent(in)                        :: i
+         class(photint_t), allocatable, intent(out) :: photint
+         integer, intent(out), optional             :: stat
+
+         call self%photsource%fetch(i, photint, stat)
+
+         return
+
+      end subroutine fetch_proc_
+
+   end procedure write
+
+   !****
+
+   function photint_group_name_(i) result(name)
+
+      integer, intent(in) :: i
+      character(256)      :: name
+
+      write(name, 100) i
+100   format('photints[',I0,']')
+
+   end function photint_group_name_
+
+end submodule photgrid_io_sm

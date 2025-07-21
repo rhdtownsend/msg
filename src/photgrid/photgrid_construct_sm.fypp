@@ -1,0 +1,53 @@
+! Submodule : photgrid_construct_sm
+! Purpose   : Constructor routines for photgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (photgrid_m) photgrid_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure photgrid_t_
+
+      integer :: n
+      integer :: n_seq
+
+      ! Construct photgrid from the supplied data
+
+      call photsource%get_n(n)
+      call vgrid%get_n_seq(n_seq)
+
+      @:CHECK_BOUNDS(n, n_seq)
+
+      photgrid%photsource = photsource
+      photgrid%photcache = photcache_t(n)
+
+      photgrid%vgrid = vgrid
+
+      ! Finish
+
+      return
+
+   end procedure photgrid_t_
+
+end submodule photgrid_construct_sm

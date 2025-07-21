@@ -12,7 +12,7 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq ($(TESTS),yes)
-  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_vgrid utest_specgrid utest_photgrid
+  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_axis utest_vgrid utest_specgrid utest_photgrid
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_specgrid
   BIN_TARGETS += $(UTEST_TARGETS) $(STRESS_TARGETS) $(TIME_TARGETS)
@@ -35,7 +35,37 @@ endif
 # xxx_USES = source files providing modules USE'd by xxx
 # xxx_LIBS = library files required to link xxx
 
-libmsg_SRCS = msg_m.fypp axis_m.fypp vgrid_m.fypp ninterp_m.fypp	\
+axis_SRCS = axis_m.fypp axis_construct_sm.fypp axis_inquire_sm.fypp \
+            axis_locate_sm.fypp axis_io_sm.fypp
+
+ninterp_SRCS = ninterp_m.fypp ninterp_linear_sm.fypp ninterp_cubic_sm.fypp \
+               basis_m.fypp
+
+vgrid_SRCS = vgrid_m.fypp vgrid_construct_sm.fypp vgrid_index_sm.fypp \
+             vgrid_inquire_sm.fypp vgrid_interp_sm.fypp vgrid_traverse_sm.fypp \
+             vgrid_io_sm.fypp
+
+photcache_SRCS = photcache_m.fypp photcache_construct_sm.fypp photcache_params_sm.fypp \
+                 photcache_access_sm.fypp
+
+photgrid_SRCS = photgrid_m.fypp photgrid_construct_sm.fypp photgrid_params_sm.fypp \
+                photgrid_interp_sm.fypp photgrid_io_sm.fypp
+
+photint_SRCS = photint_m.fypp photint_sm.fypp \
+               limb_photint_m.fypp limb_photint_construct_sm.fypp limb_photint_inquire_sm.fypp \
+               limb_photint_interp_sm.fypp limb_photint_io_sm.fypp
+
+photsource_SRCS = photsource_m.fypp \
+                  hdf5_photsource_m.fypp hdf5_photsource_construct_sm.fypp \
+                  hdf5_photsource_params_sm.fypp hdf5_photsource_access_sm.fypp \
+                  mem_photsource_m.fypp mem_photsource_construct_sm.fypp \
+                  mem_photsource_params_sm.fypp mem_photsource_access_sm.fypp \
+                  spec_photsource_m.fypp spec_photsource_construct_sm.fypp \
+                  spec_photsource_params_sm.fypp spec_photsource_access_sm.fypp
+
+libmsg_SRCS = msg_m.fypp \
+              $(axis_SRCS) $(vgrid_SRCS) $(ninterp_SRCS) \
+              $(photcache_SRCS) $(photgrid_SRCS) $(photint_SRCS) $(photsource_SRCS) \
               range_m.fypp range_sm.fypp comp_range_m.fypp		\
               lin_range_m.fypp log_range_m.fypp tab_range_m.fypp	\
               specgrid_m.fypp speccache_m.fypp specsource_m.fypp	\
@@ -43,7 +73,6 @@ libmsg_SRCS = msg_m.fypp axis_m.fypp vgrid_m.fypp ninterp_m.fypp	\
               limb_specint_m.fypp photgrid_m.fypp photcache_m.fypp	\
               photsource_m.fypp hdf5_photsource_m.fypp			\
               spec_photsource_m.fypp mem_photsource_m.fypp		\
-              photint_m.fypp photint_sm.fypp limb_photint_m.fypp	\
               passband_m.fypp cubint_m.fypp stat_m.fypp file_m.fypp	\
               fit_m.fypp limb_m.fypp math_m.fypp
 
@@ -137,6 +166,10 @@ utest_cubint_LIBS = libmsg
 utest_ninterp_SRCS = utest_ninterp.fypp utest_ninterp_m.fypp
 utest_ninterp_USES = $(libmsg_SRCS)
 utest_ninterp_LIBS = libmsg
+
+utest_axis_SRCS = utest_axis.fypp utest_axis_m.fypp
+utest_axis_USES = $(libmsg_SRCS)
+utest_axis_LIBS = libmsg
 
 utest_vgrid_SRCS = utest_vgrid.fypp utest_vgrid_m.fypp
 utest_vgrid_USES = $(libmsg_SRCS)

@@ -1,0 +1,169 @@
+! Module  : limb_photint_m
+! Purpose : Define limb_photint_t type, for representing photometric
+!           intensity parameterized by a limb-darkening law
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module limb_photint_m
+
+   ! Uses
+
+   use forum_m
+
+   use limb_m
+   use math_m
+   use photint_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Derived-type definitions
+
+   type, extends(photint_t) :: limb_photint_t
+      private
+      type(limb_t)          :: limb
+      real(RD), allocatable :: c(:)
+      integer               :: n_b
+      logical               :: precise
+   contains
+      private
+      procedure, public :: get_precise
+      procedure, public :: get_ssize
+      procedure, public :: interp_intensity
+      procedure, public :: interp_E_moment
+      procedure, public :: interp_D_moment
+      procedure, public :: interp_flux
+      procedure, public :: read
+      procedure, public :: write
+   end type limb_photint_t
+
+   ! Interfaces
+
+   interface limb_photint_t
+      module procedure limb_photint_t_data_
+      module procedure limb_photint_t_fit_
+   end interface limb_photint_t
+
+   ! In limb_photint_construct_sm
+
+   interface
+
+      module function limb_photint_t_data_(c, limb, precise) result(photint)
+         implicit none (type, external)
+         real(RD), intent(in)          :: c(:)
+         type(limb_t), intent(in)      :: limb
+         logical, intent(in), optional :: precise
+         type(limb_photint_t)          :: photint
+      end function limb_photint_t_data_
+
+      module function limb_photint_t_fit_(I, mu, limb, precise) result(photint)
+         implicit none (type, external)
+         real(RD), intent(in)          :: I(:)
+         real(RD), intent(in)          :: mu(:)
+         type(limb_t), intent(in)      :: limb
+         logical, intent(in), optional :: precise
+         type(limb_photint_t)          :: photint
+      end function limb_photint_t_fit_
+
+   end interface
+
+   ! In limb_photint_inquire
+
+   interface
+
+      module subroutine get_precise(self, precise)
+         implicit none (type, external)
+         class(limb_photint_t), intent(in) :: self
+         logical, intent(out)              :: precise
+      end subroutine get_precise
+
+      module subroutine get_ssize(self, ssize)
+         implicit none (type, external)
+         class(limb_photint_t), intent(in) :: self
+         integer(ID), intent(out)          :: ssize
+      end subroutine get_ssize
+
+   end interface
+
+   ! In limb_photint_interp_sm
+
+   interface
+
+      module subroutine interp_intensity(self, mu, res, stat)
+         implicit none (type, external)
+         class(limb_photint_t), intent(in) :: self
+         real(RD), intent(in)              :: mu
+         real(RD), intent(out)             :: res
+         integer, intent(out), optional    :: stat
+      end subroutine interp_intensity
+
+      module subroutine interp_E_moment(self, k, res, stat)
+         implicit none (type, external)
+         class(limb_photint_t), intent(in) :: self
+         integer, intent(in)               :: k
+         real(RD), intent(out)             :: res
+         integer, intent(out), optional    :: stat
+      end subroutine interp_E_moment
+
+      module subroutine interp_D_moment(self, l, res, stat)
+         implicit none (type, external)
+         class(limb_photint_t), intent(in) :: self
+         integer, intent(in)               :: l
+         real(RD), intent(out)             :: res
+         integer, intent(out), optional    :: stat
+      end subroutine interp_D_moment
+
+      module subroutine interp_flux(self, res, stat)
+         implicit none (type, external)
+         class(limb_photint_t), intent(in) :: self
+         real(RD), intent(out)             :: res
+         integer, intent(out), optional    :: stat
+      end subroutine interp_flux
+
+   end interface
+
+   ! In limb_photint_io_sm
+
+   interface
+
+      module subroutine read(self, hdf5io, stat)
+         implicit none (type, external)
+         class(limb_photint_t), intent(out) :: self
+         type(hdf5io_t), intent(inout)      :: hdf5io
+         integer, intent(out), optional     :: stat
+      end subroutine read
+
+      module subroutine write(self, hdf5io, stat)
+         implicit none (type, external)
+         class(limb_photint_t), intent(in)   :: self
+         type(hdf5io_t), intent(inout)  :: hdf5io
+         integer, intent(out), optional :: stat
+      end subroutine write
+
+   end interface
+
+   ! Access specifiers
+
+   private
+
+   public :: limb_photint_t
+
+end module limb_photint_m

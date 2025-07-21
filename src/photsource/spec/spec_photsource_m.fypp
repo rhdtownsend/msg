@@ -1,0 +1,103 @@
+! Module  : spec_photsource_m
+! Purpose : Define spec_photsource_t type, for representing a
+!           source of photint_t basd on a corresponding specsource_t
+!           and passband
+!
+! Copyright 2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module spec_photsource_m
+
+   ! Uses
+
+   use forum_m
+
+   use passband_m
+   use photint_m
+   use photsource_m
+   use specsource_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Derived-type definitions
+
+   type, extends(photsource_t) :: spec_photsource_t
+      private
+      class(specsource_t), allocatable :: specsource
+      type(passband_t)                 :: passband
+      integer                          :: n
+   contains
+      private
+      procedure, public :: get_n
+      procedure, public :: fetch
+   end type spec_photsource_t
+
+   ! Interfaces
+
+   interface spec_photsource_t
+      module procedure spec_photsource_t_
+   end interface spec_photsource_t
+
+   ! In spec_photsource_construct_sm
+
+   interface
+
+      module function spec_photsource_t_(specsource, passband) result(photsource)
+         implicit none (type, external)
+         class(specsource_t), intent(in) :: specsource
+         type(passband_t), intent(in)    :: passband
+         type(spec_photsource_t)         :: photsource
+      end function spec_photsource_t_
+
+   end interface
+
+   ! In spec_photsource_params_sm
+
+   interface
+
+      module subroutine get_n(self, n)
+         implicit none (type, external)
+         class(spec_photsource_t), intent(in) :: self
+         integer, intent(out)                 :: n
+      end subroutine get_n
+
+   end interface
+
+   ! In spec_photsource_access_sm
+
+   interface
+
+      module subroutine fetch(self, i, photint, stat)
+         implicit none (type, external)
+         class(spec_photsource_t), intent(in)       :: self
+         integer, intent(in)                        :: i
+         class(photint_t), allocatable, intent(out) :: photint
+         integer, intent(out), optional             :: stat
+      end subroutine fetch
+
+   end interface
+
+   ! Access photifiers
+
+   private
+
+   public :: spec_photsource_t
+
+end module spec_photsource_m

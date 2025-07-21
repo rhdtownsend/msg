@@ -1,0 +1,88 @@
+! Submodule : limb_photint_interp_sm
+! Purpose   : Interpolation routines for limb_photint_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_photint_m) limb_photint_interp_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
+                                     ('E_moment', 'k', 'integer'), &
+                                     ('D_moment', 'l', 'integer'))
+
+      module procedure interp_${name}$
+
+         real(RD) :: b(self%n_b)
+
+         ! Set up the basis functions
+
+         call self%limb%eval_${name}$_basis(${arg_var}$, b, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+
+         ! Interpolate ${name}$
+
+         res = DOT_PRODUCT(b, self%c)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         ! Finish
+
+         return
+
+      end procedure interp_${name}$
+
+   #:endfor
+
+   !****
+
+   #:for name in ('flux',)
+
+      module procedure interp_${name}$
+
+         real(RD) :: b(self%n_b)
+
+         ! Set up the basis functions
+
+         call self%limb%eval_${name}$_basis(b, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         endif
+
+         ! Interpolate ${name}$
+
+         res = DOT_PRODUCT(b, self%c)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         ! Finish
+
+         return
+
+      end procedure interp_${name}$
+
+   #:endfor
+
+end submodule limb_photint_interp_sm

@@ -1,0 +1,62 @@
+! Submodule : limb_photint_inquire_sm
+! Purpose   : Inquiry routines for limb_photint_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (limb_photint_m) limb_photint_inquire_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure get_precise
+
+      ! Get the precision flag
+
+      precise = self%precise
+
+      ! Finish
+
+      return
+
+   end procedure get_precise
+
+   !****
+
+   module procedure get_ssize
+
+      integer(ID) :: ssize_limb
+
+      ! Get the storage size
+
+      call self%limb%get_ssize(ssize_limb)
+
+      ssize = STORAGE_SIZE(self)/8 +                 &
+              STORAGE_SIZE(self%c)/8*SIZE(self%c) +  &
+              ssize_limb
+
+      ! Finish
+
+      return
+
+   end procedure get_ssize
+
+end submodule limb_photint_inquire_sm
