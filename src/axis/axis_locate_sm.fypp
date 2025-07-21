@@ -36,7 +36,7 @@ contains
             stat = STAT_OUT_OF_BOUNDS_AXIS_LO
             return
          else
-            @:ABORT('out-of-bounds (lo) on '//self%label//' axis')
+            @:ABORT('out-of-bounds (lo) on '//TRIM(self%label)//' axis')
          endif
       endif
 
@@ -45,7 +45,7 @@ contains
             stat = STAT_OUT_OF_BOUNDS_AXIS_HI
             return
          else
-            @:ABORT('out-of-bounds (hi) on '//self%label//' axis')
+            @:ABORT('out-of-bounds (hi) on '//TRIM(self%label)//' axis')
          endif
       endif
 
@@ -71,7 +71,7 @@ contains
             stat = STAT_OUT_OF_BOUNDS_AXIS_LO
             return
          else
-            @:ABORT('out-of-bounds (lo) on '//self%label//' axis')
+            @:ABORT('out-of-bounds (lo) on '//TRIM(self%label)//' axis')
          end if
       end if
 
@@ -80,7 +80,7 @@ contains
             stat = STAT_OUT_OF_BOUNDS_AXIS_HI
             return
          else
-            @:ABORT('out-of-bounds (hi) on '//self%label//' axis')
+            @:ABORT('out-of-bounds (hi) on '//TRIM(self%label)//' axis')
          end if
       end if
 
