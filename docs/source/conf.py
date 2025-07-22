@@ -46,6 +46,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinxcontrib.spelling',
+    'sphinx_copybutton',
     'sphinx_substitution_extensions',
     'nbsphinx',
     'ads_cite',
@@ -216,5 +217,11 @@ nbsphinx_prolog = rst_prolog
 # Spelling
 spelling_word_list_filename='spelling_wordlist.txt'
 
-# Pymsg
+# Pygments style
+pygments_style = 'sphinx'
+
+# Copybutton settings
+copybutton_exclude = '.linenos, .gp, .go'
+
+# Add path to pymsg
 os.environ['MSG_DIR'] = os.path.abspath('../..')
