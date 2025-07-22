@@ -5,8 +5,7 @@
 TESTS ?= yes
 
 # Build tool executables
-#TOOLS ?= yes
-TOOLS ?= no
+TOOLS ?= yes
 
 # Build ForUM internally. If not set to "yes", then
 # you must set FORUM_LIB_DIR and FORUM_INC_DIR to
@@ -27,8 +26,7 @@ FPE ?= yes
 OMP ?= yes
 
 # Build Python interface
-#PYTHON ?= yes
-PYTHON ?= no
+PYTHON ?= yes
 
 # Link string for FITS library
 # (leave undefined if not available)
