@@ -116,9 +116,9 @@ int main(int argc, char *argv[]) {
   B = -2.5*log10(F_B_obs);
   V = -2.5*log10(F_V_obs);
 
-  printf("  V=  %.17e\n", V);
-  printf("U-B=  %.17e\n", U-B);
-  printf("B-V=  %.17e\n", B-V);
+  printf("  V=  %24.17E\n", V);
+  printf("U-B=  %24.17E\n", U-B);
+  printf("B-V=  %24.17E\n", B-V);
 
   // Clean up
 

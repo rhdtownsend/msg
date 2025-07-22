@@ -112,9 +112,10 @@ program fortran_walkthrough
    B = -2.5_RD*LOG10(F_B_obs)
    V = -2.5_RD*LOG10(F_V_obs)
 
-   print *, '  V=', V
-   print *, 'U-B=', U-B
-   print *, 'B-V=', B-V
+   print 100, '  V=  ', V
+   print 100, 'U-B=  ', U-B
+   print 100, 'B-V=  ', B-V
+100 format(A, 1pe24.17)
 
    ! Finish
 
