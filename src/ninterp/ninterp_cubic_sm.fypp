@@ -392,7 +392,7 @@ contains
 
    !****
 
-   module function edge_deriv_kernel_(edge_mask, edge_delta) result(edge_deriv_kernel)
+   function edge_deriv_kernel_(edge_mask, edge_delta) result(edge_deriv_kernel)
 
       logical, intent(in)   :: edge_mask(:)
       real(RD), intent(in)  :: edge_delta(:)
