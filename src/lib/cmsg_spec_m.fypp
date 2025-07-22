@@ -29,7 +29,7 @@ module cmsg_spec_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Access specifiers
 
@@ -64,9 +64,9 @@ contains
 
    subroutine load_specgrid(specgrid_file_name, specgrid_ptr, stat) bind(C)
 
-      character(C_CHAR)        :: specgrid_file_name(*)
-      type(C_PTR)              :: specgrid_ptr
-      integer(C_INT), optional :: stat
+      character(C_CHAR), intent(in)         :: specgrid_file_name(*)
+      type(C_PTR), intent(out)              :: specgrid_ptr
+      integer(C_INT), intent(out), optional :: stat
 
       type(hdf5io_t)            :: hdf5io
       type(specgrid_t), pointer :: specgrid
@@ -135,8 +135,8 @@ contains
 
       subroutine get_specgrid_${name}$(specgrid_ptr, ${name}$) bind(C)
 
-         type(C_PTR), value :: specgrid_ptr
-         ${type}$           :: ${name}$
+         type(C_PTR), value    :: specgrid_ptr
+         ${type}$, intent(out) :: ${name}$
 
          type(specgrid_t), pointer :: specgrid
 
@@ -160,8 +160,8 @@ contains
 
    subroutine get_specgrid_shape(specgrid_ptr, shape) bind(C)
 
-      type(C_PTR), value :: specgrid_ptr
-      integer(C_INT)     :: shape(*)
+      type(C_PTR), value          :: specgrid_ptr
+      integer(C_INT), intent(out) :: shape(*)
 
       type(specgrid_t), pointer :: specgrid
       integer                   :: rank
@@ -186,9 +186,9 @@ contains
 
    subroutine get_specgrid_axis_x_min(specgrid_ptr, i, axis_x_min) bind(C)
 
-      type(C_PTR), value    :: specgrid_ptr
-      integer(C_INT), value :: i
-      real(C_DOUBLE)        :: axis_x_min
+      type(C_PTR), value          :: specgrid_ptr
+      integer(C_INT), value       :: i
+      real(C_DOUBLE), intent(out) :: axis_x_min
 
       type(specgrid_t), pointer :: specgrid
       type(axis_t)              :: axis
@@ -213,9 +213,9 @@ contains
 
    subroutine get_specgrid_axis_x_max(specgrid_ptr, i, axis_x_max) bind(C)
 
-      type(C_PTR), value    :: specgrid_ptr
-      integer(C_INT), value :: i
-      real(C_DOUBLE)        :: axis_x_max
+      type(C_PTR), value          :: specgrid_ptr
+      integer(C_INT), value       :: i
+      real(C_DOUBLE), intent(out) :: axis_x_max
 
       type(specgrid_t), pointer :: specgrid
       type(axis_t)              :: axis
@@ -240,9 +240,9 @@ contains
 
    subroutine get_specgrid_axis_label(specgrid_ptr, i, axis_label) bind(C)
 
-      type(C_PTR), value    :: specgrid_ptr
-      integer(C_INT), value :: i
-      character(C_CHAR)     :: axis_label(*)
+      type(C_PTR), value             :: specgrid_ptr
+      integer(C_INT), value          :: i
+      character(C_CHAR), intent(out) :: axis_label(*)
 
       type(specgrid_t), pointer :: specgrid
       type(axis_t)              :: axis
@@ -274,9 +274,9 @@ contains
 
       subroutine set_specgrid_${name}$(specgrid_ptr, ${name}$, stat) bind(C)
 
-         type(C_PTR), value       :: specgrid_ptr
-         ${type}$, value          :: ${name}$
-         integer(C_INT), optional :: stat
+         type(C_PTR), value                    :: specgrid_ptr
+         ${type}$, value                       :: ${name}$
+         integer(C_INT), intent(out), optional :: stat
 
          type(specgrid_t), pointer :: specgrid
 
@@ -300,7 +300,7 @@ contains
 
    subroutine flush_specgrid_cache(specgrid_ptr) bind(C)
 
-      type(C_PTR), value       :: specgrid_ptr
+      type(C_PTR), value :: specgrid_ptr
 
       type(specgrid_t), pointer :: specgrid
 
@@ -327,15 +327,15 @@ contains
       subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, ${arg_var}$, n, lam, res, stat, &
                                           deriv_vec, order) bind(C, name='interp_specgrid_${name}$')
 
-         type(C_PTR), value        :: specgrid_ptr
-         real(C_DOUBLE)            :: x_vec(*)
-         ${arg_type}$, value       :: ${arg_var}$
-         integer(C_INT), value     :: n
-         real(C_DOUBLE)            :: lam(n)
-         real(C_DOUBLE)            :: res(n-1)
-         integer(C_INT), optional  :: stat
-         logical(C_BOOL), optional :: deriv_vec(*)
-         integer(C_INT), optional  :: order
+         type(C_PTR), value                    :: specgrid_ptr
+         real(C_DOUBLE), intent(in)            :: x_vec(*)
+         ${arg_type}$, value                   :: ${arg_var}$
+         integer(C_INT), value                 :: n
+         real(C_DOUBLE), intent(in)            :: lam(n)
+         real(C_DOUBLE), intent(out)           :: res(n-1)
+         integer(C_INT), intent(out), optional :: stat
+         logical(C_BOOL), intent(in), optional :: deriv_vec(*)
+         integer(C_INT), intent(in), optional  :: order
 
          type(specgrid_t), pointer :: specgrid
          integer                   :: rank
@@ -371,14 +371,14 @@ contains
       subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, n, lam, res, stat, &
                                           deriv_vec, order) bind(C, name='interp_specgrid_${name}$')
 
-         type(C_PTR), value        :: specgrid_ptr
-         real(C_DOUBLE)            :: x_vec(*)
-         integer(C_INT), value     :: n
-         real(C_DOUBLE)            :: lam(n)
-         real(C_DOUBLE)            :: res(n-1)
-         integer(C_INT), optional  :: stat
-         logical(C_BOOL), optional :: deriv_vec(*)
-         integer(C_INT), optional  :: order
+         type(C_PTR), value                    :: specgrid_ptr
+         real(C_DOUBLE), intent(in)            :: x_vec(*)
+         integer(C_INT), value                 :: n
+         real(C_DOUBLE), intent(in)            :: lam(n)
+         real(C_DOUBLE), intent(out)           :: res(n-1)
+         integer(C_INT), intent(out), optional :: stat
+         logical(C_BOOL), intent(in), optional :: deriv_vec(*)
+         integer(C_INT), intent(in), optional  :: order
 
          type(specgrid_t), pointer :: specgrid
          integer                   :: rank
@@ -412,11 +412,11 @@ contains
    subroutine adjust_specgrid_x_vec(specgrid_ptr, x_vec, dx_vec, x_adj, &
                                     stat) bind(C, name='adjust_specgrid_x_vec')
 
-      type(C_PTR), value        :: specgrid_ptr
-      real(C_DOUBLE)            :: x_vec(*)
-      real(C_DOUBLE)            :: dx_vec(*)
-      real(C_DOUBLE)            :: x_adj(*)
-      integer(C_INT), optional  :: stat
+      type(C_PTR), value                    :: specgrid_ptr
+      real(C_DOUBLE), intent(in)            :: x_vec(*)
+      real(C_DOUBLE), intent(in)            :: dx_vec(*)
+      real(C_DOUBLE), intent(out)           :: x_adj(*)
+      integer(C_INT), intent(out), optional :: stat
 
       type(specgrid_t), pointer :: specgrid
       integer                   :: rank

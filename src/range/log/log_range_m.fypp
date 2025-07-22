@@ -62,6 +62,7 @@ module log_range_m
    interface
 
       module function log_range_t_(logx_0, dlogx, n) result(range)
+         implicit none (type, external)
          real(RD), intent(in) :: logx_0
          real(RD), intent(in) :: dlogx
          integer, intent(in)  :: n

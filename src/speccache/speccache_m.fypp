@@ -149,6 +149,7 @@ module speccache_m
          interface
             subroutine fetch_proc(i, specint, stat)
                use specint_m
+               implicit none (type, external)
                integer, intent(in)                        :: i
                class(specint_t), allocatable, intent(out) :: specint
                integer, intent(out), optional             :: stat
@@ -182,9 +183,5 @@ module speccache_m
    private
 
    public :: speccache_t
-
-contains
-
-   !****
 
 end module speccache_m

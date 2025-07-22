@@ -22,68 +22,86 @@ module photint_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Derived-type definitions
 
    type, abstract :: photint_t
    contains
       private
-      procedure(get_precise), deferred, public :: get_precise
-      procedure(get_ssize), deferred, public   :: get_ssize
-      #:for name in ('intensity', 'E_moment', 'D_moment', 'flux')
-         procedure(interp_${name}$), deferred, public :: interp_${name}$
-      #:endfor
-      procedure(read), deferred, public  :: read
-      procedure(write), deferred, public :: write
+      procedure(get_precise), deferred, public      :: get_precise
+      procedure(get_ssize), deferred, public        :: get_ssize
+      procedure(interp_intensity), deferred, public :: interp_intensity
+      procedure(interp_E_moment), deferred, public  :: interp_E_moment
+      procedure(interp_D_moment), deferred, public  :: interp_D_moment
+      procedure(interp_flux), deferred, public      :: interp_flux
+      procedure(read), deferred, public             :: read
+      procedure(write), deferred, public            :: write
    end type photint_t
 
    ! Interfaces
 
    abstract interface
 
-      #:for name, type in (('precise', 'logical'), &
-                           ('ssize', 'integer(ID)'))
+      subroutine get_precise(self, precise)
+         use forum_m
+         import photint_t
+         implicit none (type, external)
+         class(photint_t), intent(in) :: self
+         logical, intent(out)         :: precise
+      end subroutine get_precise
 
-         subroutine get_${name}$(self, ${name}$)
-            use forum_m
-            import photint_t
-            class(photint_t), intent(in) :: self
-            ${type}$, intent(out)        :: ${name}$
-         end subroutine get_${name}$
+      subroutine get_ssize(self, ssize)
+         use forum_m
+         import photint_t
+         implicit none (type, external)
+         class(photint_t), intent(in) :: self
+         integer(ID), intent(out)     :: ssize
+      end subroutine get_ssize
 
-      #:endfor
+      subroutine interp_intensity(self, mu, res, stat)
+         use forum_m
+         import photint_t
+         implicit none (type, external)
+         class(photint_t), intent(in)   :: self
+         real(RD), intent(in)           :: mu
+         real(RD), intent(out)          :: res
+         integer, intent(out), optional :: stat
+      end subroutine interp_intensity
 
-      #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
-                                        ('E_moment', 'k', 'integer'), &
-                                        ('D_moment', 'l', 'integer'))
+      subroutine interp_E_moment(self, k, res, stat)
+         use forum_m
+         import photint_t
+         implicit none (type, external)
+         class(photint_t), intent(in)   :: self
+         integer, intent(in)            :: k
+         real(RD), intent(out)          :: res
+         integer, intent(out), optional :: stat
+      end subroutine interp_E_moment
 
-         subroutine interp_${name}$(self, ${arg_var}$, res, stat)
-            use forum_m
-            import photint_t
-            class(photint_t), intent(in)   :: self
-            ${arg_type}$, intent(in)       :: ${arg_var}$
-            real(RD), intent(out)          :: res
-            integer, intent(out), optional :: stat
-         end subroutine interp_${name}$
+      subroutine interp_D_moment(self, l, res, stat)
+         use forum_m
+         import photint_t
+         implicit none (type, external)
+         class(photint_t), intent(in)   :: self
+         integer, intent(in)            :: l
+         real(RD), intent(out)          :: res
+         integer, intent(out), optional :: stat
+      end subroutine interp_D_moment
 
-      #:endfor
-
-      #:for name, var in (('flux', 'F'),)
-
-         subroutine interp_${name}$(self, res, stat)
-            use forum_m
-            import photint_t
-            class(photint_t), intent(in)   :: self
-            real(RD), intent(out)          :: res
-            integer, intent(out), optional :: stat
-         end subroutine interp_${name}$
-
-      #:endfor
+      subroutine interp_flux(self, res, stat)
+         use forum_m
+         import photint_t
+         implicit none (type, external)
+         class(photint_t), intent(in)   :: self
+         real(RD), intent(out)          :: res
+         integer, intent(out), optional :: stat
+      end subroutine interp_flux
 
       subroutine read(self, hdf5io, stat)
          use forum_m
          import photint_t
+         implicit none (type, external)
          class(photint_t), intent(out)  :: self
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
@@ -92,6 +110,7 @@ module photint_m
       subroutine write(self, hdf5io, stat)
          use forum_m
          import photint_t
+         implicit none (type, external)
          class(photint_t), intent(in)   :: self
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
@@ -102,6 +121,7 @@ module photint_m
    interface photint_t
 
       module function photint_t_type_(type) result(photint)
+         implicit none (type, external)
          character(*), intent(in)      :: type
          class(photint_t), allocatable :: photint
       end function photint_t_type_

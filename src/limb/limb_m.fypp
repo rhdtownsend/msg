@@ -28,7 +28,7 @@ module limb_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Parameter definitions
 
@@ -105,7 +105,7 @@ module limb_m
          implicit none (type, external)
          class(limb_t), intent(in)      :: self
          real(RD), intent(in)           :: mu
-         real(RD)                       :: b(:)
+         real(RD), intent(out)          :: b(:)
          integer, intent(out), optional :: stat
       end subroutine eval_intensity_basis
 
@@ -113,7 +113,7 @@ module limb_m
          implicit none (type, external)
          class(limb_t), intent(in)      :: self
          integer, intent(in)            :: k
-         real(RD)                       :: b(:)
+         real(RD), intent(out)          :: b(:)
          integer, intent(out), optional :: stat
       end subroutine eval_E_moment_basis
 
@@ -121,14 +121,14 @@ module limb_m
          implicit none (type, external)
          class(limb_t), intent(in)      :: self
          integer, intent(in)            :: l
-         real(RD)                       :: b(:)
+         real(RD), intent(out)          :: b(:)
          integer, intent(out), optional :: stat
       end subroutine eval_D_moment_basis
 
       module subroutine eval_flux_basis(self, b, stat)
          implicit none (type, external)
          class(limb_t), intent(in)      :: self
-         real(RD)                       :: b(:)
+         real(RD), intent(out)          :: b(:)
          integer, intent(out), optional :: stat
       end subroutine eval_flux_basis
 

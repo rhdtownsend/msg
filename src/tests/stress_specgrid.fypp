@@ -28,7 +28,7 @@ program stress_specgrid
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Variables
 

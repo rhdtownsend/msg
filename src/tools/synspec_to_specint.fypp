@@ -30,7 +30,7 @@ program synspec_to_specint
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Variables
 

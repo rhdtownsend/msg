@@ -28,7 +28,7 @@ program specgrid_to_photgrid
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Variables
 

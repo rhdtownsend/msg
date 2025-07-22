@@ -244,7 +244,7 @@ include Make.inc
 # Target for linting
 
 linter :
-        fortitude check --file-extensions=f90
+	fortitude check --file-extensions=f90
 
 # Targets for source checking
 
@@ -254,3 +254,5 @@ check_src:
 # Additional dependencies
 
 pycmsg.o : cmsg.h
+
+.PHONY: all linter check_src

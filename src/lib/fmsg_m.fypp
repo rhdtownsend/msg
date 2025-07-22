@@ -28,7 +28,7 @@ module fmsg_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Access specifiers
 
@@ -55,6 +55,8 @@ module fmsg_m
    public :: load_specgrid
    public :: load_photgrid
    public :: load_photgrid_from_specgrid
+
+   ! Procedures
 
 contains
 

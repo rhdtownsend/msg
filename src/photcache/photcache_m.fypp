@@ -32,7 +32,7 @@ module photcache_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Parameter definitions
 
@@ -99,6 +99,7 @@ module photcache_m
       end subroutine get_usage
 
       module subroutine set_limit(self, limit, stat)
+         implicit none (type, external)
          class(photcache_t), intent(inout) :: self
          integer, intent(in)               :: limit
          integer, intent(out), optional    :: stat
@@ -117,6 +118,7 @@ module photcache_m
          interface
             subroutine fetch_proc(i, photint, stat)
                use photint_m
+               implicit none (type, external)
                integer, intent(in)                        :: i
                class(photint_t), allocatable, intent(out) :: photint
                integer, intent(out), optional             :: stat
@@ -139,6 +141,7 @@ module photcache_m
       end subroutine flush
 
       module subroutine trim_(self)
+         implicit none (type, external)
          class(photcache_t), intent(inout) :: self
       end subroutine trim_
 

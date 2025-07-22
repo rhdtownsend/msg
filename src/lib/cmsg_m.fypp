@@ -33,17 +33,19 @@ module cmsg_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Access specifiers
 
    public
 
+   ! Procedures
+
 contains
 
    subroutine get_msg_version(version) bind(C)
 
-      character(C_CHAR) :: version(*)
+      character(C_CHAR), intent(out) :: version(*)
 
       character(:), allocatable :: f_version
 

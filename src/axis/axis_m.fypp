@@ -30,7 +30,7 @@ module axis_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Parameter definitions
 
@@ -99,8 +99,8 @@ module axis_m
 
       module subroutine get_label(self, label)
          implicit none (type, external)
-         class(axis_t), intent(in) :: self
-         character(*), intent(out) :: label
+         class(axis_t), intent(in)         :: self
+         character(LABEL_LEN), intent(out) :: label
       end subroutine get_label
 
    end interface

@@ -148,6 +148,7 @@ module vgrid_m
          class(vgrid_t), intent(in) :: self
          interface
             subroutine map_proc(v_seq, stat)
+               implicit none (type, external)
                integer, intent(in)            :: v_seq
                integer, intent(out), optional :: stat
             end subroutine map_proc
@@ -167,6 +168,7 @@ module vgrid_m
          interface
             subroutine data_proc(v_seq, data, stat)
                use forum_m
+               implicit none (type, external)
                integer, intent(in)            :: v_seq
                real(RD), intent(out)          :: data
                integer, intent(out), optional :: stat
@@ -185,6 +187,7 @@ module vgrid_m
          interface
             subroutine data_proc(v_seq, data, stat)
                use forum_m
+               implicit none (type, external)
                integer, intent(in)            :: v_seq
                real(RD), intent(out)          :: data(:)
                integer, intent(out), optional :: stat

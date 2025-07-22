@@ -22,7 +22,7 @@ module photsource_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Derived-type definitions
 
@@ -39,6 +39,7 @@ module photsource_m
 
       subroutine get_n(self, n)
          import photsource_t
+         implicit none (type, external)
          class(photsource_t), intent(in) :: self
          integer, intent(out)            :: n
       end subroutine get_n
@@ -46,6 +47,7 @@ module photsource_m
       subroutine fetch(self, i, photint, stat)
          use photint_m
          import photsource_t
+         implicit none (type, external)
          class(photsource_t), intent(in)            :: self
          integer, intent(in)                        :: i
          class(photint_t), allocatable, intent(out) :: photint

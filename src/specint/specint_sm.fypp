@@ -29,7 +29,9 @@ submodule(specint_m) specint_sm
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
+
+   ! Procedures
 
 contains
 

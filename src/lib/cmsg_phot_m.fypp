@@ -29,7 +29,7 @@ module cmsg_phot_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Access specifiers
 
@@ -58,9 +58,9 @@ contains
 
    subroutine load_photgrid(photgrid_file_name, photgrid_ptr, stat) bind(C)
 
-      character(C_CHAR)        :: photgrid_file_name(*)
-      type(C_PTR)              :: photgrid_ptr
-      integer(C_INT), optional :: stat
+      character(C_CHAR), intent(in)         :: photgrid_file_name(*)
+      type(C_PTR), intent(out)              :: photgrid_ptr
+      integer(C_INT), intent(out), optional :: stat
 
       type(hdf5io_t)            :: hdf5io
       type(photgrid_t), pointer :: photgrid
@@ -100,10 +100,10 @@ contains
    subroutine load_photgrid_from_specgrid(specgrid_file_name, passband_file_name, &
                                           photgrid_ptr, stat) bind(C)
 
-      character(C_CHAR)        :: specgrid_file_name(*)
-      character(C_CHAR)        :: passband_file_name(*)
-      type(C_PTR)              :: photgrid_ptr
-      integer(C_INT), optional :: stat
+      character(C_CHAR), intent(in)         :: specgrid_file_name(*)
+      character(C_CHAR), intent(in)         :: passband_file_name(*)
+      type(C_PTR), intent(out)              :: photgrid_ptr
+      integer(C_INT), intent(out), optional :: stat
 
       type(hdf5io_t)            :: hdf5io
       type(passband_t)          :: passband
@@ -185,8 +185,8 @@ contains
 
       subroutine get_photgrid_${name}$(photgrid_ptr, ${name}$) bind(C)
 
-         type(C_PTR), value :: photgrid_ptr
-         ${type}$           :: ${name}$
+         type(C_PTR), value    :: photgrid_ptr
+         ${type}$, intent(out) :: ${name}$
 
          type(photgrid_t), pointer :: photgrid
 
@@ -210,8 +210,8 @@ contains
 
    subroutine get_photgrid_shape(photgrid_ptr, shape) bind(C)
 
-      type(C_PTR), value :: photgrid_ptr
-      integer(C_INT)     :: shape(*)
+      type(C_PTR), value          :: photgrid_ptr
+      integer(C_INT), intent(out) :: shape(*)
 
       type(photgrid_t), pointer :: photgrid
       integer                   :: rank
@@ -236,9 +236,9 @@ contains
 
    subroutine get_photgrid_axis_x_min(photgrid_ptr, i, axis_x_min) bind(C)
 
-      type(C_PTR), value    :: photgrid_ptr
-      integer(C_INT), value :: i
-      real(C_DOUBLE)        :: axis_x_min
+      type(C_PTR), value          :: photgrid_ptr
+      integer(C_INT), value       :: i
+      real(C_DOUBLE), intent(out) :: axis_x_min
 
       type(photgrid_t), pointer :: photgrid
       type(axis_t)              :: axis
@@ -263,9 +263,9 @@ contains
 
    subroutine get_photgrid_axis_x_max(photgrid_ptr, i, axis_x_max) bind(C)
 
-      type(C_PTR), value    :: photgrid_ptr
-      integer(C_INT), value :: i
-      real(C_DOUBLE)        :: axis_x_max
+      type(C_PTR), value          :: photgrid_ptr
+      integer(C_INT), value       :: i
+      real(C_DOUBLE), intent(out) :: axis_x_max
 
       type(photgrid_t), pointer :: photgrid
       type(axis_t)              :: axis
@@ -290,9 +290,9 @@ contains
 
    subroutine get_photgrid_axis_label(photgrid_ptr, i, axis_label) bind(C)
 
-      type(C_PTR), value    :: photgrid_ptr
-      integer(C_INT), value :: i
-      character(C_CHAR)     :: axis_label(*)
+      type(C_PTR), value             :: photgrid_ptr
+      integer(C_INT), value          :: i
+      character(C_CHAR), intent(out) :: axis_label(*)
 
       type(photgrid_t), pointer :: photgrid
       type(axis_t)              :: axis
@@ -320,9 +320,9 @@ contains
 
    subroutine set_photgrid_cache_limit(photgrid_ptr, cache_limit, stat) bind(C)
 
-      type(C_PTR), value       :: photgrid_ptr
-      integer(C_INT), value    :: cache_limit
-      integer(C_INT), optional :: stat
+      type(C_PTR), value                    :: photgrid_ptr
+      integer(C_INT), value                 :: cache_limit
+      integer(C_INT), intent(out), optional :: stat
 
       type(photgrid_t), pointer :: photgrid
 
@@ -373,13 +373,13 @@ contains
       subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, ${arg_var}$, res, stat, &
                                           deriv_vec, order) bind(C, name='interp_photgrid_${name}$')
 
-         type(C_PTR), value        :: photgrid_ptr
-         real(C_DOUBLE)            :: x_vec(*)
-         ${arg_type}$, value       :: ${arg_var}$
-         real(C_DOUBLE)            :: res
-         integer(C_INT), optional  :: stat
-         logical(C_BOOL), optional :: deriv_vec(*)
-         integer(C_INT), optional  :: order
+         type(C_PTR), value                    :: photgrid_ptr
+         real(C_DOUBLE), intent(in)            :: x_vec(*)
+         ${arg_type}$, value                   :: ${arg_var}$
+         real(C_DOUBLE), intent(out)           :: res
+         integer(C_INT), intent(out), optional :: stat
+         logical(C_BOOL), intent(in), optional :: deriv_vec(*)
+         integer(C_INT), intent(in), optional  :: order
 
          type(photgrid_t), pointer :: photgrid
          integer                   :: rank
@@ -415,12 +415,12 @@ contains
       subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, res, stat, &
                                           deriv_vec, order) bind(C, name='interp_photgrid_${name}$')
 
-         type(C_PTR), value        :: photgrid_ptr
-         real(C_DOUBLE)            :: x_vec(*)
-         real(C_DOUBLE)            :: res
-         integer(C_INT), optional  :: stat
-         logical(C_BOOL), optional :: deriv_vec(*)
-         integer(C_INT), optional  :: order
+         type(C_PTR), value                    :: photgrid_ptr
+         real(C_DOUBLE), intent(in)            :: x_vec(*)
+         real(C_DOUBLE), intent(out)           :: res
+         integer(C_INT), intent(out), optional :: stat
+         logical(C_BOOL), intent(in), optional :: deriv_vec(*)
+         integer(C_INT), intent(in), optional  :: order
 
          type(photgrid_t), pointer :: photgrid
          integer                   :: rank
@@ -454,11 +454,11 @@ contains
    subroutine adjust_photgrid_x_vec(photgrid_ptr, x_vec, dx_vec, x_adj, &
                                     stat) bind(C, name='adjust_photgrid_x_vec')
 
-      type(C_PTR), value        :: photgrid_ptr
-      real(C_DOUBLE)            :: x_vec(*)
-      real(C_DOUBLE)            :: dx_vec(*)
-      real(C_DOUBLE)            :: x_adj(*)
-      integer(C_INT), optional  :: stat
+      type(C_PTR), value                    :: photgrid_ptr
+      real(C_DOUBLE), intent(in)            :: x_vec(*)
+      real(C_DOUBLE), intent(in)            :: dx_vec(*)
+      real(C_DOUBLE), intent(out)           :: x_adj(*)
+      integer(C_INT), intent(out), optional :: stat
 
       type(photgrid_t), pointer :: photgrid
       integer                   :: rank

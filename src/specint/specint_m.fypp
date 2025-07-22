@@ -22,7 +22,7 @@ module specint_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Derived-type definitions
 
@@ -51,6 +51,7 @@ module specint_m
       subroutine get_lam_min(self, lam_min)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in) :: self
          real(RD), intent(out)        :: lam_min
       end subroutine get_lam_min
@@ -58,6 +59,7 @@ module specint_m
       subroutine get_lam_max(self, lam_max)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in) :: self
          real(RD), intent(out)        :: lam_max
       end subroutine get_lam_max
@@ -65,6 +67,7 @@ module specint_m
       subroutine get_precise(self, precise)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in) :: self
          logical, intent(out)         :: precise
       end subroutine get_precise
@@ -72,6 +75,7 @@ module specint_m
       subroutine get_ssize(self, ssize)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in) :: self
          integer(ID), intent(out)     :: ssize
       end subroutine get_ssize
@@ -79,6 +83,7 @@ module specint_m
       subroutine interp_intensity(self, mu, lam, res, stat)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in)   :: self
          real(RD), intent(in)           :: mu
          real(RD), intent(in)           :: lam(:)
@@ -89,6 +94,7 @@ module specint_m
       subroutine interp_E_moment(self, k, lam, res, stat)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in)   :: self
          integer, intent(in)            :: k
          real(RD), intent(in)           :: lam(:)
@@ -99,6 +105,7 @@ module specint_m
       subroutine interp_D_moment(self, l, lam, res, stat)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in)   :: self
          integer, intent(in)            :: l
          real(RD), intent(in)           :: lam(:)
@@ -109,6 +116,7 @@ module specint_m
       subroutine interp_flux(self, lam, res, stat)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in)   :: self
          real(RD), intent(in)           :: lam(:)
          real(RD), intent(out)          :: res(:)
@@ -118,6 +126,7 @@ module specint_m
       subroutine subset(self, lam_min, lam_max, specint, stat)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in)               :: self
          real(RD), intent(in)                       :: lam_min
          real(RD), intent(in)                       :: lam_max
@@ -129,6 +138,7 @@ module specint_m
          use forum_m
          use range_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in)               :: self
          class(range_t), intent(in)                 :: range
          class(specint_t), allocatable, intent(out) :: specint
@@ -140,6 +150,7 @@ module specint_m
          use passband_m
          use photint_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in)               :: self
          type(passband_t), intent(in)               :: passband
          class(photint_t), allocatable, intent(out) :: photint
@@ -149,6 +160,7 @@ module specint_m
       subroutine read(self, hdf5io, stat)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(out)  :: self
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
@@ -157,6 +169,7 @@ module specint_m
       subroutine write(self, hdf5io, stat)
          use forum_m
          import specint_t
+         implicit none (type, external)
          class(specint_t), intent(in)   :: self
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
@@ -167,6 +180,7 @@ module specint_m
    interface specint_t
 
       module function specint_t_type_(type) result(specint)
+         implicit none (type, external)
          character(*), intent(in)      :: type
          class(specint_t), allocatable :: specint
       end function specint_t_type_

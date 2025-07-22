@@ -34,6 +34,7 @@ contains
       interface
          subroutine data_proc(v_seq, data, stat)
             use forum_m
+            implicit none (type, external)
             integer, intent(in)            :: v_seq
             real(RD), intent(out)          :: data
             integer, intent(out), optional :: stat
@@ -229,6 +230,7 @@ contains
       interface
          subroutine data_proc(v_seq, data, stat)
             use forum_m
+            implicit none (type, external)
             integer, intent(in)            :: v_seq
             real(RD), intent(out)          :: data(:)
             integer, intent(out), optional :: stat

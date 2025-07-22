@@ -38,6 +38,7 @@ contains
       interface
          subroutine fetch_proc(i, specint, stat)
             use specint_m
+            implicit none (type, external)
             integer, intent(in)                        :: i
             class(specint_t), allocatable, intent(out) :: specint
             integer, intent(out), optional             :: stat

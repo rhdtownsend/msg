@@ -29,7 +29,7 @@ program ascii_to_specint
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Variables
 
@@ -180,4 +180,4 @@ contains
 
    end subroutine read_ascii_file
 
-end program
+end program ascii_to_specint

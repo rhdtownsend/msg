@@ -31,7 +31,7 @@ module cubint_m
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Derived-type definitions
 

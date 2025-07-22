@@ -29,7 +29,7 @@ module fit_m
 
   ! No implicit typing
 
-  implicit none
+  implicit none (type, external)
 
   ! Interfaces
 
@@ -44,6 +44,8 @@ module fit_m
 
   public :: gls_fit
 
+  ! Procedures
+
 contains
 
   subroutine gls_fit_1_(x, y, f, a)
@@ -52,7 +54,8 @@ contains
     real(RD), intent(in) :: y(:)
     interface
        function f (x, n)
-         use forum_m
+          use forum_m
+          implicit none (type, external)
          real(RD), intent(in) :: x
          integer, intent(in)  :: n
          real(RD)             :: f(n)
@@ -87,57 +90,58 @@ contains
 
   subroutine gls_fit_2_(x, y, f, a)
 
-    real(RD), intent(in) :: x(:)
-    real(RD), intent(in) :: y(:,:)
-    interface
-       function f (x, n)
-         use forum_m
-         real(RD), intent(in) :: x
-         integer, intent(in)  :: n
-         real(RD)             :: f(n)
-       end function f
-    end interface
-    real(RD), intent(out) :: a(:,:)
+     real(RD), intent(in) :: x(:)
+     real(RD), intent(in) :: y(:,:)
+     interface
+        function f (x, n)
+           use forum_m
+           implicit none (type, external)
+           real(RD), intent(in) :: x
+           integer, intent(in)  :: n
+           real(RD)             :: f(n)
+        end function f
+     end interface
+     real(RD), intent(out) :: a(:,:)
 
-    integer               :: n_a
-    integer               :: n_x
-    integer               :: i
-    real(RD), allocatable :: M(:,:)
-    real(RD), allocatable :: B(:,:)
+     integer               :: n_a
+     integer               :: n_x
+     integer               :: i
+     real(RD), allocatable :: M(:,:)
+     real(RD), allocatable :: B(:,:)
 
-    @:CHECK_BOUNDS(SIZE(y, 1), SIZE(x))
+     @:CHECK_BOUNDS(SIZE(y, 1), SIZE(x))
 
-    ! Determine the coefficients a_{i} in the fit to the y(x,:) data
-    !  using the function f(x) = sum_{i} a_{i} * f_{i}(x)
+     ! Determine the coefficients a_{i} in the fit to the y(x,:) data
+     !  using the function f(x) = sum_{i} a_{i} * f_{i}(x)
 
-    ! Set up the desgin matrix
+     ! Set up the desgin matrix
 
-    n_a = SIZE(a, 1)
-    n_x = SIZE(x)
+     n_a = SIZE(a, 1)
+     n_x = SIZE(x)
 
-    allocate(M(n_x,n_a))
+     allocate(M(n_x,n_a))
 
-    x_loop : do i = 1, n_x
-       M(i,:) = f(x(i), n_a)
-    end do x_loop
+     x_loop : do i = 1, n_x
+        M(i,:) = f(x(i), n_a)
+     end do x_loop
 
-    ! Set up the rhs matrix
+     ! Set up the rhs matrix
 
-    allocate(B(MAX(n_x, n_a), SIZE(y, 2)))
+     allocate(B(MAX(n_x, n_a), SIZE(y, 2)))
 
-    B(:n_x,:) = y
-    B(n_x+1:,:) = 0._RD
+     B(:n_x,:) = y
+     B(n_x+1:,:) = 0._RD
 
-    ! Do the fit
+     ! Do the fit
 
-    call LA_GELSS(M, B)
+     call LA_GELSS(M, B)
 
-    ! Extract the results
+     ! Extract the results
 
-    a = B(:n_a,:)
+     a = B(:n_a,:)
 
-    ! Finish
+     ! Finish
 
- end subroutine gls_fit_2_
+  end subroutine gls_fit_2_
 
 end module fit_m

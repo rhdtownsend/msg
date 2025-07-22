@@ -28,7 +28,7 @@ program ferre_to_specint
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Parameter defintiions
 

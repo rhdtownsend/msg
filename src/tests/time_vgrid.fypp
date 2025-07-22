@@ -29,7 +29,7 @@ program time_vgrid
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Variables
 
@@ -92,7 +92,7 @@ contains
 
       type(vgrid_t), intent(out) :: vgrid
 
-      integer :: N = 10
+      integer, parameter :: N = 10
 
       real(RD), allocatable :: coords(:,:)
       integer               :: i

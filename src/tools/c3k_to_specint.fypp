@@ -42,7 +42,7 @@ program c3k_to_specint
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Parameter defintiions
 
@@ -187,9 +187,9 @@ contains
 
    subroutine read_params(hdf5io, labels, x_vecs)
 
-      type(hdf5io_t), intent(inout)              :: hdf5io
-      character(*), allocatable, intent(out)     :: labels(:)
-      real(RD), allocatable, target, intent(out) :: x_vecs(:,:)
+      type(hdf5io_t), intent(inout)                  :: hdf5io
+      character(LABEL_LEN), allocatable, intent(out) :: labels(:)
+      real(RD), allocatable, target, intent(out)     :: x_vecs(:,:)
 
       integer(HID_T)   :: group_id
       integer(HID_T)   :: dset_id

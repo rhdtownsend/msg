@@ -3,7 +3,7 @@ program time_specgrid
    use forum_m
    use fmsg_m
 
-   implicit none
+   implicit none (type, external)
 
    integer               :: n
    integer               :: k
