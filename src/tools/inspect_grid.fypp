@@ -45,7 +45,7 @@ program inspect_grid
    @:ASSERT(n_arg() == 1, 'Syntax: inspect_specgrid grid_file_name')
 
    call get_arg(1, grid_file_name)
- 
+
    ! Read & inspect the grid
 
    hdf5io = hdf5io_t(grid_file_name, OPEN_FILE_RO)
@@ -81,7 +81,7 @@ program inspect_grid
       else
          label = ''
       end if
-         
+
       write(OUTPUT_UNIT, 110) 'Label :', TRIM(label)
 
       call hdf5io%final()
@@ -127,7 +127,7 @@ contains
             call axis%get_x_max(x_max)
 
             call axis%get_label(label)
-      
+
             write(OUTPUT_UNIT, 120) 'Axis', r
 120         format(A,1X,I0)
 
@@ -140,10 +140,10 @@ contains
          end do
 
          #:if type == 'specgrid_t'
-      
+
             call grid%get_lam_min(lam_min)
             call grid%get_lam_max(lam_max)
-   
+
             write(OUTPUT_UNIT, 150) 'Wavelength range:', lam_min, '->', lam_max
 150         format(A,1X,F11.2,1X,A,1X,F11.2)
 
@@ -156,5 +156,5 @@ contains
       end subroutine inspect_${name}$_
 
    #:endfor
-   
+
 end program inspect_grid

@@ -108,7 +108,7 @@ program make_bb_photgrid
       end do
 
    end do
-         
+
    ! Create vgrid
 
    vgrid = vgrid_t(x_vecs, ['logT', 'logg'])

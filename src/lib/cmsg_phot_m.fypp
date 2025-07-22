@@ -73,7 +73,7 @@ contains
       end if
 
       ! Load the photgrid
-      
+
       allocate(photgrid)
 
       call photgrid%read(hdf5io, stat)
@@ -84,7 +84,7 @@ contains
             return
          end if
       end if
- 
+
       ! Set up the C pointer
 
       photgrid_ptr = C_LOC(photgrid)
@@ -116,7 +116,7 @@ contains
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
-      
+
       call passband%read(hdf5io, stat)
       call hdf5io%final()
       if (PRESENT(stat)) then
@@ -127,13 +127,13 @@ contains
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
-      
+
       call specgrid%read(hdf5io, stat)
       call hdf5io%final()
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
- 
+
       call specgrid%set_cache_limit(0)
 
       allocate(photgrid)
@@ -152,7 +152,7 @@ contains
       ! Finish
 
       return
-      
+
    end subroutine load_photgrid_from_specgrid
 
    !****
@@ -182,7 +182,7 @@ contains
    #:for name, type in (('rank', 'integer(C_INT)'),        &
                         ('cache_usage', 'integer(C_INT)'), &
                         ('cache_limit', 'integer(C_INT)'))
-                        
+
       subroutine get_photgrid_${name}$(photgrid_ptr, ${name}$) bind(C)
 
          type(C_PTR), value :: photgrid_ptr
@@ -235,7 +235,7 @@ contains
    !****
 
    subroutine get_photgrid_axis_x_min(photgrid_ptr, i, axis_x_min) bind(C)
-         
+
       type(C_PTR), value    :: photgrid_ptr
       integer(C_INT), value :: i
       real(C_DOUBLE)        :: axis_x_min
@@ -262,7 +262,7 @@ contains
    !****
 
    subroutine get_photgrid_axis_x_max(photgrid_ptr, i, axis_x_max) bind(C)
-         
+
       type(C_PTR), value    :: photgrid_ptr
       integer(C_INT), value :: i
       real(C_DOUBLE)        :: axis_x_max
@@ -289,7 +289,7 @@ contains
    !****
 
    subroutine get_photgrid_axis_label(photgrid_ptr, i, axis_label) bind(C)
-         
+
       type(C_PTR), value    :: photgrid_ptr
       integer(C_INT), value :: i
       character(C_CHAR)     :: axis_label(*)
@@ -323,7 +323,7 @@ contains
       type(C_PTR), value       :: photgrid_ptr
       integer(C_INT), value    :: cache_limit
       integer(C_INT), optional :: stat
-      
+
       type(photgrid_t), pointer :: photgrid
 
       ! Set up the Fortran pointer
@@ -345,7 +345,7 @@ contains
    subroutine flush_photgrid_cache(photgrid_ptr) bind(C)
 
       type(C_PTR), value       :: photgrid_ptr
-         
+
       type(photgrid_t), pointer :: photgrid
 
       ! Set up the Fortran pointer
@@ -409,7 +409,7 @@ contains
    #:endfor
 
    !****
-      
+
    #:for name, var in (('flux', 'F'),)
 
       subroutine interp_photgrid_${name}$(photgrid_ptr, x_vec, res, stat, &

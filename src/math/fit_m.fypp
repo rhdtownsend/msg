@@ -84,7 +84,7 @@ contains
  end subroutine gls_fit_1_
 
   !****
-  
+
   subroutine gls_fit_2_(x, y, f, a)
 
     real(RD), intent(in) :: x(:)
@@ -141,4 +141,3 @@ contains
  end subroutine gls_fit_2_
 
 end module fit_m
-

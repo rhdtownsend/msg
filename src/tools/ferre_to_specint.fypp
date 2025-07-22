@@ -48,7 +48,7 @@ program ferre_to_specint
       real(RD)                         :: resolution
       integer                          :: transposed
    end type ferre_hdr_t
-      
+
    ! Variables
 
    character(:), allocatable :: ferre_file_name
@@ -292,7 +292,7 @@ contains
       end do
 
       call hdf5io_labels%final()
-      
+
       call hdf5io%final()
 
       ! Finish

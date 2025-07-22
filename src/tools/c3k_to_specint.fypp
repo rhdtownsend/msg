@@ -28,7 +28,7 @@
       @:ABORT('error in call to ${proc}$')
    endif
 #:enddef
-   
+
 program c3k_to_specint
 
    ! Uses
@@ -90,7 +90,7 @@ program c3k_to_specint
    rank = SIZE(labels)
 
    ! Read spectra
-   
+
    call hdf5io%alloc_read_dset('spectra', spectra)
 
    n_lam = SIZE(spectra, 1)
@@ -105,7 +105,7 @@ program c3k_to_specint
 
    allocate(lam(n_lam))
    call range%unpack(lam)
-   
+
    ! Process the spectra
 
    allocate(F(n_lam))
@@ -122,7 +122,7 @@ program c3k_to_specint
       F = 4._RD*spectra(:,j)*C_LIGHT/(lam*1E-8_RD)**2*1E-8_RD
 
       I(1,:) = 0.5_RD*(F(:n_lam-1) + F(2:))
-   
+
       ! Create specint
 
       specint = limb_specint_t(I, [1._RD], range, limb_t('CONST'), precise=.FALSE.)
@@ -130,7 +130,7 @@ program c3k_to_specint
       ! Write it
 
       hdf5io_specint = hdf5io_t(specint_file_name, CREATE_FILE)
-      
+
       call specint%write(hdf5io_specint)
 
       hdf5io_labels = hdf5io_t(hdf5io_specint, 'labels')
@@ -206,7 +206,7 @@ contains
       integer(HID_T)   :: mem_type_id
       integer(SIZE_T)  :: comp_size
       type(C_PTR)      :: data_ptr
-      
+
       ! Open the parameter dataset
 
       call hdf5io%inquire(group_id=group_id)
@@ -214,7 +214,7 @@ contains
       @:HDF5_CALL(h5dopen_f, group_id, 'parameters', dset_id)
 
       ! Get the size
-      
+
       @:HDF5_CALL(h5dget_space_f, dset_id, space_id)
       @:HDF5_CALL(h5sget_simple_extent_dims_f, space_id, shape, max_shape)
       @:HDF5_CALL(h5sclose_f, space_id)
@@ -228,7 +228,7 @@ contains
       ! Extract the labels
 
       @:HDF5_CALL(h5tget_nmembers_f, file_type_id, rank)
-      
+
       allocate(labels(rank))
 
       do r = 1, rank
@@ -269,4 +269,3 @@ contains
    end subroutine read_params
 
 end program c3k_to_specint
-

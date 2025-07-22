@@ -51,7 +51,7 @@ module photint_m
             class(photint_t), intent(in) :: self
             ${type}$, intent(out)        :: ${name}$
          end subroutine get_${name}$
-      
+
       #:endfor
 
       #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
@@ -68,7 +68,7 @@ module photint_m
          end subroutine interp_${name}$
 
       #:endfor
-      
+
       #:for name, var in (('flux', 'F'),)
 
          subroutine interp_${name}$(self, res, stat)
@@ -88,7 +88,7 @@ module photint_m
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
       end subroutine read
-         
+
       subroutine write(self, hdf5io, stat)
          use forum_m
          import photint_t
@@ -96,9 +96,9 @@ module photint_m
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
       end subroutine write
-         
+
    end interface
-         
+
    interface photint_t
 
       module function photint_t_type_(type) result(photint)
@@ -107,7 +107,7 @@ module photint_m
       end function photint_t_type_
 
    end interface photint_t
-   
+
    ! Access specifiers
 
    private

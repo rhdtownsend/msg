@@ -52,7 +52,7 @@ program specint_to_specgrid
 
    type(specgrid_t) :: specgrid
    type(hdf5io_t)   :: hdf5io
-   
+
    ! Read command-line arguments
 
    @:ASSERT(n_arg() == 3, 'Syntax: specint_to_specgrid manifest_file_name specgrid_file_name label')
@@ -125,7 +125,7 @@ contains
          read(unit, *, END=100)
          n_smetas = n_smetas + 1
       end do count_loop
-      
+
 100   continue
 
       ! Read the spectrum metadata
@@ -180,7 +180,7 @@ contains
          call hdf5io%read_attr('lam_max', smetas(i)%lam_max)
 
          ! Close the file
-         
+
          call hdf5io%final()
 
       end do smeta_loop
@@ -213,7 +213,7 @@ contains
       character(NAME_LEN), allocatable :: file_names(:)
       character(NAME_LEN), allocatable :: group_names(:)
       type(hdf5_specsource_t)          :: specsource
-      
+
       ! Create the vgrid
 
       ! First, get the list of vertex coordinates

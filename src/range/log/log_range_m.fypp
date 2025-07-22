@@ -48,7 +48,7 @@ module log_range_m
       procedure, public :: unpack
       procedure, public :: subset
       procedure, public :: read
-      procedure, public :: write 
+      procedure, public :: write
   end type log_range_t
 
    ! Interfaces

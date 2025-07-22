@@ -53,7 +53,7 @@ module photsource_m
       end subroutine fetch
 
    end interface
-      
+
    ! Access photifiers
 
    private

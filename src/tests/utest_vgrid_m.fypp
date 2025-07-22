@@ -39,7 +39,7 @@ module utest_vgrid_m
   public :: test
 
 contains
- 
+
    subroutine test()
 
       call test_stat_()
@@ -242,7 +242,7 @@ contains
          else
             print *,'    FAIL rank:', rank, '/=', rank_chk
          end if
-         
+
          if (ALL(shape == shape_chk)) then
             print *,'    PASS shape'
          else
@@ -256,7 +256,7 @@ contains
          end if
 
          ! Finish
-         
+
          return
 
       end subroutine attr_assert_
@@ -335,9 +335,9 @@ contains
          else
             print *,'    FAIL mask', mask, '/=', mask_chk
          end if
-         
+
          ! Finish
-         
+
          return
 
       end subroutine map_assert_
@@ -388,7 +388,7 @@ contains
          x_vec(:,2) = [0.5_RD, 1.5_RD]
 
          f_chk = 1._RD + x_vec(1,:) + 2._RD*x_vec(2,:)
-         
+
          ! Finish
 
          return
@@ -444,7 +444,7 @@ contains
          else
             print *,'    FAIL linear: ', MAXVAL(ABS(f_err)), '>', tol
          end if
-         
+
          f_err = (f_cub - f_chk)/f_chk
 
          if (ALL(ABS(f_err) < tol)) then
@@ -454,7 +454,7 @@ contains
          end if
 
          ! Finish
-         
+
          return
 
       end subroutine interp_assert_
@@ -497,7 +497,7 @@ contains
 
          x_vec(:,1) = [0.5_RD, 1.5_RD]
          dx_vec(:,1) = [1._RD, 1._RD]
-         
+
          x_adj_chk(:,1) = [0.5_RD, 1.5_RD]
          stat_chk(1) = STAT_OK
 
@@ -505,7 +505,7 @@ contains
 
          x_vec(:,2) = [1.5_RD, 1.5_RD]
          dx_vec(:,2) = [-1._RD, 0._RD]
-         
+
          x_adj_chk(:,2) = [1.0_RD, 1.5_RD]
          stat_chk(2) = STAT_OK
 
@@ -514,7 +514,7 @@ contains
 
          x_vec(:,3) = [1.5_RD, 2.0_RD]
          dx_vec(:,3) = [-1._RD, 0._RD]
-         
+
          x_adj_chk(:,3) = [1.0_RD, 2.0_RD]
          stat_chk(3) = STAT_OK
 
@@ -523,7 +523,7 @@ contains
 
          x_vec(:,4) = [1.5_RD, 2.0_RD]
          dx_vec(:,4) = [0._RD, -1._RD]
-         
+
          x_adj_chk(:,4) = [1.5_RD, 1.0_RD]
          stat_chk(4) = STAT_OK
 
@@ -531,7 +531,7 @@ contains
 
          x_vec(:,5) = [2.0_RD, 2.0_RD]
          dx_vec(:,5) = [-2._RD, -1._RD]
-         
+
          x_adj_chk(:,5) = [1.0_RD, 1.5_RD]
          stat_chk(5) = STAT_OK
 
@@ -539,7 +539,7 @@ contains
 
          x_vec(:,6) = [1.5_RD, 1.5_RD]
          dx_vec(:,6) = [2._RD, 1._RD]
-         
+
          x_adj_chk(:,6) = [1.0_RD, 1.5_RD]
          stat_chk(6) = STAT_OUT_OF_BOUNDS_AXIS_HI
 
@@ -581,7 +581,7 @@ contains
                if (stat(i) == STAT_OK) then
 
                   f_err = (x_adj(:,i) - x_adj_chk(:,i))/x_adj_chk(:,i)
-               
+
                   if (ALL(ABS(f_err) < tol)) then
                      print *,'    PASS case ', i
                   else
@@ -597,13 +597,13 @@ contains
             else
 
                print *,'    FAIL case ', i, ':', stat(i), '/=', stat_chk(i)
-               
+
             end if
 
          end do
-         
+
          ! Finish
-         
+
          return
 
       end subroutine adjust_assert_

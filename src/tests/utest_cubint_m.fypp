@@ -64,7 +64,7 @@ contains
       real(RD)       :: df_dx_chk(n_x_int)
       real(RD)       :: int_f_chk(n_x_int)
       type(cubint_t) :: ci
-      
+
       call cubint_arrange_()
       call cubint_act_()
       call cubint_assert_()
@@ -130,7 +130,7 @@ contains
             call eval_cubic_(x_int(i), f_chk(i), df_dx_chk(i), int_f_chk(i))
 
          end do
-         
+
          ! Finish
 
          return

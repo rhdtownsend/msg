@@ -46,7 +46,7 @@ module range_m
                            ('x_min', 'real(RD)'), &
                            ('x_max', 'real(RD)'), &
                            ('ssize', 'integer(ID)'))
-                           
+
          subroutine get_${name}$(self, ${name}$)
             use forum_m
             import range_t
@@ -98,7 +98,7 @@ module range_m
       end function range_t_type_
 
    end interface range_t
-   
+
    ! Access specifiers
 
    private

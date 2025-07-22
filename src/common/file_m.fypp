@@ -107,7 +107,7 @@ contains
       integer, intent(out), optional :: stat
 
       character(:), allocatable :: file_name
-      
+
       ! Open the file
 
       call c_f_string(c_file_name, file_name)
@@ -127,7 +127,7 @@ contains
       integer, intent(out), optional :: stat
 
       character(TYPE_LEN) :: type_
-      
+
       ! Check the type attribute stored in the HDF5 group
 
       if (hdf5io%attr_exists('TYPE')) then
@@ -162,4 +162,3 @@ contains
    end subroutine check_type
 
 end module file_m
-

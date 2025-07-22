@@ -20,7 +20,7 @@
 module utest_specgrid_m
 
    ! Uses
-   
+
    use forum_m
    use fmsg_m
 
@@ -202,11 +202,11 @@ contains
       real(RD)         :: cache_lam_max_chk
       integer          :: cache_limit
       integer          :: cache_limit_chk
- 
+
       print *, '  attributes'
 
       call load_specgrid('sg-demo.h5', sg)
-      
+
       call attr_arrange_()
       call attr_act_()
       call attr_assert_()
@@ -268,31 +268,31 @@ contains
          else
             print *,'    FAIL rank:', rank, '/=', rank_chk
          end if
-            
+
          if (lam_min == lam_min_chk) then
             print *,'    PASS lam_min'
          else
             print *,'    FAIL lam_min:', lam_min, '/=', lam_min_chk
          end if
-            
+
          if (lam_max == lam_max_chk) then
             print *,'    PASS lam_max'
          else
             print *,'    FAIL lam_max:', lam_max, '/=', lam_max_chk
          end if
-            
+
          if (cache_lam_min == cache_lam_min_chk) then
             print *,'    PASS cache_lam_min'
          else
             print *,'    FAIL cache_lam_min:', cache_lam_min, '/=', cache_lam_min_chk
          end if
-            
+
          if (cache_lam_max == cache_lam_max_chk) then
             print *,'    PASS cache_lam_max'
          else
             print *,'    FAIL cache_lam_max:', cache_lam_max, '/=', cache_lam_max_chk
          end if
-            
+
          if (cache_limit == cache_limit_chk) then
             print *,'    PASS cache_limit'
          else
@@ -324,11 +324,11 @@ contains
       real(RD)         :: D_chk(n_lam-1)
       real(RD)         :: F(n_lam-1)
       real(RD)         :: F_chk(n_lam-1)
- 
+
       print *, '  interpolation'
 
       call load_specgrid('sg-demo.h5', sg)
-      
+
       call interp_arrange_()
       call interp_act_()
       call interp_assert_()
@@ -370,7 +370,7 @@ contains
          call sg%interp_D_moment(x_vec, 2, lam, D)
 
          call sg%interp_flux(x_vec, lam, F)
-         
+
          ! Finish
 
          return
@@ -398,25 +398,25 @@ contains
          else
             print *,'    FAIL intensity:', MAXVAL(ABS(I_err)), '>', tol
          end if
-            
+
          if (ALL(ABS(E_err) < tol)) then
             print *,'    PASS E_moment'
          else
             print *,'    FAIL E_moment:', MAXVAL(ABS(E_err)), '>', tol
          end if
-            
+
          if (ALL(ABS(D_err) < tol)) then
             print *,'    PASS D_moment'
          else
             print *,'    FAIL D_moment:', MAXVAL(ABS(D_err)), '>', tol
          end if
-            
+
          if (ALL(ABS(F_err) < tol)) then
             print *,'    PASS flux'
          else
             print *,'    FAIL flux:', MAXVAL(ABS(F_err)), '>', tol
          end if
-            
+
          ! Finish
 
          return

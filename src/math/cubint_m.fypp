@@ -37,11 +37,11 @@ module cubint_m
 
    type cubint_t
       private
-      real(RD), allocatable :: x(:)    
-      real(RD), allocatable :: f(:)    
+      real(RD), allocatable :: x(:)
+      real(RD), allocatable :: f(:)
       real(RD), allocatable :: df_dx(:)
       real(RD), allocatable :: g(:)
-      integer               :: n       
+      integer               :: n
    contains
       private
       procedure, public :: get_x_min
@@ -126,12 +126,12 @@ contains
 
          h = x(i+1) - x(i)
 
-         cubint%g(i) = int_f +                   &  
+         cubint%g(i) = int_f +                   &
               f    (i  )*phi_(1._RD, -1)*h -     &
               f    (i+1)*phi_(0._RD, -1)*h -     &
               df_dx(i  )*psi_(1._RD, -1)*h**2 -  &
               df_dx(i+1)*psi_(0._RD, -1)*h**2
-         
+
       end do x_loop
 
       ! Finish
@@ -176,7 +176,7 @@ contains
    end function cubint_t_derivs_
 
    !****
-   
+
    function spline_derivs_(x, f, df_dx_a, df_dx_b) result(df_dx)
 
       real(RD), intent(in)           :: x(:)
@@ -365,7 +365,7 @@ contains
    end function mono_derivs_
 
    !****
-   
+
    subroutine get_x_min(self, x_min)
 
       class(cubint_t), intent(in) :: self

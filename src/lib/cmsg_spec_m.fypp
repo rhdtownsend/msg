@@ -79,7 +79,7 @@ contains
       end if
 
       ! Load the specgrid
-      
+
       allocate(specgrid)
 
       call specgrid%read(hdf5io, stat)
@@ -90,7 +90,7 @@ contains
             return
          end if
       end if
- 
+
       ! Set up the C pointer
 
       specgrid_ptr = C_LOC(specgrid)
@@ -132,7 +132,7 @@ contains
                         ('cache_lam_max', 'real(C_DOUBLE)'), &
                         ('cache_limit', 'integer(C_INT)'),   &
                         ('cache_usage', 'integer(C_INT)'))
-                        
+
       subroutine get_specgrid_${name}$(specgrid_ptr, ${name}$) bind(C)
 
          type(C_PTR), value :: specgrid_ptr
@@ -185,7 +185,7 @@ contains
    !****
 
    subroutine get_specgrid_axis_x_min(specgrid_ptr, i, axis_x_min) bind(C)
-         
+
       type(C_PTR), value    :: specgrid_ptr
       integer(C_INT), value :: i
       real(C_DOUBLE)        :: axis_x_min
@@ -212,7 +212,7 @@ contains
    !****
 
    subroutine get_specgrid_axis_x_max(specgrid_ptr, i, axis_x_max) bind(C)
-         
+
       type(C_PTR), value    :: specgrid_ptr
       integer(C_INT), value :: i
       real(C_DOUBLE)        :: axis_x_max
@@ -239,7 +239,7 @@ contains
    !****
 
    subroutine get_specgrid_axis_label(specgrid_ptr, i, axis_label) bind(C)
-         
+
       type(C_PTR), value    :: specgrid_ptr
       integer(C_INT), value :: i
       character(C_CHAR)     :: axis_label(*)
@@ -271,13 +271,13 @@ contains
    #:for name, type in (('cache_lam_min', 'real(C_DOUBLE)'), &
                         ('cache_lam_max', 'real(C_DOUBLE)'), &
                         ('cache_limit', 'integer(C_INT)'))
-                        
+
       subroutine set_specgrid_${name}$(specgrid_ptr, ${name}$, stat) bind(C)
 
          type(C_PTR), value       :: specgrid_ptr
          ${type}$, value          :: ${name}$
          integer(C_INT), optional :: stat
-         
+
          type(specgrid_t), pointer :: specgrid
 
          ! Set up the Fortran pointer
@@ -301,7 +301,7 @@ contains
    subroutine flush_specgrid_cache(specgrid_ptr) bind(C)
 
       type(C_PTR), value       :: specgrid_ptr
-         
+
       type(specgrid_t), pointer :: specgrid
 
       ! Set up the Fortran pointer
@@ -365,7 +365,7 @@ contains
    #:endfor
 
    !****
-      
+
    #:for name, var in (('flux', 'F'),)
 
       subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, n, lam, res, stat, &

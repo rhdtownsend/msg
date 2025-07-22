@@ -72,13 +72,13 @@ program specint_to_specint
 
    call get_arg('lam_max', lam_max, status, first=3)
    lam_max_set = status == 0
-   
+
    call get_arg('dlam', dlam, status, first=3)
    dlam_set = status == 0
-   
+
    call get_arg('R', R, status, first=3)
    R_set = status == 0
-   
+
    call get_arg('just', just, status, first=3)
    just_set = status == 0
 
@@ -212,7 +212,7 @@ contains
    end function lin_range
 
    !****
-   
+
    function log_range(lam_min, lam_max, R, just) result(range)
 
       real(RD), intent(in)     :: lam_min
@@ -255,5 +255,5 @@ contains
       return
 
    end function log_range
-      
+
 end program specint_to_specint

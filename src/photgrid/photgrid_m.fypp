@@ -21,7 +21,7 @@
 module photgrid_m
 
    ! Uses
-   
+
    use forum_m
 
    use axis_m
@@ -48,7 +48,7 @@ module photgrid_m
       procedure, public :: get_shape
       procedure, public :: get_axis
       procedure, public :: get_cache_limit
-      procedure, public :: get_cache_usage 
+      procedure, public :: get_cache_usage
       procedure, public :: set_cache_limit
       procedure, public :: flush_cache
       procedure, public :: interp_intensity
@@ -222,7 +222,7 @@ module photgrid_m
    public :: photgrid_t
 
    ! Procedures
-   
+
 contains
 
    subroutine flush_cache(self)

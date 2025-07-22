@@ -20,7 +20,7 @@
 module utest_math_m
 
    ! Uses
-   
+
    use forum_m
 
    use math_m
@@ -145,7 +145,7 @@ contains
       end subroutine integrate_con_assert_
 
    end subroutine test_integrate_con_
-   
+
 
    !****
 

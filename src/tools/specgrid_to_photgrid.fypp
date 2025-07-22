@@ -48,7 +48,7 @@ program specgrid_to_photgrid
    call get_arg(1, specgrid_file_name)
    call get_arg(2, passband_file_name)
    call get_arg(3, photgrid_file_name)
- 
+
    ! Read the passband
 
    hdf5io = hdf5io_t(passband_file_name, OPEN_FILE_RO)

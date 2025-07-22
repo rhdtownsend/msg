@@ -110,7 +110,7 @@ program synspec_to_specint
    ! Bin the data onto this axis
 
    call bin_data(lam_in, I_in, lam, I)
- 
+
    ! Create specint
 
    specint = limb_specint_t(I, mu, range, limb, precise=.FALSE.)

@@ -38,7 +38,7 @@ module utest_ninterp_m
   public :: test
 
 contains
- 
+
    subroutine test()
 
       call test_cont_()
@@ -185,7 +185,7 @@ contains
       integer, parameter :: n_x = 8
       integer, parameter :: n_y = 10
       integer, parameter :: n_z = 12
-      
+
       real(RD) :: x(n_x)
       real(RD) :: y(n_y)
       real(RD) :: z(n_z)
@@ -213,8 +213,8 @@ contains
       call derivs_act_()
       call derivs_assert_()
 
-   contains      
-      
+   contains
+
       subroutine derivs_arrange_()
 
          integer :: i
@@ -242,7 +242,7 @@ contains
       end subroutine derivs_arrange_
 
       !****
-  
+
       subroutine derivs_act_()
 
          logical  :: cell_mask(4**3)
@@ -286,7 +286,7 @@ contains
 
                      ! Extract bitfields from l. Right bits (bits_l)
                      ! encode position, left bits (bits_p) encode derivatives
-         
+
                      bits_d = IBITS(l-1, 3, 3)
                      bits_p = IBITS(l-1, 0, 3)
 
@@ -307,7 +307,7 @@ contains
                      else
                         k_ = 1
                      end if
-                     
+
                      select case(bits_d)
                      case(0)
                         f(i_,j_,k_,i-1,j-1,k-1) = D(l)
@@ -360,7 +360,7 @@ contains
       end subroutine derivs_act_
 
       !****
-      
+
       subroutine derivs_assert_()
 
          real(RD), parameter :: tol = 1.5E-13_RD
@@ -385,7 +385,7 @@ contains
          d2f_dydz_err = (d2f_dydz - d2f_dydz_chk)/d2f_dydz_chk
 
          d3f_dxdydz_err = (d3f_dxdydz - d3f_dxdydz_chk)/d3f_dxdydz_chk
-         
+
          if (ALL(ABS(f_err) < tol)) then
             print *,'    PASS f'
          else
@@ -449,7 +449,7 @@ contains
       integer, parameter :: n_x_int = n_over*(n_x-3) + 1
       integer, parameter :: n_y_int = n_over*(n_y-3) + 1
       integer, parameter :: n_z_int = n_over*(n_z-3) + 1
-      
+
       real(RD) :: x(n_x)
       real(RD) :: y(n_y)
       real(RD) :: z(n_z)
@@ -466,8 +466,8 @@ contains
       call interp_cubic_act_()
       call interp_cubic_assert_()
 
-   contains      
-      
+   contains
+
       subroutine interp_cubic_arrange_()
 
          integer :: i
@@ -508,7 +508,7 @@ contains
                z_int(n_over*(k-1)+m) = z(k+1) + (z(k+2) - z(k+1))*(m-1)/n_over
             end do
          end do
-         
+
          x_int(n_x_int) = x(n_x-1)
          y_int(n_y_int) = y(n_y-1)
          z_int(n_z_int) = z(n_z-1)
@@ -520,7 +520,7 @@ contains
       end subroutine interp_cubic_arrange_
 
       !****
-  
+
       subroutine interp_cubic_act_()
 
          logical  :: cell_mask(4**3)
@@ -590,7 +590,7 @@ contains
       end subroutine interp_cubic_act_
 
       !****
-      
+
       subroutine interp_cubic_assert_()
 
          real(RD), parameter :: tol = 1.5E-13_RD

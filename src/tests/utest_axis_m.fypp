@@ -39,7 +39,7 @@ module utest_axis_m
   public :: test
 
 contains
- 
+
    subroutine test()
 
       call test_stat_()
@@ -197,7 +197,7 @@ contains
          else
             print *,'    FAIL n:', n, '/=', n_chk
          end if
-         
+
          if (x_min == x_min_chk) then
             print *,'    PASS x_min'
          else
@@ -217,7 +217,7 @@ contains
          end if
 
          ! Finish
-         
+
          return
 
       end subroutine attr_assert_
@@ -291,7 +291,7 @@ contains
          else
             print *,'    FAIL locate: ', i, '/=', i_chk
          end if
-         
+
          if (ALL(u == u_chk)) then
             print *,'    PASS locate_u'
          else
@@ -299,7 +299,7 @@ contains
          end if
 
          ! Finish
-         
+
          return
 
       end subroutine locate_assert_

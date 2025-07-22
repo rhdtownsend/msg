@@ -69,7 +69,7 @@ module specsource_m
       end subroutine fetch
 
    end interface
-      
+
    ! Access specifiers
 
    private

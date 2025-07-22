@@ -38,7 +38,7 @@ module utest_fit_m
   public :: test
 
 contains
- 
+
    subroutine test ()
 
       call test_gls_fit_()
@@ -79,7 +79,7 @@ contains
       end subroutine gls_fit_arrange_
 
       !****
-  
+
       subroutine gls_fit_act_()
 
          call gls_fit(x, y, gls_fit_func_, a)
@@ -93,9 +93,9 @@ contains
          real(RD), intent(in) :: x
          integer, intent(in)  :: n
          real(RD)             :: func(n)
-         
+
          integer :: i
-         
+
          do i = 1, n
             func(i) = x**(i-1)
          end do
@@ -109,7 +109,7 @@ contains
          real(RD) :: err(n_a)
 
          err = (a - a_chk)/a_chk
-         
+
          if (ALL(ABS(err) < 1E-13)) then
             print *,'  PASS'
          else

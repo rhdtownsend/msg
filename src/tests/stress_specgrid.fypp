@@ -119,7 +119,7 @@ program stress_specgrid
 40          format(A,1X,I0)
             @:ABORT('unexpected stat code')
          end select
-            
+
       end do random_loop
 
       write(OUTPUT_UNIT, 30)

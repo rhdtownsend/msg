@@ -83,7 +83,7 @@ contains
 
          stat_chk(4) = STAT_INVALID_GROUP_TYPE
          stat_str(4) = 'STAT_INVALID_GROUP_TYPE'
-         
+
          ! Finish
 
          return
@@ -101,7 +101,7 @@ contains
          call open_file('not-present-file.h5', hdf5io, stat(1))
          call open_file('text-file.txt', hdf5io, stat(2))
          call open_file('sg-demo.h5', hdf5io, stat(3))
-         
+
          ! Check type
 
          call check_type(hdf5io, 'photgrid_t', stat(4))
@@ -125,7 +125,7 @@ contains
                print *,'    PASS ', TRIM(stat_str(j))
             end if
          end do
-               
+
          ! Finish
 
          return

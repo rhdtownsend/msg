@@ -112,7 +112,7 @@ contains
    end subroutine load_photgrid
 
    !****
-      
+
    subroutine load_photgrid_from_specgrid(specgrid_file_name, passband_file_name, &
                                           photgrid, stat)
 
@@ -152,5 +152,5 @@ contains
       return
 
    end subroutine load_photgrid_from_specgrid
-         
+
 end module fmsg_m

@@ -61,5 +61,5 @@ contains
       return
 
    end function range_t_type_
-         
+
 end submodule range_sm

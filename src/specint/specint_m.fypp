@@ -54,7 +54,7 @@ module specint_m
          class(specint_t), intent(in) :: self
          real(RD), intent(out)        :: lam_min
       end subroutine get_lam_min
-      
+
       subroutine get_lam_max(self, lam_max)
          use forum_m
          import specint_t
@@ -153,7 +153,7 @@ module specint_m
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
       end subroutine read
-         
+
       subroutine write(self, hdf5io, stat)
          use forum_m
          import specint_t
@@ -161,9 +161,9 @@ module specint_m
          type(hdf5io_t), intent(inout)  :: hdf5io
          integer, intent(out), optional :: stat
       end subroutine write
-         
+
    end interface
-         
+
    interface specint_t
 
       module function specint_t_type_(type) result(specint)
@@ -172,7 +172,7 @@ module specint_m
       end function specint_t_type_
 
    end interface specint_t
-   
+
    ! Access specifiers
 
    private

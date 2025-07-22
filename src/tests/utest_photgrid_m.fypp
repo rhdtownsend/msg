@@ -20,7 +20,7 @@
 module utest_photgrid_m
 
    ! Uses
-   
+
    use forum_m
    use fmsg_m
 
@@ -63,7 +63,7 @@ contains
       print *, '  exceptions'
 
       call load_photgrid_from_specgrid('sg-demo.h5', 'pb-Generic-Johnson.V-Vega.h5', pg)
-      
+
       call stat_arrange_()
       call stat_act_()
       call stat_assert_()
@@ -179,11 +179,11 @@ contains
       integer  :: rank_chk
       integer  :: cache_limit
       integer  :: cache_limit_chk
- 
+
       print *, '  attributes'
 
       call load_photgrid_from_specgrid('sg-demo.h5', 'pb-Generic-Johnson.V-Vega.h5', pg)
-      
+
       call attr_arrange_()
       call attr_act_()
       call attr_assert_()
@@ -231,7 +231,7 @@ contains
          else
             print *,'    FAIL rank:', rank, '/=', rank_chk
          end if
-            
+
          if (cache_limit == cache_limit_chk) then
             print *,'    PASS cache_limit'
          else
@@ -260,11 +260,11 @@ contains
       real(RD)         :: D_chk
       real(RD)         :: F
       real(RD)         :: F_chk
- 
+
       print *, '  interpolation'
 
       call load_photgrid_from_specgrid('sg-demo.h5', 'pb-Generic-Johnson.V-Vega.h5', pg)
-      
+
       call interp_arrange_()
       call interp_act_()
       call interp_assert_()
@@ -304,7 +304,7 @@ contains
          call pg%interp_D_moment(x_vec, 2, D)
 
          call pg%interp_flux(x_vec, F)
-         
+
          ! Finish
 
          return
@@ -332,25 +332,25 @@ contains
          else
             print *,'    FAIL intensity:', ABS(I_err), '>', tol
          end if
-            
+
          if (ABS(E_err) < tol) then
             print *,'    PASS E_moment'
          else
             print *,'    FAIL E_moment:', ABS(E_err), '>', tol
          end if
-            
+
          if (ABS(D_err) < tol) then
             print *,'    PASS D_moment'
          else
             print *,'    FAIL D_moment:', ABS(D_err), '>', tol
          end if
-            
+
          if (ABS(F_err) < tol) then
             print *,'    PASS flux'
          else
             print *,'    FAIL flux:', ABS(F_err), '>', tol
          end if
-            
+
          ! Finish
 
          return
