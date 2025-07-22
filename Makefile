@@ -50,7 +50,7 @@ LIB_DIR ?= $(CURDIR)/lib
 INC_DIR ?= $(CURDIR)/include
 
 SRC_DIR = $(CURDIR)/src
-SRC_DIRS = $(addprefix $(SRC_DIR)/, axis common cython include interp lib limb math \
+SRC_DIRS = $(addprefix $(SRC_DIR)/, axis common cython include ninterp lib limb math \
            range range/comp range/lin range/log range/tab \
            specsource \
            photcache photgrid \
