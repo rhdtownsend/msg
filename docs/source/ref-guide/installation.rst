@@ -36,25 +36,25 @@ Building MSG
 Download the `MSG source code <tarball_url_>`__, and unpack it
 from the command line using the :command:`tar` utility:
 
-.. prompt:: bash
+.. code-block:: console
    :substitutions:
 
-   tar xf |tarball|
+   $ tar xf |tarball|
 
 Set the :envvar:`MSG_DIR` environment variable with the path to the
 newly created source directory; this can be achieved, e.g., using the
 :command:`realpath` command\ [#realpath]_:
 
-.. prompt:: bash
+.. code-block:: console
    :substitutions:
 
-   export MSG_DIR=$(realpath |dist_dir|)
+   $ export MSG_DIR=$(realpath |dist_dir|)
 
 Finally, compile MSG using the :command:`make` utility:
 
-.. prompt:: bash
+.. code-block:: console
 
-   make -j -C $MSG_DIR
+   $ make -j -C $MSG_DIR
    
 (the :command:`-j` flags tells :command:`make` to use multiple cores,
 speeding up the build).  If things go awry, consult the
@@ -65,9 +65,9 @@ Testing MSG
 
 To test MSG, use the command
 
-.. prompt:: bash
+.. code-block:: console
 
-   make -C $MSG_DIR test
+   $ make -C $MSG_DIR test
 
 This runs unit tests for the various Fortran modules that together
 compose the MSG library. At the end of the test sequence, a summary of
@@ -80,9 +80,9 @@ Installing the :py:mod:`pymsg` Module
 
 To install the :py:mod:`pymsg` Python module, use the :command:`pip` tool:
 
-.. prompt:: bash
+.. code-block:: console
 
-   pip install $MSG_DIR/python
+   $ pip install $MSG_DIR/python
 
 You can alternatively add the :file:`$MSG_DIR/python/src` directory to
 the :envvar:`PYTHONPATH` environment variable. Note that in order for
@@ -128,9 +128,9 @@ yet made it into a formal release. In such cases, you can check out
 MSG directly from the :git:`rhdtownsend/msg` git repository on
 :git:`GitHub <>`:
 
-.. prompt:: bash
+.. code-block:: console
 
-   git clone --recurse-submodules https://github.com/rhdtownsend/msg.git
+   $ git clone --recurse-submodules https://github.com/rhdtownsend/msg.git
 
 However, a word of caution: MSG is under constant development, and
 features in the ``main`` branch can change without warning.

@@ -37,9 +37,9 @@ The next step is to compile the demo program. Make sure the
 :envvar:`MSG_DIR` environment variable is set, as described in the
 :ref:`quick-start` chapter. Then, enter the following on the command line:
 
-.. prompt:: bash
+.. code-block:: console
 
-   gcc -o c-walkthrough c-walkthrough.c -I$MSG_DIR/include `$MSG_DIR/scripts/cmsg_link`
+   $ gcc -o c-walkthrough c-walkthrough.c -I$MSG_DIR/include `$MSG_DIR/scripts/cmsg_link`
 
 The :code:`-I$MSG_DIR/include` option tells the compiler where to find
 the header file, while the :code:`$MSG_DIR/scripts/cmsg_link` clause
@@ -52,15 +52,15 @@ Running
 
 To run the code, first create a symbolic link to the demo grid:
 
-.. prompt:: bash
+.. code-block:: console
 
-   ln -s $MSG_DIR/data/grids/sg-demo.h5
+   $ ln -s $MSG_DIR/data/grids/sg-demo.h5
 
 Then, execute the command
 
-.. prompt:: bash
+.. code-block:: console
 
-   ./c-walkthrough
+   $ ./c-walkthrough
 
 The code will create a file :file:`spectrum.dat` containing the flux
 spectrum for Sirius A (as an ASCII table), and print out the

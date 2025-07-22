@@ -46,7 +46,6 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinxcontrib.spelling',
-    'sphinx-prompt',
     'sphinx_substitution_extensions',
     'nbsphinx',
     'ads_cite',
@@ -168,7 +167,7 @@ mathjax_macros = {}
 latex_preamble = ''
 
 for key, value in macros.items():
-    argnums = re.findall('#(\d)', value)
+    argnums = re.findall(r'#(\d)', value)
     if argnums:
         n_args = int(max(argnums))
         mathjax_macros[key] = [value, n_args]

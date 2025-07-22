@@ -76,17 +76,17 @@ one file; for instance::
 Then, run the :command:`specint_to_specgrid` tool to create a
 :f-schema:`specgrid` file:
 
-.. prompt:: bash
+.. code-block:: console
 
-   $MSG_DIR/bin/specint_to_specgrid manifest.txt specgrid.h5
+   $ $MSG_DIR/bin/specint_to_specgrid manifest.txt specgrid.h5
 
 To build a :f-schema:`photgrid` file from the data in a
 :f-schema:`specgrid` file, run the :command:`specgrid_to_photgrid`
 tool:
 
-.. prompt:: bash
+.. code-block:: console
 	    
-   $MSG_DIR/bin/specgrid_to_photgrid specgrid.h5 passband.h5 photgrid.h5
+   $ $MSG_DIR/bin/specgrid_to_photgrid specgrid.h5 passband.h5 photgrid.h5
 
 ...where :file:`passband.h5` is the name of the :f-schema:`passband`
 file to use. Note that it's not always necessary to create a

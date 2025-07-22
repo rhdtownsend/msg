@@ -33,6 +33,6 @@ a script :file:`$MSG_DIR/scripts/fmsg_link` is provided that writes
 the appropriate linker commands to standard output. This script can be
 used to compile/link a program with :command:`gfortran` as follows:
 
-.. prompt:: bash
+.. code-block:: console
 
-   gfortran -o myprogram myprogram.f90 -I $MSG_DIR/include `$MSG_DIR/scripts/fmsg_link`
+   $ gfortran -o myprogram myprogram.f90 -I $MSG_DIR/include `$MSG_DIR/scripts/fmsg_link`

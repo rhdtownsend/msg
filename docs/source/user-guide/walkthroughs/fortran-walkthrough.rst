@@ -39,9 +39,9 @@ The next step is to compile the demo program. Make sure the
 :envvar:`MSG_DIR` environment variable is set, as described in the
 :ref:`quick-start` chapter. Then, enter the following on the command line:
 
-.. prompt:: bash
+.. code-block:: console
 
-   gfortran -o fortran-walkthrough fortran-walkthrough.f90 -I$MSG_DIR/include `$MSG_DIR/scripts/fmsg_link`
+   $ gfortran -o fortran-walkthrough fortran-walkthrough.f90 -I$MSG_DIR/include `$MSG_DIR/scripts/fmsg_link`
 
 The :code:`-I$MSG_DIR/include` option tells the compiler where to find
 the module definition (:file:`.mod`) files, while the
@@ -54,15 +54,15 @@ Running
 
 To run the code, first create a symbolic link to the demo grid:
 
-.. prompt:: bash
+.. code-block:: console
 
-   ln -s $MSG_DIR/data/grids/sg-demo.h5
+   $ ln -s $MSG_DIR/data/grids/sg-demo.h5
 
 Then, execute the command
 
-.. prompt:: bash
+.. code-block:: console
 
-   ./fortran-walkthrough
+   $ ./fortran-walkthrough
 
 The code will create a file :file:`spectrum.dat` containing the flux
 spectrum for Sirius A (as an ASCII table), and print out the
