@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 
   // Evaluate the flux
 
-  interp_specgrid_flux(specgrid, x_vec, N_LAM, lam, F, NULL, NULL);
+  interp_specgrid_flux(specgrid, x_vec, N_LAM, lam, F, NULL, NULL, NULL);
 
   for(int i=0; i < N_LAM-1; i++) {
     F_obs[i] = R2_d2*F[i];
@@ -102,9 +102,9 @@ int main(int argc, char *argv[]) {
 
   // Evaluate fluxes
 
-  interp_photgrid_flux(photgrid_U, x_vec, &F_U, NULL, NULL);
-  interp_photgrid_flux(photgrid_B, x_vec, &F_B, NULL, NULL);
-  interp_photgrid_flux(photgrid_V, x_vec, &F_V, NULL, NULL);
+  interp_photgrid_flux(photgrid_U, x_vec, &F_U, NULL, NULL, NULL);
+  interp_photgrid_flux(photgrid_B, x_vec, &F_B, NULL, NULL, NULL);
+  interp_photgrid_flux(photgrid_V, x_vec, &F_V, NULL, NULL, NULL);
 
   F_U_obs = R2_d2*F_U;
   F_B_obs = R2_d2*F_B;
