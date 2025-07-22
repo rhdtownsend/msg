@@ -50,11 +50,14 @@ libraries.
 Running
 -------
 
-To run the code, first create a symbolic link to the demo grid:
+To run the code, first create symbolic link to the demo grid and passbands:
 
 .. code-block:: console
 
    $ ln -s $MSG_DIR/data/grids/sg-demo.h5
+   $ ln -s $MSG_DIR/data/passbands/pb-Generic-Johnson.U-Vega.h5
+   $ ln -s $MSG_DIR/data/passbands/pb-Generic-Johnson.B-Vega.h5
+   $ ln -s $MSG_DIR/data/passbands/pb-Generic-Johnson.V-Vega.h5
 
 Then, execute the command
 
