@@ -245,11 +245,11 @@ contains
   
       subroutine derivs_act_()
 
-         logical  :: mask(4**3)
+         logical  :: cell_mask(4**3)
          integer  :: i
          integer  :: j
          integer  :: k
-         real(RD) :: cell_deltas(3,3)
+         real(RD) :: edge_deltas(3,3)
          real(RD) :: data_kernel(4**3,4**3)
          real(RD) :: D(4**3)
          integer  :: l
@@ -262,7 +262,7 @@ contains
          ! Loop through the inner (non-edge) cells of the datacube,
          ! evaluating the function & derivatives
 
-         mask = .TRUE.
+         cell_mask = .TRUE.
 
          do i = 2, n_x-2
             do j = 2, n_y-2
@@ -270,11 +270,11 @@ contains
 
                   ! Evaluate the data kernel
 
-                  cell_deltas(:,1) = x(i:i+2) - x(i-1:i+1)
-                  cell_deltas(:,2) = y(j:j+2) - y(j-1:j+1)
-                  cell_deltas(:,3) = z(k:k+2) - z(k-1:k+1)
+                  edge_deltas(:,1) = x(i:i+2) - x(i-1:i+1)
+                  edge_deltas(:,2) = y(j:j+2) - y(j-1:j+1)
+                  edge_deltas(:,3) = z(k:k+2) - z(k-1:k+1)
 
-                  data_kernel = data_kernel_cubic(3, mask, cell_deltas)
+                  data_kernel = data_kernel_cubic(3, cell_mask, edge_deltas)
 
                   ! Evaluate the function and derivatives
 
@@ -523,14 +523,14 @@ contains
   
       subroutine interp_cubic_act_()
 
-         logical  :: mask(4**3)
+         logical  :: cell_mask(4**3)
          integer  :: i
          integer  :: j
          integer  :: k
          integer  :: i_
          integer  :: j_
          integer  :: k_
-         real(RD) :: cell_deltas(3,3)
+         real(RD) :: edge_deltas(3,3)
          real(RD) :: u(3)
          real(RD) :: data_kernel(4**3,4**3)
          real(RD) :: interp_kernel(4**3)
@@ -539,7 +539,7 @@ contains
          ! Loop through the inner (non-edge) cells of the datacube,
          ! evaluating the function
 
-         mask = .TRUE.
+         cell_mask = .TRUE.
 
          do i_ = 1, n_x_int
 
@@ -562,12 +562,12 @@ contains
                   u(2) = (y_int(j_) - y(j))/(y(j+1) - y(j))
                   u(3) = (z_int(k_) - z(k))/(z(k+1) - z(k))
 
-                  cell_deltas(:,1) = x(i:i+2) - x(i-1:i+1)
-                  cell_deltas(:,2) = y(j:j+2) - y(j-1:j+1)
-                  cell_deltas(:,3) = z(k:k+2) - z(k-1:k+1)
+                  edge_deltas(:,1) = x(i:i+2) - x(i-1:i+1)
+                  edge_deltas(:,2) = y(j:j+2) - y(j-1:j+1)
+                  edge_deltas(:,3) = z(k:k+2) - z(k-1:k+1)
 
-                  data_kernel = data_kernel_cubic(3, mask, cell_deltas)
-                  interp_kernel = interp_kernel_cubic(3, u, cell_deltas, data_kernel)
+                  data_kernel = data_kernel_cubic(3, cell_mask, edge_deltas)
+                  interp_kernel = interp_kernel_cubic(3, u, edge_deltas(2,:), data_kernel)
 
                   ! Evaluate the interpolated function
 
