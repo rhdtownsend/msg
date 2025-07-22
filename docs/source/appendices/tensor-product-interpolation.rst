@@ -25,21 +25,25 @@ interpolation scheme approximates :math:`f(x)` in each subinterval
 
 .. math::
 
-   \tilde{f}(x) = f_{i} \, \ell_{1} (u) + f_{i+1} \, \ell_{2} (u)
+   \tilde{f}(x) = f_{i} \, \ell_{1} (u) + f_{i+1} \, \ell_{2} (u).
 
 Here :math:`f_{i} \equiv f(x_{i})`, while
 
 .. math::
 
-   u \equiv \frac{x - x_{i}}{x_{i+1} - x_{i}}
+   u \equiv \frac{x - x_{i}}{h_{i}},
 
-is a normalized coordinate that expresses where in the subinterval we
-are; :math:`u=0` corresponds to :math:`x=x_{i}`, and :math:`u=1` to
-:math:`x=x_{i+1}`. The linear basis functions are defined by
+with :math:`h \equiv x_{i+1} - x_{i}`, is a normalized coordinate that
+expresses where we are within the subinterval: :math:`u=0` corresponds
+to :math:`x=x_{i}`, and :math:`u=1` to :math:`x=x_{i+1}`. The linear
+basis functions are defined by
 
 .. math::
 
-   \ell_{1}(u) = 1 - u, \qquad \ell_{2}(u) = u.
+   \begin{align}
+   \ell_{1}(u) &= 1 - u, \\
+   \ell_{2}(u) &= u.
+   \end{align}
 
 This interpolation scheme is :math:`C^{0}` continuous, and reproduces
 :math:`f(x)` exactly at the grid points.
@@ -54,8 +58,8 @@ piecewise-cubic interpolation scheme is
    \tilde{f}(x) =
        f_{i} \, c_{1}(u) +
        f_{i+1} \, c_{2}(u) +
-       \partial_{x} f_{i} \, c_{3}(u) +
-       \partial_{x} f_{i+1} \, c_{4}(u)
+       h\, \partial_{x} f_{i} \, c_{3}(u) +
+       h\, \partial_{x} f_{i+1} \, c_{4}(u),
 
 where :math:`u` has the same definition as before, :math:`\partial_{x}
 f_{i} \equiv (\sderiv{f}{x})_{x=x_{i}}`, and the cubic basis
@@ -63,10 +67,12 @@ functions are
 
 .. math::
 
-   c_{1}(u) = 2 u^3 - 3 u^2 + 1, \quad
-   c_{2}(u) = u^3 - u^2, \quad
-   c_{3}(u) = -2 u^3 + 3 u^2, \quad
-   c_{4}(u) = u^3 - 2 u^2 + u
+   \begin{align}
+   c_{1}(u) &= 2 u^3 - 3 u^2 + 1, \\
+   c_{2}(u) &= u^3 - u^2, \\
+   c_{3}(u) &= -2 u^3 + 3 u^2, \\
+   c_{4}(u) &= u^3 - 2 u^2 + u
+   \end{align}
 
 (these can be recognized as the basis functions for :wiki:`cubic Hermite splines <Cubic_Hermite_spline>`). This new definition is
 :math:`C^{1}` continuous, and reproduces :math:`f(x)` *and* its first
@@ -92,14 +98,16 @@ approximates :math:`f(x,y)` in each subinterval :math:`x_{i} \leq x
        f_{i,j+1}   \, \ell_{1}(u) \ell_{1}(v) +
        f_{i+1,j+1} \, \ell_{2}(u) \ell_{2}(v)
 
-Here, :math:`u` has the same definition as before, while
+Here, :math:`f_{i,j} \equiv f(x_{i},y_{j})` while the normalized coordinates are now
 
 .. math::
 
-   v \equiv \frac{y - y_{j}}{y_{j+1} - y_{j}},
+   u = \frac{x - x_{j}}{h_{x}}, \qquad
+   v = \frac{y - y_{j}}{h_{y}},
 
-and :math:`f_{i,j} \equiv f(x_{i},y_{j})`. We can also write the
-scheme in the more-compact form
+with :math:`h_{x} \equiv x_{i+1} - x_{i}` and :math:`h_{y} \equiv
+y_{i+1} - y_{i}`. We can also write the scheme in the more-compact
+form
 
 .. math::
 
@@ -128,10 +136,10 @@ where the coefficients :math:`\mathcal{C}^{h}` can be expressed as the matrix
 
    \mathcal{C}^{p,q} \equiv
    \begin{bmatrix}
-     f_{i,j} & f_{i,j+1} & \partial_{y} f_{i,j} & \partial_{y} f_{i,j+1} \\
-     f_{i+1,j} & f_{i+1,j+1} & \partial_{y} f_{i+1,j} & \partial_{y} f_{i+1,j+1} \\
-     \partial_{x} f_{i,j} & \partial_{x} f_{i,j+1} & \partial_{xy} f_{i,j} & \partial_{xy} f_{i,j+1} \\
-     \partial_{x} f_{i+1,j} & \partial_{x} f_{i+1,j+1} & \partial_{xy} f_{i+1,j} & \partial_{xy} f_{i+1,j+1}
+     f_{i,j} & f_{i,j+1} & h_{y}\partial_{y} f_{i,j} & h_{y} \partial_{y} f_{i,j+1} \\
+     f_{i+1,j} & f_{i+1,j+1} & h_{y} \partial_{y} f_{i+1,j} & h_{y} \partial_{y} f_{i+1,j+1} \\
+     h_{x} \partial_{x} f_{i,j} & h_{x} \partial_{x} f_{i,j+1} & h_{x} h_{y} \partial_{xy} f_{i,j} & h_{x} h_{y} \partial_{xy} f_{i,j+1} \\
+     h_{x} \partial_{x} f_{i+1,j} & h_{x} \partial_{x} f_{i+1,j+1} & h_{x} h_{y} \partial_{xy} f_{i+1,j} & h_{x} h_{y} \partial_{xy} f_{i+1,j+1}
    \end{bmatrix}.
      
 Constructing this matrix requires 16 values: the function at the four
