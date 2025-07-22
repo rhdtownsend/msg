@@ -291,13 +291,14 @@ contains
       type(vgrid_t)             :: vgrid
       integer                   :: c_lin
       integer, allocatable      :: c_vec(:)
+      integer, allocatable      :: v_vec(:)
       integer                   :: i
       integer                   :: v_lin
       integer                   :: v_seq
 
       @:CHECK_BOUNDS(SIZE(mask), SIZE(x_vecs, 2))
 
-      ! Optimize grid construction by returning a mask that indices
+      ! Optimize grid construction by returning a mask that indicates
       ! which vertices in x_vecs are usable (the remainder do not
       ! belong to complete interpolation cells, and therefore can be
       ! discarded)
@@ -318,6 +319,7 @@ contains
       ! Loop through cells of the grid
 
       allocate(c_vec(rank))
+      allocate(v_vec(rank))
 
       mask = .FALSE.
 
@@ -333,7 +335,10 @@ contains
 
             do i = 1, 2**rank
 
-               v_lin = vgrid%vert_linear_(c_vec + vgrid%offset_vector_(i, 2))
+               v_vec = c_vec + vgrid%offset_vector_(i, 2)
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
+
+               v_lin = vgrid%vert_linear_(v_vec)
                v_seq = vgrid%v_seq_lin(v_lin)
 
                ! Update the mask
