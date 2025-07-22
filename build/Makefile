@@ -19,7 +19,7 @@ endif
 ifeq ($(TESTS),yes)
   UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_axis utest_vgrid utest_specgrid utest_photgrid
   STRESS_TARGETS := stress_specgrid stress_photgrid
-  TIME_TARGETS := time_specgrid
+  TIME_TARGETS := time_vgrid time_specgrid
   BIN_TARGETS += $(UTEST_TARGETS) $(STRESS_TARGETS) $(TIME_TARGETS)
 endif
 
@@ -220,6 +220,10 @@ stress_specgrid_LIBS = libmsg libfmsg
 stress_photgrid_SRCS = stress_photgrid.fypp
 stress_photgrid_USES = $(libmsg_SRCS) $(libfmsg_SRCS)
 stress_photgrid_LIBS = libmsg libfmsg
+
+time_vgrid_SRCS = time_vgrid.fypp
+time_vgrid_USES = $(libmsg_SRCS) $(libfmsg_SRCS)
+time_vgrid_LIBS = libmsg libfmsg
 
 time_specgrid_SRCS = time_specgrid.fypp
 time_specgrid_USES = $(libmsg_SRCS) $(libfmsg_SRCS)

@@ -1,0 +1,128 @@
+! Program : time_vgrid
+! Purpose : Time testing for vgrid_m
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program time_vgrid
+
+   ! Uses
+
+   use forum_m
+
+   use vgrid_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none
+
+   ! Variables
+
+   integer :: n_interp
+
+   type(vgrid_t)         :: vgrid
+   real(RD), allocatable :: x_vec(:,:)
+   integer               :: i
+   real(RD)              :: f
+   integer(ID)           :: c_beg
+   integer(ID)           :: c_end
+   integer(ID)           :: c_rate
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() == 1, 'Syntax: time_vgrid n_interp')
+
+   call get_arg(1, n_interp)
+
+   ! Create the vgrid
+
+   call build_vgrid(vgrid)
+
+   ! Set up interpolation locations
+
+   allocate(x_vec(3, n_interp))
+
+   call RANDOM_INIT(.TRUE., .TRUE.)
+   call RANDOM_NUMBER(x_vec)
+
+   ! Do the interpolations
+
+   call SYSTEM_CLOCK(c_beg, c_rate)
+
+   do i = 1, n_interp
+      call vgrid%interp(data_proc, x_vec(:,i), f)
+   end do
+
+   call SYSTEM_CLOCK(c_end)
+
+   print *, 'Time:', REAL(c_end - c_beg, RD)/c_rate
+
+   ! Finish
+
+contains
+
+   subroutine data_proc(v_seq, data, stat)
+
+      integer, intent(in)            :: v_seq
+      real(RD), intent(out)          :: data
+      integer, intent(out), optional :: stat
+
+      data = 1._RD
+
+   end subroutine data_proc
+
+   !****
+
+   subroutine build_vgrid(vgrid)
+
+      type(vgrid_t), intent(out) :: vgrid
+
+      integer :: N = 10
+
+      real(RD), allocatable :: coords(:,:)
+      integer               :: i
+      integer               :: j
+      integer               :: k
+      integer               :: l
+
+      ! Construct a rank-3 vgrid with side lengths N
+
+      allocate(coords(3,N**3))
+
+      l = 1
+
+      do i = 1, N
+         do j = 1, N
+            do k = 1, N
+               coords(1,l) = (i - 1._RD)/(N - 1._RD)
+               coords(2,l) = (j - 1._RD)/(N - 1._RD)
+               coords(3,l) = (k - 1._RD)/(N - 1._RD)
+               l = l + 1
+            end do
+         end do
+      end do
+
+      vgrid = vgrid_t(coords, ['x', 'y', 'z'])
+
+      ! Finish
+
+      return
+
+   end subroutine build_vgrid
+
+end program time_vgrid
