@@ -79,6 +79,9 @@ clean : clean-forum
 	@$(MAKE) -C build $@
 	@rm -rf $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
 
+test :
+	@$(MAKE) -C test $@
+
 check_src :
 	@$(MAKE) -C build $@
 
@@ -99,7 +102,7 @@ else
 
 endif
 
-.PHONY: install build clean check_src install-forum clean-forum
+.PHONY: install build clean test check_src install-forum clean-forum
 
 $(BIN_DIR) $(LIB_DIR) $(INC_DIR) :
 	@mkdir -p $@

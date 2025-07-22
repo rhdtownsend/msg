@@ -2,7 +2,7 @@
 
 rm -f test.out
 
-for t in ${BINDIR}/utest_*; do
+for t in ${BIN_DIR}/utest_*; do
     $t | tee -a test.out
 done
 
