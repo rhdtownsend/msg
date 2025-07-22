@@ -23,6 +23,8 @@ submodule (ninterp_m) ninterp_cubic_sm
 
    use basis_m
 
+   use IEEE_ARITHMETIC
+
    ! No implicit typing
 
    implicit none (type, external)
@@ -136,9 +138,21 @@ contains
       ! Cache data for a single vertex, to speed up data_kernel_cubic
       ! evaluation
 
-      ! Generate and store edge kernels for the vertex
+      ! Generate edge masks
 
       edge_masks = edge_masks_(rank, vert_mask)
+
+      ! If some of the edge masks are not valid, then this vertex
+      ! cannot be used for interpolation; return early
+
+      do r = 1, rank
+         if (.NOT. edge_masks(2,r) .OR. COUNT(edge_masks(:,r)) < 2) then
+            cache = IEEE_VALUE(cache, IEEE_SIGNALING_NAN)
+            return
+         end if
+      end do
+
+      ! Generate and store edge kernels for the vertex
 
       do r = 1, rank
 
