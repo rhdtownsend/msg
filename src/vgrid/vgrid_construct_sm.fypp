@@ -112,6 +112,7 @@ contains
       integer, allocatable      :: v_seq_lin(:)
       logical, allocatable      :: c_lin_mask(:)
       integer, allocatable      :: c_vec(:)
+      integer, allocatable      :: v_vec(:)
       integer                   :: c_lin
       integer                   :: i
       integer                   :: v_lin
@@ -184,7 +185,9 @@ contains
       ! routines
 
       allocate(c_lin_mask(vgrid%n_c_lin))
+
       allocate(c_vec(vgrid%rank))
+      allocate(v_vec(vgrid%rank))
 
       cell_loop: do c_lin = 1, vgrid%n_c_lin
 
@@ -194,7 +197,10 @@ contains
 
          do i = 1, 2**vgrid%rank
 
-            v_lin = vgrid%vert_linear_(c_vec + vgrid%offset_vector_(i, 2))
+            v_vec = c_vec + vgrid%offset_vector_(i, 2)
+            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
+
+            v_lin = vgrid%vert_linear_(v_vec)
 
             if (.NOT. vgrid%v_lin_mask(v_lin)) then
                c_lin_mask(c_lin) = .FALSE.
