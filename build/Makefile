@@ -10,7 +10,7 @@ all:
 
 LIB_TARGETS = libmsg libfmsg libcmsg
 
-INC_FILES = msg_m.mod fmsg_m.mod cmsg_m.mod
+INC_FILES = msg_m.mod fmsg_m.mod cmsg_m.mod cmsg.h
 
 ifeq ($(PYTHON),yes)
   PYC_TARGETS := pycmsg
