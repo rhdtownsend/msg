@@ -112,7 +112,7 @@ contains
                ! Evaluate data for this vertex
 
                v_vec = c_vec + self%offset_vector_(i, 2)
-               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bounds v_vec')
 
                v_lin = self%vert_linear_(v_vec)
                v_seq = self%v_seq_lin(v_lin)
@@ -166,7 +166,7 @@ contains
          do i = 1, 2**self%rank
 
             v_vec = c_vec + self%offset_vector_(i, 2)
-            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bounds v_vec')
 
             v_lin = self%vert_linear_(v_vec)
             v_seq = self%v_seq_lin(v_lin)
@@ -192,7 +192,7 @@ contains
                ! Evaluate data for this vertex
 
                v_vec = c_vec - 1 + self%offset_vector_(i, 4)
-               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bounds v_vec')
 
                v_lin = self%vert_linear_(v_vec)
                v_seq = self%v_seq_lin(v_lin)
@@ -322,7 +322,7 @@ contains
                ! Evaluate data for this vertex
 
                v_vec = c_vec + self%offset_vector_(i, 4)
-               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bounds v_vec')
 
                v_lin = self%vert_linear_(v_vec)
                v_seq = self%v_seq_lin(v_lin)
@@ -410,7 +410,7 @@ contains
          do i = 1, 2**self%rank
 
             v_vec = c_vec + self%offset_vector_(i, 2)
-            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bounds v_vec')
 
             v_lin = self%vert_linear_(v_vec)
             v_seq = self%v_seq_lin(v_lin)
@@ -441,7 +441,7 @@ contains
                ! Evaluate data for this vertex
 
                v_vec = c_vec - 1 + self%offset_vector_(i, 4)
-               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bound v_vec')
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bounds v_vec')
 
                v_lin = self%vert_linear_(v_vec)
                v_seq = self%v_seq_lin(v_lin)
