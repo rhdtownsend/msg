@@ -460,9 +460,6 @@ contains
       @:CHECK_BOUNDS(SIZE(edge_deriv_kernels, 1), 3)
       @:CHECK_BOUNDS(SIZE(edge_deriv_kernels, 2), rank)
 
-      @:CHECK_BOUNDS(SIZE(vert_kernel, 1), 2**rank)
-      @:CHECK_BOUNDS(SIZE(vert_kernel, 2), 4**rank)
-
       ! Given sets of edge kernels for the i'th vertex, return the
       ! 4**rank kernel for function and cross derivative evaluation
 
