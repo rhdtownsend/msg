@@ -1,4 +1,4 @@
-Sphinx>=8.2.3
+Sphinx>=8.1.3
 Sphinx-Substitution-Extensions>=2025.6.6
 sphinxcontrib-spelling>=8.0.1
 sphinx-rtd-theme>=3.0.2
