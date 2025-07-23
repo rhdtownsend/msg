@@ -47,8 +47,8 @@ ninterp_SRCS = ninterp_m.fypp ninterp_linear_sm.fypp ninterp_cubic_sm.fypp \
                basis_m.fypp
 
 vgrid_SRCS = vgrid_m.fypp vgrid_construct_sm.fypp vgrid_index_sm.fypp \
-             vgrid_attribs_sm.fypp vgrid_interp_sm.fypp vgrid_traverse_sm.fypp \
-             vgrid_io_sm.fypp
+             vgrid_attribs_sm.fypp vgrid_traverse_sm.fypp vgrid_io_sm.fypp \
+             vgrid_interp_sm.fypp vgrid_interp_linear_sm.fypp vgrid_interp_cubic_sm.fypp
 
 photcache_SRCS = photcache_m.fypp photcache_construct_sm.fypp photcache_attribs_sm.fypp \
                  photcache_access_sm.fypp

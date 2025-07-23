@@ -1,0 +1,231 @@
+! Submodule : vgrid_interp_cubic_sm
+! Purpose   : Cubic interpolation routines for vgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (vgrid_m:vgrid_interp_sm) vgrid_interp_cubic_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure interp_0_cubic_
+
+      #:if defined('GFORTRAN_PR121204')
+
+      interface
+         subroutine data_proc(v_seq, data, stat)
+            use forum_m
+            implicit none (type, external)
+            integer, intent(in)            :: v_seq
+            real(RD), intent(out)          :: data
+            integer, intent(out), optional :: stat
+         end subroutine data_proc
+      end interface
+
+      #:endif
+
+      integer  :: c_vec(vgrid%rank)
+      real(RD) :: interp_kernel(4**vgrid%rank)
+      real(RD) :: F
+      integer  :: i
+      integer  :: v_vec(vgrid%rank)
+      integer  :: v_lin
+      integer  :: v_seq
+
+      ! Prepare for the interpolation
+
+      call prepare_cubic_(vgrid, x_vec, c_vec, interp_kernel, stat, vderiv)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Initialize f_int
+
+      f_int = 0._RD
+
+      ! Now perform the interpolation
+
+      do i = 1, 4**vgrid%rank
+
+         if (interp_kernel(i) /= 0._RD) then
+
+            ! Evaluate data for this vertex
+
+            v_vec = c_vec - 1 + vgrid%offset_vector_(i, 4)
+            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
+
+            v_lin = vgrid%vert_linear_(v_vec)
+            v_seq = vgrid%v_seq_lin(v_lin)
+
+            call data_proc(v_seq, F, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+            ! Add the contribution to f_int
+
+            f_int = f_int + interp_kernel(i)*F
+
+         end if
+
+      end do
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure interp_0_cubic_
+
+   !****
+
+   module procedure interp_1_cubic_
+
+      #:if defined('GFORTRAN_PR121204')
+
+      interface
+         subroutine data_proc(v_seq, data, stat)
+            use forum_m
+            implicit none (type, external)
+            integer, intent(in)            :: v_seq
+            real(RD), intent(out)          :: data(:)
+            integer, intent(out), optional :: stat
+         end subroutine data_proc
+      end interface
+
+      #:endif
+
+      integer  :: c_vec(vgrid%rank)
+      real(RD) :: interp_kernel(4**vgrid%rank)
+      real(RD) :: F(SIZE(f_int))
+      integer  :: i
+      integer  :: v_vec(vgrid%rank)
+      integer  :: v_lin
+      integer  :: v_seq
+
+      ! Prepare for the interpolation
+
+      call prepare_cubic_(vgrid, x_vec, c_vec, interp_kernel, stat, vderiv)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Initialize f_int
+
+      f_int = 0._RD
+
+      ! Now perform the interpolation
+
+      do i = 1, 4**vgrid%rank
+
+         if (interp_kernel(i) /= 0._RD) then
+
+            ! Evaluate data for this vertex
+
+            v_vec = c_vec - 1 + vgrid%offset_vector_(i, 4)
+            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
+
+            v_lin = vgrid%vert_linear_(v_vec)
+            v_seq = vgrid%v_seq_lin(v_lin)
+
+            call data_proc(v_seq, F, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            endif
+
+            ! Add the contribution to f_int
+
+            f_int = f_int + interp_kernel(i)*F
+
+         end if
+
+      end do
+
+      ! Finish
+
+      if (PRESENT(stat)) stat = STAT_OK
+
+      return
+
+   end procedure interp_1_cubic_
+
+   !****
+
+   subroutine prepare_cubic_(vgrid, x_vec, c_vec, interp_kernel, stat, vderiv)
+
+      class(vgrid_t), intent(in)     :: vgrid
+      real(RD), intent(in)           :: x_vec(:)
+      integer, intent(out)           :: c_vec(:)
+      real(RD), intent(out)          :: interp_kernel(:)
+      integer, intent(out), optional :: stat
+      logical, intent(in), optional  :: vderiv(:)
+
+      real(RD) :: u(vgrid%rank)
+      real(RD) :: edge_deltas(vgrid%rank)
+      integer  :: i
+      integer  :: v_vec(vgrid%rank)
+      integer  :: v_lin
+      integer  :: v_seq
+      real(RD) :: cache(3*vgrid%rank*2,2**vgrid%rank)
+      real(RD) :: data_kernel(4**vgrid%rank,4**vgrid%rank)
+
+      @:CHECK_BOUNDS(SIZE(x_vec), vgrid%rank)
+      @:CHECK_BOUNDS(SIZE(c_vec), vgrid%rank)
+      @:CHECK_BOUNDS(SIZE(interp_kernel), 4**vgrid%rank)
+
+      ! Prepare for cubic interpolation in the cell containing x_vec
+
+      ! Locate the cell
+
+      call locate_cell_(vgrid, x_vec, c_vec, u, edge_deltas, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
+
+      ! Evaluate the data kernel
+
+      do i = 1, 2**vgrid%rank
+
+         v_vec = c_vec + vgrid%offset_vector_(i, 2)
+         @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
+
+         v_lin = vgrid%vert_linear_(v_vec)
+         v_seq = vgrid%v_seq_lin(v_lin)
+
+         cache(:,i) = vgrid%vert_cache(:,v_seq)
+
+      end do
+
+      data_kernel = data_kernel_cubic_cached(vgrid%rank, cache)
+
+      ! Evaluate the interpolation kernel
+
+      interp_kernel = interp_kernel_cubic(vgrid%rank, u, edge_deltas, data_kernel, vderiv)
+
+      ! Finish
+
+      return
+
+   end subroutine prepare_cubic_
+
+end submodule vgrid_interp_cubic_sm
