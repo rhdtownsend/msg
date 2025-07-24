@@ -92,23 +92,13 @@ contains
 
    module procedure interp_irradiance
 
-      integer  :: i
-      real(RD) :: res_i
-
       @:CHECK_BOUNDS(SIZE(mu), SIZE(x_vec, 2))
       @:CHECK_BOUNDS(SIZE(dA), SIZE(x_vec, 2))
       @:CHECK_BOUNDS(SIZE(d), SIZE(x_vec, 2))
 
       ! Interpolate the irradiance
 
-      res = 0._RD
-
-      do i = 1, SIZE(x_vec, 2)
-         if (mu(i) >= 0.) then
-            call self%vgrid%interp(data_proc_, x_vec(:,i), res_i, stat, deriv_vec, order)
-            res = res + res_i*dA(i)/d(i)**2
-         end if
-      end do
+      call self%vgrid%interp_sum(data_proc_, x_vec, res, stat, deriv_vec, order)
 
       ! Finish
 
@@ -116,8 +106,9 @@ contains
 
    contains
 
-      subroutine data_proc_(v_seq, f, stat)
+      subroutine data_proc_(j, v_seq, f, stat)
 
+         integer, intent(in)            :: j
          integer, intent(in)            :: v_seq
          real(RD), intent(out)          :: f
          integer, intent(out), optional :: stat
@@ -129,12 +120,22 @@ contains
             if (stat /= STAT_OK) return
          end if
 
-         call photint%interp_intensity(mu(i), f, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         end if
+         if (mu(j) >= 0._RD) then
 
-         call self%photcache%release(v_seq, stat)
+            call photint%interp_intensity(mu(j), f, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            f = f*dA(j)/d(j)**2
+
+            call self%photcache%release(v_seq, stat)
+
+         else
+
+            f = 0._RD
+
+         end if
 
          return
 
