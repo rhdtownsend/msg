@@ -50,8 +50,12 @@ contains
          integer  :: i
          integer  :: v_vec(vgrid%rank)
          integer  :: v_lin
-         integer  :: v_seq(4**vgrid%rank)
+         integer  :: v_seq
          real(RD) :: F${size_F}$
+
+         ! Initialize f_int
+
+         f_int = 0._RD
 
          ! Prepare for the interpolation
 
@@ -60,44 +64,28 @@ contains
             if (stat /= STAT_OK) return
          end if
 
+         ! Add contributions from each vertex of the cell
+
          do i = 1, 4**vgrid%rank
 
             if (interp_kernel(i) /= 0._RD) then
 
-               ! Set up the sequence index for this vertex
+               ! Set up the sequence index for the vertex
 
                v_vec = c_vec - 1 + vgrid%offset_vector_(i, 4)
                @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
 
                v_lin = vgrid%vert_linear_(v_vec)
-               v_seq(i) = vgrid%v_seq_lin(v_lin)
+               v_seq = vgrid%v_seq_lin(v_lin)
 
-            else
+               ! Evaluate data for the vertex
 
-               v_seq(i) = 0
-
-            end if
-
-         end do
-
-         ! Initialize f_int
-
-         f_int = 0._RD
-
-         ! Now perform the interpolation
-
-         do i = 1, 4**vgrid%rank
-
-            if (v_seq(i) /= 0._RD) then
-
-               ! Evaluate data for this vertex
-
-               call data_proc(v_seq(i), F, stat)
+               call data_proc(v_seq, F, stat)
                if (PRESENT(stat)) then
                   if (stat /= STAT_OK) return
-               endif
+               end if
 
-               ! Add the contribution to f_int
+               ! Add the contribution
 
                f_int = f_int + interp_kernel(i)*F
 
@@ -132,78 +120,53 @@ contains
 
          #:endif
 
-         integer  :: n_sum
          integer  :: j
          integer  :: c_vec(vgrid%rank)
-         real(RD) :: interp_kernel(4**vgrid%rank,SIZE(x_vec,2))
+         real(RD) :: interp_kernel(4**vgrid%rank)
          integer  :: i
          integer  :: v_vec(vgrid%rank)
          integer  :: v_lin
-         integer  :: v_seq(4**vgrid%rank,SIZE(x_vec,2))
-         real(RD) :: f_int_cell${size_F}$
+         integer  :: v_seq
          real(RD) :: F${size_F}$
-
-         ! Prepare for the interpolations
-
-         n_sum = SIZE(x_vec, 2)
-
-         !$OMP PARALLEL DO PRIVATE(i, c_vec, v_vec, v_lin)
-         do j = 1, n_sum
-
-            call prepare_cubic_(vgrid, x_vec(:,j), c_vec, interp_kernel(:,j), vderiv=vderiv)
-
-            do i = 1, 4**vgrid%rank
-
-               if (interp_kernel(i,j) /= 0._RD) then
-
-                  ! Set up the sequence index for this vertex
-
-                  v_vec = c_vec - 1 + vgrid%offset_vector_(i, 4)
-                  @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
-
-                  v_lin = vgrid%vert_linear_(v_vec)
-                  v_seq(i,j) = vgrid%v_seq_lin(v_lin)
-
-               else
-
-                  v_seq(i,j) = 0
-
-               end if
-
-            end do
-
-         end do
 
          ! Initialize f_int
 
          f_int = 0._RD
 
-         ! Now perform the interpolations
+         ! Loop over interpolation points
 
-         !$OMP PARALLEL DO PRIVATE(f_int_cell, i, F) REDUCTION(+:f_int)
-         do j = 1, n_sum
+         !$OMP PARALLEL DO PRIVATE(c_vec, interp_kernel, i, v_vec, v_lin, v_seq, F) REDUCTION(+:f_int)
+         do j = 1, SIZE(x_vec, 2)
 
-            f_int_cell = 0._RD
+            ! Prepare for the interpolation
+
+            call prepare_cubic_(vgrid, x_vec(:,j), c_vec, interp_kernel, vderiv=vderiv)
+
+            ! Add contributions from each vertex of the cell
 
             do i = 1, 4**vgrid%rank
 
-               if (v_seq(i,j) /= 0) then
+               if (interp_kernel(i) /= 0._RD) then
 
-                  ! Evaluate data for this vertex
+                  ! Set up the sequence index for the vertex
 
-                  !$OMP CRITICAL
-                  call data_proc(j, v_seq(i,j), F)
-                  !$OMP END CRITICAL
+                  v_vec = c_vec - 1 + vgrid%offset_vector_(i, 4)
+                  @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
 
-                  ! Add the contribution to f_int_cell
+                  v_lin = vgrid%vert_linear_(v_vec)
+                  v_seq = vgrid%v_seq_lin(v_lin)
 
-                  f_int_cell = f_int_cell + interp_kernel(i,j)*F
+                  ! Evaluate data for the vertex
+
+                  call data_proc(j, v_seq, F)
+
+                  ! Add the contribution
+
+                  f_int = f_int + interp_kernel(i)*F
 
                end if
 
             end do
-
-            f_int = f_int + f_int_cell
 
          end do
 
