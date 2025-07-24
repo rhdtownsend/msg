@@ -65,6 +65,9 @@ module vgrid_m
       procedure         :: interp_0_
       procedure         :: interp_1_
       generic, public   :: interp => interp_0_, interp_1_
+      procedure         :: interp_sum_0_
+      procedure         :: interp_sum_1_
+      generic, public   :: interp_sum => interp_sum_0_, interp_sum_1_
       procedure, public :: adjust_x_vec
       procedure         :: cell_linear_
       procedure         :: cell_vector_
@@ -199,6 +202,46 @@ module vgrid_m
          logical, intent(in), optional  :: vderiv(:)
          integer, intent(in), optional  :: order
       end subroutine interp_1_
+
+      module subroutine interp_sum_0_(self, data_proc, x_vec, f_int, stat, vderiv, order)
+         implicit none (type, external)
+         class(vgrid_t), intent(in) :: self
+         interface
+            subroutine data_proc(j, v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: j
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
+         real(RD), intent(in)           :: x_vec(:,:)
+         real(RD), intent(out)          :: f_int
+         integer, intent(out), optional :: stat
+         logical, intent(in), optional  :: vderiv(:)
+         integer, intent(in), optional  :: order
+      end subroutine interp_sum_0_
+
+      module subroutine interp_sum_1_(self, data_proc, x_vec, f_int, stat, vderiv, order)
+         implicit none (type, external)
+         class(vgrid_t), intent(in) :: self
+         interface
+            subroutine data_proc(j, v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: j
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data(:)
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
+         real(RD), intent(in)           :: x_vec(:,:)
+         real(RD), intent(out)          :: f_int(:)
+         integer, intent(out), optional :: stat
+         logical, intent(in), optional  :: vderiv(:)
+         integer, intent(in), optional  :: order
+      end subroutine interp_sum_1_
 
       module subroutine adjust_x_vec(self, x_vec, dx_vec, x_adj, stat)
          implicit none (type, external)

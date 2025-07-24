@@ -65,6 +65,44 @@ submodule (vgrid_m) vgrid_interp_sm
          logical, intent(in), optional  :: vderiv(:)
       end subroutine interp_1_linear_
 
+      module subroutine interp_sum_0_linear_(vgrid, data_proc, x_vec, f_int, stat, vderiv)
+         implicit none (type, external)
+         class(vgrid_t), intent(in) :: vgrid
+         interface
+            subroutine data_proc(j, v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: j
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
+         real(RD), intent(in)           :: x_vec(:,:)
+         real(RD), intent(out)          :: f_int
+         integer, intent(out), optional :: stat
+         logical, intent(in), optional  :: vderiv(:)
+      end subroutine interp_sum_0_linear_
+
+      module subroutine interp_sum_1_linear_(vgrid, data_proc, x_vec, f_int, stat, vderiv)
+         implicit none (type, external)
+         class(vgrid_t), intent(in) :: vgrid
+         interface
+            subroutine data_proc(j, v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: j
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data(:)
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
+         real(RD), intent(in)           :: x_vec(:,:)
+         real(RD), intent(out)          :: f_int(:)
+         integer, intent(out), optional :: stat
+         logical, intent(in), optional  :: vderiv(:)
+      end subroutine interp_sum_1_linear_
+
    end interface
 
    ! In vgrid_interp_cubic_sm
@@ -107,118 +145,156 @@ submodule (vgrid_m) vgrid_interp_sm
          logical, intent(in), optional  :: vderiv(:)
       end subroutine interp_1_cubic_
 
+      module subroutine interp_sum_0_cubic_(vgrid, data_proc, x_vec, f_int, stat, vderiv)
+         implicit none (type, external)
+         class(vgrid_t), intent(in) :: vgrid
+         interface
+            subroutine data_proc(j, v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: j
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
+         real(RD), intent(in)           :: x_vec(:,:)
+         real(RD), intent(out)          :: f_int
+         integer, intent(out), optional :: stat
+         logical, intent(in), optional  :: vderiv(:)
+      end subroutine interp_sum_0_cubic_
+
+      module subroutine interp_sum_1_cubic_(vgrid, data_proc, x_vec, f_int, stat, vderiv)
+         implicit none (type, external)
+         class(vgrid_t), intent(in) :: vgrid
+         interface
+            subroutine data_proc(j, v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: j
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data(:)
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
+         real(RD), intent(in)           :: x_vec(:,:)
+         real(RD), intent(out)          :: f_int(:)
+         integer, intent(out), optional :: stat
+         logical, intent(in), optional  :: vderiv(:)
+      end subroutine interp_sum_1_cubic_
+
    end interface
 
    ! Procedures
 
 contains
 
-   module procedure interp_0_
+   #:for rank in (0, 1)
 
-      #:if defined('GFORTRAN_PR121204')
+      module procedure interp_${rank}$_
 
-      interface
-         subroutine data_proc(v_seq, data, stat)
-            use forum_m
-            implicit none (type, external)
-            integer, intent(in)            :: v_seq
-            real(RD), intent(out)          :: data
-            integer, intent(out), optional :: stat
-         end subroutine data_proc
-      end interface
+         #:if defined('GFORTRAN_PR121204')
 
-      #:endif
+         interface
+            subroutine data_proc(v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data${ARRAY_SPEC(rank)}$
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
 
-      integer :: order_
+         #:endif
 
-      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
+         integer :: order_
 
-      if (PRESENT(order)) then
-         order_ = order
-      else
-         order_ = 3
-      end if
+         @:CHECK_BOUNDS(SIZE(x_vec, 1), self%rank)
 
-      ! Interpolate a scalar value
-
-      select case(order_)
-
-      case(1)
-
-         call interp_0_linear_(self, data_proc, x_vec, f_int, stat, vderiv)
-
-      case(3)
-
-         call interp_0_cubic_(self, data_proc, x_vec, f_int, stat, vderiv)
-
-      case default
-
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_ARGUMENT
-            return
+         if (PRESENT(order)) then
+            order_ = order
          else
-            @:ABORT('invalid argument')
+            order_ = 3
          end if
 
-      end select
+         ! Interpolate the data
 
-      ! Finish
+         select case(order_)
+         case(1)
+            call interp_${rank}$_linear_(self, data_proc, x_vec, f_int, stat, vderiv)
+         case(3)
+            call interp_${rank}$_cubic_(self, data_proc, x_vec, f_int, stat, vderiv)
+         case default
 
-      return
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_ARGUMENT
+               return
+            else
+               @:ABORT('invalid argument')
+            end if
 
-   end procedure interp_0_
+         end select
 
-   !****
+         ! Finish
 
-   module procedure interp_1_
+         return
 
-      #:if defined('GFORTRAN_PR121204')
+      end procedure interp_${rank}$_
 
-      interface
-         subroutine data_proc(v_seq, data, stat)
-            use forum_m
-            implicit none (type, external)
-            integer, intent(in)            :: v_seq
-            real(RD), intent(out)          :: data(:)
-            integer, intent(out), optional :: stat
-         end subroutine data_proc
-      end interface
+      !****
 
-      #:endif
+      module procedure interp_sum_${rank}$_
 
-      integer :: order_
+         #:if defined('GFORTRAN_PR121204')
 
-      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
+         interface
+            subroutine data_proc(j, v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: j
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data${ARRAY_SPEC(rank)}$
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
 
-      if (PRESENT(order)) then
-         order_ = order
-      else
-         order_ = 3
-      end if
+         #:endif
 
-      ! Interpolate a scalar value
+         integer :: order_
 
-      select case(order_)
-      case(1)
-         call interp_1_linear_(self, data_proc, x_vec, f_int, stat, vderiv)
-      case(3)
-         call interp_1_cubic_(self, data_proc, x_vec, f_int, stat, vderiv)
-      case default
+         @:CHECK_BOUNDS(SIZE(x_vec, 1), self%rank)
 
-         if (PRESENT(stat)) then
-            stat = STAT_INVALID_ARGUMENT
-            return
+         if (PRESENT(order)) then
+            order_ = order
          else
-            @:ABORT('invalid argument')
+            order_ = 3
          end if
 
-      end select
+         ! Interpolate the data
 
-      ! Finish
+         select case(order_)
+         case(1)
+            call interp_sum_${rank}$_linear_(self, data_proc, x_vec, f_int, stat, vderiv)
+         case(3)
+            call interp_sum_${rank}$_cubic_(self, data_proc, x_vec, f_int, stat, vderiv)
+         case default
 
-      return
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_ARGUMENT
+               return
+            else
+               @:ABORT('invalid argument')
+            end if
 
-   end procedure interp_1_
+         end select
+
+         ! Finish
+
+         return
+
+      end procedure interp_sum_${rank}$_
+
+   #:endfor
 
    !****
 

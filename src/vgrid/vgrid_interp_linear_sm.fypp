@@ -27,147 +27,196 @@ submodule (vgrid_m:vgrid_interp_sm) vgrid_interp_linear_sm
 
 contains
 
-   module procedure interp_0_linear_
+   #:for rank, size_F in ((0, ''), (1, '(SIZE(f_int))'))
 
-      #:if defined('GFORTRAN_PR121204')
+      module procedure interp_${rank}$_linear_
 
-      interface
-         subroutine data_proc(v_seq, data, stat)
-            use forum_m
-            implicit none (type, external)
-            integer, intent(in)            :: v_seq
-            real(RD), intent(out)          :: data
-            integer, intent(out), optional :: stat
-         end subroutine data_proc
-      end interface
+         #:if defined('GFORTRAN_PR121204')
 
-      #:endif
+         interface
+            subroutine data_proc(v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data${ARRAY_SPEC(rank)}$
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
 
-      integer  :: c_vec(vgrid%rank)
-      real(RD) :: interp_kernel(2**vgrid%rank)
-      real(RD) :: F
-      integer  :: i
-      integer  :: v_vec(vgrid%rank)
-      integer  :: v_lin
-      integer  :: v_seq
+         #:endif
 
-      ! Prepare for the interpolation
+         integer  :: i
+         integer  :: c_vec(vgrid%rank)
+         real(RD) :: interp_kernel(2**vgrid%rank)
+         integer  :: v_vec(vgrid%rank)
+         integer  :: v_lin
+         integer  :: v_seq(2**vgrid%rank)
+         real(RD) :: F${size_F}$
 
-      call prepare_linear_(vgrid, x_vec, c_vec, interp_kernel, stat, vderiv)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
+         ! Prepare for the interpolation
 
-      ! Initialize f_int
-
-      f_int = 0._RD
-
-      ! Now perform the interpolation
-
-      do i = 1, 2**vgrid%rank
-
-         if (interp_kernel(i) /= 0._RD) then
-
-            ! Evaluate data for this vertex
-
-            v_vec = c_vec + vgrid%offset_vector_(i, 2)
-            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
-
-            v_lin = vgrid%vert_linear_(v_vec)
-            v_seq = vgrid%v_seq_lin(v_lin)
-
-            call data_proc(v_seq, F, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            endif
-
-            ! Add the contribution to f_int
-
-            f_int = f_int + interp_kernel(i)*F
-
+         call prepare_linear_(vgrid, x_vec, c_vec, interp_kernel, stat, vderiv)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
          end if
 
-      end do
+         do i = 1, 2**vgrid%rank
 
-      ! Finish
+            if (interp_kernel(i) /= 0._RD) then
 
-      if (PRESENT(stat)) stat = STAT_OK
+               ! Set up the sequence index for this vertex
 
-      return
+               v_vec = c_vec + vgrid%offset_vector_(i, 2)
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
 
-   end procedure interp_0_linear_
+               v_lin = vgrid%vert_linear_(v_vec)
+               v_seq(i) = vgrid%v_seq_lin(v_lin)
 
-   !****
+            else
 
-   module procedure interp_1_linear_
+               v_seq(i) = 0
 
-      #:if defined('GFORTRAN_PR121204')
+            end if
 
-      interface
-         subroutine data_proc(v_seq, data, stat)
-            use forum_m
-            implicit none (type, external)
-            integer, intent(in)            :: v_seq
-            real(RD), intent(out)          :: data(:)
-            integer, intent(out), optional :: stat
-         end subroutine data_proc
-      end interface
+         end do
 
-      #:endif
+          ! Initialize f_int
 
-      integer  :: c_vec(vgrid%rank)
-      real(RD) :: interp_kernel(2**vgrid%rank)
-      real(RD) :: F(SIZE(f_int))
-      integer  :: i
-      integer  :: v_vec(vgrid%rank)
-      integer  :: v_lin
-      integer  :: v_seq
+         f_int = 0._RD
 
-      ! Prepare for the interpolation
+         ! Now perform the interpolation
 
-      call prepare_linear_(vgrid, x_vec, c_vec, interp_kernel, stat, vderiv)
-      if (PRESENT(stat)) then
-         if (stat /= STAT_OK) return
-      end if
+         do i = 1, 2**vgrid%rank
 
-      ! Initialize f_int
+            if (v_seq(i) /= 0) then
 
-      f_int = 0._RD
+               ! Evaluate data for this vertex
 
-      ! Now perform the interpolation
+               call data_proc(v_seq(i), F, stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) return
+               endif
 
-      do i = 1, 2**vgrid%rank
+               ! Add the contribution to f_int
 
-         if (interp_kernel(i) /= 0._RD) then
+               f_int = f_int + interp_kernel(i)*F
 
-            ! Evaluate data for this vertex
+            end if
 
-            v_vec = c_vec + vgrid%offset_vector_(i, 4)
-            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
+         end do
 
-            v_lin = vgrid%vert_linear_(v_vec)
-            v_seq = vgrid%v_seq_lin(v_lin)
+         ! Finish
 
-            call data_proc(v_seq, F, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            endif
+         if (PRESENT(stat)) stat = STAT_OK
 
-            ! Add the contribution to f_int
+         return
 
-            f_int = f_int + interp_kernel(i)*F
+      end procedure interp_${rank}$_linear_
 
-         end if
+      !****
 
-      end do
+      module procedure interp_sum_${rank}$_linear_
 
-      ! Finish
+         #:if defined('GFORTRAN_PR121204')
 
-      if (PRESENT(stat)) stat = STAT_OK
+         interface
+            subroutine data_proc(j, v_seq, data, stat)
+               use forum_m
+               implicit none (type, external)
+               integer, intent(in)            :: j
+               integer, intent(in)            :: v_seq
+               real(RD), intent(out)          :: data${ARRAY_SPEC(rank)}$
+               integer, intent(out), optional :: stat
+            end subroutine data_proc
+         end interface
 
-      return
+         #:endif
 
-   end procedure interp_1_linear_
+         integer  :: n_sum
+         integer  :: j
+         integer  :: c_vec(vgrid%rank)
+         real(RD) :: interp_kernel(2**vgrid%rank,SIZE(x_vec,2))
+         integer  :: i
+         integer  :: v_vec(vgrid%rank)
+         integer  :: v_lin
+         integer  :: v_seq(2**vgrid%rank,SIZE(x_vec,2))
+         real(RD) :: f_int_cell${size_F}$
+         real(RD) :: F${size_F}$
+         integer  :: i
+
+         ! Prepare for the interpolations
+
+         n_sum = SIZE(x_vec, 2)
+
+         !$OMP PARALLEL DO PRIVATE(i, c_vec, v_vec, v_lin)
+         do j = 1, n_sum
+
+            call prepare_linear_(vgrid, x_vec(:,j), c_vec, interp_kernel(:,j), vderiv=vderiv)
+
+            do i = 1, 2**vgrid%rank
+
+               if (interp_kernel(i,j) /= 0._RD) then
+
+                  ! Set up the sequence index for this vertex
+
+                  v_vec = c_vec + vgrid%offset_vector_(i, 2)
+                  @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
+
+                  v_lin = vgrid%vert_linear_(v_vec)
+                  v_seq(i,j) = vgrid%v_seq_lin(v_lin)
+
+               else
+
+                  v_seq(i,j) = 0
+
+               end if
+
+            end do
+
+         end do
+
+         ! Initialize f_int
+
+         f_int = 0._RD
+
+         ! Now perform the interpolations
+
+         !$OMP PARALLEL DO PRIVATE(f_int_cell, i, F) REDUCTION(+:f_int)
+         do j = 1, n_sum
+
+            f_int_cell = 0._RD
+
+            do i = 1, 2**vgrid%rank
+
+               if (v_seq(i,j) /= 0) then
+
+                  ! Evaluate data for this vertex
+
+                  !$OMP CRITICAL
+                  call data_proc(j, v_seq(i,j), F)
+                  !$OMP END CRITICAL
+
+                  ! Add the contribution to f_int_vert
+
+                  f_int_cell = f_int_cell + interp_kernel(i,j)*F
+
+               end if
+
+            end do
+
+            f_int = f_int + f_int_cell
+
+         end do
+
+         ! Finish
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         return
+
+      end procedure interp_sum_${rank}$_linear_
+
+   #:endfor
 
    !****
 
