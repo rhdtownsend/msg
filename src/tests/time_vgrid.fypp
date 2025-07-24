@@ -34,10 +34,12 @@ program time_vgrid
    ! Variables
 
    integer :: n_interp
+   logical :: sum
 
    type(vgrid_t)         :: vgrid
    real(RD), allocatable :: x_vec(:,:)
    integer               :: i
+   real(RD)              :: sum_f
    real(RD)              :: f
    integer(ID)           :: c_beg
    integer(ID)           :: c_end
@@ -45,9 +47,10 @@ program time_vgrid
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 1, 'Syntax: time_vgrid n_interp')
+   @:ASSERT(n_arg() == 2, 'Syntax: time_vgrid n_interp sum')
 
    call get_arg(1, n_interp)
+   call get_arg(2, sum)
 
    ! Create the vgrid
 
@@ -64,13 +67,25 @@ program time_vgrid
 
    call SYSTEM_CLOCK(c_beg, c_rate)
 
-   do i = 1, n_interp
-      call vgrid%interp(data_proc, x_vec(:,i), f)
-   end do
+   if (sum) then
+
+      call vgrid%interp_sum(data_proc_sum, x_vec, sum_f)
+
+   else
+
+      sum_f = 0._RD
+
+      do i = 1, n_interp
+         call vgrid%interp(data_proc, x_vec(:,i), f)
+         sum_f = sum_f + f
+      end do
+
+   end if
 
    call SYSTEM_CLOCK(c_end)
 
-   print *, 'Time:', REAL(c_end - c_beg, RD)/c_rate
+   print *, 'Sum f:', sum_f
+   print *, 'Time :', REAL(c_end - c_beg, RD)/c_rate
 
    ! Finish
 
@@ -85,6 +100,19 @@ contains
       data = 1._RD
 
    end subroutine data_proc
+
+   !****
+
+   subroutine data_proc_sum(j, v_seq, data, stat)
+
+      integer, intent(in)            :: j
+      integer, intent(in)            :: v_seq
+      real(RD), intent(out)          :: data
+      integer, intent(out), optional :: stat
+
+      data = 1._RD
+
+   end subroutine data_proc_sum
 
    !****
 
