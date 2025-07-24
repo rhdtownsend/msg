@@ -43,6 +43,7 @@ contains
 
       #:endif
 
+      integer     :: stat_
       integer(ID) :: ssize
 
       ! Fetch the i'th photint
@@ -55,6 +56,10 @@ contains
             @:ABORT('invalid argument')
          end if
       end if
+
+      stat_ = STAT_OK
+
+      !$OMP CRITICAL (photcache)
 
       ! Check if the entry is already present
 
@@ -77,9 +82,6 @@ contains
          ! Fetch the photint
 
          call fetch_proc(i, self%photint_elements(i)%photint, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         end if
 
          ! Update the storage size
 
@@ -94,13 +96,15 @@ contains
 
       end if
 
+      !$OMP END CRITICAL (photcache)
+
       ! Set up the return pointer
 
       photint => self%photint_elements(i)%photint
 
       ! Finish
 
-      if (PRESENT(stat)) stat = STAT_OK
+      if (PRESENT(stat)) stat = stat_
 
       return
 
@@ -121,6 +125,8 @@ contains
          end if
       end if
 
+      !$OMP CRITICAL (photcache)
+
       if (self%ref_counts(i) > 0) then
 
          ! Decrement the reference counter
@@ -136,6 +142,8 @@ contains
       ! Trim the cache
 
       call self%trim_()
+
+      !$OMP END CRITICAL (photcache)
 
       ! Finish
 
