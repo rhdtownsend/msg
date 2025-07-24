@@ -174,23 +174,6 @@ contains
 
          end do
 
-         ! Perform the dummy fetches
-
-         do j = 1, n_sum
-
-            do i = 1, 4**vgrid%rank
-
-               if (v_seq(i,j) /= 0) then
-
-                  call data_proc(j, v_seq(i,j), F)
-
-               end if
-
-            end do
-
-         end do
-
-
          ! Initialize f_int
 
          f_int = 0._RD
