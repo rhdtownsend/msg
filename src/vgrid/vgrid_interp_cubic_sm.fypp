@@ -120,6 +120,7 @@ contains
 
          #:endif
 
+         integer  :: stat_cancel
          integer  :: j
          integer  :: c_vec(vgrid%rank)
          real(RD) :: interp_kernel(4**vgrid%rank)
@@ -135,12 +136,22 @@ contains
 
          ! Loop over interpolation points
 
-         !$OMP PARALLEL DO PRIVATE(c_vec, interp_kernel, i, v_vec, v_lin, v_seq, F) REDUCTION(+:f_int)
+         stat_cancel = STAT_OK
+
+         !$OMP PARALLEL DO PRIVATE(c_vec, interp_kernel, i, v_vec, v_lin, v_seq, F) REDUCTION(+:f_int) SCHEDULE(STATIC)
          do j = 1, SIZE(x_vec, 2)
+
+            !$OMP CANCELLATION POINT DO
 
             ! Prepare for the interpolation
 
-            call prepare_cubic_(vgrid, x_vec(:,j), c_vec, interp_kernel, vderiv=vderiv)
+            call prepare_cubic_(vgrid, x_vec(:,j), c_vec, interp_kernel, stat, vderiv)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) then
+                  stat_cancel = stat
+                  !$OMP CANCEL DO
+               end if
+            end if
 
             ! Add contributions from each vertex of the cell
 
@@ -158,7 +169,13 @@ contains
 
                   ! Evaluate data for the vertex
 
-                  call data_proc(j, v_seq, F)
+                  call data_proc(j, v_seq, F, stat)
+                  if (PRESENT(stat)) then
+                     if (stat /= STAT_OK) then
+                        stat_cancel = stat
+                        !$OMP CANCEL DO
+                     end if
+                  end if
 
                   ! Add the contribution
 
@@ -172,7 +189,7 @@ contains
 
          ! Finish
 
-         if (PRESENT(stat)) stat = STAT_OK
+         if (PRESENT(stat)) stat = stat_cancel
 
          return
 
