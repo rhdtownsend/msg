@@ -161,16 +161,6 @@ module photgrid_m
          integer, intent(in), optional            :: order
       end subroutine interp_D_moment
 
-      module subroutine interp_flux(self, x_vec, res, stat, deriv_vec, order)
-         implicit none (type, external)
-         class(photgrid_t), target, intent(inout) :: self
-         real(RD), intent(in)                     :: x_vec(:)
-         real(RD), intent(out)                    :: res
-         integer, intent(out), optional           :: stat
-         logical, intent(in), optional            :: deriv_vec(:)
-         integer, intent(in), optional            :: order
-      end subroutine interp_flux
-
       module subroutine interp_irradiance(self, x_vec, mu, dA, d, res, stat, deriv_vec, order)
          implicit none (type, external)
          class(photgrid_t), target, intent(inout) :: self
@@ -183,6 +173,16 @@ module photgrid_m
          logical, intent(in), optional            :: deriv_vec(:)
          integer, intent(in), optional            :: order
       end subroutine interp_irradiance
+
+      module subroutine interp_flux(self, x_vec, res, stat, deriv_vec, order)
+         implicit none (type, external)
+         class(photgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:)
+         real(RD), intent(out)                    :: res
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
+         integer, intent(in), optional            :: order
+      end subroutine interp_flux
 
       module subroutine adjust_x_vec(self, x_vec, dx_vec, x_adj, stat)
          implicit none (type, external)
