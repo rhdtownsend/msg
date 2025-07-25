@@ -83,7 +83,7 @@ program stress_photgrid
 
    interp_loop : do i = 1, n_interp
 
-!      write(OUTPUT_UNIT, 10, ADVANCE='NO') i
+      write(OUTPUT_UNIT, 10, ADVANCE='NO') i
 10    format(I8,1X)
 
       ! Choose random parameters and interpolate
@@ -95,7 +95,7 @@ program stress_photgrid
 
          call photgrid%interp_flux(x_vec, F, stat)
 
-!         write(OUTPUT_UNIT, 20, ADVANCE='NO') '.'
+         write(OUTPUT_UNIT, 20, ADVANCE='NO') '.'
 20       format(1A)
 
          select case(stat)
@@ -114,7 +114,7 @@ program stress_photgrid
 
       end do random_loop
 
-!      write(OUTPUT_UNIT, 30)
+      write(OUTPUT_UNIT, 30)
 
    end do interp_loop
 
