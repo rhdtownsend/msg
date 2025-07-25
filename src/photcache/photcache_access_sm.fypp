@@ -78,24 +78,35 @@ contains
 
       else
 
-         ! Fetch the photint
+         fetch_block: block
 
-         call fetch_proc(i, self%photint_elements(i)%photint, stat)
+            ! Fetch the photint
 
-         ! Update the storage size
+            call fetch_proc(i, self%photint_elements(i)%photint, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) exit fetch_block
+            end if
 
-         call self%photint_elements(i)%photint%get_ssize(ssize)
+            ! Update the storage size
 
-         self%ssize = self%ssize + ssize
+            call self%photint_elements(i)%photint%get_ssize(ssize)
 
-         ! Set the reference and expiry counters
+            self%ssize = self%ssize + ssize
 
-         self%ref_counts(i) = 1
-         self%exp_counts(i) = 0
+            ! Set the reference and expiry counters
+
+            self%ref_counts(i) = 1
+            self%exp_counts(i) = 0
+
+         end block fetch_block
 
       end if
 
       !$OMP END CRITICAL (photcache)
+
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      end if
 
       ! Set up the return pointer
 

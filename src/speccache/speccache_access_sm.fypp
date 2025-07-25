@@ -64,6 +64,10 @@ contains
          end if
       end if
 
+      if (PRESENT(stat)) stat = STAT_OK
+
+      !$OMP CRITICAL (speccache)
+
       ! Check if the entry is already present
 
       if (self%ref_counts(i) > 0) then
@@ -82,40 +86,50 @@ contains
 
       else
 
-         ! Fetch the specint
+         fetch_block: block
 
-         call fetch_proc(i, specint_full, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         end if
+            ! Fetch the specint
 
-         call specint_full%get_lam_min(lam_min)
-         call specint_full%get_lam_min(lam_max)
-
-         if (lam_min < self%lam_min .OR. lam_max > self%lam_max) then
-
-            call specint_full%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
+            call fetch_proc(i, specint_full, stat)
             if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
+               if (stat /= STAT_OK) exit fetch_block
             end if
 
-         else
+            call specint_full%get_lam_min(lam_min)
+            call specint_full%get_lam_min(lam_max)
 
-            self%specint_elements(i)%specint = specint_full
+            if (lam_min < self%lam_min .OR. lam_max > self%lam_max) then
 
-         endif
+               call specint_full%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
+               if (PRESENT(stat)) then
+                  if (stat /= STAT_OK) exit fetch_block
+               end if
 
-         ! Update the storage size
+            else
 
-         call self%specint_elements(i)%specint%get_ssize(ssize)
+               self%specint_elements(i)%specint = specint_full
 
-         self%ssize = self%ssize + ssize
+            endif
 
-         ! Set the reference and expiry counters
+            ! Update the storage size
 
-         self%ref_counts(i) = 1
-         self%exp_counts(i) = 0
+            call self%specint_elements(i)%specint%get_ssize(ssize)
 
+            self%ssize = self%ssize + ssize
+
+            ! Set the reference and expiry counters
+
+            self%ref_counts(i) = 1
+            self%exp_counts(i) = 0
+
+         end block fetch_block
+
+      end if
+
+      !$OMP END CRITICAL (speccache)
+
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
       end if
 
       ! Set up the return pointer
@@ -123,8 +137,6 @@ contains
       specint => self%specint_elements(i)%specint
 
       ! Finish
-
-      if (PRESENT(stat)) stat = STAT_OK
 
       return
 
