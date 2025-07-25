@@ -69,6 +69,7 @@ module specgrid_m
       procedure, public :: interp_intensity
       procedure, public :: interp_E_moment
       procedure, public :: interp_D_moment
+      procedure, public :: interp_irradiance
       procedure, public :: interp_flux
       procedure, public :: adjust_x_vec
       procedure, public :: filter
@@ -216,6 +217,20 @@ module specgrid_m
          logical, intent(in), optional            :: deriv_vec(:)
          integer, intent(in), optional            :: order
       end subroutine interp_D_moment
+
+      module subroutine interp_irradiance(self, x_vec, mu, dA, d, lam, res, stat, deriv_vec, order)
+         implicit none (type, external)
+         class(specgrid_t), target, intent(inout) :: self
+         real(RD), intent(in)                     :: x_vec(:,:)
+         real(RD), intent(in)                     :: mu(:)
+         real(RD), intent(in)                     :: dA(:)
+         real(RD), intent(in)                     :: d(:)
+         real(RD), intent(in)                     :: lam(:)
+         real(RD), intent(out)                    :: res(:)
+         integer, intent(out), optional           :: stat
+         logical, intent(in), optional            :: deriv_vec(:)
+         integer, intent(in), optional            :: order
+      end subroutine interp_irradiance
 
       module subroutine interp_flux(self, x_vec, lam, res, stat, deriv_vec, order)
          implicit none (type, external)

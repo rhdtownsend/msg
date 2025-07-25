@@ -85,6 +85,75 @@ contains
 
    !****
 
+   module procedure interp_irradiance
+
+      @:CHECK_BOUNDS(SIZE(mu), SIZE(x_vec, 2))
+      @:CHECK_BOUNDS(SIZE(dA), SIZE(x_vec, 2))
+      @:CHECK_BOUNDS(SIZE(d), SIZE(x_vec, 2))
+
+      @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
+
+      ! Interpolate the irradiance
+
+      call self%vgrid%interp_sum(data_proc_, x_vec, res, stat, deriv_vec, order)
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine data_proc_(j, v_seq, f, stat)
+
+         integer, intent(in)            :: j
+         integer, intent(in)            :: v_seq
+         real(RD), intent(out)          :: f(:)
+         integer, intent(out), optional :: stat
+
+         class(specint_t), pointer :: specint
+
+         call self%speccache%fetch(v_seq, fetch_proc_, specint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
+
+         if (mu(j) >= 0._RD) then
+
+            call specint%interp_intensity(mu(j), lam, f, stat)
+            if (PRESENT(stat)) then
+               if (stat /= STAT_OK) return
+            end if
+
+            f = f*dA(j)/d(j)**2
+
+            call self%speccache%release(v_seq, stat)
+
+         else
+
+            f = 0._RD
+
+         end if
+
+         return
+
+      end subroutine data_proc_
+
+      subroutine fetch_proc_(i, specint, stat)
+
+         integer, intent(in)                        :: i
+         class(specint_t), allocatable, intent(out) :: specint
+         integer, intent(out), optional             :: stat
+
+         call self%specsource%fetch(i, specint, stat)
+
+         return
+
+      end subroutine fetch_proc_
+
+   end procedure interp_irradiance
+
+   !****
+
    #:for name in ('flux',)
 
       module procedure interp_${name}$
