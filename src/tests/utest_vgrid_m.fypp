@@ -58,6 +58,7 @@ contains
 
       type(vgrid_t) :: vg
       integer       :: stat(N)
+      integer       :: stat_sum(N)
       integer       :: stat_chk(N)
       character(32) :: stat_str(N)
       real(RD)      :: x_vec(2,N)
@@ -128,10 +129,12 @@ contains
 
          integer  :: j
          real(RD) :: f
+         real(RD) :: f_sum
 
          do j = 1, N
 
             call vg%interp(data_proc_, x_vec(:,j), f, stat(j), order=order(j))
+            call vg%interp_sum(data_proc_sum_, x_vec(:,j:j), f_sum, stat_sum(j), order=order(j))
 
          end do
 
@@ -161,15 +164,42 @@ contains
 
       !****
 
+      subroutine data_proc_sum_(j, v_seq, data, stat)
+
+         integer, intent(in)            :: j
+         integer, intent(in)            :: v_seq
+         real(RD), intent(out)          :: data
+         integer, intent(out), optional :: stat
+
+         data = 0._RD
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         ! Finish
+
+         return
+
+      end subroutine data_proc_sum_
+
+      !****
+
       subroutine stat_assert_()
 
          integer :: j
 
          do j = 1, N
             if (stat(j) /= stat_chk(j)) then
-               print *,'    FAIL ', TRIM(stat_str(j)), ' ', stat(j), '/=', stat_chk(j)
+               print *,'    FAIL interp ', TRIM(stat_str(j)), ' ', stat(j), '/=', stat_chk(j)
             else
-               print *,'    PASS ', TRIM(stat_str(j))
+               print *,'    PASS interp ', TRIM(stat_str(j))
+            end if
+         end do
+
+         do j = 1, N
+            if (stat_sum(j) /= stat_chk(j)) then
+               print *,'    FAIL interp_sum ', TRIM(stat_str(j)), ' ', stat_sum(j), '/=', stat_chk(j)
+            else
+               print *,'    PASS interp_sum ', TRIM(stat_str(j))
             end if
          end do
 
@@ -353,7 +383,9 @@ contains
       real(RD)      :: x_vec(2,2)
       real(RD)      :: f_lin(2)
       real(RD)      :: f_cub(2)
+      real(RD)      :: f_sum
       real(RD)      :: f_chk(2)
+      real(RD)      :: f_sum_chk
 
       print *, '  interp'
 
@@ -389,6 +421,8 @@ contains
 
          f_chk = 1._RD + x_vec(1,:) + 2._RD*x_vec(2,:)
 
+         f_sum_chk = SUM(f_chk)
+
          ! Finish
 
          return
@@ -404,6 +438,8 @@ contains
 
          call vg%interp(data_proc_, x_vec(:,1), f_cub(1), order=3)
          call vg%interp(data_proc_, x_vec(:,2), f_cub(2), order=3)
+
+         call vg%interp_sum(data_proc_sum_, x_vec, f_sum, order=3)
 
          ! Finish
 
@@ -429,6 +465,23 @@ contains
 
       end subroutine data_proc_
 
+      subroutine data_proc_sum_(j, v_seq, data, stat)
+
+         integer, intent(in)            :: j
+         integer, intent(in)            :: v_seq
+         real(RD), intent(out)          :: data
+         integer, intent(out), optional :: stat
+
+         data = f(v_seq)
+
+         if (PRESENT(stat)) stat = STAT_OK
+
+         ! Finish
+
+         return
+
+      end subroutine data_proc_sum_
+
       !****
 
       subroutine interp_assert_()
@@ -436,6 +489,7 @@ contains
          real(RD), parameter :: tol = 1E-14_RD
 
          real(RD) :: f_err(2)
+         real(RD) :: f_sum_err
 
          f_err = (f_lin - f_chk)/f_chk
 
@@ -451,6 +505,14 @@ contains
             print *,'    PASS cubic'
          else
             print *,'    FAIL cubic: ', MAXVAL(ABS(f_err)), '>', tol
+         end if
+
+         f_sum_err = (f_sum - f_sum_chk)/f_sum_chk
+
+         if (ABS(f_sum_err) < tol) then
+            print *,'    PASS cubic sum'
+         else
+            print *,'    FAIL cubic sum: ', ABS(f_sum_err), '>', tol
          end if
 
          ! Finish
