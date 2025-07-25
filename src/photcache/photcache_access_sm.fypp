@@ -43,7 +43,6 @@ contains
 
       #:endif
 
-      integer     :: stat_
       integer(ID) :: ssize
 
       ! Fetch the i'th photint
@@ -57,7 +56,7 @@ contains
          end if
       end if
 
-      stat_ = STAT_OK
+      if (PRESENT(stat)) stat = STAT_OK
 
       !$OMP CRITICAL (photcache)
 
@@ -103,8 +102,6 @@ contains
       photint => self%photint_elements(i)%photint
 
       ! Finish
-
-      if (PRESENT(stat)) stat = stat_
 
       return
 
