@@ -38,7 +38,7 @@ contains
 
       module procedure interp_${name}$
 
-         ! Interpolate ${name$)
+         ! Interpolate ${name}$
 
          call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
 
