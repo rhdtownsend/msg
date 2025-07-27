@@ -101,7 +101,7 @@ program stress_specgrid
          call RANDOM_NUMBER(w)
          x_vec = x_min*(1._RD - w) + x_max*w
 
-         call specgrid%interp_flux(x_vec, lam, F, stat)
+         call specgrid%interp_flux(x_vec, 0._RD, lam, F, stat)
 
          write(OUTPUT_UNIT, 20, ADVANCE='NO') '.'
 20       format(1A)

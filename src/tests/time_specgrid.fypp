@@ -53,7 +53,7 @@ program time_specgrid
 
       call SYSTEM_CLOCK(count=start_time, count_rate=rate)
 
-      call specgrid%interp_intensity(vx, 1.0_RD, lam, F, stat)
+      call specgrid%interp_intensity(vx, 1.0_RD, 0.0_RD, lam, F, stat)
       if (stat /= STAT_OK) then
          print *,'Failed in interp_intensity with stat:',stat
          stop
