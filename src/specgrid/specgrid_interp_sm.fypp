@@ -88,8 +88,7 @@ contains
    module procedure interp_irradiance
 
       @:CHECK_BOUNDS(SIZE(mu), SIZE(x_vec, 2))
-      @:CHECK_BOUNDS(SIZE(dA), SIZE(x_vec, 2))
-      @:CHECK_BOUNDS(SIZE(d), SIZE(x_vec, 2))
+      @:CHECK_BOUNDS(SIZE(dOmega), SIZE(x_vec, 2))
 
       @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
 
@@ -124,7 +123,7 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            f = f*dA(j)/d(j)**2
+            f = f*dOmega(j)
 
             call self%speccache%release(v_seq, stat)
 

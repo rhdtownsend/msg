@@ -93,8 +93,7 @@ contains
    module procedure interp_irradiance
 
       @:CHECK_BOUNDS(SIZE(mu), SIZE(x_vec, 2))
-      @:CHECK_BOUNDS(SIZE(dA), SIZE(x_vec, 2))
-      @:CHECK_BOUNDS(SIZE(d), SIZE(x_vec, 2))
+      @:CHECK_BOUNDS(SIZE(dOmega), SIZE(x_vec, 2))
 
       ! Interpolate the irradiance
 
@@ -127,7 +126,7 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            f = f*dA(j)/d(j)**2
+            f = f*dOmega(j)
 
             call self%photcache%release(v_seq, stat)
 
@@ -157,57 +156,53 @@ contains
 
    !****
 
-   #:for name in ('flux',)
+   module procedure interp_flux
 
-      module procedure interp_${name}$
+      ! Interpolate the flux
 
-         ! Interpolate the ${name}$
+      call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
 
-         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
+      ! Finish
 
-         ! Finish
+   contains
 
-      contains
+      subroutine data_proc_(v_seq, f, stat)
 
-         subroutine data_proc_(v_seq, f, stat)
+         integer, intent(in)            :: v_seq
+         real(RD), intent(out)          :: f
+         integer, intent(out), optional :: stat
 
-            integer, intent(in)            :: v_seq
-            real(RD), intent(out)          :: f
-            integer, intent(out), optional :: stat
+         class(photint_t), pointer :: photint
 
-            class(photint_t), pointer :: photint
+         call self%photcache%fetch(v_seq, fetch_proc_, photint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
 
-            call self%photcache%fetch(v_seq, fetch_proc_, photint, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
+         call photint%interp_flux(f, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
 
-            call photint%interp_${name}$(f, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
+         call self%photcache%release(v_seq, stat)
 
-            call self%photcache%release(v_seq, stat)
+         return
 
-            return
+      end subroutine data_proc_
 
-         end subroutine data_proc_
+      subroutine fetch_proc_(i, photint, stat)
 
-        subroutine fetch_proc_(i, photint, stat)
+         integer, intent(in)                         :: i
+         class(photint_t), allocatable, intent(out)  :: photint
+         integer, intent(out), optional              :: stat
 
-            integer, intent(in)                         :: i
-            class(photint_t), allocatable, intent(out)  :: photint
-            integer, intent(out), optional              :: stat
+         call self%photsource%fetch(i, photint, stat)
 
-            call self%photsource%fetch(i, photint, stat)
+         return
 
-            return
+      end subroutine fetch_proc_
 
-         end subroutine fetch_proc_
-
-      end procedure interp_${name}$
-
-   #:endfor
+   end procedure interp_flux
 
    !****
 
