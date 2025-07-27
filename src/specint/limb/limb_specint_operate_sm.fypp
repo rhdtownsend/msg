@@ -108,7 +108,7 @@ contains
          b = 0._RD
          b(p) = 1._RD
 
-         call self%interp_f_(b, lam, c(p,:), stat)
+         call self%interp_f_(b, 0._RD, lam, c(p,:), stat)
          if (PRESENT(stat)) then
             if (stat /= STAT_OK) return
          end if

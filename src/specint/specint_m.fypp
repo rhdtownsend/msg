@@ -80,44 +80,48 @@ module specint_m
          integer(ID), intent(out)     :: ssize
       end subroutine get_ssize
 
-      subroutine interp_intensity(self, mu, lam, res, stat)
+      subroutine interp_intensity(self, mu, z, lam, res, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
          class(specint_t), intent(in)   :: self
          real(RD), intent(in)           :: mu
+         real(RD), intent(in)           :: z
          real(RD), intent(in)           :: lam(:)
          real(RD), intent(out)          :: res(:)
          integer, intent(out), optional :: stat
       end subroutine interp_intensity
 
-      subroutine interp_E_moment(self, k, lam, res, stat)
+      subroutine interp_E_moment(self, k, z, lam, res, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
          class(specint_t), intent(in)   :: self
          integer, intent(in)            :: k
+         real(RD), intent(in)           :: z
          real(RD), intent(in)           :: lam(:)
          real(RD), intent(out)          :: res(:)
          integer, intent(out), optional :: stat
       end subroutine interp_E_moment
 
-      subroutine interp_D_moment(self, l, lam, res, stat)
+      subroutine interp_D_moment(self, l, z, lam, res, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
          class(specint_t), intent(in)   :: self
          integer, intent(in)            :: l
+         real(RD), intent(in)           :: z
          real(RD), intent(in)           :: lam(:)
          real(RD), intent(out)          :: res(:)
          integer, intent(out), optional :: stat
       end subroutine interp_D_moment
 
-      subroutine interp_flux(self, lam, res, stat)
+      subroutine interp_flux(self, z, lam, res, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
          class(specint_t), intent(in)   :: self
+         real(RD), intent(in)           :: z
          real(RD), intent(in)           :: lam(:)
          real(RD), intent(out)          :: res(:)
          integer, intent(out), optional :: stat

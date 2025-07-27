@@ -50,7 +50,7 @@ contains
 
          ! Do the interpolation
 
-         call self%interp_f_(b, lam, res, stat)
+         call self%interp_f_(b, z, lam, res, stat)
 
          ! Finish
 
@@ -79,7 +79,7 @@ contains
 
          ! Do the interpolation
 
-         call self%interp_f_(b, lam, res, stat)
+         call self%interp_f_(b, z, lam, res, stat)
 
          ! Finish
 
@@ -93,6 +93,7 @@ contains
 
    module procedure interp_f_
 
+      real(RD) :: lam_rest(SIZE(lam))
       integer  :: n_lam
       integer  :: i
       integer  :: j
@@ -103,11 +104,15 @@ contains
       @:CHECK_BOUNDS(SIZE(b), self%n_b)
       @:CHECK_BOUNDS(SIZE(f), SIZE(lam)-1)
 
+      ! Apply the Doppler un-shift
+
+      lam_rest = lam/(1._RD + z)
+
       ! Check lam is valid
 
       n_lam = SIZE(lam)
 
-      if (lam(1) < self%lam(1)) then
+      if (lam_rest(1) < self%lam(1)) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_LAM_LO
             return
@@ -116,7 +121,7 @@ contains
          endif
       endif
 
-      if (lam(n_lam) > self%lam(self%n_lam)) then
+      if (lam_rest(n_lam) > self%lam(self%n_lam)) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_LAM_HI
             return
@@ -128,29 +133,24 @@ contains
       ! Perform the interpolation (conservative piecewise-constant
       ! rebin)
 
-      i = 0
+      call locate(self%lam, lam_rest(1), i)
+      if (i == self%n_lam) i = i - 1
 
-      !$OMP PARALLEL DO PRIVATE(lam_a, lam_b, dlam) FIRSTPRIVATE(i) SCHEDULE(static)
       out_loop: do j = 1, n_lam-1
-
-         if (i == 0) then
-            call locate(self%lam, lam(j), i)
-            if (i == self%n_lam) i = i - 1
-         end if
 
          f(j) = 0._RD
 
-         dlam = lam(j+1) - lam(j)
+         dlam = lam_rest(j+1) - lam_rest(j)
 
          in_loop: do
 
-            lam_a = MAX(self%lam(i), lam(j))
-            lam_b = MIN(self%lam(i+1), lam(j+1))
+            lam_a = MAX(self%lam(i), lam_rest(j))
+            lam_b = MIN(self%lam(i+1), lam_rest(j+1))
 
             f(j) = f(j) + (lam_b - lam_a)/dlam*DOT_PRODUCT(b, self%c(:,i))
 
             if (lam_b == self%lam(i+1)) i = i + 1
-            if (lam_b == lam(j+1)) exit in_loop
+            if (lam_b == lam_rest(j+1)) exit in_loop
 
          end do in_loop
 

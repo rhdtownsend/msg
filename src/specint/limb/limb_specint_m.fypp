@@ -132,45 +132,50 @@ module limb_specint_m
 
    interface
 
-      module subroutine interp_intensity(self, mu, lam, res, stat)
+      module subroutine interp_intensity(self, mu, z, lam, res, stat)
          implicit none (type, external)
          class(limb_specint_t), intent(in) :: self
          real(RD), intent(in)              :: mu
+         real(RD), intent(in)              :: z
          real(RD), intent(in)              :: lam(:)
          real(RD), intent(out)             :: res(:)
          integer, intent(out), optional    :: stat
       end subroutine interp_intensity
 
-      module subroutine interp_E_moment(self, k, lam, res, stat)
+      module subroutine interp_E_moment(self, k, z, lam, res, stat)
          implicit none (type, external)
          class(limb_specint_t), intent(in) :: self
          integer, intent(in)               :: k
+         real(RD), intent(in)              :: z
          real(RD), intent(in)              :: lam(:)
          real(RD), intent(out)             :: res(:)
          integer, intent(out), optional    :: stat
       end subroutine interp_E_moment
 
-      module subroutine interp_D_moment(self, l, lam, res, stat)
+      module subroutine interp_D_moment(self, l, z, lam, res, stat)
          implicit none (type, external)
          class(limb_specint_t), intent(in) :: self
          integer, intent(in)               :: l
+         real(RD), intent(in)              :: z
          real(RD), intent(in)              :: lam(:)
          real(RD), intent(out)             :: res(:)
          integer, intent(out), optional    :: stat
       end subroutine interp_D_moment
 
-      module subroutine interp_flux(self, lam, res, stat)
+      module subroutine interp_flux(self, z, lam, res, stat)
          implicit none (type, external)
          class(limb_specint_t), intent(in) :: self
+         real(RD), intent(in)              :: z
          real(RD), intent(in)              :: lam(:)
          real(RD), intent(out)             :: res(:)
          integer, intent(out), optional    :: stat
       end subroutine interp_flux
 
-      module subroutine interp_f_(self, b, lam, f, stat)
+      module subroutine interp_f_(self, b, z, lam, f, stat)
          implicit none (type, external)
          class(limb_specint_t), intent(in) :: self
          real(RD), intent(in)              :: b(:)
+         real(RD), intent(in)              :: z
          real(RD), intent(in)              :: lam(:)
          real(RD), intent(out)             :: f(:)
          integer, intent(out), optional    :: stat

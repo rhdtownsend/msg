@@ -56,7 +56,7 @@ contains
                if (stat /= STAT_OK) return
             end if
 
-            call specint%interp_${name}$(${arg_var}$, lam, f, stat)
+            call specint%interp_${name}$(${arg_var}$, z, lam, f, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
@@ -119,7 +119,7 @@ contains
 
          if (mu(j) >= 0._RD) then
 
-            call specint%interp_intensity(mu(j), lam, f, stat)
+            call specint%interp_intensity(mu(j), z(j), lam, f, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             end if
@@ -154,59 +154,55 @@ contains
 
    !****
 
-   #:for name in ('flux',)
+   module procedure interp_flux
 
-      module procedure interp_${name}$
+      @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
 
-         @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
+      ! Interpolate the flux
 
-         ! Interpolate ${name}$
+      call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
 
-         call self%vgrid%interp(data_proc_, x_vec, res, stat, deriv_vec, order)
+      ! Finish
 
-         ! Finish
+   contains
 
-      contains
+      subroutine data_proc_(v_seq, f, stat)
 
-         subroutine data_proc_(v_seq, f, stat)
+         integer, intent(in)            :: v_seq
+         real(RD), intent(out)          :: f(:)
+         integer, intent(out), optional :: stat
 
-            integer, intent(in)            :: v_seq
-            real(RD), intent(out)          :: f(:)
-            integer, intent(out), optional :: stat
+         class(specint_t), pointer :: specint
 
-            class(specint_t), pointer :: specint
+         call self%speccache%fetch(v_seq, fetch_proc_, specint, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
 
-            call self%speccache%fetch(v_seq, fetch_proc_, specint, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
+         call specint%interp_flux(z, lam, f, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) return
+         end if
 
-            call specint%interp_${name}$(lam, f, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
-            end if
+         call self%speccache%release(v_seq, stat)
 
-            call self%speccache%release(v_seq, stat)
+         return
 
-            return
+      end subroutine data_proc_
 
-         end subroutine data_proc_
+      subroutine fetch_proc_(i, specint, stat)
 
-         subroutine fetch_proc_(i, specint, stat)
+         integer, intent(in)                        :: i
+         class(specint_t), allocatable, intent(out) :: specint
+         integer, intent(out), optional             :: stat
 
-            integer, intent(in)                        :: i
-            class(specint_t), allocatable, intent(out) :: specint
-            integer, intent(out), optional             :: stat
+         call self%specsource%fetch(i, specint, stat)
 
-            call self%specsource%fetch(i, specint, stat)
+         return
 
-            return
+      end subroutine fetch_proc_
 
-         end subroutine fetch_proc_
-
-      end procedure interp_${name}$
-
-   #:endfor
+   end procedure interp_flux
 
    !****
 
