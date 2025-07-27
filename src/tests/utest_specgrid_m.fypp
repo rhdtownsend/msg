@@ -153,7 +153,7 @@ contains
 
          do j = 1, N
 
-            call sg%interp_intensity(x_vec(:,j), mu(j), lam(:,j), I, stat(j))
+            call sg%interp_intensity(x_vec(:,j), mu(j), 0._RD, lam(:,j), I, stat(j))
 
          end do
 
@@ -322,6 +322,8 @@ contains
       real(RD)         :: E_chk(n_lam-1)
       real(RD)         :: D(n_lam-1)
       real(RD)         :: D_chk(n_lam-1)
+      real(RD)         :: R(n_lam-1)
+      real(RD)         :: R_chk(n_lam-1)
       real(RD)         :: F(n_lam-1)
       real(RD)         :: F_chk(n_lam-1)
 
@@ -351,6 +353,8 @@ contains
          E_chk = [7692392.4361349288_RD, 4084491.8724862086_RD]
          D_chk = [4811175.9311023634_RD, 2442872.3012035391_RD]
 
+         R_chk = 2._RD*I_chk
+
          F_chk = [96665454.263564929_RD, 51327238.640999608_RD]
 
          ! Finish
@@ -365,11 +369,17 @@ contains
 
          ! Perform interoplations
 
-         call sg%interp_intensity(x_vec, 0.5_RD, lam, I)
-         call sg%interp_E_moment(x_vec, 1, lam, E)
-         call sg%interp_D_moment(x_vec, 2, lam, D)
+         call sg%interp_intensity(x_vec, 0.5_RD, 0.0_RD, lam, I)
+         call sg%interp_E_moment(x_vec, 1, 0.0_RD, lam, E)
+         call sg%interp_D_moment(x_vec, 2, 0.0_RD, lam, D)
 
-         call sg%interp_flux(x_vec, lam, F)
+         call sg%interp_irradiance( &
+            SPREAD(x_vec, DIM=2, NCOPIES=2), &
+            SPREAD(0.5_RD, DIM=1, NCOPIES=2), &
+            SPREAD(1._RD, DIM=1, NCOPIES=2), &
+            SPREAD(0.0_RD, DIM=1, NCOPIES=2), lam, R)
+
+         call sg%interp_flux(x_vec, 0.0_RD, lam, F)
 
          ! Finish
 
@@ -386,11 +396,13 @@ contains
          real(RD) :: I_err(n_lam-1)
          real(RD) :: E_err(n_lam-1)
          real(RD) :: D_err(n_lam-1)
+         real(RD) :: R_err(n_lam-1)
          real(RD) :: F_err(n_lam-1)
 
          I_err = (I - I_chk)/I_chk
          E_err = (E - E_chk)/E_chk
          D_err = (D - D_chk)/D_chk
+         R_err = (R - R_chk)/R_chk
          F_err = (F - F_chk)/F_chk
 
          if (ALL(ABS(I_err) < tol)) then
@@ -409,6 +421,12 @@ contains
             print *,'    PASS D_moment'
          else
             print *,'    FAIL D_moment:', MAXVAL(ABS(D_err)), '>', tol
+         end if
+
+         if (ALL(ABS(R_err) < tol)) then
+            print *,'    PASS irradiance'
+         else
+            print *,'    FAIL irradiance:', MAXVAL(ABS(R_err)), '>', tol
          end if
 
          if (ALL(ABS(F_err) < tol)) then

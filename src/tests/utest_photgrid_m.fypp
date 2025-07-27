@@ -258,6 +258,8 @@ contains
       real(RD)         :: E_chk
       real(RD)         :: D
       real(RD)         :: D_chk
+      real(RD)         :: R
+      real(RD)         :: R_chk
       real(RD)         :: F
       real(RD)         :: F_chk
 
@@ -285,6 +287,8 @@ contains
          E_chk = 1437915796284651.0_RD
          D_chk = 870305946838468.75_RD
 
+         R_chk = 2._RD*I_chk
+
          F_chk = 18069382808354304._RD
 
          ! Finish
@@ -303,6 +307,11 @@ contains
          call pg%interp_E_moment(x_vec, 1, E)
          call pg%interp_D_moment(x_vec, 2, D)
 
+         call pg%interp_irradiance( &
+            SPREAD(x_vec, DIM=2, NCOPIES=2), &
+            SPREAD(0.5_RD, DIM=1, NCOPIES=2), &
+            SPREAD(1._RD, DIM=1, NCOPIES=2), R)
+
          call pg%interp_flux(x_vec, F)
 
          ! Finish
@@ -320,11 +329,13 @@ contains
          real(RD) :: I_err
          real(RD) :: E_err
          real(RD) :: D_err
+         real(RD) :: R_err
          real(RD) :: F_err
 
          I_err = (I - I_chk)/I_chk
          E_err = (E - E_chk)/E_chk
          D_err = (D - D_chk)/D_chk
+         R_err = (R - R_chk)/R_chk
          F_err = (F - F_chk)/F_chk
 
          if (ABS(I_err) < tol) then
@@ -343,6 +354,12 @@ contains
             print *,'    PASS D_moment'
          else
             print *,'    FAIL D_moment:', ABS(D_err), '>', tol
+         end if
+
+         if (ABS(R_err) < tol) then
+            print *,'    PASS irradiance'
+         else
+            print *,'    FAIL irradiance:', ABS(R_err), '>', tol
          end if
 
          if (ABS(F_err) < tol) then
