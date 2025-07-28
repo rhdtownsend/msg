@@ -88,6 +88,18 @@ class SpecGrid:
         return x_vec
     
 
+    def _array_dict_to_x_vec(self, x):
+
+        m = len(x[self._axis_labels[0]])
+
+        x_vec = np.empty([m,self._rank])
+
+        for i, key in enumerate(self._axis_labels):
+            x_vec[:,i] = x[key]
+
+        return x_vec, m
+
+
     def _dict_to_deriv_vec(self, deriv):
 
         if deriv is not None:
@@ -180,7 +192,7 @@ class SpecGrid:
         pyc._flush_specgrid_cache(self._specgrid)
 
 
-    def intensity(self, x, mu, lam, deriv=None, order=3):
+    def intensity(self, x, mu, z, lam, deriv=None, order=3):
         r"""Evaluate the spectroscopic intensity.
 
         Args:
@@ -188,7 +200,9 @@ class SpecGrid:
                 `axis_labels` property, values must be double.b
             mu (double): Cosine of angle of emergence relative to 
                 surface normal.
-            lam (numpy.ndarray): Wavelength abscissa (Å).
+            z (double): Redshift relative to observer's frame.
+            lam (numpy.ndarray): Wavelength abscissa (Å) in observer's
+                frame.
             deriv (dict, optional): Flags indicating whether to evaluate 
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
@@ -211,18 +225,21 @@ class SpecGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_specgrid_intensity(self._specgrid, x_vec, mu, lam,
+        return pyc._interp_specgrid_intensity(self._specgrid, x_vec, mu,
+                                              z, lam,
                                               deriv_vec, order)
 
     
-    def E_moment(self, x, k, lam, deriv=None, order=3):
-        r"""Evaluate the spectroscopic intensity E-moment.
+    def M_moment(self, x, k, z, lam, deriv=None, order=3):
+        r"""Evaluate the spectroscopic intensity M-moment.
 
         Args:
             x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
+            z (double): Redshift relative to observer's frame.
             k (int): Degree of moment.
-            lam (numpy.ndarray): Wavelength abscissa (Å).
+            lam (numpy.ndarray): Wavelength abscissa (Å) in observer's
+                frame.
             deriv (dict, optional): Flags indicating whether to evaluate 
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
@@ -231,7 +248,7 @@ class SpecGrid:
                 1 or 3.
 
         Returns:
-            numpy.ndarray: Spectroscopic intensity E-moment 
+            numpy.ndarray: Spectroscopic intensity M-moment
             (erg/cm^2/s/Å) in bins delineated by lam; length len(lam)-1.
 
         Raises:
@@ -245,19 +262,21 @@ class SpecGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_specgrid_E_moment(self._specgrid, x_vec, k, lam,
-                                             deriv_vec, order)
+        return pyc._interp_specgrid_M_moment(self._specgrid, x_vec, k, z,
+                                             lam, deriv_vec, order)
 
     
-    def D_moment(self, x, l, lam, deriv=None, order=3):
+    def D_moment(self, x, l, z, lam, deriv=None, order=3):
         r"""Evaluate the spectroscopic intensity D-moment.
 
         Args:
             x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
             l (int): Harmonic degree of moment.
-            lam (numpy.ndarray): Wavelength abscissa (Å).
-            deriv (dict, optional): Flags indicating whether to evaluate 
+            z (double): Redshift relative to observer's frame.
+            lam (numpy.ndarray): Wavelength abscissa (Å) in observer's
+                frame.
+            deriv (dict, optional): Flags indicating whether to evaluate
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
@@ -279,18 +298,65 @@ class SpecGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_specgrid_D_moment(self._specgrid, x_vec, l, lam,
+        return pyc._interp_specgrid_D_moment(self._specgrid, x_vec, l,
+                                             z, lam,
                                              deriv_vec, order)
 
     
-    def flux(self, x, lam, deriv=None, order=3):
+    def irradiance(self, x, mu, dOmega, z, lam, deriv=None, order=3):
+        r"""Evaluate the spectroscopic irradiance.
+
+        Args:
+            x (dict): Photospheric parameters for emitting elements;
+                keys must match `axis_labels` property, values must
+                be numpy.ndarrays of equal length.
+            mu (np.ndarray): Cosines of angles of emergence relative to
+                surface normals; must be same length as arrays in x.
+            dOmega (np.ndarray): Solid angles of emitting elements; must
+                be same length as arrays in x.
+            z (double): Redshifts relative to observer's frame.
+            lam (numpy.ndarray): Wavelength abscissa (Å).
+            deriv (dict, optional): Flags indicating whether to evaluate
+                derivative with respect to each photospheric parameter;
+                keys must match the `axis_labels` property, values must
+                be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
+
+        Returns:
+            numpy.ndarray: Spectroscopic irradiance (erg/cm^2/s/Å) in
+            bins delineated by lam; length len(lam)-1.
+
+        Raises:
+            KeyError: If `x` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `x`, `mu`, or any part of the wavelength
+                abscissa falls outside the bounds of the grid; or if the
+                arrays in x, mu, dOmega and z have mismatched sizes
+            LookupError: If `x` falls in a grid void.
+        """
+
+        x_vec, m = self._array_dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
+
+        if len(mu) != m or len(dOmega) != m or len(z) != m:
+            raise ValueError('dimension mismatch')
+
+        return pyc._interp_specgrid_irradiance(self._specgrid, x_vec, mu, dOmega,
+                                               z, lam,
+                                               deriv_vec, order)
+
+
+    def flux(self, x, z, lam, deriv=None, order=3):
         r"""Evaluate the spectroscopic flux.
 
         Args:
             x (dict): Photospheric parameters; keys must match
                 `axis_labels` property, values must be double.
-            lam (numpy.ndarray): Wavelength abscissa (Å)
-            deriv (dict, optional): Flags indicating whether to evaluate 
+            z (double): Redshift relative to observer's frame.
+            lam (numpy.ndarray): Wavelength abscissa (Å) in observer's
+                frame.
+            deriv (dict, optional): Flags indicating whether to evaluate
                 derivative with respect to each photospheric parameter; 
                 keys must match the `axis_labels` property, values must 
                 be boolean.
@@ -312,7 +378,8 @@ class SpecGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_specgrid_flux(self._specgrid, x_vec, lam,
+        return pyc._interp_specgrid_flux(self._specgrid, x_vec,
+                                         z, lam,
                                          deriv_vec, order)
 
     
@@ -500,8 +567,8 @@ class PhotGrid:
         return pyc._interp_photgrid_intensity(self._photgrid, x_vec, mu, deriv_vec, order)
 
     
-    def E_moment(self, x, k, deriv=None, order=3):
-        r"""Evaluate the photometric intensity E-moment, normalized to
+    def M_moment(self, x, k, deriv=None, order=3):
+        r"""Evaluate the photometric intensity M-moment, normalized to
         the zero-point flux.
 
         Args:
@@ -516,7 +583,7 @@ class PhotGrid:
                 1 or 3.
 
         Returns:
-            double: photometric intensity E-moment.
+            double: photometric intensity M-moment.
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
@@ -529,7 +596,7 @@ class PhotGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_photgrid_E_moment(self._photgrid, x_vec, k, deriv_vec)
+        return pyc._interp_photgrid_M_moment(self._photgrid, x_vec, k, deriv_vec)
 
     
     def D_moment(self, x, l, deriv=None, order=3):
@@ -564,6 +631,47 @@ class PhotGrid:
         return pyc._interp_photgrid_D_moment(self._photgrid, x_vec, l, deriv_vec, order)
 
     
+    def irradiance(self, x, mu, dOmega, deriv=None, order=3):
+        r"""Evaluate the photometric irradiance, normalized to the zero-
+        point flux.
+
+        Args:
+            x (dict): Photospheric parameters for emitting elements;
+                keys must match `axis_labels` property, values must
+                be numpy.ndarrays of equal length.
+            mu (np.ndarray): Cosines of angles of emergence relative to
+                surface normals; must be same length as arrays in x.
+            dOmega (np.ndarray): Solid angles of emitting elements; must
+                be same length as arrays in x.
+            deriv (dict, optional): Flags indicating whether to evaluate
+                derivative with respect to each photospheric parameter;
+                keys must match the `axis_labels` property, values must
+                be boolean.
+            order (int, optional): Interpolation order; valid values are
+                1 or 3.
+
+        Returns:
+            numpy.ndarray: Photometric irradiance.
+
+        Raises:
+            KeyError: If `x` does not define all keys appearing in the
+                `axis_labels` property.
+            ValueError: If `x`, `mu`, or any part of the wavelength
+                abscissa falls outside the bounds of the grid; or if the
+                arrays in x, mu and dOmega have mismatched sizes
+            LookupError: If `x` falls in a grid void.
+        """
+
+        x_vec, m = self._array_dict_to_x_vec(x)
+        deriv_vec = self._dict_to_deriv_vec(deriv)
+
+        if len(mu) != m or len(dOmega) != m:
+            raise ValueError('dimension mismatch')
+
+        return pyc._interp_photgrid_irradiance(self._photgrid, x_vec, mu, dOmega,
+                                               deriv_vec, order)
+
+
     def flux(self, x, deriv=None, order=3):
         r"""Evaluate the photometric flux, normalized to the zero-point
         flux.
