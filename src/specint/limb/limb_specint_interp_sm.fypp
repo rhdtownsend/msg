@@ -32,7 +32,7 @@ submodule (limb_specint_m) limb_specint_interp_sm
 contains
 
    #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
-                                     ('E_moment', 'k', 'integer'), &
+                                     ('M_moment', 'k', 'integer'), &
                                      ('D_moment', 'l', 'integer'))
 
       module procedure interp_${name}$

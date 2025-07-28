@@ -34,7 +34,7 @@ module specint_m
       procedure(get_precise), deferred, public      :: get_precise
       procedure(get_ssize), deferred, public        :: get_ssize
       procedure(interp_intensity), deferred, public :: interp_intensity
-      procedure(interp_E_moment), deferred, public  :: interp_E_moment
+      procedure(interp_M_moment), deferred, public  :: interp_M_moment
       procedure(interp_D_moment), deferred, public  :: interp_D_moment
       procedure(interp_flux), deferred, public      :: interp_flux
       procedure(subset), deferred, public           :: subset
@@ -92,7 +92,7 @@ module specint_m
          integer, intent(out), optional :: stat
       end subroutine interp_intensity
 
-      subroutine interp_E_moment(self, k, z, lam, res, stat)
+      subroutine interp_M_moment(self, k, z, lam, res, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
@@ -102,7 +102,7 @@ module specint_m
          real(RD), intent(in)           :: lam(:)
          real(RD), intent(out)          :: res(:)
          integer, intent(out), optional :: stat
-      end subroutine interp_E_moment
+      end subroutine interp_M_moment
 
       subroutine interp_D_moment(self, l, z, lam, res, stat)
          use forum_m

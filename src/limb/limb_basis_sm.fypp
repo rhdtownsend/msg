@@ -99,11 +99,11 @@ contains
 
    !****
 
-   module procedure eval_E_moment_basis
+   module procedure eval_M_moment_basis
 
       @:CHECK_BOUNDS(SIZE(b), self%n)
 
-      ! Evaluate the E (Eddington) moment basis functions
+      ! Evaluate the M (Eddington moment) basis functions
 
       if (k < 0) then
          if (PRESENT(stat)) then
@@ -117,32 +117,32 @@ contains
       select case (self%law_id)
       case (CONST_LAW)
          b = [                &
-              E_ks_(k, 0._RD) &
+              M_ks_(k, 0._RD) &
               ]
       case (LINEAR_LAW)
          b = [                                  &
-              E_ks_(k, 0._RD),                  &
-              E_ks_(k, 1._RD) - E_ks_(k, 0._RD) &
+              M_ks_(k, 0._RD),                  &
+              M_ks_(k, 1._RD) - M_ks_(k, 0._RD) &
               ]
       case (SQRT_LAW)
          b = [                                    &
-              E_ks_(k, 0._RD),                    &
-              E_ks_(k, 0.5_RD) - E_ks_(k, 0._RD), &
-              E_ks_(k, 1._RD) - E_ks_(k, 0._RD)   &
+              M_ks_(k, 0._RD),                    &
+              M_ks_(k, 0.5_RD) - M_ks_(k, 0._RD), &
+              M_ks_(k, 1._RD) - M_ks_(k, 0._RD)   &
               ]
       case (QUAD_LAW)
          b = [                                   &
-              E_ks_(k, 0._RD),                   &
-              E_ks_(k, 1._RD) - E_ks_(k, 0._RD), &
-              E_ks_(k, 2._RD) - E_ks_(k, 0._RD)  &
+              M_ks_(k, 0._RD),                   &
+              M_ks_(k, 1._RD) - M_ks_(k, 0._RD), &
+              M_ks_(k, 2._RD) - M_ks_(k, 0._RD)  &
               ]
       case (CLARET_LAW)
          b = [                                    &
-              E_ks_(k, 0._RD),                    &
-              E_ks_(k, 0.5_RD) - E_ks_(k, 0._RD), &
-              E_ks_(k, 1._RD) - E_ks_(k, 0._RD),  &
-              E_ks_(k, 1.5_RD) - E_ks_(k, 0._RD), &
-              E_ks_(k, 2._RD) - E_ks_(k, 0._RD)   &
+              M_ks_(k, 0._RD),                    &
+              M_ks_(k, 0.5_RD) - M_ks_(k, 0._RD), &
+              M_ks_(k, 1._RD) - M_ks_(k, 0._RD),  &
+              M_ks_(k, 1.5_RD) - M_ks_(k, 0._RD), &
+              M_ks_(k, 2._RD) - M_ks_(k, 0._RD)   &
               ]
       case default
          @:ABORT('invalid law')
@@ -156,7 +156,7 @@ contains
 
    contains
 
-      function E_ks_(k, s) result(E)
+      function M_ks_(k, s) result(E)
 
          integer, intent(in)  :: k
          real(RD), intent(in) :: s
@@ -170,9 +170,9 @@ contains
 
          return
 
-      end function E_ks_
+      end function M_ks_
 
-   end procedure eval_E_moment_basis
+   end procedure eval_M_moment_basis
 
    !****
 
@@ -180,8 +180,7 @@ contains
 
       @:CHECK_BOUNDS(SIZE(b), self%n)
 
-      ! Evaluate the D (differential flux function) moment basis
-      ! functions
+      ! Evaluate the D (differential flux moment) basis functions
 
       if (l < 0) then
          if (PRESENT(stat)) then

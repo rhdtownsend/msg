@@ -55,7 +55,7 @@ module limb_specint_m
       procedure, public :: get_precise
       procedure, public :: get_ssize
       procedure, public :: interp_intensity
-      procedure, public :: interp_E_moment
+      procedure, public :: interp_M_moment
       procedure, public :: interp_D_moment
       procedure, public :: interp_flux
       procedure         :: interp_f_
@@ -142,7 +142,7 @@ module limb_specint_m
          integer, intent(out), optional    :: stat
       end subroutine interp_intensity
 
-      module subroutine interp_E_moment(self, k, z, lam, res, stat)
+      module subroutine interp_M_moment(self, k, z, lam, res, stat)
          implicit none (type, external)
          class(limb_specint_t), intent(in) :: self
          integer, intent(in)               :: k
@@ -150,7 +150,7 @@ module limb_specint_m
          real(RD), intent(in)              :: lam(:)
          real(RD), intent(out)             :: res(:)
          integer, intent(out), optional    :: stat
-      end subroutine interp_E_moment
+      end subroutine interp_M_moment
 
       module subroutine interp_D_moment(self, l, z, lam, res, stat)
          implicit none (type, external)
