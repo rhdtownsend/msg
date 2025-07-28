@@ -53,8 +53,9 @@ module cmsg_spec_m
    public :: set_specgrid_cache_limit
    public :: flush_specgrid_cache
    public :: interp_specgrid_intensity
-   public :: interp_specgrid_E_moment
+   public :: interp_specgrid_M_moment
    public :: interp_specgrid_D_moment
+   public :: interp_specgrid_irradiance
    public :: interp_specgrid_flux
    public :: adjust_specgrid_x_vec
 
@@ -320,25 +321,26 @@ contains
 
    !****
 
-   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(C_DOUBLE)'), &
-                                     ('E_moment', 'k', 'integer(C_INT)'), &
-                                     ('D_moment', 'l', 'integer(C_INT)'))
+   #:for name, arg_var, arg_type, res_var in (('intensity', 'mu', 'real(C_DOUBLE)', 'I'), &
+                                              ('M_moment', 'k', 'integer(C_INT)', 'M'), &
+                                              ('D_moment', 'l', 'integer(C_INT)', 'D'))
 
-      subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, ${arg_var}$, n, lam, res, stat, &
-                                          deriv_vec, order) bind(C, name='interp_specgrid_${name}$')
+      subroutine interp_specgrid_${name}$(specgrid_ptr, n, r, x_vec, ${arg_var}$, z, lam, ${res_var}$, &
+         stat, deriv_vec, order) bind(C, name='interp_specgrid_${name}$')
 
          type(C_PTR), value                    :: specgrid_ptr
-         real(C_DOUBLE), intent(in)            :: x_vec(*)
+         integer(C_INT), value                 :: n
+         integer(C_INT), value                 :: r
+         real(C_DOUBLE), intent(in)            :: x_vec(r)
          ${arg_type}$, value                   :: ${arg_var}$
-         integer(C_INT), value                 :: n
+         real(C_DOUBLE), value                 :: z
          real(C_DOUBLE), intent(in)            :: lam(n)
-         real(C_DOUBLE), intent(out)           :: res(n-1)
+         real(C_DOUBLE), intent(out)           :: ${res_var}$(n-1)
          integer(C_INT), intent(out), optional :: stat
-         logical(C_BOOL), intent(in), optional :: deriv_vec(*)
+         logical(C_BOOL), intent(in), optional :: deriv_vec(r)
          integer(C_INT), intent(in), optional  :: order
 
          type(specgrid_t), pointer :: specgrid
-         integer                   :: rank
 
          ! Set up the Fortran pointer
 
@@ -346,14 +348,12 @@ contains
 
          ! Interpolate the ${name}$
 
-         call specgrid%get_rank(rank)
-
          if (PRESENT(deriv_vec)) then
-            call specgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, lam, res, stat, &
-                 deriv_vec=LOGICAL(deriv_vec(1:rank)), order=order)
+            call specgrid%interp_${name}$(x_vec, ${arg_var}$, z, lam, ${res_var}$, stat, &
+               deriv_vec=LOGICAL(deriv_vec), order=order)
          else
-            call specgrid%interp_${name}$(x_vec(1:rank), ${arg_var}$, lam, res, stat, &
-                 order=order)
+            call specgrid%interp_${name}$(x_vec, ${arg_var}$, z, lam, ${res_var}$, stat, &
+               order=order)
          end if
 
          ! Finish
@@ -366,60 +366,96 @@ contains
 
    !****
 
-   #:for name, var in (('flux', 'F'),)
-
-      subroutine interp_specgrid_${name}$(specgrid_ptr, x_vec, n, lam, res, stat, &
-                                          deriv_vec, order) bind(C, name='interp_specgrid_${name}$')
-
-         type(C_PTR), value                    :: specgrid_ptr
-         real(C_DOUBLE), intent(in)            :: x_vec(*)
-         integer(C_INT), value                 :: n
-         real(C_DOUBLE), intent(in)            :: lam(n)
-         real(C_DOUBLE), intent(out)           :: res(n-1)
-         integer(C_INT), intent(out), optional :: stat
-         logical(C_BOOL), intent(in), optional :: deriv_vec(*)
-         integer(C_INT), intent(in), optional  :: order
-
-         type(specgrid_t), pointer :: specgrid
-         integer                   :: rank
-
-         ! Set up the Fortran pointer
-
-         call C_F_POINTER(specgrid_ptr, specgrid)
-
-         ! Interpolate the ${name}$
-
-         call specgrid%get_rank(rank)
-
-         if (PRESENT(deriv_vec)) then
-            call specgrid%interp_${name}$(x_vec(1:rank), lam, res, stat, &
-                 deriv_vec=LOGICAL(deriv_vec(1:rank)), order=order)
-         else
-            call specgrid%interp_${name}$(x_vec(1:rank), lam, res, stat, &
-                 order=order)
-         end if
-
-         ! Finish
-
-         return
-
-      end subroutine interp_specgrid_${name}$
-
-   #:endfor
-
-   !****
-
-   subroutine adjust_specgrid_x_vec(specgrid_ptr, x_vec, dx_vec, x_adj, &
-                                    stat) bind(C, name='adjust_specgrid_x_vec')
+   subroutine interp_specgrid_irradiance(specgrid_ptr, n, m, r, x_vec, mu, dOmega, z, lam, E, &
+      stat, deriv_vec, order) bind(C, name='interp_specgrid_irradiance')
 
       type(C_PTR), value                    :: specgrid_ptr
-      real(C_DOUBLE), intent(in)            :: x_vec(*)
-      real(C_DOUBLE), intent(in)            :: dx_vec(*)
-      real(C_DOUBLE), intent(out)           :: x_adj(*)
+      integer(C_INT), value                 :: n
+      integer(C_INT), value                 :: m
+      integer(C_INT), value                 :: r
+      real(C_DOUBLE), intent(in), target    :: x_vec(r,m)
+      real(C_DOUBLE), intent(in)            :: mu(m)
+      real(C_DOUBLE), intent(in)            :: dOmega(m)
+      real(C_DOUBLE), intent(in)            :: z(m)
+      real(C_DOUBLE), intent(in)            :: lam(n)
+      real(C_DOUBLE), intent(out)           :: E(n-1)
+      integer(C_INT), intent(out), optional :: stat
+      logical(C_BOOL), intent(in), optional :: deriv_vec(r)
+      integer(C_INT), intent(in), optional  :: order
+
+      type(specgrid_t), pointer :: specgrid
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Interpolate the ${name}$
+
+      if (PRESENT(deriv_vec)) then
+         call specgrid%interp_irradiance(x_vec, mu, dOmega, z, lam, E, stat, &
+            deriv_vec=LOGICAL(deriv_vec), order=order)
+      else
+         call specgrid%interp_irradiance(x_vec, mu, dOmega, z, lam, E, stat, &
+            order=order)
+      end if
+
+      ! Finish
+
+      return
+
+   end subroutine interp_specgrid_irradiance
+
+   !****
+
+   subroutine interp_specgrid_flux(specgrid_ptr, n, r, x_vec, z, lam, F, &
+      stat, deriv_vec, order) bind(C, name='interp_specgrid_flux')
+
+      type(C_PTR), value                    :: specgrid_ptr
+      integer(C_INT), value                 :: n
+      integer(C_INT), value                 :: r
+      real(C_DOUBLE), intent(in)            :: x_vec(r)
+      real(C_DOUBLE), value                 :: z
+      real(C_DOUBLE), intent(in)            :: lam(n)
+      real(C_DOUBLE), intent(out)           :: F(n-1)
+      integer(C_INT), intent(out), optional :: stat
+      logical(C_BOOL), intent(in), optional :: deriv_vec(r)
+      integer(C_INT), intent(in), optional  :: order
+
+      type(specgrid_t), pointer :: specgrid
+
+      ! Set up the Fortran pointer
+
+      call C_F_POINTER(specgrid_ptr, specgrid)
+
+      ! Interpolate the ${name}$
+
+      if (PRESENT(deriv_vec)) then
+         call specgrid%interp_flux(x_vec, z, lam, F, stat, &
+            deriv_vec=LOGICAL(deriv_vec), order=order)
+      else
+         call specgrid%interp_flux(x_vec, z, lam, F, stat, &
+            order=order)
+      end if
+
+      ! Finish
+
+      return
+
+   end subroutine interp_specgrid_flux
+
+   !****
+
+   subroutine adjust_specgrid_x_vec(specgrid_ptr, r, x_vec, dx_vec, x_adj, &
+      stat) bind(C, name='adjust_specgrid_x_vec')
+
+      type(C_PTR), value                    :: specgrid_ptr
+      integer(C_INT), value                 :: r
+      real(C_DOUBLE), intent(in)            :: x_vec(r)
+      real(C_DOUBLE), intent(in)            :: dx_vec(r)
+      real(C_DOUBLE), intent(out)           :: x_adj(r)
       integer(C_INT), intent(out), optional :: stat
 
       type(specgrid_t), pointer :: specgrid
-      integer                   :: rank
 
       ! Set up the Fortran pointer
 
@@ -427,9 +463,7 @@ contains
 
       ! Adjust x_vec
 
-      call specgrid%get_rank(rank)
-
-      call specgrid%adjust_x_vec(x_vec(1:rank), dx_vec(1:rank), x_adj(1:rank), stat)
+      call specgrid%adjust_x_vec(x_vec, dx_vec, x_adj, stat)
 
       ! Finish
 

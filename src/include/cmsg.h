@@ -69,12 +69,22 @@ void set_specgrid_cache_limit(SpecGrid specgrid, int cache_limit, Stat *stat);
 
 void flush_specgrid_cache(SpecGrid specgrid);
 
-void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], Stat *stat, bool deriv_vec[], int *order);
-void interp_specgrid_E_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], Stat *stat, bool deriv_vec[], int *order);
-void interp_specgrid_D_moment(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], Stat *stat, bool deriv_vec[], int *order);
-void interp_specgrid_flux(SpecGrid specgrid, double x_vec[], int n, double lam[], double F[], Stat *stat, bool deriv_vec[], int *order);
+void interp_specgrid_intensity(SpecGrid specgrid, int n, int r, double x_vec[], double mu,
+			       double z, double lam[], double I[],
+			       Stat *stat, bool deriv_vec[], int *order);
+void interp_specgrid_M_moment(SpecGrid specgrid, int n, int r, double x_vec[], int k,
+			      double z, double lam[], double M[],
+			      Stat *stat, bool deriv_vec[], int *order);
+void interp_specgrid_D_moment(SpecGrid specgrid, int n, int r, double x_vec[], int l,
+			      double z, double lam[], double D[],
+			      Stat *stat, bool deriv_vec[], int *order);
+void interp_specgrid_irradiance(SpecGrid specgrid, int n, int m, int r, double x_vec[], double mu[], double dOmega[],
+				double z[], double lam[], double E[],
+				Stat *stat, bool deriv_vec[], int *order);
+void interp_specgrid_flux(SpecGrid specgrid, int n, int r,  double x_vec[], double z, double lam[],
+			  double F[], Stat *stat, bool deriv_vec[], int *order);
 
-void adjust_specgrid_x_vec(SpecGrid specgrid, double x_vec[], double dx_vec[], double x_adj[], Stat *stat);
+void adjust_specgrid_x_vec(SpecGrid specgrid, int r, double x_vec[], double dx_vec[], double x_adj[], Stat *stat);
 
 // photgrid interface
 
@@ -96,12 +106,23 @@ void set_photgrid_cache_limit(PhotGrid photgrid, int cache_limit, Stat *stat);
 
 void flush_photgrid_cache(PhotGrid photgrid);
 
-void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, Stat *stat, bool deriv_vec[], int *order);
-void interp_photgrid_E_moment(PhotGrid photgrid, double x_vec[], int k, double *E, Stat *stat, bool deriv_vec[], int *order);
-void interp_photgrid_D_moment(PhotGrid photgrid, double x_vec[], int l, double *D, Stat *stat, bool deriv_vec[], int *order);
-void interp_photgrid_flux(PhotGrid photgrid, double x_vec[], double *F, Stat *stat, bool deriv_vec[], int *order);
+void interp_photgrid_intensity(PhotGrid photgrid, int r, double x_vec[], double mu,
+			       double *I,
+			       Stat *stat, bool deriv_vec[], int *order);
+void interp_photgrid_M_moment(PhotGrid photgrid, int r, double x_vec[], int k,
+			      double *M,
+			      Stat *stat, bool deriv_vec[], int *order);
+void interp_photgrid_D_moment(PhotGrid photgrid, int r, double x_vec[], int l,
+			      double *D,
+			      Stat *stat, bool deriv_vec[], int *order);
+void interp_photgrid_irradiance(PhotGrid photgrid, int m, int r, double x_vec[], double mu[], double dOmega[],
+				double *E,
+				Stat *stat, bool deriv_vec[], int *order);
+void interp_photgrid_flux(PhotGrid photgrid, int r, double x_vec[],
+			  double *F,
+			  Stat *stat, bool deriv_vec[], int *order);
 
-void adjust_photgrid_x_vec(PhotGrid photgrid, double x_vec[], double dx_vec[], double x_adj[], Stat *stat);
+void adjust_photgrid_x_vec(PhotGrid photgrid, int r, double x_vec[], double dx_vec[], double x_adj[], Stat *stat);
 
 // library routines
 
