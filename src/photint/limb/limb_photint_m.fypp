@@ -46,7 +46,7 @@ module limb_photint_m
       procedure, public :: get_precise
       procedure, public :: get_ssize
       procedure, public :: interp_intensity
-      procedure, public :: interp_M_moment
+      procedure, public :: interp_E_moment
       procedure, public :: interp_D_moment
       procedure, public :: interp_flux
       procedure, public :: read
@@ -105,34 +105,34 @@ module limb_photint_m
 
    interface
 
-      module subroutine interp_intensity(self, mu, res, stat)
+      module subroutine interp_intensity(self, mu, I, stat)
          implicit none (type, external)
          class(limb_photint_t), intent(in) :: self
          real(RD), intent(in)              :: mu
-         real(RD), intent(out)             :: res
+         real(RD), intent(out)             :: I
          integer, intent(out), optional    :: stat
       end subroutine interp_intensity
 
-      module subroutine interp_M_moment(self, k, res, stat)
+      module subroutine interp_E_moment(self, k, E, stat)
          implicit none (type, external)
          class(limb_photint_t), intent(in) :: self
          integer, intent(in)               :: k
-         real(RD), intent(out)             :: res
+         real(RD), intent(out)             :: E
          integer, intent(out), optional    :: stat
-      end subroutine interp_M_moment
+      end subroutine interp_E_moment
 
-      module subroutine interp_D_moment(self, l, res, stat)
+      module subroutine interp_D_moment(self, l, D, stat)
          implicit none (type, external)
          class(limb_photint_t), intent(in) :: self
          integer, intent(in)               :: l
-         real(RD), intent(out)             :: res
+         real(RD), intent(out)             :: D
          integer, intent(out), optional    :: stat
       end subroutine interp_D_moment
 
-      module subroutine interp_flux(self, res, stat)
+      module subroutine interp_flux(self, F, stat)
          implicit none (type, external)
          class(limb_photint_t), intent(in) :: self
-         real(RD), intent(out)             :: res
+         real(RD), intent(out)             :: F
          integer, intent(out), optional    :: stat
       end subroutine interp_flux
 

@@ -254,12 +254,12 @@ contains
       real(RD)         :: x_vec(2)
       real(RD)         :: I
       real(RD)         :: I_chk
-      real(RD)         :: M
-      real(RD)         :: M_chk
-      real(RD)         :: D
-      real(RD)         :: D_chk
       real(RD)         :: E
       real(RD)         :: E_chk
+      real(RD)         :: D
+      real(RD)         :: D_chk
+      real(RD)         :: F_obs
+      real(RD)         :: F_obs_chk
       real(RD)         :: F
       real(RD)         :: F_chk
 
@@ -284,10 +284,10 @@ contains
          call set_xvec(pg, ['Teff  ', 'log(g)'], [10000._RD, 4.00_RD], x_vec)
 
          I_chk = 5337442669216122.0_RD
-         M_chk = 1437915796284651.0_RD
+         E_chk = 1437915796284651.0_RD
          D_chk = 870305946838468.75_RD
 
-         E_chk = 2._RD*I_chk
+         F_obs_chk = 2._RD*I_chk
 
          F_chk = 18069382808354304._RD
 
@@ -304,13 +304,13 @@ contains
          ! Perform interoplations
 
          call pg%interp_intensity(x_vec, 0.5_RD, I)
-         call pg%interp_M_moment(x_vec, 1, M)
+         call pg%interp_E_moment(x_vec, 1, E)
          call pg%interp_D_moment(x_vec, 2, D)
 
          call pg%interp_irradiance( &
             SPREAD(x_vec, DIM=2, NCOPIES=2), &
             SPREAD(0.5_RD, DIM=1, NCOPIES=2), &
-            SPREAD(1._RD, DIM=1, NCOPIES=2), E)
+            SPREAD(1._RD, DIM=1, NCOPIES=2), F_obs)
 
          call pg%interp_flux(x_vec, F)
 
@@ -327,15 +327,17 @@ contains
          real(RD), parameter :: tol = 1E-14_RD
 
          real(RD) :: I_err
-         real(RD) :: M_err
-         real(RD) :: D_err
          real(RD) :: E_err
+         real(RD) :: D_err
+         real(RD) :: F_obs_err
          real(RD) :: F_err
 
          I_err = (I - I_chk)/I_chk
-         M_err = (M - M_chk)/M_chk
-         D_err = (D - D_chk)/D_chk
          E_err = (E - E_chk)/E_chk
+         D_err = (D - D_chk)/D_chk
+
+         F_obs_err = (F_obs - F_obs_chk)/F_obs_chk
+
          F_err = (F - F_chk)/F_chk
 
          if (ABS(I_err) < tol) then
@@ -344,10 +346,10 @@ contains
             print *,'    FAIL intensity:', ABS(I_err), '>', tol
          end if
 
-         if (ABS(M_err) < tol) then
+         if (ABS(E_err) < tol) then
             print *,'    PASS E_moment'
          else
-            print *,'    FAIL E_moment:', ABS(M_err), '>', tol
+            print *,'    FAIL E_moment:', ABS(E_err), '>', tol
          end if
 
          if (ABS(D_err) < tol) then
@@ -356,10 +358,10 @@ contains
             print *,'    FAIL D_moment:', ABS(D_err), '>', tol
          end if
 
-         if (ABS(E_err) < tol) then
+         if (ABS(F_obs_err) < tol) then
             print *,'    PASS irradiance'
          else
-            print *,'    FAIL irradiance:', ABS(E_err), '>', tol
+            print *,'    FAIL irradiance:', ABS(F_obs_err), '>', tol
          end if
 
          if (ABS(F_err) < tol) then

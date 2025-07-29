@@ -551,7 +551,7 @@ class PhotGrid:
                 1 or 3.
 
         Returns:
-            double: photometric intensity (/sr).
+            double: Photometric intensity (/sr).
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
@@ -583,7 +583,7 @@ class PhotGrid:
                 1 or 3.
 
         Returns:
-            double: photometric intensity M-moment.
+            double: Photometric intensity M-moment.
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
@@ -615,7 +615,7 @@ class PhotGrid:
                 1 or 3.
 
         Returns:
-            double: photometric intensity D-moment.
+            double: Photometric intensity D-moment.
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
@@ -687,7 +687,7 @@ class PhotGrid:
                 1 or 3.
 
         Returns:
-            double: photometric flux.
+            double: Photometric flux.
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the

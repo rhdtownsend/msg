@@ -53,7 +53,7 @@ module cmsg_spec_m
    public :: set_specgrid_cache_limit
    public :: flush_specgrid_cache
    public :: interp_specgrid_intensity
-   public :: interp_specgrid_M_moment
+   public :: interp_specgrid_E_moment
    public :: interp_specgrid_D_moment
    public :: interp_specgrid_irradiance
    public :: interp_specgrid_flux
@@ -322,7 +322,7 @@ contains
    !****
 
    #:for name, arg_var, arg_type, res_var in (('intensity', 'mu', 'real(C_DOUBLE)', 'I'), &
-                                              ('M_moment', 'k', 'integer(C_INT)', 'M'), &
+                                              ('E_moment', 'k', 'integer(C_INT)', 'E'), &
                                               ('D_moment', 'l', 'integer(C_INT)', 'D'))
 
       subroutine interp_specgrid_${name}$(specgrid_ptr, n, r, x_vec, ${arg_var}$, z, lam, ${res_var}$, &
@@ -366,7 +366,7 @@ contains
 
    !****
 
-   subroutine interp_specgrid_irradiance(specgrid_ptr, n, m, r, x_vec, mu, dOmega, z, lam, E, &
+   subroutine interp_specgrid_irradiance(specgrid_ptr, n, m, r, x_vec, mu, dOmega, z, lam, F, &
       stat, deriv_vec, order) bind(C, name='interp_specgrid_irradiance')
 
       type(C_PTR), value                    :: specgrid_ptr
@@ -378,7 +378,7 @@ contains
       real(C_DOUBLE), intent(in)            :: dOmega(m)
       real(C_DOUBLE), intent(in)            :: z(m)
       real(C_DOUBLE), intent(in)            :: lam(n)
-      real(C_DOUBLE), intent(out)           :: E(n-1)
+      real(C_DOUBLE), intent(out)           :: F(n-1)
       integer(C_INT), intent(out), optional :: stat
       logical(C_BOOL), intent(in), optional :: deriv_vec(r)
       integer(C_INT), intent(in), optional  :: order
@@ -389,13 +389,13 @@ contains
 
       call C_F_POINTER(specgrid_ptr, specgrid)
 
-      ! Interpolate the ${name}$
+      ! Interpolate the irradiance
 
       if (PRESENT(deriv_vec)) then
-         call specgrid%interp_irradiance(x_vec, mu, dOmega, z, lam, E, stat, &
+         call specgrid%interp_irradiance(x_vec, mu, dOmega, z, lam, F, stat, &
             deriv_vec=LOGICAL(deriv_vec), order=order)
       else
-         call specgrid%interp_irradiance(x_vec, mu, dOmega, z, lam, E, stat, &
+         call specgrid%interp_irradiance(x_vec, mu, dOmega, z, lam, F, stat, &
             order=order)
       end if
 
@@ -427,7 +427,7 @@ contains
 
       call C_F_POINTER(specgrid_ptr, specgrid)
 
-      ! Interpolate the ${name}$
+      ! Interpolate the flux
 
       if (PRESENT(deriv_vec)) then
          call specgrid%interp_flux(x_vec, z, lam, F, stat, &

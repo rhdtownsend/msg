@@ -2,8 +2,8 @@
 
    The specgrid_t type represents a grid of spectroscopic data.
 
-   This grid may be used to interpolate the intensity (or related
-   quantities) across a wavelength abscissa and for a set of
+   This grid may be used to interpolate the specific intensity (or
+   related quantities) across a wavelength abscissa and for a set of
    photospheric parameter values.
 
 
@@ -95,12 +95,13 @@
       :o integer stat [out]: Status code.
 
 
-   .. f:subroutine:: interp_intensity(x_vec, mu, lam, I, stat, deriv_vec, order)
+   .. f:subroutine:: interp_intensity(x_vec, mu, z, lam, I, stat, deriv_vec, order)
 
       Interpolate the spectroscopic intensity.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p real(RD) mu [in]: Cosine of angle of emergence relative to surface normal.
+      :p real(RD) z [in]: Redshift relative to observer's frame.
       :p real(RD) lam(:) [in]: Wavelength abscissa (Å).
       :p real(RD) I(:) [out]: Spectroscopic intensity (erg/cm^2/s/Å/sr) in
             bins delineated by lam; length LEN(lam)-1.
@@ -109,12 +110,13 @@
       :o integer order [in]: Interpolation order (1 or 3).
 
 			 
-   .. f:subroutine:: interp_E_moment(x_vec, k, lam, E, stat, deriv_vec, order)
+   .. f:subroutine:: interp_M_moment(x_vec, k, z, lam, E, stat, deriv_vec, order)
 
-      Interpolate the spectroscopic intensity E-moment.
+      Interpolate the spectroscopic intensity M-moment.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer k [in]: Degree of moment.
+      :p real(RD) z [in]: Redshift relative to observer's frame.
       :p real(RD) lam(:) [in]: Wavelength abscissa (Å).
       :p real(RD) E(:) [out]: Spectroscopic intensity E-moment (erg/cm^2/s/Å)
             in bins delineated by lam; length LEN(lam)-1.
@@ -123,12 +125,13 @@
       :o integer order [in]: Interpolation order (1 or 3).
 
 
-   .. f:subroutine:: interp_D_moment(x_vec, l, lam, D, stat, deriv_vec, order)
+   .. f:subroutine:: interp_D_moment(x_vec, l, z, lam, D, stat, deriv_vec, order)
 
       Interpolate the spectroscopic intensity D-moment.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer l [in]: Harmonic degree of moment.
+      :p real(RD) z [in]: Redshift relative to observer's frame.
       :p real(RD) lam(:) [in]: Wavelength abscissa (Å).
       :p real(RD) D(:) [out]: Spectroscopic intensity D-moment (erg/cm^2/s/Å)
             in bins delineated by lam; length LEN(lam)-1.
@@ -137,11 +140,31 @@
       :o integer order [in]: Interpolation order (1 or 3).
 
 
-   .. f:subroutine:: interp_flux(x_vec, lam, I, stat, deriv_vec, order)
+   .. f:subroutine:: interp_irradiance(x_vec, mu, dOmega, z, lam, D, stat, deriv_vec, order)
+
+      Interpolate the spectroscopic irradiance.
+
+      :p real(RD) x_vec(:,:) [in]: Photospheric parameter values.
+      :p real(RD) mu(:) [in]: Cosines of angles of emergence relative to surface
+            normal; length SIZE(x, 2)
+      :p real(RD) dOmega(:) [in]: Solid angles of emitting elements; length
+            SIZE(x, 2)
+      :p real(RD) z(:) [in]: Redshifts relative to observer's frame; length
+            SIZE(x, 2)
+      :p real(RD) lam(:) [in]: Wavelength abscissa (Å).
+      :p real(RD) D(:) [out]: Spectroscopic intensity D-moment (erg/cm^2/s/Å)
+            in bins delineated by lam; length LEN(lam)-1.
+      :o integer stat [out]: Status code.
+      :o logical deriv_vec(:) [in]: Derivative flags.
+      :o integer order [in]: Interpolation order (1 or 3).
+
+
+   .. f:subroutine:: interp_flux(x_vec, z, lam, I, stat, deriv_vec, order)
 
       Interpolate the spectroscopic flux.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
+      :p real(RD) z [in]: Redshift relative to observer's frame.
       :p real(RD) lam(:) [in]: Wavelength abscissa (Å).
       :p real(RD) F(:) [out]: Spectroscopic flux (erg/cm^2/s/Å) in
             bins delineated by lam; length LEN(lam)-1.

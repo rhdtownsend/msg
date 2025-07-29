@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
 
   double x_vec[2];
 
+  double z;
   double R2_d2;
 
   double lam[N_LAM];
@@ -61,6 +62,10 @@ int main(int argc, char *argv[]) {
       
   }
 
+  // Set the redshift of Sirius A
+
+  z = -1.830E-5;
+
   // Set the dilution factor R2_d2 = R**2/d**2, where R is Sirius A's
   // radius and d its distance
 
@@ -78,7 +83,7 @@ int main(int argc, char *argv[]) {
 
   // Evaluate the flux
 
-  interp_specgrid_flux(specgrid, x_vec, N_LAM, lam, F, NULL, NULL, NULL);
+  interp_specgrid_flux(specgrid, x_vec, z, N_LAM, lam, F, NULL, NULL, NULL);
 
   for(int i=0; i < N_LAM-1; i++) {
     F_obs[i] = R2_d2*F[i];

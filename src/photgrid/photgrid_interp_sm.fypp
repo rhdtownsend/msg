@@ -33,7 +33,7 @@ submodule (photgrid_m) photgrid_interp_sm
 contains
 
    #:for name, arg_var, arg_type, res_var in (('intensity', 'mu', 'real(RD)', 'I'), &
-                                              ('M_moment', 'k', 'integer', 'M'), &
+                                              ('E_moment', 'k', 'integer', 'E'), &
                                               ('D_moment', 'l', 'integer', 'D'))
 
       module procedure interp_${name}$
@@ -97,7 +97,7 @@ contains
 
       ! Interpolate the irradiance
 
-      call self%vgrid%interp_sum(data_proc_, x_vec, E, stat, deriv_vec, order)
+      call self%vgrid%interp_sum(data_proc_, x_vec, F, stat, deriv_vec, order)
 
       ! Finish
 

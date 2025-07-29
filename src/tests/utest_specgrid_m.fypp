@@ -318,12 +318,12 @@ contains
       real(RD)         :: lam(n_lam)
       real(RD)         :: I(n_lam-1)
       real(RD)         :: I_chk(n_lam-1)
-      real(RD)         :: M(n_lam-1)
-      real(RD)         :: M_chk(n_lam-1)
-      real(RD)         :: D(n_lam-1)
-      real(RD)         :: D_chk(n_lam-1)
       real(RD)         :: E(n_lam-1)
       real(RD)         :: E_chk(n_lam-1)
+      real(RD)         :: D(n_lam-1)
+      real(RD)         :: D_chk(n_lam-1)
+      real(RD)         :: F_obs(n_lam-1)
+      real(RD)         :: F_obs_chk(n_lam-1)
       real(RD)         :: F(n_lam-1)
       real(RD)         :: F_chk(n_lam-1)
 
@@ -350,10 +350,10 @@ contains
          lam = [3000._RD, 5000._RD, 7000._RD]
 
          I_chk = [28030282.999992810_RD, 15241389.849050688_RD]
-         M_chk = [7692392.4361349288_RD, 4084491.8724862086_RD]
+         E_chk = [7692392.4361349288_RD, 4084491.8724862086_RD]
          D_chk = [4811175.9311023634_RD, 2442872.3012035391_RD]
 
-         E_chk = 2._RD*I_chk
+         F_obs_chk = 2._RD*I_chk
 
          F_chk = [96665454.263564929_RD, 51327238.640999608_RD]
 
@@ -370,14 +370,14 @@ contains
          ! Perform interoplations
 
          call sg%interp_intensity(x_vec, 0.5_RD, 0.0_RD, lam, I)
-         call sg%interp_M_moment(x_vec, 1, 0.0_RD, lam, M)
+         call sg%interp_E_moment(x_vec, 1, 0.0_RD, lam, E)
          call sg%interp_D_moment(x_vec, 2, 0.0_RD, lam, D)
 
          call sg%interp_irradiance( &
             SPREAD(x_vec, DIM=2, NCOPIES=2), &
             SPREAD(0.5_RD, DIM=1, NCOPIES=2), &
             SPREAD(1._RD, DIM=1, NCOPIES=2), &
-            SPREAD(0.0_RD, DIM=1, NCOPIES=2), lam, E)
+            SPREAD(0.0_RD, DIM=1, NCOPIES=2), lam, F_obs)
 
          call sg%interp_flux(x_vec, 0.0_RD, lam, F)
 
@@ -394,15 +394,17 @@ contains
          real(RD), parameter :: tol = 1E-14_RD
 
          real(RD) :: I_err(n_lam-1)
-         real(RD) :: M_err(n_lam-1)
-         real(RD) :: D_err(n_lam-1)
          real(RD) :: E_err(n_lam-1)
+         real(RD) :: D_err(n_lam-1)
+         real(RD) :: F_obs_err(n_lam-1)
          real(RD) :: F_err(n_lam-1)
 
          I_err = (I - I_chk)/I_chk
-         M_err = (M - M_chk)/M_chk
-         D_err = (D - D_chk)/D_chk
          E_err = (E - E_chk)/E_chk
+         D_err = (D - D_chk)/D_chk
+
+         F_obs_err = (F_obs - F_obs_chk)/F_obs_chk
+
          F_err = (F - F_chk)/F_chk
 
          if (ALL(ABS(I_err) < tol)) then
@@ -411,10 +413,10 @@ contains
             print *,'    FAIL intensity:', MAXVAL(ABS(I_err)), '>', tol
          end if
 
-         if (ALL(ABS(M_err) < tol)) then
-            print *,'    PASS M_moment'
+         if (ALL(ABS(E_err) < tol)) then
+            print *,'    PASS E_moment'
          else
-            print *,'    FAIL M_moment:', MAXVAL(ABS(M_err)), '>', tol
+            print *,'    FAIL E_moment:', MAXVAL(ABS(E_err)), '>', tol
          end if
 
          if (ALL(ABS(D_err) < tol)) then
@@ -423,10 +425,10 @@ contains
             print *,'    FAIL D_moment:', MAXVAL(ABS(D_err)), '>', tol
          end if
 
-         if (ALL(ABS(E_err) < tol)) then
+         if (ALL(ABS(F_obs_err) < tol)) then
             print *,'    PASS irradiance'
          else
-            print *,'    FAIL irradiance:', MAXVAL(ABS(E_err)), '>', tol
+            print *,'    FAIL irradiance:', MAXVAL(ABS(F_obs_err)), '>', tol
          end if
 
          if (ALL(ABS(F_err) < tol)) then

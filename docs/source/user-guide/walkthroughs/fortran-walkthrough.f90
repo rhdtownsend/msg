@@ -11,7 +11,7 @@ program fortran_walkthrough
 
    ! Parameters
 
-   real(RD), parameter :: lam_min = 3000._RD
+   real(RD), parameter :: lam_min = 3800._RD
    real(RD), parameter :: lam_max = 7000._RD
    integer, parameter  :: n_lam = 501
 
@@ -21,6 +21,7 @@ program fortran_walkthrough
    type(axis_t)         :: axis
    character(LABEL_LEN) :: label
    integer              :: i
+   real(RD)             :: z
    real(RD)             :: R2_d2
    real(RD)             :: lam(n_lam)
    real(RD)             :: lam_c(n_lam-1)
@@ -62,6 +63,10 @@ program fortran_walkthrough
       end select
 
    end do
+
+   ! Set the redshift of Sirius A
+
+   z = -1.83E-5_RD
    
    ! Set the dilution factor R2_d2 = R**2/d**2, where R is Sirius A's
    ! radius and d its distance
@@ -76,7 +81,7 @@ program fortran_walkthrough
 
    ! Evaluate the observed flux
 
-   call specgrid%interp_flux(x_vec, lam, F)
+   call specgrid%interp_flux(x_vec, z, lam, F)
 
    F_obs = R2_d2*F
 

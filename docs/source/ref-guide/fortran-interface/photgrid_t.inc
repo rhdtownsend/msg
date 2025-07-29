@@ -64,7 +64,7 @@
 			 
    .. f:subroutine:: interp_E_moment(x_vec, k, E, stat, deriv_vec, order)
 
-      Interpolate the photometric E-moment, normalized to the zero-point flux.
+      Interpolate the photometric M-moment, normalized to the zero-point flux.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer k [in]: Degree of of moment.
@@ -76,7 +76,7 @@
 
    .. f:subroutine:: interp_D_moment(x_vec, l, D, stat, deriv_vec, order)
 
-      Interpolate the photometric D-moment, normalized to the zero-point flux.
+      Interpolate the photometric M-moment, normalized to the zero-point flux.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer l [in]: Harmonic degree of moment.

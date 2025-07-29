@@ -52,7 +52,7 @@ module photgrid_m
       procedure, public :: set_cache_limit
       procedure, public :: flush_cache
       procedure, public :: interp_intensity
-      procedure, public :: interp_M_moment
+      procedure, public :: interp_E_moment
       procedure, public :: interp_D_moment
       procedure, public :: interp_irradiance
       procedure, public :: interp_flux
@@ -139,16 +139,16 @@ module photgrid_m
          integer, intent(in), optional            :: order
       end subroutine interp_intensity
 
-      module subroutine interp_M_moment(self, x_vec, k, M, stat, deriv_vec, order)
+      module subroutine interp_E_moment(self, x_vec, k, E, stat, deriv_vec, order)
          implicit none (type, external)
          class(photgrid_t), target, intent(inout) :: self
          real(RD), intent(in)                     :: x_vec(:)
          integer, intent(in)                      :: k
-         real(RD), intent(out)                    :: M
+         real(RD), intent(out)                    :: E
          integer, intent(out), optional           :: stat
          logical, intent(in), optional            :: deriv_vec(:)
          integer, intent(in), optional            :: order
-      end subroutine interp_M_moment
+      end subroutine interp_E_moment
 
       module subroutine interp_D_moment(self, x_vec, l, D, stat, deriv_vec, order)
          implicit none (type, external)
@@ -161,13 +161,13 @@ module photgrid_m
          integer, intent(in), optional            :: order
       end subroutine interp_D_moment
 
-      module subroutine interp_irradiance(self, x_vec, mu, dOmega, E, stat, deriv_vec, order)
+      module subroutine interp_irradiance(self, x_vec, mu, dOmega, F, stat, deriv_vec, order)
          implicit none (type, external)
          class(photgrid_t), target, intent(inout) :: self
          real(RD), intent(in)                     :: x_vec(:,:)
          real(RD), intent(in)                     :: mu(:)
          real(RD), intent(in)                     :: dOmega(:)
-         real(RD), intent(out)                    :: E
+         real(RD), intent(out)                    :: F
          integer, intent(out), optional           :: stat
          logical, intent(in), optional            :: deriv_vec(:)
          integer, intent(in), optional            :: order

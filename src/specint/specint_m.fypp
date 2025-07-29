@@ -34,7 +34,7 @@ module specint_m
       procedure(get_precise), deferred, public      :: get_precise
       procedure(get_ssize), deferred, public        :: get_ssize
       procedure(interp_intensity), deferred, public :: interp_intensity
-      procedure(interp_M_moment), deferred, public  :: interp_M_moment
+      procedure(interp_E_moment), deferred, public  :: interp_E_moment
       procedure(interp_D_moment), deferred, public  :: interp_D_moment
       procedure(interp_flux), deferred, public      :: interp_flux
       procedure(subset), deferred, public           :: subset
@@ -80,7 +80,7 @@ module specint_m
          integer(ID), intent(out)     :: ssize
       end subroutine get_ssize
 
-      subroutine interp_intensity(self, mu, z, lam, res, stat)
+      subroutine interp_intensity(self, mu, z, lam, I, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
@@ -88,11 +88,11 @@ module specint_m
          real(RD), intent(in)           :: mu
          real(RD), intent(in)           :: z
          real(RD), intent(in)           :: lam(:)
-         real(RD), intent(out)          :: res(:)
+         real(RD), intent(out)          :: I(:)
          integer, intent(out), optional :: stat
       end subroutine interp_intensity
 
-      subroutine interp_M_moment(self, k, z, lam, res, stat)
+      subroutine interp_E_moment(self, k, z, lam, E, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
@@ -100,11 +100,11 @@ module specint_m
          integer, intent(in)            :: k
          real(RD), intent(in)           :: z
          real(RD), intent(in)           :: lam(:)
-         real(RD), intent(out)          :: res(:)
+         real(RD), intent(out)          :: E(:)
          integer, intent(out), optional :: stat
-      end subroutine interp_M_moment
+      end subroutine interp_E_moment
 
-      subroutine interp_D_moment(self, l, z, lam, res, stat)
+      subroutine interp_D_moment(self, l, z, lam, D, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
@@ -112,18 +112,18 @@ module specint_m
          integer, intent(in)            :: l
          real(RD), intent(in)           :: z
          real(RD), intent(in)           :: lam(:)
-         real(RD), intent(out)          :: res(:)
+         real(RD), intent(out)          :: D(:)
          integer, intent(out), optional :: stat
       end subroutine interp_D_moment
 
-      subroutine interp_flux(self, z, lam, res, stat)
+      subroutine interp_flux(self, z, lam, F, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
          class(specint_t), intent(in)   :: self
          real(RD), intent(in)           :: z
          real(RD), intent(in)           :: lam(:)
-         real(RD), intent(out)          :: res(:)
+         real(RD), intent(out)          :: F(:)
          integer, intent(out), optional :: stat
       end subroutine interp_flux
 

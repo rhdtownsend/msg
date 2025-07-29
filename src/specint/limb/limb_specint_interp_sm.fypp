@@ -31,15 +31,15 @@ submodule (limb_specint_m) limb_specint_interp_sm
 
 contains
 
-   #:for name, arg_var, arg_type in (('intensity', 'mu', 'real(RD)'), &
-                                     ('M_moment', 'k', 'integer'), &
-                                     ('D_moment', 'l', 'integer'))
+   #:for name, arg_var, arg_type, res_var in (('intensity', 'mu', 'real(RD)', 'I'), &
+                                              ('E_moment', 'k', 'integer', 'E'), &
+                                              ('D_moment', 'l', 'integer', 'D'))
 
       module procedure interp_${name}$
 
          real(RD) :: b(self%n_b)
 
-         @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
+         @:CHECK_BOUNDS(SIZE(${res_var}$), SIZE(lam)-1)
 
          ! Set up the basis functions
 
@@ -48,9 +48,9 @@ contains
             if (stat /= STAT_OK) return
          endif
 
-         ! Do the interpolation
+         ! Interpolate the ${name}$
 
-         call self%interp_f_(b, z, lam, res, stat)
+         call self%interp_f_(b, z, lam, ${res_var}$, stat)
 
          ! Finish
 
@@ -62,32 +62,28 @@ contains
 
    !****
 
-   #:for name, var in (('flux', 'F'),)
+   module procedure interp_flux
 
-      module procedure interp_${name}$
+      real(RD) :: b(self%n_b)
 
-         real(RD) :: b(self%n_b)
+      @:CHECK_BOUNDS(SIZE(F), SIZE(lam)-1)
 
-         @:CHECK_BOUNDS(SIZE(res), SIZE(lam)-1)
+      ! Set up the basis functions
 
-         ! Set up the basis functions
+      call self%limb%eval_flux_basis(b, stat)
+      if (PRESENT(stat)) then
+         if (stat /= STAT_OK) return
+      endif
 
-         call self%limb%eval_${name}$_basis(b, stat)
-         if (PRESENT(stat)) then
-            if (stat /= STAT_OK) return
-         endif
+      ! Interpolate the flux
 
-         ! Do the interpolation
+      call self%interp_f_(b, z, lam, F, stat)
 
-         call self%interp_f_(b, z, lam, res, stat)
+      ! Finish
 
-         ! Finish
+      return
 
-         return
-
-      end procedure interp_${name}$
-
-   #:endfor
+   end procedure interp_flux
 
    !****
 

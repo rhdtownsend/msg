@@ -47,7 +47,7 @@ module cmsg_phot_m
    public :: set_photgrid_cache_limit
    public :: flush_photgrid_cache
    public :: interp_photgrid_intensity
-   public :: interp_photgrid_M_moment
+   public :: interp_photgrid_E_moment
    public :: interp_photgrid_D_moment
    public :: interp_photgrid_irradiance
    public :: interp_photgrid_flux
@@ -366,7 +366,7 @@ contains
    !****
 
    #:for name, arg_var, arg_type, res_var in (('intensity', 'mu', 'real(C_DOUBLE)', 'I'), &
-                                              ('M_moment', 'k', 'integer(C_INT)', 'M'), &
+                                              ('E_moment', 'k', 'integer(C_INT)', 'E'), &
                                               ('D_moment', 'l', 'integer(C_INT)', 'D'))
 
       subroutine interp_photgrid_${name}$(photgrid_ptr, r, x_vec, ${arg_var}$, ${res_var}$, &
@@ -407,7 +407,7 @@ contains
 
    !****
 
-   subroutine interp_photgrid_irradiance(photgrid_ptr, m, r, x_vec, mu, dOmega, E, &
+   subroutine interp_photgrid_irradiance(photgrid_ptr, m, r, x_vec, mu, dOmega, F, &
       stat, deriv_vec, order) bind(C, name='interp_photgrid_irradiance')
 
       type(C_PTR), value                    :: photgrid_ptr
@@ -416,7 +416,7 @@ contains
       real(C_DOUBLE), intent(in)            :: x_vec(r,m)
       real(C_DOUBLE), intent(in)            :: mu(m)
       real(C_DOUBLE), intent(in)            :: dOmega(m)
-      real(C_DOUBLE), intent(out)           :: E
+      real(C_DOUBLE), intent(out)           :: F
       integer(C_INT), intent(out), optional :: stat
       logical(C_BOOL), intent(in), optional :: deriv_vec(r)
       integer(C_INT), intent(in), optional  :: order
@@ -427,13 +427,13 @@ contains
 
       call C_F_POINTER(photgrid_ptr, photgrid)
 
-      ! Interpolate the ${name}$
+      ! Interpolate the irradiance
 
       if (PRESENT(deriv_vec)) then
-         call photgrid%interp_irradiance(x_vec, mu, dOmega, E, stat, &
+         call photgrid%interp_irradiance(x_vec, mu, dOmega, F, stat, &
             deriv_vec=LOGICAL(deriv_vec), order=order)
       else
-         call photgrid%interp_irradiance(x_vec, mu, dOmega, E, stat, &
+         call photgrid%interp_irradiance(x_vec, mu, dOmega, F, stat, &
             order=order)
       end if
 
@@ -462,7 +462,7 @@ contains
 
       call C_F_POINTER(photgrid_ptr, photgrid)
 
-      ! Interpolate the ${name}$
+      ! Interpolate the flux
 
       if (PRESENT(deriv_vec)) then
          call photgrid%interp_flux(x_vec, F, stat, &
