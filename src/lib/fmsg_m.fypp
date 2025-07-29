@@ -36,6 +36,7 @@ module fmsg_m
 
    public :: LABEL_LEN
    public :: STAT_OK
+   public :: STAT_INVALID_DIMENSION
    public :: STAT_OUT_OF_BOUNDS_AXIS_LO
    public :: STAT_OUT_OF_BOUNDS_AXIS_HI
    public :: STAT_OUT_OF_BOUNDS_LAM_LO

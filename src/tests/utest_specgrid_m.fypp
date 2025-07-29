@@ -51,7 +51,7 @@ contains
 
    subroutine test_stat_()
 
-      integer, parameter :: N = 8
+      integer, parameter :: N = 9
       integer, parameter :: N_LAM = 501
 
       type(specgrid_t) :: sg
@@ -60,6 +60,7 @@ contains
       character(32)    :: stat_str(N)
       real(RD)         :: lam(N_LAM,N)
       real(RD)         :: x_vec(2,N)
+      integer          :: n_x_vec(N)
       real(RD)         :: mu(N)
 
       print *, '  exceptions'
@@ -88,6 +89,8 @@ contains
             call set_xvec(sg, ['Teff  ', 'log(g)'], [10000._RD, 4.00_RD], x_vec(:,j))
             mu(j) = 0.5_RD
          end do
+
+         n_x_vec = 2
 
          ! Now modify to create exceptional cases
 
@@ -138,6 +141,12 @@ contains
          stat_chk(8) = STAT_UNAVAILABLE_DATA
          stat_str(8) = 'STAT_UNAVAILABLE_DATA'
 
+         !
+
+         n_x_vec(9) = 1
+         stat_chk(9) = STAT_INVALID_DIMENSION
+         stat_str(9) = 'STAT_INVALID_DIMENSION'
+
          ! Finish
 
          return
@@ -149,11 +158,11 @@ contains
       subroutine stat_act_()
 
          integer  :: j
-         real(RD) :: I(n_lam-1)
+         real(RD) :: I(N_LAM-1)
 
          do j = 1, N
 
-            call sg%interp_intensity(x_vec(:,j), mu(j), 0._RD, lam(:,j), I, stat(j))
+            call sg%interp_intensity(x_vec(:n_x_vec(j),j), mu(j), 0._RD, lam(:,j), I, stat(j))
 
          end do
 
