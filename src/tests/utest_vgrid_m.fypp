@@ -54,7 +54,7 @@ contains
 
    subroutine test_stat_()
 
-      integer, parameter :: N = 5
+      integer, parameter :: N = 6
 
       type(vgrid_t) :: vg
       integer       :: stat(N)
@@ -119,6 +119,11 @@ contains
          stat_chk(5) = STAT_INVALID_ARGUMENT
          stat_str(5) = 'STAT_INVALID_ARGUMENT'
 
+         !
+
+         stat_chk(6) = STAT_INVALID_DIMENSION
+         stat_str(6) = 'STAT_INVALID_DIMENSION'
+
          ! Finish
 
       end subroutine stat_arrange_
@@ -131,12 +136,15 @@ contains
          real(RD) :: f
          real(RD) :: f_sum
 
-         do j = 1, N
+         do j = 1, N-1
 
             call vg%interp(data_proc_, x_vec(:,j), f, stat(j), order=order(j))
             call vg%interp_sum(data_proc_sum_, x_vec(:,j:j), f_sum, stat_sum(j), order=order(j))
 
          end do
+
+         call vg%interp(data_proc_, x_vec(1:1,N), f, stat(N), order=order(N))
+         call vg%interp_sum(data_proc_sum_, x_vec(1:1,N:N), f_sum, stat_sum(N), order=order(N))
 
          ! Finish
 
