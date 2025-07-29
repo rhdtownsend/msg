@@ -62,6 +62,7 @@ contains
       integer       :: stat_chk(N)
       character(32) :: stat_str(N)
       real(RD)      :: x_vec(2,N)
+      integer       :: n_x_vec(N)
       integer       :: order(N)
 
       print *, '  exceptions'
@@ -86,6 +87,7 @@ contains
 
          x_vec(1,:) = 1.5_RD
          x_vec(2,:) = 0.5_RD
+         n_x_vec = 2
          order = 3
 
          ! Now modify to create exceptional cases
@@ -121,6 +123,7 @@ contains
 
          !
 
+         n_x_vec(6) = 1
          stat_chk(6) = STAT_INVALID_DIMENSION
          stat_str(6) = 'STAT_INVALID_DIMENSION'
 
@@ -136,15 +139,12 @@ contains
          real(RD) :: f
          real(RD) :: f_sum
 
-         do j = 1, N-1
+         do j = 1, N
 
-            call vg%interp(data_proc_, x_vec(:,j), f, stat(j), order=order(j))
-            call vg%interp_sum(data_proc_sum_, x_vec(:,j:j), f_sum, stat_sum(j), order=order(j))
+            call vg%interp(data_proc_, x_vec(:n_x_vec(j),j), f, stat(j), order=order(j))
+            call vg%interp_sum(data_proc_sum_, x_vec(:n_x_vec(j),j:j), f_sum, stat_sum(j), order=order(j))
 
          end do
-
-         call vg%interp(data_proc_, x_vec(1:1,N), f, stat(N), order=order(N))
-         call vg%interp_sum(data_proc_sum_, x_vec(1:1,N:N), f_sum, stat_sum(N), order=order(N))
 
          ! Finish
 
