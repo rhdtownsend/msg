@@ -215,6 +215,10 @@ contains
       @:CHECK_BOUNDS(SIZE(c_vec), vgrid%rank)
       @:CHECK_BOUNDS(SIZE(interp_kernel), 2**vgrid%rank)
 
+      if (PRESENT(vderiv)) then
+         @:CHECK_BOUNDS(SIZE(vderiv), vgrid%rank)
+      end if
+
       ! Prepare for linear interpolation in the cell containing x_vec
 
       ! Locate the cell
