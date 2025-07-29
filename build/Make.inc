@@ -126,7 +126,7 @@ FPP = PYTHONPATH=$(MESASDK_ROOT)/lib/python ./fypp_deps
 FPPOPTS = DEBUG OMP FPE
 
 FPPFLAGS += --line-numbering $(addprefix -I,$(SRC_DIRS)) \
-            $(foreach opt,$(FPPOPTS),$(if $(filter yes,$($(opt))),-D$(opt)=1,-D$(opt)=0))
+            $(foreach opt,$(FPPOPTS),$(if $(filter yes,$($(opt))),-D$(opt)=1,))
 
 ifeq ($(DEBUG),yes)
    FPPFLAGS += -DLOG_LEVEL=\'DEBUG\'
