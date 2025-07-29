@@ -19,12 +19,6 @@
 
 submodule (vgrid_m) vgrid_construct_sm
 
-   ! Uses
-
-   #:if OMP is not None
-      use omp_lib
-   #:endif
-
    ! No implicit typing
 
    implicit none (type, external)
@@ -224,13 +218,6 @@ contains
       ! Set up the per-vertex cache
 
       call setup_cache_(vgrid)
-
-      ! Ensure that OMP cancellation is enabled
-
-      #:if OMP is not None
-         @:ASSERT(omp_get_cancellation(), 'the OMP_CANCELLATION environment variable must be set to TRUE')
-      #:endif
-
 
       ! Finish
 
