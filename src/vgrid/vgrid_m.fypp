@@ -29,10 +29,6 @@ module vgrid_m
    use ninterp_m
    use stat_m
 
-   #:if OMP is not None
-   use omp_lib
-   #:endif
-
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
