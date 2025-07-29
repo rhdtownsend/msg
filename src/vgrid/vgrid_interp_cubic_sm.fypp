@@ -126,29 +126,25 @@ contains
 
          #:endif
 
-         logical, save :: check_cancel = .TRUE.
-         integer       :: stat_cancel
-         integer       :: j
-         integer       :: c_vec(vgrid%rank)
-         real(RD)      :: interp_kernel(4**vgrid%rank)
-         integer       :: i
-         integer       :: v_vec(vgrid%rank)
-         integer       :: v_lin
-         integer       :: v_seq
-         real(RD)      :: F${size_F}$
+         integer  :: stat_cancel
+         integer  :: j
+         integer  :: c_vec(vgrid%rank)
+         real(RD) :: interp_kernel(4**vgrid%rank)
+         integer  :: i
+         integer  :: v_vec(vgrid%rank)
+         integer  :: v_lin
+         integer  :: v_seq
+         real(RD) :: F${size_F}$
 
          ! Ensure that OMP cancellation is enabled
 
          #:if OMP is not None
-            if (check_cancel) then
-               if (.NOT. omp_get_cancellation()) then
-                  if (PRESENT(stat)) then
-                     stat = STAT_INVALID_OMP_CONFIG
-                     return
-                  else
-                     @:ABORT('invalid OpenMP configuration (must set OMP_CANCELLATION environment variable to TRUE)')
-                  end if
-                  check_cancel = .FALSE.
+            if (.NOT. omp_get_cancellation()) then
+               if (PRESENT(stat)) then
+                  stat = STAT_INVALID_OMP_CONFIG
+                  return
+               else
+                  @:ABORT('invalid OpenMP configuration (must set OMP_CANCELLATION environment variable to TRUE)')
                end if
             end if
          #:endif
