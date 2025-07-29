@@ -209,12 +209,21 @@ contains
 
          integer :: order_
 
-         @:CHECK_BOUNDS(SIZE(x_vec, 1), self%rank)
-
          if (PRESENT(order)) then
             order_ = order
          else
             order_ = 3
+         end if
+
+         ! Check dimensions
+
+         if (SIZE(x_vec) /= self%rank) then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_DIMENSION
+               return
+            else
+               @:ABORT('invalid dimension')
+            end if
          end if
 
          ! Interpolate the data
@@ -262,12 +271,21 @@ contains
 
          integer :: order_
 
-         @:CHECK_BOUNDS(SIZE(x_vec, 1), self%rank)
-
          if (PRESENT(order)) then
             order_ = order
          else
             order_ = 3
+         end if
+
+         ! Check dimensions
+
+         if (SIZE(x_vec, 1) /= self%rank) then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_DIMENSION
+               return
+            else
+               @:ABORT('invalid dimension')
+            end if
          end if
 
          ! Interpolate the data
@@ -309,9 +327,19 @@ contains
       real(RD)             :: t(2,self%rank)
       integer              :: i(2)
 
-      @:CHECK_BOUNDS(SIZE(x_vec), self%rank)
-      @:CHECK_BOUNDS(SIZE(dx_vec), self%rank)
-      @:CHECK_BOUNDS(SIZE(x_adj), self%rank)
+      ! Check dimensions
+
+      if ( &
+         SIZE(x_vec) /= self%rank .OR. &
+         SIZE(dx_vec) /= self%rank .OR. &
+         SIZE(x_adj) /= self%rank) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_DIMENSION
+            return
+         else
+            @:ABORT('invalid dimension')
+         end if
+      end if
 
       ! Adjust x_vec in the direction dx_vec, until it falls within a
       ! valid cell (one with c_lin_mask set)

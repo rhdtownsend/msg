@@ -31,6 +31,7 @@ module stat_m
 
    enum, bind(C)
       enumerator :: STAT_OK
+      enumerator :: STAT_INVALID_DIMENSION
       enumerator :: STAT_OUT_OF_BOUNDS_RANGE_LO
       enumerator :: STAT_OUT_OF_BOUNDS_RANGE_HI
       enumerator :: STAT_OUT_OF_BOUNDS_AXIS_LO
@@ -45,7 +46,6 @@ module stat_m
       enumerator :: STAT_INVALID_FILE_TYPE
       enumerator :: STAT_INVALID_GROUP_TYPE
       enumerator :: STAT_INVALID_GROUP_REVISION
-      enumerator :: STAT_INVALID_DATASET_DIM
    end enum
 
    ! Access specifiers
@@ -53,6 +53,7 @@ module stat_m
    private
 
    public :: STAT_OK
+   public :: STAT_INVALID_DIMENSION
    public :: STAT_OUT_OF_BOUNDS_RANGE_LO
    public :: STAT_OUT_OF_BOUNDS_RANGE_HI
    public :: STAT_OUT_OF_BOUNDS_AXIS_LO
@@ -67,6 +68,5 @@ module stat_m
    public :: STAT_INVALID_FILE_TYPE
    public :: STAT_INVALID_GROUP_TYPE
    public :: STAT_INVALID_GROUP_REVISION
-   public :: STAT_INVALID_DATASET_DIM
 
 end module stat_m

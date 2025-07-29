@@ -92,8 +92,18 @@ contains
 
    module procedure interp_irradiance
 
-      @:CHECK_BOUNDS(SIZE(mu), SIZE(x_vec, 2))
-      @:CHECK_BOUNDS(SIZE(dOmega), SIZE(x_vec, 2))
+      ! Check dimensions
+
+      if ( &
+         SIZE(mu) /= SIZE(x_vec, 2) .OR. &
+         SIZE(dOmega) /= SIZE(x_vec, 2)) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_DIMENSION
+            return
+         else
+            @:ABORT('invalid dimension')
+         end if
+      end if
 
       ! Interpolate the irradiance
 

@@ -33,9 +33,18 @@ contains
 
       module procedure interp_${name}$
 
-         @:CHECK_BOUNDS(SIZE(${res_var}$), SIZE(lam)-1)
+         ! Check dimensions
 
-         ! Interpolate ${name}$
+         if (SIZE(${res_var}$) /= SIZE(lam)-1) then
+            if (PRESENT(stat)) then
+               stat = STAT_INVALID_DIMENSION
+               return
+            else
+               @:ABORT('invalid dimension')
+            end if
+         end if
+
+         ! Interpolate the ${name}$
 
          call self%vgrid%interp(data_proc_, x_vec, ${res_var}$, stat, deriv_vec, order)
 
@@ -87,10 +96,27 @@ contains
 
    module procedure interp_irradiance
 
-      @:CHECK_BOUNDS(SIZE(mu), SIZE(x_vec, 2))
-      @:CHECK_BOUNDS(SIZE(dOmega), SIZE(x_vec, 2))
+      ! Check dimensions
 
-      @:CHECK_BOUNDS(SIZE(F), SIZE(lam)-1)
+      if (SIZE(F) /= SIZE(lam)-1) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_DIMENSION
+            return
+         else
+            @:ABORT('invalid dimension')
+         end if
+      end if
+
+      if ( &
+         SIZE(mu) /= SIZE(x_vec, 2) .OR. &
+         SIZE(dOmega) /= SIZE(x_vec, 2)) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_DIMENSION
+            return
+         else
+            @:ABORT('invalid dimension')
+         end if
+      end if
 
       ! Interpolate the irradiance
 
@@ -155,7 +181,16 @@ contains
 
    module procedure interp_flux
 
-      @:CHECK_BOUNDS(SIZE(F), SIZE(lam)-1)
+      ! Check dimensions
+
+      if (SIZE(F) /= SIZE(lam)-1) then
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_DIMENSION
+            return
+         else
+            @:ABORT('invalid dimension')
+         end if
+      end if
 
       ! Interpolate the flux
 
