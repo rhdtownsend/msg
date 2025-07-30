@@ -3,7 +3,7 @@
 rm -f test.out
 
 for t in ${BIN_DIR}/utest_*; do
-    $t | tee -a test.out
+    $t 2>&1 | tee -a test.out
 done
 
 echo "==============="
