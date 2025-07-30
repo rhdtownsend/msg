@@ -142,22 +142,17 @@ contains
             if (stat /= STAT_OK) return
          end if
 
-         if (mu(j) >= 0._RD) then
-
-            call specint%interp_intensity(mu(j), z(j), lam, f, stat)
-            if (PRESENT(stat)) then
-               if (stat /= STAT_OK) return
+         call specint%interp_intensity(mu(j), z(j), lam, f, stat)
+         if (PRESENT(stat)) then
+            if (stat /= STAT_OK) then
+               call self%speccache%release(v_seq)
+               return
             end if
-
-            f = f*dOmega(j)
-
-            call self%speccache%release(v_seq, stat)
-
-         else
-
-            f = 0._RD
-
          end if
+
+         f = f*dOmega(j)
+
+         call self%speccache%release(v_seq, stat)
 
          return
 
