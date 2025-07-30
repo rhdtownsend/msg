@@ -17,20 +17,26 @@ barye	{\rm Ba}
 Msun	{\rm M}_{\odot}
 diff	{\rm d}#1
 sderiv	\diff{#1}/\diff{#2}
-obs	{\oplus}
+obs	{\rm obs}
 vshat	{\bf \hat{s}}
 vdhat	{\bf \hat{d}}
 vnhat	{\bf \hat{n}}
 vx	{\bf x}
-engy	\mathcal{E}
+engy	E
 engyo	\engy^{\obs}
 intsy	I_{\lambda}
 intnu	I_{\nu}
-irrad	E_{\lambda}
 mintsy	\overline{I}
+mintsyz	\mintsy_{0}
 flux	F_{\lambda}
-mirrad	\overline{E}
-mirradz	\mirrad_{0}
+mflux	\overline{F}
+fluxz	F_{0}
+emom	\mathcal{E}^{k}_{\lambda}
+memom	\overline{\mathcal{E}}^{k}
+dmom	\mathcal{D}^{\ell}_{\lambda}
+mdmom	\overline{\mathcal{D}}^{\ell}
+irrad	F_{\lambda}^{\obs}
+mirrad	\overline{F}^{\obs}
 area	A
 areao	A^{\obs}
 grad	g_{\rm rad}

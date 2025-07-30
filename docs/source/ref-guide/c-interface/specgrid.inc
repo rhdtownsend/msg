@@ -132,73 +132,101 @@
    :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void interp_specgrid_intensity(SpecGrid specgrid, double x_vec[], double mu, int n, double lam[], double I[], Stat *stat, bool deriv_vec[], int *order)
+.. c:function:: void interp_specgrid_intensity(SpecGrid specgrid, int n, int r, double x_vec[], double mu, double z, double lam[], double I[], Stat *stat, bool deriv_vec[], int *order)
 
-   Interpolate the spectroscopic intensity.
+   Interpolate the spectroscopic specific intensity for a photospheric element.
 
    :param specgrid: Grid object.
-   :param x_vec: Photospheric parameter values.
-   :param mu: Cosine of angle of emergence relative to surface normal.
-   :param n: Number of points in wavelength abscissa.
-   :param lam[n]: Wavelength abscissa (Å).
-   :param I[n-1]: Spectroscopic intensity (erg/cm^2/s/Å/sr) in bins delineated by lam
+   :param n: Number of wavelength points.
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
+   :param mu: Cosine of angle of emergence relative to element normal.
+   :param z: Redshift of element relative to observer's frame.
+   :param lam[n]: Wavelength abscissa (Å) in observer's frame.
+   :param I[n-1]: Spectroscopic specific intensity (erg/cm^2/s/Å/sr) in bins delineated by lam.
    :param stat: Status code (set to :c:expr:`NULL` if not required).
-   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_E_moment(SpecGrid specgrid, double x_vec[], int k, int n, double lam[], double E[], Stat *stat, bool deriv_vec[], int *order)
+.. c:function:: void interp_specgrid_E_moment(SpecGrid specgrid, int n, int r, double x_vec[], int k, double z, double lam[], double E[], Stat *stat, bool deriv_vec[], int *order)
 
-   Interpolate the spectroscopic intensity E-moment.
+   Interpolate the spectroscopic intensity E-moment for a photospheric element.
 
    :param specgrid: Grid object.
-   :param x_vec: Photospheric parameter values.
+   :param n: Number of wavelength points.
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
    :param k: Degree of moment.
-   :param n: Number of points in wavelength abscissa.
-   :param lam[n]: Wavelength abscissa (Å).
-   :param D[n-1]: Spectroscopic intensity E-moment (erg/cm^2/s/Å) in bins delineated by lam
+   :param z: Redshift of element relative to obvserver's frame.
+   :param lam[n]: Wavelength abscissa (Å) in observer's frame.
+   :param D[n-1]: Spectroscopic intensity E-moment (erg/cm^2/s/Å) in bins delineated by lam.
    :param stat: Status code (set to :c:expr:`NULL` if not required).
-   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_D_moment(SpecGrid specgrid, double x_vec[], int l, int n, double lam[], double D[], Stat *stat, bool deriv_vec[], int *order)
+.. c:function:: void interp_specgrid_D_moment(SpecGrid specgrid, int n, int r, double x_vec[], int l, double z, double lam[], double D[], Stat *stat, bool deriv_vec[], int *order)
 
    Interpolate the spectroscopic intensity D-moment.
 
    :param specgrid: Grid object.
-   :param x_vec: Photospheric parameter values.
+   :param n: Number of wavelength points.
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
    :param l: Harmonic degree of moment.
-   :param n: Number of points in wavelength abscissa.
-   :param lam[n]: Wavelength abscissa (Å).
-   :param D[n-1]: Spectroscopic intensity D-moment (erg/cm^2/s/Å) in bins delineated by lam
+   :param z: Redshift of element relative to observer's frame.
+   :param lam[n]: Wavelength abscissa (Å) in observer's frame.
+   :param D[n-1]: Spectroscopic intensity D-moment (erg/cm^2/s/Å) in bins delineated by lam.
    :param stat: Status code (set to :c:expr:`NULL` if not required).
-   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_flux(SpecGrid specgrid, double x_vec[], int n, double lam[], double F[], Stat *stat, bool deriv_vec[], int *order)
-		
-   Interpolate the spectroscopic flux.
+.. c:function:: void interp_specgrid_irradiance(SpecGrid specgrid, int n, int m, int r, double x_vec[], double mu[], double dOmega[], double z, double lam[], double F[], Stat *stat, bool deriv_vec[], int *order)
+
+   Interpolate the spectroscopic irradiance for an object composed of multiple photospheric elements.
 
    :param specgrid: Grid object.
-   :param x_vec: Photospheric parameter values.
-   :param n: Number of points in wavelength abscissa.
-   :param lam[n]: Wavelength abscissa (Å).
-   :param F[n-1]: Spectroscopic flux (erg/cm^2/s/Å) in bins delineated by lam
+   :param n: Number of wavelength points.
+   :param m: Number of elements.
+   :param r: Number of photospheric parameters.
+   :param x_vec[m,r]: Photospheric parameter values.
+   :param mu[m]: Cosines of angles of emergence relative to element normals.
+   :param dOmega[m]: Solid angles (sr) of elements.
+   :param z[m]: Redshifts of elements relative to observer's frame.
+   :param lam[n]: Wavelength abscissa (Å) in observer's frame.
+   :param F[n-1]: Spectroscopic irradiance (erg/cm^2/s/Å) in bins delineated by lam.
    :param stat: Status code (set to :c:expr:`NULL` if not required).
-   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
+
+		  
+.. c:function:: void interp_specgrid_flux(SpecGrid specgrid, int n, int r, double x_vec[], double z, double lam[], double F[], Stat *stat, bool deriv_vec[], int *order)
+		
+   Interpolate the spectroscopic flux for a photospheric element.
+
+   :param specgrid: Grid object.
+   :param n: Number of wavelength points.
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
+   :param z: Redshift of element relative to observer's frame.
+   :param lam[n]: Wavelength abscissa (Å) in observer's frame.
+   :param F[n-1]: Spectroscopic flux (erg/cm^2/s/Å) in bins delineated by lam.
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void adjust_specgrid_x_vec(SpecGrid specgrid, double x_vec[], double dx_vec[], double x_adj[], Stat *stat)
+.. c:function:: void adjust_specgrid_x_vec(SpecGrid specgrid, int r, double x_vec[], double dx_vec[], double x_adj[], Stat *stat)
 		
    Adjust photospheric parameters in a specified direction, until 
    they fall within a valid part of the grid.
 
    :param specgrid: Grid object.
-   :param x_vec: Photospheric parameter values.
-   :param dx_vec: Photospheric parameter adjustment direction.
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
+   :param dx_vec[r]: Photospheric parameter adjustment direction.
    	  The overall scaling is unimportant, but at least one element must be non-zero.
-   :param x_adj: Adjusted photospheric parameter values.
+   :param x_adj[r]: Adjusted photospheric parameter values.
    :param stat: Status code (set to :c:expr:`NULL` if not required).

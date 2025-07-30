@@ -14,7 +14,7 @@ lumped together under the name 'spectrum'.
 Elemental Spectra
 =================
 
-The radiation emitted by a small element of a star's surface is most
+The radiation emitted by a small element of a star's photosphere is most
 completely characterized by the specific intensity
 :math:`\intsy(\lambda; \vshat; \vx)`. This quantity is defined such
 that energy passing through the element into a solid angle
@@ -33,9 +33,9 @@ interval :math:`[\lambda, \lambda+\diff{\lambda}]` and time interval
    \diff{\lambda} \,
    \diff{\area}.
 
-Here, :math:`\diff{\area}` is the area of the surface element,
+Here, :math:`\diff{\area}` is the area of the photospheric element,
 :math:`\vnhat` is the unit surface normal vector, and :math:`\vx` is a
-vector specifying the photospheric parameters of the element --- for
+vector specifying the parameters of the element --- for
 instance, its effective temperature :math:`T_{\rm eff}`, gravity
 :math:`g` and metallicty :math:`[{\rm Fe}/{\rm H}]`. The subscript on
 :math:`\intsy` is a reminder that it is the specific intensity per
@@ -44,7 +44,7 @@ unit `wavelength` interval, which is related to the intensity per unit
 
 .. math::
 
-   \intsy(\lambda; \vshat; \vx) = \frac{c}{\lambda^{2}} \intnu(\lambda; \vshat; \vx) .
+   \intsy(\lambda; \vshat; \vx) = \frac{c}{\lambda^{2}} \intnu(\lambda; \vshat; \vx).
 
 Integrating the equation for :math:`\diff{\engy}` over all solid
 angles yields the net energy passing through the element in the
@@ -78,7 +78,7 @@ simplifies to
    \flux(\lambda; \vx) = 2\pi \int_{0}^{1} \intsy(\lambda; \mu; \vx) \, \mu \, \diff{\mu}
 
 (the lower bound on :math:`\mu` is set to 0 rather than -1 under the
-assumption that there is no external radiation at the stellar surface).
+assumption that there is no external radiation at the stellar photosphere).
 
 Both :math:`\intsy` and :math:`\flux` can reasonably be dubbed a
 'spectrum', as they each represent the distribution of electromagnetic
@@ -87,13 +87,13 @@ distinguish these `elemental` spectra from the :ref:`irradiance spectrum
 <irrad-spectra>` of a star; this distinction is further clarified below.
 
 Evaluating an elemental spectrum requires solution of the radiative
-transfer equation throughout the atmospheric layers composing the
-surface element. This is often far too computationally expensive
-to do on-the-fly. An alternative approach is to pre-calculate spectra
-across a multi-dimensional grid spanning a range of photospheric
-parameters, and then interpolate within this grid when an elemental
-spectrum is required for a specific :math:`\vx`. `This is the
-fundamental purpose of MSG.`
+transfer equation throughout the layers composing the
+photosphere. This is often far too computationally expensive to do
+on-the-fly. An alternative approach is to pre-calculate spectra across
+a multi-dimensional grid spanning a range of photospheric parameters,
+and then interpolate within this grid when an elemental spectrum is
+required for a specific :math:`\vx`. `This is the fundamental purpose
+of MSG.`
 
 Evaluating Elemental Spectra
 ============================
@@ -163,14 +163,22 @@ where there are now four limb-darkening coefficients :math:`c_{j}`.
 
 The advantage of using limb-darkening laws is the ease with which
 other useful quantities can be calculated. For instance, the flux
-:math:numref:`eq:elem-flux-axi` can be evaluated analytically, as can any
-of the :ads_citet:`eddington:1926` intensity moments (or `M-moments`,
-as MSG terms them):
+:math:numref:`eq:elem-flux-axi` can be evaluated analytically.  So,
+too, can the :ads_citet:`eddington:1926` intensity moments
+(`E-moments`, as MSG terms them),
 
 .. math::
 
-   \mathcal{M}^{k}_{\lambda}(\lambda; \vx) = \frac{1}{2} \int_{-1}^{1} \intsy(\lambda; \mu; \vx) \, \mu^{k} \,\diff{\mu}.
+   \emom(\lambda; \vx) = \frac{1}{2} \int_{0}^{1} \intsy(\lambda; \mu; \vx) \, \mu^{k} \,\diff{\mu},
 
+and the :ads_citet:`townsend:2003` differential flux functions
+(`D-moments`),
+
+.. math::
+
+   \dmom(\lambda; \vx) = \int_{0}^{1} \intsy(\lambda; \mu; \vx) \, \mu \, P_{\ell}(\mu) \,\diff{\mu}.
+
+   
 .. _limb-darkening-laws:
 
 MSG supports the following limb-darkening laws:
@@ -219,21 +227,20 @@ boundaries).
 Grids often contain holes and/or ragged boundaries (the latter
 typically arising near the edge of the region of the :math:`\Teff-g`
 plane corresponding to super-Eddington luminosity). When an
-interpolation tries to access such missing data, MSG either switches
-to a lower-order scheme, or (if there simply aren't sufficient data to
-interpolate) signals an exception (see the :ref:`exception-handling`
-chapter for further details).
+interpolation tries to access such missing data, MSG signals an
+exception (see the :ref:`exception-handling` chapter for further
+details).
 
 .. _irrad-spectra:
 
 Irradiance Spectra
 ==================
 
-Suppose we observe a star from Earth, at a distance :math:`d`\
-[#distant]_ along unit direction vector :math:`\vdhat`. The energy
-measured by a detector of area :math:`\diff{\areao}`, within
-wavelength interval :math:`[\lambda, \lambda+\diff{\lambda}]` and time
-interval :math:`\diff{t}`, can be expressed as
+Suppose a star is observed from a distance :math:`d`\ [#distant]_ along
+unit direction vector :math:`\vdhat`. The energy measured by a
+detector of area :math:`\diff{\areao}`, within wavelength interval
+:math:`[\lambda, \lambda+\diff{\lambda}]` and time interval
+:math:`\diff{t}`, can be expressed as
 
 .. math::
 
@@ -244,35 +251,31 @@ interval :math:`\diff{t}`, can be expressed as
    \diff{\areao}
 
 (here and subsequently the superscript :math:`^{\obs}` should be read
-as 'observed from Earth'), where the `irradiance` is introduced as
+as 'observed'), where the `irradiance` is introduced as
 
 .. math::
    :label: eq:irrad
    
    \irrad(\lambda) \equiv \frac{1}{d^{2}}
-   \int_{A_{\text{vis.}}} \intsy(\lambda; -\vdhat; \vx) \, [-\vdhat \cdot \vnhat] \, \diff{\area}.
+   \int_{A_{\text{vis}}} \intsy(\lambda; -\vdhat; \vx) \, [-\vdhat \cdot \vnhat] \, \diff{\area}.
 
-The irradiance has the same units as the flux [cf. equation
-:math:numref:`eq:elem-flux`], but involves an intergral over the
-visible stellar surface :math:`A_{\text{vis.}}`, rather than an
-integral over solid angle :math:`\Omega` at a fixed location on the
-surface. It corresponds to the spectrum measured from Earth, using a
-spectrograph attached (presumably) to a telescope.
+(the integral is over the visible area :math:`A_{\text{vis}}` of the
+photosphere). The irradiance has the same units as the elemental flux
+[cf. equation :math:numref:`eq:elem-flux`], and confusingly is often
+referred to as the 'flux'. Indeed, both quantities have the same
+units; however, they are defined at different locations: the former at
+the observer's location, the latter at the stellar photosphere. It is
+the irradiance that is measured by a telescope/spectrograph.
 
-In the particular case of stars that are spherical, and for which the
-specific intensity is axisymmetric and does not depend on location on
-the surface, a simple relationship exists between the elemental flux
-spectrum and the irradiance spectrum. Let :math:`\theta` be the
-colatitude angle in a spherical coordinate system centered on the star
-and with polar axis antiparallel to :math:`\vdhat`. The surface area
-element in above expression becomes
-
-.. math::
-
-   \diff{\area} = 2\pi \, R^{2} \, \sin\theta \, \diff{\theta},
-
-where :math:`R` is the stellar radius. Setting :math:`-\vdhat \cdot
-\vnhat = \cos\theta = \mu`, the irradiance then reduces to
+Under certain conditions, a simple proportionality relationship exists
+between the irradiance and the elemental flux. Consider a star that is
+spherically symmetric in both geometry and photospheric
+parameters. Then, the specific intensity must be axisymmetric around
+:math:`\vnhat`, and moreover cannot depend on location on the
+surface. Let :math:`\theta` be the colatitude angle in a spherical
+coordinate system centered on the star and with polar axis
+antiparallel to :math:`\vdhat`. Setting :math:`-\vdhat \cdot \vnhat =
+\cos\theta = \mu`, the irradiance can be reduced to
 
 .. math::
 
@@ -287,32 +290,27 @@ Comparing this expression against equation
 
    \irrad(\lambda) = \frac{R^{2}}{d^{2}} \flux(\lambda; \vx).
 
-Don't be fooled by the apparent triviality of this result: it means
-that we need only the elemental flux spectrum, and not the specific
-intensity, to calculate the irradiance. This is why many spectral
-grids in the literature include flux spectra instead of specific
-intensity spectra.
+This is a very convenient result: it means that we need only the
+elemental flux spectrum, and not the specific intensity, to calculate
+the irradiance. That's why many spectral grids in the literature
+include flux spectra instead of specific intensity spectra.
 
-However, remember that equation :math:numref:`eq:irrad-flux` applies
-only to spherically symmetric stars with position-independent surface
-radiation fields. In more complex situations, for instance when a star
-is rotatiing, spotted, pulsating or even eclipsed, evaluation of
-:math:`\irrad` must proceed via the visible-surface integration
-appearing in equation :math:numref:`eq:irrad`, which requires the
-specific intensity. MSG offers routine to facilitate this integration
-(see, for instance, the :py:meth:`pymsg.SpecGrid.irradiance` method).
-
+However, recall that equation :math:numref:`eq:irrad-flux` applies
+only to spherically symmetric stars. In more complex situations, for
+instance when the star is rotatiing, spotted, pulsating or even
+eclipsed, evaluation of :math:`\irrad` must proceed via the
+visible-area integration appearing in equation
+:math:numref:`eq:irrad`, which requires the specific intensity.
 
 .. _photometric-colors:
 
 Photometric Colors
 ==================
 
-To evaluate a photometric color, MSG convolves irradiance spectra\
-[#convolve]_ with an appropriate passband response function
-:math:`S'(\lambda)`. This function represents the combined sensitivity
-of the optical pathway, filter and detector. The passband-averaged
-specific intensity is defined as
+To evaluate a photometric color, MSG convolves spectra with an
+appropriate passband response function :math:`S'(\lambda)`. This
+function represents the combined sensitivity of the optical pathway,
+filter, and detector. The photometric specific intensity is defined as
 
 .. math::
    :label: eq:conv
@@ -322,23 +320,21 @@ specific intensity is defined as
 meaning that :math:`S'(\lambda)` is interpreted as an `energy`
 response function (see appendix A of :ads_citealp:`bessell:2012` for a
 discussion of the relationship between :math:`S'` and the
-corresponding photon response function :math:`S`). The
-passband-averaged irradiance follows from equation
-:math:numref:`eq:irrad` as
+corresponding photon response function :math:`S`). The photometric
+irradiance then follows from equation :math:numref:`eq:irrad` as
 
 .. math::
 
    \mirrad = \frac{1}{d^{2}}
-   \int_{\text{vis.}} \mintsy(-\vdhat; \vx) \, [-\vdhat \cdot \vnhat] \, \diff{A},
+   \int_{A_\text{vis}} \mintsy(-\vdhat; \vx) \, [-\vdhat \cdot \vnhat] \, \diff{A},
    
-and the apparent magnitude of the star is
+and the apparent magnitude of the star in the adopted photometric system is
 
 .. math::
 
-   m = -2.5 \log_{10} \left( \frac{\mirrad}{\mirradz} \right),
+   m = -2.5 \log_{10} \left( \frac{\mirrad}{\fluxz} \right),
 
-where the normalizing irradiance :math:`\mirradz` is set by the zero-point of
-the photometric system.
+where :math:`\fluxz` is the zero-point flux of the system.
 
 The convolution in :math:numref:`eq:conv` can be performed before or
 after the interpolations discussed above:
@@ -354,15 +350,70 @@ after the interpolations discussed above:
   performs the convolution on-the-fly after each spectrum is
   interpolated. This is computationally less efficient, but incurs no
   storage requirements beyond the :f-schema:`specgrid` file.
+
+Summary of Routines
+===================
+
+The foregoing discussion provides the mathematical definition of the
+various quantities that MSG can evaluate. The table below summarizes
+how these quantities map to the specific interpolation routines
+provided by MSG.
+
+.. _routine-mapping:
+
+.. list-table:: Routine Mapping
+   :header-rows: 1
+
+   * - Quantity
+     - Python
+     - Fortran
+     - C
+   * - :math:`\intsy`
+     - :py:meth:`pymsg.SpecGrid.intensity`
+     - :f:func:`~fmsg_m/specgrid_t%interp_intensity`
+     - :c:func:`interp_specgrid_intensity`
+   * - :math:`\emom`
+     - :py:meth:`pymsg.SpecGrid.E_moment`
+     - :f:func:`~fmsg_m/specgrid_t%interp_E_moment`
+     - :c:func:`interp_specgrid_E_moment`
+   * - :math:`\dmom`
+     - :py:meth:`pymsg.SpecGrid.D_moment`
+     - :f:func:`~fmsg_m/specgrid_t%interp_D_moment`
+     - :c:func:`interp_specgrid_D_moment`
+   * - :math:`\irrad`
+     - :py:meth:`pymsg.SpecGrid.irradiance`
+     - :f:func:`~fmsg_m/specgrid_t%interp_irradiance`
+     - :c:func:`interp_specgrid_irradiance`
+   * - :math:`\flux`
+     - :py:meth:`pymsg.SpecGrid.flux`
+     - :f:func:`~fmsg_m/specgrid_t%interp_flux`
+     - :c:func:`interp_specgrid_flux`
+   * - :math:`\mintsy/\fluxz`
+     - :py:meth:`pymsg.PhotGrid.intensity`
+     - :f:func:`~fmsg_m/photgrid_t%interp_intensity`
+     - :c:func:`interp_photgrid_intensity`
+   * - :math:`\memom/\fluxz`
+     - :py:meth:`pymsg.PhotGrid.E_moment`
+     - :f:func:`~fmsg_m/photgrid_t%interp_E_moment`
+     - :c:func:`interp_photgrid_E_moment`
+   * - :math:`\mdmom/\fluxz`
+     - :py:meth:`pymsg.PhotGrid.D_moment`
+     - :f:func:`~fmsg_m/photgrid_t%interp_D_moment`
+     - :c:func:`interp_photgrid_D_moment`
+   * - :math:`\mirrad/\fluxz`
+     - :py:meth:`pymsg.PhotGrid.irradiance`
+     - :f:func:`~fmsg_m/photgrid_t%interp_irradiance`
+     - :c:func:`interp_photgrid_irradiance`
+   * - :math:`\mflux/\fluxz`
+     - :py:meth:`pymsg.PhotGrid.flux`
+     - :f:func:`~fmsg_m/photgrid_t%interp_flux`
+     - :c:func:`interp_photgrid_flux`
   
 .. rubric:: footnote
 
 .. [#distant] The analysis here assumes that the distance to the
                center of the star is very large compared to its
-               physical size, such that all parts of the stellar
-               surface can be treated as if they were at the same
-               distance :math:`d` from the observer. This also allows
-               the use of the small-angle approximation.
-
-.. [#convolve] MSG can also perform this convolution for elemental
-	       specific intensity and flux spetra.
+               physical size, such that all parts of the photosphere
+               can be treated as if they were at the same distance
+               :math:`d` from the observer. This also allows the use
+               of the small-angle approximation.

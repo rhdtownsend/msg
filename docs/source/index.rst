@@ -21,6 +21,7 @@ version 3.
    user-guide/msg-fundamentals.rst
    user-guide/data-files.rst
    user-guide/data-caching.ipynb
+   user-guide/performance.rst
    user-guide/exception-handling.rst
    user-guide/grid-voids.rst
    user-guide/troubleshooting.rst

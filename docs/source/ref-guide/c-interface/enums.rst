@@ -74,7 +74,13 @@ Enums
       
       Status code indicating function call encountered a file group with an invalid type.
 
+      
    .. c:enumerator:: STAT_INVALID_GROUP_REVISION
       
       Status code indicating function call encountered a file group with an invalid revision number.
       
+
+   .. c:enumerator:: STAT_INVALID_OMP_CONFIG
+      
+      Status code indicating function call encountered an invalid OpenMP configuration. This
+      can be resolved by setting the :envvar:`OMP_CANCELLATION` environment variable to `TRUE`.

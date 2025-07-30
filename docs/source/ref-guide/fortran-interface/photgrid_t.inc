@@ -52,48 +52,68 @@
 
    .. f:subroutine:: interp_intensity(x_vec, mu, I, stat, deriv_vec, order)
 
-      Interpolate the photometric intensity, normalized to the zero-point flux.
+      Interpolate the photometric specific intensity for a
+      photospheric element, normalized by the zero-point flux.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
-      :p real(RD) mu [in]: Cosine of angle of emergence relative to surface normal.
-      :p real(RD) I [out]: Photometric intensity (/sr).
+      :p real(RD) mu [in]: Cosine of angle of emergence relative to element normal.
+      :p real(RD) I [out]: Photometric specific intensity (/sr).
       :o integer stat [out]: Status code.
-      :o logical deriv_vec(:) [in]: Derivative flags.
+      :o logical deriv_vec(:) [in]: Derivative flags; length SIZE(x_vec).
       :o integer order [in]: Interpolation order (1 or 3).
 
 			 
    .. f:subroutine:: interp_E_moment(x_vec, k, E, stat, deriv_vec, order)
 
-      Interpolate the photometric M-moment, normalized to the zero-point flux.
+      Interpolate the photometric E-moment for a photospheric element,
+      normalized by the zero-point flux.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer k [in]: Degree of of moment.
-      :p real(RD) E [out]: Photometric E-moment.
+      :p real(RD) E [out]: Photometric E-moment (dimensionless).
       :o integer stat [out]: Status code.
-      :o logical deriv_vec(:) [in]: Derivative flags.
+      :o logical deriv_vec(:) [in]: Derivative flags; length SIZE(x_vec).
       :o integer order [in]: Interpolation order (1 or 3).
 
 
    .. f:subroutine:: interp_D_moment(x_vec, l, D, stat, deriv_vec, order)
 
-      Interpolate the photometric M-moment, normalized to the zero-point flux.
+      Interpolate the photometric D-moment for a photospheric element,
+      normalized by the zero-point flux.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer l [in]: Harmonic degree of moment.
-      :p real(RD) D [out]: Photometric D-moment.
+      :p real(RD) D [out]: Photometric D-moment (dimensionless).
       :o integer stat [out]: Status code.
-      :o logical deriv_vec(:) [in]: Derivative flags.
+      :o logical deriv_vec(:) [in]: Derivative flags; length SIZE(x_vec).
+      :o integer order [in]: Interpolation order (1 or 3).
+
+
+   .. f:subroutine:: interp_irradiance(x_vec, mu, dOmega, F, stat, deriv_vec, order)
+
+      Interpolate the photometric irradiance for an object composed of
+      multiple photospheric elements, normalized by the zero-point
+      flux.
+
+      :p real(RD) x_vec(:,:) [in]: Photospheric parameter values.
+      :p real(RD) mu(:) [in]: Cosines of angles of emergence relative to element
+            normals; length SIZE(x_vec, 2).
+      :p real(RD) dOmega(:) [in]: Solid angles (sr) of elements; length SIZE(x_vec, 2).
+      :p real(RD) F [out]: Photometric irradiance (dimensionless).
+      :o integer stat [out]: Status code.
+      :o logical deriv_vec(:) [in]: Derivative flags; length SIZE(x_vec).
       :o integer order [in]: Interpolation order (1 or 3).
 
 
    .. f:subroutine:: interp_flux(x_vec, F, stat, deriv_vec, order)
 
-      Interpolate the photometric flux, normalized to the zero-point flux.
+      Interpolate the photometric flux for a photospheric element,
+      normalized by the zero-point flux.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
-      :p real(RD) F [out]: Photometric flux.
+      :p real(RD) F [out]: Photometric flux (dimensionless)
       :o integer stat [out]: Status code.
-      :o logical deriv_vec(:) [in]: Derivative flags.
+      :o logical deriv_vec(:) [in]: Derivative flags; length SIZE(x_vec).
       :o integer order [in]: Interpolation order (1 or 3).
 
 
@@ -105,5 +125,7 @@
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p real(RD) dx_vec(:) [in]: Photospheric parameter adjustment direction. 
             The overall scaling is unimportant, but at least one element must be non-zero.
-      :p real(RD) x_adj(:) [out]: Adjusted photospheric parameter values.
+	    Length SIZE(x_vec).
+      :p real(RD) x_adj(:) [out]: Adjusted photospheric parameter values;
+	    length SIZE(x_vec).
       :o integer stat [out]: Status code.

@@ -5,6 +5,8 @@
 
 #include "cmsg.h"
 
+#define LABEL_LEN 16
+#define N_X_VEC 2
 #define N_LAM 501
 #define LAM_MIN 3000.
 #define LAM_MAX 7000.
@@ -16,9 +18,9 @@ int main(int argc, char *argv[]) {
   PhotGrid photgrid_B;
   PhotGrid photgrid_V;
   
-  char label[17];
+  char label[LABEL_LEN+1];
 
-  double x_vec[2];
+  double x_vec[N_X_VEC];
 
   double z;
   double R2_d2;
@@ -45,7 +47,7 @@ int main(int argc, char *argv[]) {
 
   // Set photospheric parameters to correspond to Sirius A
 
-  for(int i=0; i < 2; i++) {
+  for(int i=0; i < N_X_VEC; i++) {
 
     get_specgrid_axis_label(specgrid, i, label);
 
@@ -83,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   // Evaluate the flux
 
-  interp_specgrid_flux(specgrid, x_vec, z, N_LAM, lam, F, NULL, NULL, NULL);
+  interp_specgrid_flux(specgrid, N_LAM, N_X_VEC, x_vec, z, lam, F, NULL, NULL, NULL);
 
   for(int i=0; i < N_LAM-1; i++) {
     F_obs[i] = R2_d2*F[i];
@@ -107,9 +109,9 @@ int main(int argc, char *argv[]) {
 
   // Evaluate fluxes
 
-  interp_photgrid_flux(photgrid_U, x_vec, &F_U, NULL, NULL, NULL);
-  interp_photgrid_flux(photgrid_B, x_vec, &F_B, NULL, NULL, NULL);
-  interp_photgrid_flux(photgrid_V, x_vec, &F_V, NULL, NULL, NULL);
+  interp_photgrid_flux(photgrid_U, N_X_VEC, x_vec, &F_U, NULL, NULL, NULL);
+  interp_photgrid_flux(photgrid_B, N_X_VEC, x_vec, &F_B, NULL, NULL, NULL);
+  interp_photgrid_flux(photgrid_V, N_X_VEC, x_vec, &F_V, NULL, NULL, NULL);
 
   F_U_obs = R2_d2*F_U;
   F_B_obs = R2_d2*F_B;

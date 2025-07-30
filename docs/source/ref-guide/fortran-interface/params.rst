@@ -105,3 +105,11 @@ Parameters
    :attrs: parameter
    
    Status code indicating procedure call encountered a file group with an invalid revision number.
+
+   
+.. f:variable:: int STAT_INVALID_OMP_CONFIG
+   :attrs: parameter
+
+   Status code indicating procedure call encountered an invalid OpenMP configuration. This
+   can be resolved by setting the :envvar:`OMP_CANCELLATION` environment variable to `TRUE`.
+	   

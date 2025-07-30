@@ -93,65 +93,91 @@
    :param stat: Status code (set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void interp_photgrid_intensity(PhotGrid photgrid, double x_vec[], double mu, double *I, int *stat, bool deriv_vec[], int *order)
+.. c:function:: void interp_photgrid_intensity(PhotGrid photgrid, int r, double x_vec[], double mu, double *I, int *stat, bool deriv_vec[], int *order)
 
-   Interpolate the photometric intensity, normalized to the zero-point flux.
+   Interpolate the photometric intensity for a photospheric element,
+   normalized by the zero-point flux.
 
    :param photgrid: Grid object.
-   :param x_vec: Photospheric parameter values.
-   :param mu: Cosine of angle of emergence relative to surface normal.
-   :param I: Photometric intensity (/sr).
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
+   :param mu: Cosine of angle of emergence relative to element normal.
+   :param I: Photometric specific intensity (/sr).
    :param stat: Status code (set to :c:expr:`NULL` if not required).
-   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_photgrid_E_moment(PhotGrid photgrid, double x_vec[], int k, double *E, int *stat, bool deriv_vec[], int *order)
+.. c:function:: void interp_photgrid_E_moment(PhotGrid photgrid, int r, double x_vec[], int k, double *E, int *stat, bool deriv_vec[], int *order)
 
-   Interpolate the photometric intensity E-moment, normalized to the zero-point flux.
+   Interpolate the photometric intensity E-moment for a photospheric
+   element, normalized by the zero-point flux.
 
    :param photgrid: Grid object.
-   :param x_vec: Photospheric parameter values.
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
    :param k: Degree of moment.
-   :param D: Photometric intensity E-moment.
+   :param D: Photometric intensity E-moment (dimensionless).
    :param stat: Status code (set to :c:expr:`NULL` if not required).
-   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 		  
 		
-.. c:function:: void interp_photgrid_D_moment(PhotGrid photgrid, double x_vec[], int l, double *D, int *stat, bool deriv_vec[], int *order)
+.. c:function:: void interp_photgrid_D_moment(PhotGrid photgrid, int r, double x_vec[], int l, double *D, int *stat, bool deriv_vec[], int *order)
 
-   Interpolate the photometric intensity D-moment, normalized to the zero-point flux.
+   Interpolate the photometric intensity D-moment for a photospheric
+   element, normalized by the zero-point flux.
+
+:param photgrid: Grid object.
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
+   :param l: Harmonic degree of moment.
+   :param D: Photometric intensity D-moment (dimensionless).
+   :param stat: Status code (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
+
+
+.. c:function:: void interp_photgrid_irradiance(PhotGrid photgrid, int m, int r, double x_vec[], double mu[], double dOmega[], double *F, int *stat, bool deriv_vec[], int *order)
+
+   Interpolate the photometric irradiance for an object composed of
+   multiple photospheric elements, normalized by the zero-point flux.
 
    :param photgrid: Grid object.
-   :param x_vec: Photospheric parameter values.
-   :param l: Harmonic degree of moment.
-   :param D: Photometric intensity D-moment.
+   :param m: Number of elements.
+   :param r: Number of photospheric parameters.
+   :param x_vec[m,r]: Photospheric parameter values.
+   :param mu[m]: Cosines of angles of emergence relative to element normals.
+   :param dOmega[m]: Solid angles (sr) of elements.
+   :param I: Photometric irradiance (dimensionless).
    :param stat: Status code (set to :c:expr:`NULL` if not required).
-   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
+		  
+.. c:function:: void interp_photgrid_flux(PhotGrid photgrid, int r, double x_vec[], double *F, int *stat, bool deriv_vec[], int *order)
 
-.. c:function:: void interp_photgrid_flux(PhotGrid photgrid, double x_vec[], double *F, int *stat, bool deriv_vec[], int *order)
-
-   Interpolate the photometric flux, normalized to the zero-point flux.
+   Interpolate the photometric flux for a photospheric element,
+   normalized by the zero-point flux.
 
    :param PhotGrid: Grid object.
-   :param x_vec: Photospheric parameter values.
-   :param F: Photometric flux.
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
+   :param F: Photometric flux (dimensionless).
    :param stat: Status code (set to :c:expr:`NULL` if not required).
-   :param deriv_vec: Derivative flags (set to :c:expr:`NULL` if not required).
+   :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 
-.. c:function:: void adjust_photgrid_x_vec(PhotGrid photgrid, double x_vec[], double dx_vec[], double x_adj[], Stat *stat)
+.. c:function:: void adjust_photgrid_x_vec(PhotGrid photgrid, int r, double x_vec[], double dx_vec[], double x_adj[], Stat *stat)
 		
    Adjust photospheric parameters in a specified direction, until 
    they fall within a valid part of the grid.
 
    :param photgrid: Grid object.
-   :param x_vec: Photospheric parameter values.
-   :param dx_vec: Photospheric parameter adjustment direction.
+   :param r: Number of photospheric parameters.
+   :param x_vec[r]: Photospheric parameter values.
+   :param dx_vec[r]: Photospheric parameter adjustment direction.
    	  The overall scaling is unimportant, but at least one element must be non-zero.
-   :param x_adj: Adjusted photospheric parameter values.
+   :param x_adj[r]: Adjusted photospheric parameter values.
    :param stat: Status code (set to :c:expr:`NULL` if not required).

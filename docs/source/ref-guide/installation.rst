@@ -98,22 +98,22 @@ Custom builds of MSG can be created by setting certain environment
 variables to the value ``yes``. The following variables are currently
 supported:
 
-DEBUG
+:envvar:`DEBUG`
   Enable debugging mode (default ``no``)
 
-FPE
+:envvar:`FPE`
   Enable floating point exception checks (default ``yes``)
 
-OMP
+:envvar:`OMP`
   Enable OpenMP parallelization (default ``yes``)
 
-PYTHON
+:envvar:`PYTHON`
   Enable building of the Python extension (default ``yes``)
 
-TEST
+:envvar:`TEST`
   Enable building of testing tools (default ``yes``)
 
-TOOLS
+:envvar:`TOOLS`
   Enable building of development tools (default ``yes``)
 
 If an environment variable is not set, then its default value is assumed.
