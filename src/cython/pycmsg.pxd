@@ -33,6 +33,7 @@ cdef extern from "cmsg.h":
 
     ctypedef enum Stat:
        STAT_OK,
+       STAT_INVALID_DIMENSION,
        STAT_OUT_OF_BOUNDS_RANGE_LO,
        STAT_OUT_OF_BOUNDS_RANGE_HI,
        STAT_OUT_OF_BOUNDS_AXIS_LO,
@@ -47,7 +48,7 @@ cdef extern from "cmsg.h":
        STAT_INVALID_FILE_TYPE,
        STAT_INVALID_GROUP_TYPE,
        STAT_INVALID_GROUP_REVISION,
-       STAT_INVALID_DATASET_DIM
+       STAT_INVALID_OMP_CONFIG
 
     # specgrid
 
@@ -74,14 +75,14 @@ cdef extern from "cmsg.h":
     void interp_specgrid_intensity(void *specgrid, int n, int r, double x_vec[], double mu,
                                    double z, double lam[], double I[],
                                    Stat *stat, bool deriv_vec[], int *order)
-    void interp_specgrid_M_moment(void *specgrid, int n, int r, double x_vec[], int k,
-                                  double z, double lam[], double M[],
+    void interp_specgrid_E_moment(void *specgrid, int n, int r, double x_vec[], int k,
+                                  double z, double lam[], double E[],
                                   Stat *stat, bool deriv_vec[], int *order)
     void interp_specgrid_D_moment(void *specgrid, int n, int r, double x_vec[], int l,
                                   double z, double lam[], double D[],
                                   Stat *stat, bool deriv_vec[], int *order)
     void interp_specgrid_irradiance(void *specgrid, int n, int m, int r, double x_vec[], double[] mu, double[] dOmega,
-                                    double[] z, double lam[], double E[],
+                                    double[] z, double lam[], double F[],
                                     Stat *stat, bool deriv_vec[], int *order)
     void interp_specgrid_flux(void *specgrid, int n, int r, double x_vec[],
                               double z, double lam[], double F[],
@@ -111,14 +112,14 @@ cdef extern from "cmsg.h":
     void interp_photgrid_intensity(void *photgrid, int r, double x_vec[], double mu,
                                    double *I,
                                    Stat *stat, bool deriv_vec[], int *order)
-    void interp_photgrid_M_moment(void *photgrid, int r, double x_vec[], int k,
-                                  double *M,
+    void interp_photgrid_E_moment(void *photgrid, int r, double x_vec[], int k,
+                                  double *E,
                                   Stat *stat, bool deriv_vec[], int *order)
     void interp_photgrid_D_moment(void *photgrid, int r, double x_vec[], int l,
                                   double *D,
                                   Stat *stat, bool deriv_vec[], int *order)
     void interp_photgrid_irradiance(void *photgrid, int m, int r, double x_vec[], double[] mu, double[] dOmega,
-                                    double *E,
+                                    double *F,
                                     Stat *stat, bool deriv_vec[], int *order)
     void interp_photgrid_flux(void *photgrid, int r, double x_vec[],
                               double *F,

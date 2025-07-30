@@ -177,21 +177,21 @@ def _interp_specgrid_intensity(uintptr_t specgrid, double[:] x_vec, double mu, d
     return np.asarray(I)
 
 
-def _interp_specgrid_M_moment(uintptr_t specgrid, double[:] x_vec, int k, double z, double[:] lam,
+def _interp_specgrid_E_moment(uintptr_t specgrid, double[:] x_vec, int k, double z, double[:] lam,
                               bool[:] deriv_vec, int order):
 
-    cdef double[:] M
+    cdef double[:] E
     cdef Stat stat
 
     n = len(lam)
     r = len(x_vec)
 
-    M = np.empty(n-1, dtype=np.double)
+    E = np.empty(n-1, dtype=np.double)
 
-    interp_specgrid_M_moment(<void *>specgrid, n, r, &x_vec[0], k, z, &lam[0], &M[0], &stat, &deriv_vec[0], &order)
+    interp_specgrid_E_moment(<void *>specgrid, n, r, &x_vec[0], k, z, &lam[0], &E[0], &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
-    return np.asarray(M)
+    return np.asarray(E)
 
 
 def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double z, double[:] lam,
@@ -214,20 +214,20 @@ def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double
 def _interp_specgrid_irradiance(uintptr_t specgrid, double[:,::1] x_vec, double[:] mu, double[:] dOmega,
                                 double[:] z, double[:] lam, bool[:] deriv_vec, int order):
 
-    cdef double[:] E
+    cdef double[:] F
     cdef Stat stat
 
     n = len(lam)
     m = x_vec.shape[0]
     r = x_vec.shape[1]
 
-    E = np.empty(n-1, dtype=np.double)
+    F = np.empty(n-1, dtype=np.double)
 
     interp_specgrid_irradiance(<void *>specgrid, n, m, r, &x_vec[0,0], &mu[0], &dOmega[0],
-                               &z[0], &lam[0], &E[0], &stat, &deriv_vec[0], &order)
+                               &z[0], &lam[0], &F[0], &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
-    return np.asarray(E)
+    return np.asarray(F)
 
 
 def _interp_specgrid_flux(uintptr_t specgrid, double[:] x_vec, double z, double[:] lam, bool[:] deriv_vec, int order):
@@ -370,14 +370,14 @@ def _interp_photgrid_intensity(uintptr_t photgrid, double[:] x_vec, double mu, b
     return I
 
 
-def _interp_photgrid_M_moment(uintptr_t photgrid, double[:] x_vec, int k, bool[:] deriv_vec, int order):
+def _interp_photgrid_E_moment(uintptr_t photgrid, double[:] x_vec, int k, bool[:] deriv_vec, int order):
 
     cdef double M
     cdef Stat stat
 
     r = len(x_vec)
 
-    interp_photgrid_M_moment(<void *>photgrid, r, &x_vec[0], k, &M, &stat, &deriv_vec[0], &order)
+    interp_photgrid_E_moment(<void *>photgrid, r, &x_vec[0], k, &M, &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
     return M
@@ -399,17 +399,17 @@ def _interp_photgrid_D_moment(uintptr_t photgrid, double[:] x_vec, int l, bool[:
 def _interp_photgrid_irradiance(uintptr_t photgrid, double[:,::1] x_vec, double[:] mu, double[:] dOmega,
                                 bool[:] deriv_vec, int order):
 
-    cdef double E
+    cdef double F
     cdef Stat stat
 
     m = x_vec.shape[0]
     r = x_vec.shape[1]
 
     interp_photgrid_irradiance(<void *>photgrid, m, r, &x_vec[0,0], &mu[0], &dOmega[0],
-                               &E, &stat, &deriv_vec[0], &order)
+                               &F, &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
-    return np.asarray(E)
+    return np.asarray(F)
 
 
 def _interp_photgrid_flux(uintptr_t photgrid, double[:] x_vec, bool[:] deriv_vec, int order):
@@ -457,6 +457,8 @@ def _handle_error(stat):
 
     if stat == STAT_OK:
         return
+    elif stat == STAT_INVALID_DIMENSION:
+        raise ValueError('invalid dimension')
     elif stat == STAT_OUT_OF_BOUNDS_AXIS_LO:
         raise ValueError('out-of-bounds (lo) axis')
     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
@@ -481,8 +483,8 @@ def _handle_error(stat):
         raise IOError('invalid group type')
     elif stat == STAT_INVALID_GROUP_REVISION:
         raise IOError('invalid group revision')
-    elif stat == STAT_INVALID_DATASET_DIM:
-        raise IOError('invalid dataset dimension')
+    elif stat == STAT_INVALID_OMP_CONFIG:
+        raise OSError('invalid OpenMP configuration')
     else:
         raise Exception(f'error with unknown stat code: {stat}')
 
