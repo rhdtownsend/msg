@@ -100,7 +100,7 @@ contains
       @:CHECK_BOUNDS(SIZE(b), self%n_b)
       @:CHECK_BOUNDS(SIZE(f), SIZE(lam)-1)
 
-      ! Apply the Doppler un-shift
+      ! Doppler shift to the rest frame
 
       lam_rest = lam/(1._RD + z)
 
