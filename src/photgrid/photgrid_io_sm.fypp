@@ -143,7 +143,7 @@ contains
       call hdf5io%write_attr('TYPE', 'photgrid_t')
       call hdf5io%write_attr('REVISION', 1)
 
-      call self%vgrid%get_n_seq(n)
+      call self%vgrid%get_n_vert_seq(n)
 
       hdf5io_photsource = hdf5io_t(hdf5io, 'photsource')
 

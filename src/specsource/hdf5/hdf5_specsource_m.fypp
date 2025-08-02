@@ -48,6 +48,7 @@ module hdf5_specsource_m
       procedure, public :: get_n
       procedure, public :: get_lam_min
       procedure, public :: get_lam_max
+      procedure, public :: subset
       procedure, public :: fetch
    end type hdf5_specsource_t
 
@@ -93,6 +94,19 @@ module hdf5_specsource_m
          class(hdf5_specsource_t), intent(in) :: self
          real(RD), intent(out)                :: lam_max
       end subroutine get_lam_max
+
+   end interface
+
+   ! In hdf5_specsource_operate_sm
+
+   interface
+
+      module subroutine subset(self, mask, specsource)
+         implicit none (type, external)
+         class(hdf5_specsource_t), intent(in)          :: self
+         logical, intent(in)                           :: mask(:)
+         class(specsource_t), allocatable, intent(out) :: specsource
+      end subroutine subset
 
    end interface
 

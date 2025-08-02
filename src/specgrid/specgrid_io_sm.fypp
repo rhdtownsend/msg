@@ -147,7 +147,7 @@ contains
       call hdf5io%write_attr('TYPE', 'specgrid_t')
       call hdf5io%write_attr('REVISION', 1)
 
-      call self%vgrid%get_n_seq(n)
+      call self%vgrid%get_n_vert_seq(n)
       call self%speccache%get_lam_min(lam_min)
       call self%speccache%get_lam_max(lam_max)
 

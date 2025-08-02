@@ -29,59 +29,21 @@ contains
 
    module procedure vgrid_t_coords_
 
-      integer                   :: rank
-      integer                   :: n_seq
-      real(RD), allocatable     :: x(:)
       type(axis_t), allocatable :: axes(:)
-      integer                   :: r
       integer, allocatable      :: v_lin_seq(:)
-      integer                   :: v_seq
-      integer                   :: p
-      integer                   :: i
-      integer                   :: n
 
       @:CHECK_BOUNDS(SIZE(labels), SIZE(x_vecs, 1))
 
-      ! Construct vgrid from the supplied list of vertex coordinates
-      ! and axis labels
+      ! Construct vgrid from the vertex coordinate list and axis
+      ! labels
 
-      ! First, build the axes
+      ! Build the axes
 
-      rank = SIZE(labels)
-      n_seq = SIZE(x_vecs, 2)
+      axes = axes_(x_vecs, labels)
 
-      allocate(x(n_seq))
-      allocate(axes(rank))
+      ! Set up the vertex sequence-to-linear index map
 
-      do r = 1, rank
-
-         x = x_vecs(r,:)
-
-         associate (u => unique_indices(x))
-           axes(r) = axis_t(x(u), labels(r))
-         end associate
-
-      end do
-
-      ! Create the vertex sequence-to-linear index map
-
-      allocate(v_lin_seq(n_seq))
-
-      do v_seq = 1, n_seq
-
-         ! Determine the linear index of the vertex
-
-         v_lin_seq(v_seq) = 1
-         p = 1
-
-         do r = 1, rank
-            call axes(r)%get_n(n)
-            call axes(r)%locate(x_vecs(r,v_seq), i)
-            v_lin_seq(v_seq) = v_lin_seq(v_seq) + (i-1)*p
-            p = p*n
-         end do
-
-      end do
+      v_lin_seq = vert_linear_(x_vecs, axes)
 
       ! Construct vgrid
 
@@ -97,123 +59,22 @@ contains
 
    module procedure vgrid_t_map_
 
-      integer                   :: rank
-      integer                   :: r
-      integer                   :: shape(SIZE(axes))
-      integer                   :: n_v_lin
-      integer                   :: n_seq
-      logical                   :: mask(SIZE(axes))
-      type(axis_t), allocatable :: axes_nd(:)
-      integer                   :: rank_nd
-      integer, allocatable      :: shape_nd(:)
-      integer                   :: n_c_lin
-      logical, allocatable      :: v_lin_mask(:)
-      integer                   :: v_seq
-      integer, allocatable      :: v_seq_lin(:)
-      logical, allocatable      :: c_lin_mask(:)
-      integer, allocatable      :: c_vec(:)
-      integer, allocatable      :: v_vec(:)
-      integer                   :: c_lin
-      integer                   :: i
-      integer                   :: v_lin
-
       ! Construct vgrid from the axes and sequence-to-linear index map
 
-      ! First, determine the shape
+      ! Initialize axes, rank and shape
 
-      rank = SIZE(axes)
+      vgrid%axes = axes
 
-      do r = 1, rank
-         call axes(r)%get_n(shape(r))
-      end do
+      vgrid%rank = SIZE(axes)
 
-      n_v_lin = PRODUCT(shape)
-      n_seq = SIZE(v_lin_seq)
+      allocate(vgrid%shape(vgrid%rank))
+      call axes%get_n(vgrid%shape)
 
-      @:ASSERT_DEBUG(MINVAL(v_lin_seq) >= 1, 'Invalid v_lin_seq')
-      @:ASSERT_DEBUG(MAXVAL(v_lin_seq) <= n_v_lin, 'Invalid v_lin_seq')
+      @:ASSERT_DEBUG(ALL(vgrid%shape > 1), 'grid has degenerate axis')
 
-      ! Strip out degenerate (length-1) axes
+      ! Set up the indexer
 
-      mask = shape > 1
-
-      axes_nd = PACK(axes, mask)
-
-      rank_nd = COUNT(mask)
-      shape_nd = PACK(shape, mask)
-
-      n_c_lin = PRODUCT(shape_nd-1)
-
-      ! Set up the linear vertex mask and the linear-to-sequence
-      ! index map
-
-      allocate(v_lin_mask(n_v_lin))
-      v_lin_mask = .FALSE.
-
-      allocate(v_seq_lin(n_v_lin))
-      v_seq_lin = 0
-
-      do v_seq = 1, n_seq
-
-         v_lin = v_lin_seq(v_seq)
-
-         if (.NOT. v_lin_mask(v_lin)) then
-            v_lin_mask(v_lin) = .TRUE.
-            v_seq_lin(v_lin) = v_seq
-         end if
-
-      end do
-
-      ! Initialize vgrid
-
-      vgrid%axes = axes_nd
-
-      call MOVE_ALLOC(v_lin_mask, vgrid%v_lin_mask)
-
-      vgrid%v_lin_seq = v_lin_seq
-      call MOVE_ALLOC(v_seq_lin, vgrid%v_seq_lin)
-
-      vgrid%shape = shape_nd
-      vgrid%rank = rank_nd
-
-      vgrid%n_v_lin = n_v_lin
-      vgrid%n_c_lin = n_c_lin
-      vgrid%n_seq = n_seq
-      vgrid%n_stn = 4**rank_nd
-
-      ! Initialize c_lin_mask last, to take advantage of indexing
-      ! routines
-
-      allocate(c_lin_mask(vgrid%n_c_lin))
-
-      allocate(c_vec(vgrid%rank))
-      allocate(v_vec(vgrid%rank))
-
-      cell_loop: do c_lin = 1, vgrid%n_c_lin
-
-         c_vec = vgrid%cell_vector_(c_lin)
-
-         ! Iterate over corner vertices of the cell
-
-         do i = 1, 2**vgrid%rank
-
-            v_vec = c_vec + vgrid%offset_vector_(i, 2)
-            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
-
-            v_lin = vgrid%vert_linear_(v_vec)
-
-            if (.NOT. vgrid%v_lin_mask(v_lin)) then
-               c_lin_mask(c_lin) = .FALSE.
-               cycle cell_loop
-            end if
-
-         end do
-
-         c_lin_mask(c_lin) = .TRUE.
-
-      end do cell_loop
-
-      call MOVE_ALLOC(c_lin_mask, vgrid%c_lin_mask)
+      vgrid%indexer = indexer_t(vgrid%shape, v_lin_seq)
 
       ! Set up the per-vertex cache
 
@@ -230,32 +91,18 @@ contains
    module procedure vgrid_t_mask_
 
       integer              :: n_v_lin
-      integer              :: n_seq
       integer, allocatable :: v_lin_seq(:)
-      integer              :: v_seq
       integer              :: v_lin
 
       ! Construct vgrid from the axes and occupancy mask. This is a
       ! compatibility constructor for grids read in the "old" (rev <=
       ! 2) format
 
-      ! Set up the vertex sequence-to-linear mask
+      ! Set up the vertex sequence-to-linear index map
 
       n_v_lin = SIZE(mask)
-      n_seq = COUNT(mask)
 
-      allocate(v_lin_seq(n_seq))
-
-      v_seq = 0
-
-      do v_lin = 1, n_v_lin
-
-         if (mask(v_lin)) then
-            v_seq = v_seq + 1
-            v_lin_seq(v_seq) = v_lin
-         end if
-
-      end do
+      v_lin_seq = PACK([(v_lin, v_lin=1,n_v_lin)], MASK=mask)
 
       ! Construct vgrid
 
@@ -269,15 +116,107 @@ contains
 
    !****
 
+   function axes_(x_vecs, labels) result(axes)
+
+      real(RD), intent(in)      :: x_vecs(:,:)
+      character(*), intent(in)  :: labels(:)
+      type(axis_t)              :: axes(SIZE(labels))
+
+      integer  :: r
+      real(RD) :: x(SIZE(x_vecs, 2))
+
+      @:CHECK_BOUNDS(SIZE(x_vecs, 1), SIZE(labels))
+
+      ! Generate a set of axes from the vertex coordinate list and
+      ! labels
+
+      do r = 1, SIZE(x_vecs, 1)
+
+         x = x_vecs(r,:)
+
+         associate (u => unique_indices(x))
+            axes(r) = axis_t(x(u), labels(r))
+         end associate
+
+      end do
+
+      ! Finish
+
+      return
+
+   end function axes_
+
+   !****
+
+   function vert_linear_(x_vecs, axes) result(v_lin)
+
+      real(RD), intent(in)     :: x_vecs(:,:)
+      type(axis_t), intent(in) :: axes(:)
+      integer                  :: v_lin(SIZE(x_vecs, 2))
+
+      integer  :: rank
+      integer  :: shape(SIZE(axes))
+      integer  :: v_seq
+      integer  :: r
+      integer  :: p
+      integer  :: i
+      real(RD) :: x
+
+      @:CHECK_BOUNDS(SIZE(x_vecs, 1), SIZE(axes))
+
+      ! Generate a list of linear vertex indices from the vertex
+      ! coordinate list
+
+      ! Extract the grid shape
+
+      rank = SIZE(axes)
+
+      call axes%get_n(shape)
+
+      ! Set up the indices
+
+      do v_seq = 1, SIZE(x_vecs, 2)
+
+         ! Determine the linear index of the vertex
+
+         v_lin(v_seq) = 1
+         p = 1
+
+         do r = 1, rank
+
+            call axes(r)%locate(x_vecs(r,v_seq), i)
+
+            #:if DEBUG
+               call axes(r)%fetch(i, x)
+               @:ASSERT(x == x_vecs(r,v_seq), 'mismatched vertex position')
+            #:endif
+
+            v_lin(v_seq) = v_lin(v_seq) + (i-1)*p
+
+            p = p*shape(r)
+
+         end do
+
+      end do
+
+      ! Finish
+
+      return
+
+   end function vert_linear_
+
+   !****
+
    subroutine setup_cache_(vgrid)
 
       type(vgrid_t), intent(inout) :: vgrid
 
+      integer  :: n_vert_seq
       integer  :: v_seq
+      integer  :: v_lin
       integer  :: v_vec(vgrid%rank)
       integer  :: v_vec_i(vgrid%rank)
       integer  :: i
-      integer  :: v_lin
       logical  :: vert_mask(3**vgrid%rank)
       integer  :: r
       integer  :: j
@@ -287,23 +226,26 @@ contains
       ! For each sequential vertex, cache data to be used later by
       ! data_kernel_cubic_cached
 
-      allocate(vgrid%vert_cache(3*vgrid%rank*2, vgrid%n_seq))
+      call vgrid%indexer%get_n_vert_seq(n_vert_seq)
 
-      do v_seq = 1, vgrid%n_seq
+      allocate(vgrid%vert_cache(3*vgrid%rank*2, n_vert_seq))
 
-         v_vec = vgrid%vert_vector_(vgrid%v_lin_seq(v_seq))
+      do v_seq = 1, n_vert_seq
+
+         v_lin = vgrid%indexer%vert_linear(v_seq)
+         v_vec = vgrid%indexer%vert_vector(v_lin)
 
          ! Set up the vert_mask
 
          do i = 1, 3**vgrid%rank
 
-            v_vec_i = v_vec - 1 + vgrid%offset_vector_(i, 3)
+            v_vec_i = v_vec - 1 + vgrid%indexer%offset_vector(i, 3)
 
             if (ALL(v_vec_i >= 1 .AND. v_vec_i <= vgrid%shape)) then
 
-               v_lin = vgrid%vert_linear_(v_vec_i)
+               v_lin = vgrid%indexer%vert_linear(v_vec_i)
 
-               vert_mask(i) = vgrid%v_lin_mask(v_lin)
+               vert_mask(i) = vgrid%indexer%vert_sequence(v_lin) /= NULL_NODE
 
             else
 

@@ -26,6 +26,7 @@ module vgrid_m
 
    use axis_m
    use file_m
+   use indexer_m
    use ninterp_m
    use stat_m
 
@@ -40,24 +41,18 @@ module vgrid_m
    type vgrid_t
       private
       type(axis_t), allocatable :: axes(:)
+      type(indexer_t)           :: indexer
       real(RD), allocatable     :: vert_cache(:,:) ! Per-vertex cache
-      logical, allocatable      :: v_lin_mask(:)   ! Linear vertex mask
-      logical, allocatable      :: c_lin_mask(:)   ! Linear cell mask
-      integer, allocatable      :: v_seq_lin(:)    ! Vertex linear-to_sequence map
-      integer, allocatable      :: v_lin_seq(:)    ! Vertex sequence-to-linear map
       integer, allocatable      :: shape(:)
       integer                   :: rank
-      integer                   :: n_v_lin       ! Number of linear vertices
-      integer                   :: n_c_lin       ! Number of linear cells
-      integer                   :: n_seq         ! Number of sequential vertices
-      integer                   :: n_stn         ! Number of stencil points
    contains
       private
-      procedure, public :: get_n_seq
       procedure, public :: get_rank
       procedure, public :: get_shape
       procedure, public :: get_axis
-      procedure, public :: map
+      procedure, public :: get_n_vert_seq
+!      procedure, public :: subset_mask
+      procedure, public :: subset
       procedure         :: interp_0_
       procedure         :: interp_1_
       generic, public   :: interp => interp_0_, interp_1_
@@ -65,11 +60,6 @@ module vgrid_m
       procedure         :: interp_sum_1_
       generic, public   :: interp_sum => interp_sum_0_, interp_sum_1_
       procedure, public :: adjust_x_vec
-      procedure         :: cell_linear_
-      procedure         :: cell_vector_
-      procedure         :: vert_linear_
-      procedure         :: vert_vector_
-      procedure         :: offset_vector_
       procedure, public :: read
       procedure, public :: write
    end type vgrid_t
@@ -78,6 +68,7 @@ module vgrid_m
 
    interface vgrid_t
       module procedure vgrid_t_coords_
+      module procedure vgrid_t_map_
    end interface vgrid_t
 
    ! In vgrid_construct_sm
@@ -91,7 +82,7 @@ module vgrid_m
          type(vgrid_t)            :: vgrid
       end function vgrid_t_coords_
 
-      module function vgrid_t_mask_ (axes, mask) result(vgrid)
+      module function vgrid_t_mask_(axes, mask) result(vgrid)
          implicit none (type, external)
          type(axis_t), intent(in) :: axes(:)
          logical, intent(in)      :: mask(:)
@@ -107,15 +98,9 @@ module vgrid_m
 
    end interface
 
-   ! In vgrid_inquire_sm
+   ! In vgrid_attribs_sm
 
    interface
-
-      module subroutine get_n_seq(self, n_seq)
-         implicit none (type, external)
-         class(vgrid_t), intent(in) :: self
-         integer, intent(out)       :: n_seq
-      end subroutine get_n_seq
 
       module subroutine get_rank(self, rank)
          implicit none (type, external)
@@ -136,24 +121,45 @@ module vgrid_m
          type(axis_t), intent(out)  :: axis
       end subroutine get_axis
 
+      module subroutine get_n_vert_seq(self, n_vert_seq)
+         implicit none (type, external)
+         class(vgrid_t), intent(in) :: self
+         integer, intent(out)       :: n_vert_seq
+      end subroutine get_n_vert_seq
+
    end interface
 
-   ! In vgrid_traverse_sm
+   ! In vgrid_operate_sm
 
    interface
 
-      module subroutine map(self, map_proc, stat)
+      module subroutine subset(self, subset_mask, vgrid)
          implicit none (type, external)
-         class(vgrid_t), intent(in) :: self
-         interface
-            subroutine map_proc(v_seq, stat)
-               implicit none (type, external)
-               integer, intent(in)            :: v_seq
-               integer, intent(out), optional :: stat
-            end subroutine map_proc
-         end interface
-         integer, intent(out), optional :: stat
-      end subroutine map
+         class(vgrid_t), intent(in)               :: self
+         logical, intent(in)                      :: subset_mask(:)
+         class(vgrid_t), intent(out), allocatable :: vgrid
+      end subroutine subset
+
+   end interface
+
+   ! In vgrid_mask_sm
+
+   interface
+
+      ! module function subset_mask(self, x_min, x_max) result(subset_mask)
+      !    implicit none (type, external)
+      !    class(vgrid_t), intent(in) :: self
+      !    real(RD), intent(in)       :: x_min(:)
+      !    real(RD), intent(in)       :: x_max(:)
+      !    logical                    :: subset_mask(self%n_vert_seq)
+      ! end function subset_mask
+
+      ! module subroutine generate_reduction_masks(indexer, axis_mask, vert_seq_mask)
+      !    implicit none (type, external)
+      !    type(indexer_t), intent(in)       :: indexer
+      !    logical, allocatable, intent(out) :: axis_mask(:)
+      !    logical, allocatable, intent(out) :: vert_seq_mask(:)
+      ! end subroutine generate_reduction_masks
 
    end interface
 
@@ -250,48 +256,6 @@ module vgrid_m
 
    end interface
 
-   ! In vgrid_index_sm
-
-   interface
-
-      module function cell_linear_(self, c_vec) result(c_lin)
-         implicit none (type, external)
-         class(vgrid_t), intent(in) :: self
-         integer, intent(in)        :: c_vec(:)
-         integer                    :: c_lin
-      end function cell_linear_
-
-      module function cell_vector_(self, c_lin) result(c_vec)
-         implicit none (type, external)
-         class(vgrid_t), intent(in) :: self
-         integer, intent(in)        :: c_lin
-         integer                    :: c_vec(self%rank)
-      end function cell_vector_
-
-      module function vert_linear_(self, v_vec) result(v_lin)
-         implicit none (type, external)
-         class(vgrid_t), intent(in) :: self
-         integer, intent(in)        :: v_vec(:)
-         integer                    :: v_lin
-      end function vert_linear_
-
-      module function vert_vector_(self, v_lin) result(v_vec)
-         implicit none (type, external)
-         class(vgrid_t), intent(in) :: self
-         integer, intent(in)        :: v_lin
-         integer                    :: v_vec(self%rank)
-      end function vert_vector_
-
-      module function offset_vector_(self, i, n) result(d_vec)
-         implicit none (type, external)
-         class(vgrid_t), intent(in) :: self
-         integer, intent(in)        :: i
-         integer, intent(in)        :: n
-         integer                    :: d_vec(self%rank)
-      end function offset_vector_
-
-   end interface
-
    ! In vgrid_io_sm
 
    interface
@@ -317,86 +281,6 @@ module vgrid_m
    private
 
    public :: vgrid_t
-   public :: optimize
-
-   ! Procedures
-
-contains
-
-   subroutine optimize(x_vecs, mask)
-
-      real(RD), intent(in) :: x_vecs(:,:)
-      logical, intent(out) :: mask(:)
-
-      integer                   :: rank
-      character(1), allocatable :: labels(:)
-      type(vgrid_t)             :: vgrid
-      integer                   :: c_lin
-      integer, allocatable      :: c_vec(:)
-      integer, allocatable      :: v_vec(:)
-      integer                   :: i
-      integer                   :: v_lin
-      integer                   :: v_seq
-
-      @:CHECK_BOUNDS(SIZE(mask), SIZE(x_vecs, 2))
-
-      ! Optimize grid construction by returning a mask that indicates
-      ! which vertices in x_vecs are usable (the remainder do not
-      ! belong to complete interpolation cells, and therefore can be
-      ! discarded)
-
-      ! Start by creating a dummy vgrid
-
-      rank = SIZE(x_vecs, 1)
-
-      allocate(labels(rank))
-      labels = ''
-
-      vgrid = vgrid_t(x_vecs, labels)
-
-      ! Update rank (to handle removal of degenerate axes)
-
-      call vgrid%get_rank(rank)
-
-      ! Loop through cells of the grid
-
-      allocate(c_vec(rank))
-      allocate(v_vec(rank))
-
-      mask = .FALSE.
-
-      do c_lin = 1, vgrid%n_c_lin
-
-         ! Check if the cell is complete
-
-         if (vgrid%c_lin_mask(c_lin)) then
-
-            c_vec = vgrid%cell_vector_(c_lin)
-
-            ! Iterate over corner vertices of the cell
-
-            do i = 1, 2**rank
-
-               v_vec = c_vec + vgrid%offset_vector_(i, 2)
-               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
-
-               v_lin = vgrid%vert_linear_(v_vec)
-               v_seq = vgrid%v_seq_lin(v_lin)
-
-               ! Update the mask
-
-               mask(v_seq) = .TRUE.
-
-            end do
-
-         endif
-
-      end do
-
-      ! Finish
-
-      return
-
-   end subroutine optimize
+!   public :: generate_reduction_masks
 
 end module vgrid_m

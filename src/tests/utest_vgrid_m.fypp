@@ -44,7 +44,7 @@ contains
 
       call test_stat_()
       call test_attr_()
-      call test_map_()
+      call test_construct_()
       call test_interp_()
       call test_adjust_()
 
@@ -80,8 +80,6 @@ contains
    contains
 
       subroutine stat_arrange_()
-
-         integer  :: j
 
          ! Set up default (good) params
 
@@ -228,8 +226,8 @@ contains
       integer       :: rank_chk
       integer       :: shape(2)
       integer       :: shape_chk(2)
-      integer       :: n_seq
-      integer       :: n_seq_chk
+      integer       :: n_vert_seq
+      integer       :: n_vert_seq_chk
 
       print *, '  attributes'
 
@@ -249,7 +247,7 @@ contains
 
          rank_chk = 2
          shape_chk = [3,3]
-         n_seq_chk = 8
+         n_vert_seq_chk = 8
 
          ! Finish
 
@@ -263,7 +261,7 @@ contains
 
          call vg%get_rank(rank)
          call vg%get_shape(shape)
-         call vg%get_n_seq(n_seq)
+         call vg%get_n_vert_seq(n_vert_seq)
 
          ! Finish
 
@@ -287,10 +285,10 @@ contains
             print *,'    FAIL shape:', shape, '/=', shape_chk
          end if
 
-         if (n_seq == n_seq_chk) then
-            print *,'    PASS n_seq'
+         if (n_vert_seq == n_vert_seq_chk) then
+            print *,'    PASS n_vert_seq'
          else
-            print *,'    FAIL n_seq:', n_seq, '/=', n_seq_chk
+            print *,'    FAIL n_vert_seq:', n_vert_seq, '/=', n_vert_seq_chk
          end if
 
          ! Finish
@@ -303,19 +301,23 @@ contains
 
    !****
 
-   subroutine test_map_()
+   subroutine test_construct_()
+
+      use axis_m
 
       type(vgrid_t) :: vg
-      logical       :: mask(8)
-      logical       :: mask_chk(8)
+      real(RD)      :: x_vec(2)
+      real(RD)      :: f_seq(4)
+      real(RD)      :: f
+      real(RD)      :: f_chk
 
-      print *, '  map'
+      print *, '  constructors'
 
       call build_vgrid_(vg)
 
-      call map_arrange_()
-      call map_act_()
-      call map_assert_()
+      call construct_arrange_()
+      call construct_act_()
+      call construct_assert_()
 
       ! Finish
 
@@ -323,38 +325,72 @@ contains
 
    contains
 
-      subroutine map_arrange_()
+      subroutine construct_arrange_()
 
-         mask_chk = .TRUE.
+         type(axis_t) :: axes(2)
+         integer      :: v_lin_seq(4)
+
+         axes(1) = axis_t([1._RD, 2._RD, 3._RD, 4._RD], 'x')
+         axes(2) = axis_t([1._RD, 2._RD, 3._RD, 4._RD], 'y')
+
+         v_lin_seq = [11, 7, 10, 6]
+         f_seq = [6._RD, 5._RD, 5._RD, 4._RD]
+
+         vg = vgrid_t(axes, v_lin_seq)
+
+         x_vec = [2.5_RD, 2.5_RD]
+
+         f_chk = 5._RD
 
          ! Finish
 
          return
 
-      end subroutine map_arrange_
+      end subroutine construct_arrange_
 
       !****
 
-      subroutine map_act_()
+      subroutine construct_act_()
 
-         mask = .FALSE.
-
-         call vg%map(map_proc_)
+         call vg%interp(data_proc_, x_vec, f)
 
          ! Finish
 
          return
 
-      end subroutine map_act_
+      end subroutine construct_act_
 
       !****
 
-      subroutine map_proc_(v_seq, stat)
+      subroutine construct_assert_()
+
+         real(RD), parameter :: tol = 1E-14_RD
+
+         real(RD) :: f_err
+
+         f_err = (f - f_chk)/f_chk
+
+         if (ABS(f_err) < tol) then
+            print *,'    PASS vgrid_t_map_'
+         else
+            print *,'    FAIL vgrid_t_map:', f_err, '>', tol
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine construct_assert_
+
+      !****
+
+      subroutine data_proc_(v_seq, data, stat)
 
          integer, intent(in)            :: v_seq
+         real(RD), intent(out)          :: data
          integer, intent(out), optional :: stat
 
-         mask(v_seq) = .TRUE.
+         data = f_seq(v_seq)
 
          if (PRESENT(stat)) stat = STAT_OK
 
@@ -362,25 +398,9 @@ contains
 
          return
 
-      end subroutine map_proc_
+      end subroutine data_proc_
 
-      !****
-
-      subroutine map_assert_()
-
-         if (ALL(mask .EQV. mask_chk)) then
-            print *,'    PASS mask'
-         else
-            print *,'    FAIL mask', mask, '/=', mask_chk
-         end if
-
-         ! Finish
-
-         return
-
-      end subroutine map_assert_
-
-   end subroutine test_map_
+   end subroutine test_construct_
 
    !****
 

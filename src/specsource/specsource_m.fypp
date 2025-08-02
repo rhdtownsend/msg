@@ -32,6 +32,7 @@ module specsource_m
       procedure(get_n), deferred, public       :: get_n
       procedure(get_lam_min), deferred, public :: get_lam_min
       procedure(get_lam_max), deferred, public :: get_lam_max
+      procedure(subset), deferred, public      :: subset
       procedure(fetch), deferred, public       :: fetch
    end type specsource_t
 
@@ -61,6 +62,14 @@ module specsource_m
          class(specsource_t), intent(in) :: self
          real(RD), intent(out)           :: lam_max
       end subroutine get_lam_max
+
+      subroutine subset(self, mask, specsource)
+         import specsource_t
+         implicit none (type, external)
+         class(specsource_t), intent(in)               :: self
+         logical, intent(in)                           :: mask(:)
+         class(specsource_t), allocatable, intent(out) :: specsource
+      end subroutine subset
 
       subroutine fetch(self, i, specint, stat)
          use specint_m

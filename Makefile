@@ -60,7 +60,7 @@ SRC_DIRS = $(addprefix $(SRC_DIR)/, axis common cython include ninterp lib limb 
            speccache specgrid \
            specint specint/limb \
            specsource specsource/hdf5 \
-           tests tools vgrid)
+           tests tools vgrid indexer)
 
 ifeq ($(FORUM),yes)
    FORUM_LIB_DIR = $(LIB_DIR)

@@ -27,8 +27,9 @@ ifeq ($(TOOLS),yes)
   BIN_TARGETS += ascii_to_specint synspec_to_specint ferre_to_specint	\
                  c3k_to_specint specint_to_specint			\
                  specgrid_to_photgrid specint_to_specgrid		\
-                 make_bb_photgrid make_passband make_photon_passband	\
-                 inspect_grid
+#                 make_bb_photgrid make_passband make_photon_passband	\
+                 make_passband make_photon_passband	\
+                 inspect_grid subset_specgrid
   ifneq ($(FITS_LDFLAGS),)
     BIN_TARGETS += goettingen_to_specint coelho_to_specint
   endif
@@ -46,8 +47,11 @@ axis_SRCS = axis_m.fypp axis_construct_sm.fypp axis_attribs_sm.fypp \
 ninterp_SRCS = ninterp_m.fypp ninterp_linear_sm.fypp ninterp_cubic_sm.fypp \
                basis_m.fypp
 
-vgrid_SRCS = vgrid_m.fypp vgrid_construct_sm.fypp vgrid_index_sm.fypp \
-             vgrid_attribs_sm.fypp vgrid_traverse_sm.fypp vgrid_io_sm.fypp \
+indexer_SRCS = indexer_m.fypp indexer_construct_sm.fypp indexer_attribs_sm.fypp \
+               indexer_index_sm.fypp
+
+vgrid_SRCS = vgrid_m.fypp vgrid_construct_sm.fypp vgrid_mask_sm.fypp \
+             vgrid_attribs_sm.fypp vgrid_operate_sm.fypp vgrid_io_sm.fypp \
              vgrid_interp_sm.fypp vgrid_interp_linear_sm.fypp vgrid_interp_cubic_sm.fypp
 
 photcache_SRCS = photcache_m.fypp photcache_construct_sm.fypp photcache_attribs_sm.fypp \
@@ -69,18 +73,19 @@ photsource_SRCS = photsource_m.fypp \
                   spec_photsource_attribs_sm.fypp spec_photsource_access_sm.fypp
 
 speccache_SRCS = speccache_m.fypp speccache_construct_sm.fypp speccache_attribs_sm.fypp \
-                  speccache_access_sm.fypp
+                 speccache_access_sm.fypp
 
 specgrid_SRCS = specgrid_m.fypp specgrid_construct_sm.fypp specgrid_attribs_sm.fypp \
-                 specgrid_interp_sm.fypp specgrid_operate_sm.fypp specgrid_io_sm.fypp
+                specgrid_interp_sm.fypp specgrid_operate_sm.fypp specgrid_io_sm.fypp
 
 specint_SRCS = specint_m.fypp specint_sm.fypp \
                 limb_specint_m.fypp limb_specint_construct_sm.fypp limb_specint_attribs_sm.fypp \
                 limb_specint_interp_sm.fypp limb_specint_operate_sm.fypp limb_specint_io_sm.fypp
 
 specsource_SRCS = specsource_m.fypp \
-                   hdf5_specsource_m.fypp hdf5_specsource_construct_sm.fypp \
-                   hdf5_specsource_attribs_sm.fypp hdf5_specsource_access_sm.fypp
+                  hdf5_specsource_m.fypp hdf5_specsource_construct_sm.fypp \
+                  hdf5_specsource_attribs_sm.fypp hdf5_specsource_access_sm.fypp \
+                  hdf5_specsource_operate_sm.fypp
 
 limb_SRCS = limb_m.fypp limb_construct_sm.fypp limb_attribs_sm.fypp limb_basis_sm.fypp \
             limb_fit_sm.fypp limb_io_sm.fypp
@@ -99,7 +104,7 @@ range_SRCS = range_m.fypp range_sm.fypp \
              tab_range_operate_sm.fypp tab_range_io_sm.fypp
 
 libmsg_SRCS = msg_m.fypp \
-              $(axis_SRCS) $(vgrid_SRCS) $(ninterp_SRCS) \
+              $(axis_SRCS) $(vgrid_SRCS) $(indexer_SRCS) $(ninterp_SRCS) \
               $(photcache_SRCS) $(photgrid_SRCS) $(photint_SRCS) $(photsource_SRCS) \
               $(speccache_SRCS) $(specgrid_SRCS) $(specint_SRCS) $(specsource_SRCS) \
               $(limb_SRCS) $(passband_SRCS) $(range_SRCS) \
@@ -176,6 +181,10 @@ make_photon_passband_LIBS = libmsg
 inspect_grid_SRCS = inspect_grid.fypp
 inspect_grid_USES = $(libmsg_SRCS)
 inspect_grid_LIBS = libmsg
+
+subset_specgrid_SRCS = subset_specgrid.fypp
+subset_specgrid_USES = $(libmsg_SRCS)
+subset_specgrid_LIBS = libmsg
 
 utest_file_SRCS = utest_file.fypp utest_file_m.fypp
 utest_file_USES = $(libmsg_SRCS)

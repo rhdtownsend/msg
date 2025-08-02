@@ -1,5 +1,5 @@
-! Submodule : vgrid_attribs_sm
-! Purpose   : Attribute get/set routines for vgrid_t
+! Submodule : indexer_attribs_sm
+! Purpose   : Attribute get/set routines for indexer_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -17,7 +17,7 @@
 
 #:include 'forum.inc'
 
-submodule (vgrid_m) vgrid_attribs_sm
+submodule (indexer_m) indexer_attribs_sm
 
    ! No implicit typing
 
@@ -57,17 +57,17 @@ contains
 
    !****
 
-   module procedure get_axis
+   module procedure get_n_vert
 
-      ! Get the i'th axis
+      ! Get the number of vertices
 
-      axis = self%axes(i)
+      n_vert = self%n_vert
 
       ! Finish
 
       return
 
-   end procedure get_axis
+   end procedure get_n_vert
 
    !****
 
@@ -75,7 +75,7 @@ contains
 
       ! Get the number of sequential vertices
 
-      call self%indexer%get_n_vert_seq(n_vert_seq)
+      n_vert_seq = self%n_vert_seq
 
       ! Finish
 
@@ -83,4 +83,32 @@ contains
 
    end procedure get_n_vert_seq
 
-end submodule vgrid_attribs_sm
+   !****
+
+   module procedure get_n_cell
+
+      ! Get the number of cells
+
+      n_cell = self%n_cell
+
+      ! Finish
+
+      return
+
+   end procedure get_n_cell
+
+   !****
+
+   module procedure get_n_cell_seq
+
+      ! Get the number of sequential cells
+
+      n_cell_seq = self%n_cell_seq
+
+      ! Finish
+
+      return
+
+   end procedure get_n_cell_seq
+
+end submodule indexer_attribs_sm

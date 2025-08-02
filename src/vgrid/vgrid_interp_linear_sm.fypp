@@ -78,11 +78,11 @@ contains
 
                ! Set up the sequence index for the vertex
 
-               v_vec = c_vec + vgrid%offset_vector_(i, 2)
+               v_vec = c_vec + vgrid%indexer%offset_vector(i, 2)
                @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
 
-               v_lin = vgrid%vert_linear_(v_vec)
-               v_seq = vgrid%v_seq_lin(v_lin)
+               v_lin = vgrid%indexer%vert_linear(v_vec)
+               v_seq = vgrid%indexer%vert_sequence(v_lin)
 
                ! Evaluate data for the vertex
 
@@ -180,11 +180,11 @@ contains
 
                   ! Set up the sequence index for the vertex
 
-                  v_vec = c_vec + vgrid%offset_vector_(i, 2)
+                  v_vec = c_vec + vgrid%indexer%offset_vector(i, 2)
                   @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= vgrid%shape), 'out-of-bounds v_vec')
 
-                  v_lin = vgrid%vert_linear_(v_vec)
-                  v_seq = vgrid%v_seq_lin(v_lin)
+                  v_lin = vgrid%indexer%vert_linear(v_vec)
+                  v_seq = vgrid%indexer%vert_sequence(v_lin)
 
                   ! Evaluate data for the vertex
 

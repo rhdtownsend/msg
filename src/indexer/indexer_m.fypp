@@ -1,0 +1,213 @@
+! Module  : indexer_m
+! Purpose : Define indexer_t type, providing support for indexing in
+!           N-dimensional grids
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module indexer_m
+
+   ! Uses
+
+   use forum_m
+
+   use axis_m
+   use stat_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Parameter definitions
+
+   integer, parameter :: NULL_NODE = -HUGE(0)
+
+   ! Derived-type definitions
+
+   type indexer_t
+      private
+      integer, allocatable :: vert_seq_lin(:)
+      integer, allocatable :: vert_lin_seq(:)
+      integer, allocatable :: cell_seq_lin(:)
+      integer, allocatable :: cell_lin_seq(:)
+      integer, allocatable :: shape(:)
+      integer              :: rank
+      integer              :: n_vert
+      integer              :: n_cell
+      integer              :: n_vert_seq
+      integer              :: n_cell_seq
+   contains
+      private
+      procedure, public :: get_rank
+      procedure, public :: get_shape
+      procedure, public :: get_n_vert
+      procedure, public :: get_n_vert_seq
+      procedure, public :: get_n_cell
+      procedure         :: vert_linear_vec_
+      procedure         :: vert_linear_seq_
+      generic, public   :: vert_linear => vert_linear_seq_, vert_linear_vec_
+      procedure, public :: vert_sequence
+      procedure, public :: vert_vector
+      procedure, public :: get_n_cell_seq
+      procedure         :: cell_linear_seq_
+      procedure         :: cell_linear_vec_
+      generic, public   :: cell_linear => cell_linear_seq_, cell_linear_vec_
+      procedure, public :: cell_sequence
+      procedure, public :: cell_vector
+      procedure, public :: offset_vector
+   end type indexer_t
+
+   ! Interfaces
+
+   interface indexer_t
+      module procedure indexer_t_map_
+   end interface indexer_t
+
+   ! In indexer_construct_sm
+
+   interface
+
+      module function indexer_t_map_(shape, v_lin_seq) result(indexer)
+         implicit none (type, external)
+         integer, intent(in) :: shape(:)
+         integer, intent(in) :: v_lin_seq(:)
+         type(indexer_t)     :: indexer
+      end function indexer_t_map_
+
+   end interface
+
+   ! In indexer_attribs_sm
+
+   interface
+
+      module subroutine get_rank(self, rank)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(out)         :: rank
+      end subroutine get_rank
+
+      module subroutine get_shape(self, shape)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(out)         :: shape(:)
+      end subroutine get_shape
+
+      module subroutine get_n_vert(self, n_vert)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(out)         :: n_vert
+      end subroutine get_n_vert
+
+      module subroutine get_n_vert_seq(self, n_vert_seq)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(out)         :: n_vert_seq
+      end subroutine get_n_vert_seq
+
+      module subroutine get_n_cell(self, n_cell)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(out)         :: n_cell
+      end subroutine get_n_cell
+
+      module subroutine get_n_cell_seq(self, n_cell_seq)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(out)         :: n_cell_seq
+      end subroutine get_n_cell_seq
+
+   end interface
+
+   ! In indexer_index_sm
+
+   interface
+
+      module function vert_linear_seq_(self, v_seq) result(v_lin)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(in)          :: v_seq
+         integer                      :: v_lin
+      end function vert_linear_seq_
+
+      module function vert_linear_vec_(self, v_vec) result(v_lin)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(in)          :: v_vec(:)
+         integer                      :: v_lin
+      end function vert_linear_vec_
+
+      module function vert_sequence(self, v_lin) result(v_seq)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(in)          :: v_lin
+         integer                      :: v_seq
+      end function vert_sequence
+
+      module function vert_vector(self, v_lin) result(v_vec)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(in)          :: v_lin
+         integer                      :: v_vec(self%rank)
+      end function vert_vector
+
+      module function offset_vector(self, i, n) result(d_vec)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(in)          :: i
+         integer, intent(in)          :: n
+         integer                      :: d_vec(self%rank)
+      end function offset_vector
+
+      module function cell_linear_seq_(self, c_seq) result(c_lin)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(in)          :: c_seq
+         integer                      :: c_lin
+      end function cell_linear_seq_
+
+      module function cell_linear_vec_(self, c_vec) result(c_lin)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(in)          :: c_vec(:)
+         integer                      :: c_lin
+      end function cell_linear_vec_
+
+      module function cell_sequence(self, c_lin) result(c_seq)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(in)          :: c_lin
+         integer                      :: c_seq
+      end function cell_sequence
+
+      module function cell_vector(self, c_lin) result(c_vec)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         integer, intent(in)          :: c_lin
+         integer                      :: c_vec(self%rank)
+      end function cell_vector
+
+   end interface
+
+   ! Access specifiers
+
+   private
+
+   public :: indexer_t
+   public :: NULL_NODE
+
+end module indexer_m

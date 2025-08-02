@@ -342,7 +342,7 @@ contains
       end if
 
       ! Adjust x_vec in the direction dx_vec, until it falls within a
-      ! valid cell (one with c_lin_mask set)
+      ! valid cell (one with cell_mask set)
 
       ! Check the direction vector
 
@@ -408,11 +408,11 @@ contains
 
       do
 
-         c_lin = self%cell_linear_(c_vec)
+         c_lin = self%indexer%cell_linear(c_vec)
 
          ! Finish if the cell is valid
 
-         if (self%c_lin_mask(c_lin)) exit
+         if (self%indexer%cell_sequence(c_lin) /= NULL_NODE) exit
 
          ! Get the bounds of the current cell
 
@@ -535,9 +535,9 @@ contains
       ! See if the cell has sufficient data (i.e., all vertices
       ! defined) to do an interpolation
 
-      c_lin = vgrid%cell_linear_(c_vec)
+      c_lin = vgrid%indexer%cell_linear(c_vec)
 
-      if (.NOT. vgrid%c_lin_mask(c_lin)) then
+      if (vgrid%indexer%cell_sequence(c_lin) == NULL_NODE) then
 
          ! If not, and if the point is on the left boundary(s) of the
          ! cell, try adjusting c_vec toward the origin
@@ -571,9 +571,9 @@ contains
 
             ! Check whether the adjacent cell will do
 
-            c_lin = vgrid%cell_linear_(c_vec+dc_vec)
+            c_lin = vgrid%indexer%cell_linear(c_vec+dc_vec)
 
-            if (vgrid%c_lin_mask(c_lin)) exit adjacent_loop
+            if (vgrid%indexer%cell_sequence(c_lin) /= NULL_NODE) exit adjacent_loop
 
          end do adjacent_loop
 

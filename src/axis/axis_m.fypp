@@ -79,25 +79,25 @@ module axis_m
 
    interface
 
-      module subroutine get_n(self, n)
+      module elemental subroutine get_n(self, n)
          implicit none (type, external)
          class(axis_t), intent(in) :: self
          integer, intent(out)      :: n
       end subroutine get_n
 
-      module subroutine get_x_min(self, x_min)
+      module elemental subroutine get_x_min(self, x_min)
          implicit none (type, external)
          class(axis_t), intent(in) :: self
          real(RD), intent(out)     :: x_min
       end subroutine get_x_min
 
-      module subroutine get_x_max(self, x_max)
+      module elemental subroutine get_x_max(self, x_max)
          implicit none (type, external)
          class(axis_t), intent(in) :: self
          real(RD), intent(out)     :: x_max
       end subroutine get_x_max
 
-      module subroutine get_label(self, label)
+      module elemental subroutine get_label(self, label)
          implicit none (type, external)
          class(axis_t), intent(in)         :: self
          character(LABEL_LEN), intent(out) :: label

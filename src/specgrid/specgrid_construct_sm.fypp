@@ -32,7 +32,7 @@ contains
       integer  :: n
       real(RD) :: lam_min
       real(RD) :: lam_max
-      integer  :: n_seq
+      integer  :: n_vert_seq
 
       ! Construct specgrid from the supplied data
 
@@ -40,9 +40,9 @@ contains
       call specsource%get_lam_min(lam_min)
       call specsource%get_lam_max(lam_max)
 
-      call vgrid%get_n_seq(n_seq)
+      call vgrid%get_n_vert_seq(n_vert_seq)
 
-      @:CHECK_BOUNDS(n, n_seq)
+      @:CHECK_BOUNDS(n, n_vert_seq)
 
       specgrid%specsource = specsource
       specgrid%speccache = speccache_t(n, lam_min, lam_max)

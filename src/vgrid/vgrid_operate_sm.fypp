@@ -1,0 +1,91 @@
+! Submodule : vgrid_operate_sm
+! Purpose   : Operation routines for vgrid_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (vgrid_m) vgrid_operate_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure subset
+
+      integer               :: n_vert_seq
+      real(RD), allocatable :: x_vecs(:,:)
+      integer               :: n_vert_seq
+      integer               :: v_seq
+      integer               :: v_lin
+      integer               :: v_vec(self%rank)
+      integer               :: r
+      character(LABEL_LEN)  :: labels(self%rank)
+
+      ! Subset the vgrid to contain only the sequential vertices
+      ! selected by subset_mask
+
+      ! Determine the selected vertex coordinates
+
+      call vgrid%indexer%get_n_vert_seq(n_vert_seq)
+
+      @:CHECK_BOUNDS(SIZE(subset_mask), n_vert_seq)
+
+      allocate(x_vecs(self%rank,n_vert_seq))
+
+      n_vert_seq = 0
+
+      do v_seq = 1, n_vert_seq
+
+         if (subset_mask(v_seq)) then
+
+            v_lin = self%indexer%vert_linear(v_seq)
+            v_vec = self%indexer%vert_vector(v_lin)
+
+            n_vert_seq = n_vert_seq + 1
+
+            do r = 1, self%rank
+               call self%axes(r)%fetch(v_vec(r), x_vecs(r,n_vert_seq))
+            end do
+
+         end if
+
+      end do
+
+      x_vecs = x_vecs(:,:n_vert_seq)
+
+      ! Reduce
+
+      ! Extract axis labels
+
+      do r = 1, self%rank
+         call self%axes(r)%get_label(labels(r))
+      end do
+
+      ! Create the vgrid
+
+      vgrid = vgrid_t_coords_(x_vecs, labels)
+
+      ! Finish
+
+      return
+
+   end procedure subset
+
+end submodule vgrid_operate_sm

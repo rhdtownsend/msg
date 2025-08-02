@@ -30,14 +30,14 @@ contains
    module procedure photgrid_t_
 
       integer :: n
-      integer :: n_seq
+      integer :: n_vert_seq
 
       ! Construct photgrid from the supplied data
 
       call photsource%get_n(n)
-      call vgrid%get_n_seq(n_seq)
+      call vgrid%get_n_vert_seq(n_vert_seq)
 
-      @:CHECK_BOUNDS(n, n_seq)
+      @:CHECK_BOUNDS(n, n_vert_seq)
 
       photgrid%photsource = photsource
       photgrid%photcache = photcache_t(n)

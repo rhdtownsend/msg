@@ -1,0 +1,157 @@
+! Submodule : indexer_construct_sm
+! Purpose   : Constructor routines for indexer_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (indexer_m) indexer_construct_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure indexer_t_map_
+
+      ! Construct indexer from the shape and the sequence-to-linear
+      ! vertex map
+
+      indexer%shape = shape
+      indexer%rank = SIZE(shape)
+
+      @:ASSERT_DEBUG(ALL(shape > 0), 'invalid shape')
+
+      indexer%n_cell = PRODUCT(shape-1)
+      indexer%n_vert = PRODUCT(shape)
+
+      ! Set vertex and cell index maps
+
+      call set_vert_maps_(v_lin_seq)
+      call set_cell_maps_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine set_vert_maps_(v_lin_seq)
+
+         integer, intent(in) :: v_lin_seq(:)
+
+         integer :: v_seq
+
+         @:ASSERT_DEBUG(MINVAL(v_lin_seq) >= 1, 'invalid v_lin_seq')
+         @:ASSERT_DEBUG(MAXVAL(v_lin_seq) <= indexer%n_vert, 'invalid v_lin_seq')
+
+         ! Set the vertex index maps:
+         !
+         !   indexer%vert_lin_seq(v_seq) -> v_lin
+         !   indexer%vert_seq_lin(v_seq) -> v_seq
+         !
+         ! vert_lin_seq is directly copied from v_lin_seq. Currently,
+         ! the code works fine if the entries in v_lin_seq are not
+         ! monotonic increasing. However, this is a bit of a code
+         ! smell; shouldn't sequential indices satisft
+         ! vert_lin_seq(i+1) > vert_lin_seq(i)?
+
+         indexer%n_vert_seq = SIZE(v_lin_seq)
+
+         indexer%vert_lin_seq = v_lin_seq
+
+         allocate(indexer%vert_seq_lin(indexer%n_vert))
+
+         indexer%vert_seq_lin = NULL_NODE
+         indexer%vert_seq_lin(indexer%vert_lin_seq) = [(v_seq, v_seq=1,indexer%n_vert_seq)]
+
+         ! Finish
+
+         return
+
+      end subroutine set_vert_maps_
+
+      !****
+
+      subroutine set_cell_maps_()
+
+         logical, allocatable :: cell_mask(:)
+         integer              :: c_lin
+         integer              :: c_vec(indexer%rank)
+         integer              :: i
+         integer              :: v_vec(indexer%rank)
+         integer              :: v_lin
+         integer              :: v_seq
+         integer              :: c_seq
+
+         ! Set cell index maps:
+         !
+         !   indexer%cell_lin_seq(c_seq) -> c_lin
+         !   indexer%cell_seq_lin(c_seq) -> c_seq
+         !
+         ! Unlike the case with the vertex index maps, cell_lin_seq is
+         ! monotonic-increasing
+
+         ! First, generate a mask for which cells have all corner
+         ! vertices defined
+
+         allocate(cell_mask(indexer%n_cell))
+
+         cell_mask = .TRUE.
+
+         cell_loop: do c_lin = 1, indexer%n_cell
+
+            c_vec = indexer%cell_vector(c_lin)
+
+            do i = 1, 2**indexer%rank
+
+               v_vec = c_vec + indexer%offset_vector(i, 2)
+               @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= shape), 'out-of-bounds v_vec')
+
+               v_lin = indexer%vert_linear(v_vec)
+               v_seq = indexer%vert_sequence(v_lin)
+
+               if (v_seq == NULL_NODE) then
+                  cell_mask(c_lin) = .FALSE.
+                  cycle cell_loop
+               end if
+
+            end do
+
+         end do cell_loop
+
+         ! Now set the cell index maps
+
+         indexer%n_cell_seq = COUNT(cell_mask)
+
+         indexer%cell_lin_seq = PACK([(c_lin, c_lin=1,indexer%n_cell)], MASK=cell_mask)
+
+         allocate(indexer%cell_seq_lin(indexer%n_cell))
+
+         indexer%cell_seq_lin = NULL_NODE
+         indexer%cell_seq_lin(indexer%cell_lin_seq) = [(c_seq, c_seq=1,indexer%n_cell_seq)]
+
+         ! Finish
+
+         return
+
+      end subroutine set_cell_maps_
+
+   end procedure indexer_t_map_
+
+end submodule indexer_construct_sm

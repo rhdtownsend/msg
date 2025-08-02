@@ -40,6 +40,8 @@ contains
 
       call hdf5io%read_attr('REVISION', revision)
 
+      print *,'revision:',revision
+
       select case(revision)
       case(1)
          call read_rev1_()
@@ -195,6 +197,10 @@ contains
       integer        :: r
       type(hdf5io_t) :: hdf5io_axis
 
+      integer              :: v_seq
+      integer              :: n_vert_seq
+      integer, allocatable :: v_lin_seq(:)
+
       ! Write the vgrid
 
       call hdf5io%write_attr('TYPE', 'vgrid_t')
@@ -212,7 +218,13 @@ contains
          endif
       end do axis_loop
 
-      call hdf5io%write_dset('v_lin_seq', self%v_lin_seq)
+      call self%get_n_vert_seq(n_vert_seq)
+
+      do v_seq = 1, n_vert_seq
+         v_lin_seq(v_seq) = self%indexer%vert_linear(v_seq)
+      end do
+
+      call hdf5io%write_dset('v_lin_seq', v_lin_seq)
 
       ! Finish
 

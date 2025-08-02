@@ -1,5 +1,5 @@
 ! Submodule : specgrid_operate_sm
-! Purpose   : Operation routines routines for specgrid_t
+! Purpose   : Operation routines for specgrid_t
 !
 ! Copyright 2021-2022 Rich Townsend & The MSG Team
 !
@@ -26,6 +26,32 @@ submodule (specgrid_m) specgrid_operate_sm
    ! Procedures
 
 contains
+
+   module procedure subset
+
+      logical, allocatable             :: mask(:)
+      class(vgrid_t), allocatable      :: vgrid
+      class(specsource_t), allocatable :: specsource
+
+      ! Subset the specgrid to contain only the sequential vertices
+      ! selected by mask
+
+      !mask = subset_mask(self%vgrid, x_min, x_max)
+
+      print *,'mask count', COUNT(mask), SIZE(mask)
+
+      call self%vgrid%subset(mask, vgrid)
+      call self%specsource%subset(mask, specsource)
+
+      specgrid = specgrid_t(specsource, vgrid)
+
+      ! Finish
+
+      return
+
+   end procedure subset
+
+   !****
 
    module procedure filter
 

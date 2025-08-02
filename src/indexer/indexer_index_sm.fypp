@@ -1,0 +1,281 @@
+! Submodule : indexer_index_sm
+! Purpose   : Indexing routines for indexer_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (indexer_m) indexer_index_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure vert_linear_seq_
+
+      ! Calculate a linear vertex index from a sequential vertex
+      ! index. Returns NULL_NODE if the vertex is outside the grid
+
+      if (v_seq >= 1 .AND. v_seq <= self%n_vert_seq) then
+
+         v_lin = self%vert_lin_seq(v_seq)
+
+      else
+
+         v_lin = NULL_NODE
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure vert_linear_seq_
+
+   !****
+
+   module procedure vert_linear_vec_
+
+      integer :: p
+      integer :: r
+
+      @:CHECK_BOUNDS(SIZE(v_vec), self%rank)
+
+      ! Calculate a linear vertex index from a vector vertex
+      ! index. Returns NULL_NODE if the vertex is outside the grid
+
+      if (ALL(v_vec >= 1 .AND. v_vec <= self%shape)) then
+
+         v_lin = 1
+         p = 1
+
+         do r = 1, self%rank
+            v_lin = v_lin + (v_vec(r)-1)*p
+            p = p*self%shape(r)
+         end do
+
+      else
+
+         v_lin = NULL_NODE
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure vert_linear_vec_
+
+   !****
+
+   module procedure vert_sequence
+
+      ! Calculate a sequential vertex index from a linear vertex
+      ! index. Returns NULL_NODE if the vertex is outside the grid
+
+      if (v_lin >= 1 .AND. v_lin <= self%n_vert) then
+
+         v_seq = self%vert_seq_lin(v_lin)
+
+      else
+
+         v_seq = NULL_NODE
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure vert_sequence
+
+   !****
+
+   module procedure vert_vector
+
+      integer :: p
+      integer :: q
+      integer :: r
+
+      ! Calculate a vector vertex index from a linear vertex
+      ! index. Returns NULL_NODE if the vertex is outside the grid
+
+      if (v_lin >= 1 .AND. v_lin <= self%n_vert) then
+
+         p = self%n_vert
+         q = v_lin - 1
+
+         do r = self%rank, 1, -1
+            p = p/self%shape(r)
+            v_vec(r) = q/p + 1
+            q = q - (v_vec(r)-1)*p
+         end do
+
+      else
+
+         v_vec = 0
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure vert_vector
+
+   !****
+
+   module procedure offset_vector
+
+     integer :: p
+     integer :: r
+
+     @:ASSERT_DEBUG(i >= 1 .AND. i <= n**self%rank)
+
+     ! Calculate the vector offset associated with the i'th position (i=1,...,n**rank)
+     ! in a nxnx..xn subgrid. i=1 corresponds to an offdet d_vec = (0,0,...)
+
+     p = i - 1
+
+     do r = 1, self%rank
+        d_vec(r) = MODULO(p, n)
+        p = p/n
+     end do
+
+     ! Finish
+
+     return
+
+   end procedure offset_vector
+
+   !****
+
+   module procedure cell_linear_seq_
+
+      ! Calculate a linear cell index from a sequential cell
+      ! index. Returns NULL_NODE if the cell is outside the grid
+
+      if (c_seq >= 1 .AND. c_seq <= self%n_cell_seq) then
+
+         c_lin = self%cell_lin_seq(c_seq)
+
+      else
+
+         c_lin = NULL_NODE
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure cell_linear_seq_
+
+   !****
+
+   module procedure cell_linear_vec_
+
+      integer :: p
+      integer :: r
+
+      @:CHECK_BOUNDS(SIZE(c_vec), self%rank)
+
+      ! Calculate a linear cell index from a vector cell
+      ! index. Returns NULL_NODE if the cell is outside the grid
+
+      if (ALL(c_vec >= 1 .AND. c_vec <= self%shape-1)) then
+
+         c_lin = 1
+         p = 1
+
+         do r = 1, self%rank
+            c_lin = c_lin + (c_vec(r)-1)*p
+            p = p*(self%shape(r)-1)
+         end do
+
+      else
+
+         c_lin = NULL_NODE
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure cell_linear_vec_
+
+   !****
+
+   module procedure cell_sequence
+
+      ! Calculate a sequential cell index from a linear cell
+      ! index. Returns NULL_NODE if the cell is outside the grid
+
+      if (c_lin >= 1 .AND. c_lin <= self%n_cell) then
+
+         c_seq = self%cell_seq_lin(c_lin)
+
+      else
+
+         c_seq = NULL_NODE
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure cell_sequence
+
+   !****
+
+   module procedure cell_vector
+
+      integer :: p
+      integer :: q
+      integer :: r
+
+      ! Calculate a vector cell index from a linear cell
+      ! index. Returns NULL_NODE if the cell is outside the grid
+
+      if (c_lin >= 1 .AND. c_lin <= self%n_cell) then
+
+         p = self%n_cell
+         q = c_lin - 1
+
+         do r = self%rank, 1, -1
+            p = p/(self%shape(r)-1)
+            c_vec(r) = q/p + 1
+            q = q - (c_vec(r)-1)*p
+         end do
+
+      else
+
+         c_vec = NULL_NODE
+
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure cell_vector
+
+end submodule indexer_index_sm

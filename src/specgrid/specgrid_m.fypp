@@ -72,6 +72,7 @@ module specgrid_m
       procedure, public :: interp_irradiance
       procedure, public :: interp_flux
       procedure, public :: adjust_x_vec
+      procedure, public :: subset
       procedure, public :: filter
       procedure, public :: read
       procedure, public :: write
@@ -261,6 +262,14 @@ module specgrid_m
    ! In specgrid_operate_sm
 
    interface
+
+      module subroutine subset(self, x_min, x_max, specgrid)
+         implicit none (type, external)
+         class(specgrid_t), intent(in)               :: self
+         real(RD), intent(in)                        :: x_min(:)
+         real(RD), intent(in)                        :: x_max(:)
+         class(specgrid_t), allocatable, intent(out) :: specgrid
+      end subroutine subset
 
       module subroutine filter(self, passband, photgrid, stat)
          implicit none (type, external)
