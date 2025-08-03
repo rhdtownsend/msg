@@ -1,0 +1,227 @@
+! Submodule : indexer_operate_sm
+! Purpose   : Operation routines for indexer_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (indexer_m) indexer_operate_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure remove_subset
+
+      logical :: mask(indexer%n_vert_seq)
+      integer :: v_seq
+      integer :: v_lin
+      integer :: v_vec(indexer%rank)
+
+      if (PRESENT(vert_mask)) then
+         @:CHECK_BOUNDS(SIZE(vert_mask), indexer%n_vert_seq)
+      end if
+
+      ! Remove vertices from the indexer whose coordinates fall
+      ! outside the subset defined by i_min, i_max (i.e., v_vec <
+      ! i_min or v_vec > i_max along any dimension
+
+      ! Build a mask indicating which sequential vertices are
+      ! to be retained
+
+      mask = .FALSE.
+
+      do v_seq = 1, indexer%n_vert_seq
+
+         v_lin = indexer%vert_linear(v_seq)
+         v_vec = indexer%vert_vector(v_lin)
+
+         if (ALL(v_vec >= i_min .AND. v_vec <= i_max)) then
+            mask(v_seq) = .TRUE.
+         end if
+
+      end do
+
+      ! Update the indexer
+
+      indexer = indexer_t(indexer%shape, PACK(indexer%vert_lin_seq, MASK=mask))
+
+      ! If necessary, return mask as vert_mask
+
+      if (PRESENT(vert_mask)) vert_mask = mask
+
+      ! Finish
+
+      return
+
+   end procedure remove_subset
+
+   !****
+
+   module procedure remove_orphans
+
+      logical :: mask(indexer%n_vert_seq)
+      integer :: c_seq
+      integer :: c_lin
+      integer :: c_vec(indexer%rank)
+      integer :: i
+      integer :: v_vec(indexer%rank)
+      integer :: v_lin
+      integer :: v_seq
+
+      if (PRESENT(vert_mask)) then
+         @:CHECK_BOUNDS(SIZE(vert_mask), indexer%n_vert_seq)
+      end if
+
+      ! Remove orphaned vertices from the indexer (i.e., ones that
+      ! aren't a corner of any cell)
+
+      ! Build a mask indicating which sequential vertices are
+      ! to be retained
+
+      mask = .FALSE.
+
+      do c_seq = 1, indexer%n_cell_seq
+
+         c_lin = indexer%cell_linear(c_seq)
+         c_vec = indexer%cell_vector(c_lin)
+
+         do i = 1, 2**indexer%rank
+
+            v_vec = c_vec + indexer%offset_vector(i, 2)
+            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= indexer%shape), 'out-of-bounds v_vec')
+
+            v_lin = indexer%vert_linear(v_vec)
+            v_seq = indexer%vert_sequence(v_lin)
+
+            mask(v_seq) = .TRUE.
+
+         end do
+
+      end do
+
+      ! Update the indexer
+
+      indexer = indexer_t(indexer%shape, PACK(indexer%vert_lin_seq, MASK=mask))
+
+      ! If necessary, return mask as vert_mask
+
+      if (PRESENT(vert_mask)) vert_mask = mask
+
+      ! Finish
+
+      return
+
+   end procedure remove_orphans
+
+   !****
+
+   module procedure remove_space
+
+      integer :: i_min(indexer%rank)
+      integer :: i_max(indexer%rank)
+      integer :: v_seq
+      integer :: v_lin
+      integer :: v_vec(indexer%rank)
+      integer :: shape_old(indexer%rank)
+      integer :: shape_new(indexer%rank)
+      integer :: v_lin_seq(indexer%n_vert_seq)
+
+      ! Remove superfluos space from the indexer
+
+      ! Determine the range of vector vertex indices spanned by
+      ! sequential vertices
+
+      i_min = HUGE(0)
+      i_max = -HUGE(0)
+
+      do v_seq = 1, indexer%n_vert_seq
+
+         v_lin = indexer%vert_linear(v_seq)
+         v_vec = indexer%vert_vector(v_lin)
+
+         i_min = MIN(i_min, v_vec)
+         i_max = MAX(i_max, v_vec)
+
+      end do
+
+      @:ASSERT_DEBUG(ALL(i_min >= 1 .AND. i_min <= indexer%shape), 'invalid i_min')
+      @:ASSERT_DEBUG(ALL(i_max >= 1 .AND. i_max <= indexer%shape), 'invalid i_max')
+      @:ASSERT_DEBUG(ALL(i_max >= i_min), 'invalid i_min/i_max')
+
+      ! Set up the old and new shapes
+
+      shape_old = indexer%shape
+      shape_new = i_max - i_min + 1
+
+      ! Generate a new v_lin_seq
+
+      v_lin_seq = indexer%vert_lin_seq
+
+      do v_seq = 1, indexer%n_vert_seq
+
+         v_lin = indexer%vert_linear(v_seq)
+         v_vec = indexer%vert_vector(v_lin)
+
+         indexer%shape = shape_new
+         v_lin_seq(v_seq) = indexer%vert_linear(v_vec - i_min + 1)
+         indexer%shape = shape_old
+
+      end do
+
+      ! Update the indexer
+
+      indexer = indexer_t(shape_new, v_lin_seq)
+
+      ! Finish
+
+   end procedure remove_space
+
+   !****
+
+   module procedure remove_degen
+
+      logical :: mask(indexer%rank)
+
+      if (PRESENT(dim_mask)) then
+         @:CHECK_BOUNDS(SIZE(dim_mask), indexer%rank)
+      end if
+
+      ! Remove degenerate (length-1) dimensions from the indexer
+
+      ! Build a mask indicating which sequential vertices are
+      ! to be retained
+
+      mask = indexer%shape > 1
+
+      ! Update the indexer
+
+      indexer = indexer_t(PACK(indexer%shape, MASK=mask), indexer%vert_lin_seq)
+
+      ! If necessary, return mask as dim_mask
+
+      if (PRESENT(dim_mask)) dim_mask = mask
+
+      ! Finish
+
+      return
+
+   end procedure remove_degen
+
+end submodule indexer_operate_sm

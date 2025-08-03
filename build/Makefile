@@ -17,7 +17,8 @@ ifeq ($(PYTHON),yes)
 endif
 
 ifeq ($(TESTS),yes)
-  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_axis utest_vgrid utest_specgrid utest_photgrid
+  UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_axis \
+                   utest_indexer utest_vgrid utest_specgrid utest_photgrid
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_vgrid time_specgrid
   BIN_TARGETS += $(UTEST_TARGETS) $(STRESS_TARGETS) $(TIME_TARGETS)
@@ -48,7 +49,7 @@ ninterp_SRCS = ninterp_m.fypp ninterp_linear_sm.fypp ninterp_cubic_sm.fypp \
                basis_m.fypp
 
 indexer_SRCS = indexer_m.fypp indexer_construct_sm.fypp indexer_attribs_sm.fypp \
-               indexer_index_sm.fypp
+               indexer_index_sm.fypp indexer_operate_sm.fypp
 
 vgrid_SRCS = vgrid_m.fypp vgrid_construct_sm.fypp vgrid_mask_sm.fypp \
              vgrid_attribs_sm.fypp vgrid_operate_sm.fypp vgrid_io_sm.fypp \
@@ -213,6 +214,10 @@ utest_axis_LIBS = libmsg
 utest_vgrid_SRCS = utest_vgrid.fypp utest_vgrid_m.fypp
 utest_vgrid_USES = $(libmsg_SRCS)
 utest_vgrid_LIBS = libmsg
+
+utest_indexer_SRCS = utest_indexer.fypp utest_indexer_m.fypp
+utest_indexer_USES = $(libmsg_SRCS)
+utest_indexer_LIBS = libmsg
 
 utest_specgrid_SRCS = utest_specgrid.fypp utest_specgrid_m.fypp
 utest_specgrid_USES = $(libmsg_SRCS) $(libfmsg_SRCS)

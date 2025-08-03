@@ -1,0 +1,547 @@
+! Module  : utest_indexer_m
+! Purpose : Test implementations for utest_indexer
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module utest_indexer_m
+
+  ! Uses
+
+  use forum_m
+
+  use stat_m
+  use indexer_m
+
+  use ISO_FORTRAN_ENV
+
+  ! No implicit typing
+
+  implicit none (type, external)
+
+  ! Access specifiers
+
+  private
+
+  public :: test
+
+contains
+
+   subroutine test()
+
+      call test_attr_()
+      call test_remove_subset_()
+      call test_remove_orphans_()
+      call test_remove_space_()
+      call test_remove_degen_()
+
+   end subroutine test
+
+   !****
+
+   subroutine test_attr_()
+
+      type(indexer_t) :: indexer
+      integer         :: rank
+      integer         :: rank_chk
+      integer         :: shape(2)
+      integer         :: shape_chk(2)
+      integer         :: n_vert
+      integer         :: n_vert_chk
+      integer         :: n_vert_seq
+      integer         :: n_vert_seq_chk
+      integer         :: n_cell
+      integer         :: n_cell_chk
+      integer         :: n_cell_seq
+      integer         :: n_cell_seq_chk
+
+      print *, '  attributes'
+
+      call attr_arrange_()
+      call attr_act_()
+      call attr_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine attr_arrange_()
+
+         indexer = indexer_t([4, 4], [15, 10, 11, 6, 7, 8])
+
+         rank_chk = 2
+         shape_chk = [4, 4]
+         n_vert_chk = 16
+         n_vert_seq_chk = 6
+         n_cell_chk = 9
+         n_cell_seq_chk = 1
+
+         ! Finish
+
+         return
+
+      end subroutine attr_arrange_
+
+      !****
+
+      subroutine attr_act_()
+
+         call indexer%get_rank(rank)
+         call indexer%get_shape(shape)
+         call indexer%get_n_vert(n_vert)
+         call indexer%get_n_vert_seq(n_vert_seq)
+         call indexer%get_n_cell(n_cell)
+         call indexer%get_n_cell_seq(n_cell_seq)
+
+         ! Finish
+
+         return
+
+      end subroutine attr_act_
+
+      !****
+
+      subroutine attr_assert_()
+
+         if (rank == rank_chk) then
+            print *,'    PASS rank'
+         else
+            print *,'    FAIL rank:', rank, '/=', rank_chk
+         end if
+
+         if (ALL(shape == shape_chk)) then
+            print *,'    PASS shape'
+         else
+            print *,'    FAIL shape:', shape, '/=', shape_chk
+         end if
+
+         if (n_vert == n_vert_chk) then
+            print *,'    PASS n_vert'
+         else
+            print *,'    FAIL n_vert:', n_vert, '/=', n_vert_chk
+         end if
+         if (n_vert_seq == n_vert_seq_chk) then
+            print *,'    PASS n_vert_seq'
+         else
+            print *,'    FAIL n_vert_seq:', n_vert_seq, '/=', n_vert_seq_chk
+         end if
+
+         if (n_cell == n_cell_chk) then
+            print *,'    PASS n_cell'
+         else
+            print *,'    FAIL n_cell:', n_cell, '/=', n_cell_chk
+         end if
+         if (n_cell_seq == n_cell_seq_chk) then
+            print *,'    PASS n_cell_seq'
+         else
+            print *,'    FAIL n_cell_seq:', n_cell_seq, '/=', n_cell_seq_chk
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine attr_assert_
+
+   end subroutine test_attr_
+
+   !****
+
+   subroutine test_remove_subset_()
+
+      type(indexer_t) :: indexer
+      integer         :: rank
+      integer         :: v_lin_seq(4)
+      integer         :: v_lin_seq_chk(4)
+      integer         :: c_lin_seq(1)
+      integer         :: c_lin_seq_chk(1)
+      logical         :: vert_mask(9)
+      logical         :: vert_mask_chk(9)
+
+      print *, '  remove_subset'
+
+      call remove_subset_arrange_()
+      call remove_subset_act_()
+      call remove_subset_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine remove_subset_arrange_()
+
+         indexer = indexer_t([3, 3], [4, 5, 6, 1, 2, 3, 7, 8, 9])
+
+         v_lin_seq_chk = [4, 5, 7, 8]
+         c_lin_seq_chk = [3]
+
+         vert_mask_chk = [ &
+            .TRUE., .TRUE., .FALSE., &
+            .FALSE., .FALSE., .FALSE., &
+            .TRUE., .TRUE., .FALSE.]
+
+         ! Finish
+
+         return
+
+      end subroutine remove_subset_arrange_
+
+      !****
+
+      subroutine remove_subset_act_()
+
+         integer :: n_vert_seq
+         integer :: n_cell_seq
+         integer :: v_seq
+         integer :: c_seq
+
+         call remove_subset(indexer, [1, 2], [2, 3], vert_mask)
+
+         call indexer%get_n_vert_seq(n_vert_seq)
+         call indexer%get_n_cell_seq(n_cell_seq)
+
+         do v_seq = 1, n_vert_seq
+            v_lin_seq(v_seq) = indexer%vert_linear(v_seq)
+         end do
+
+         do c_seq = 1, n_cell_seq
+            c_lin_seq(c_seq) = indexer%cell_linear(c_seq)
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine remove_subset_act_
+
+      !****
+
+      subroutine remove_subset_assert_()
+
+         if (ALL(v_lin_seq == v_lin_seq_chk)) then
+            print *,'    PASS v_lin_seq'
+         else
+            print *,'    FAIL v_lin_seq:', v_lin_seq, '/=', v_lin_seq_chk
+         end if
+
+         if (ALL(c_lin_seq == c_lin_seq_chk)) then
+            print *,'    PASS c_lin_seq'
+         else
+            print *,'    FAIL c_lin_seq:', c_lin_seq, '/=', c_lin_seq_chk
+         end if
+
+         if (ALL(vert_mask .EQV. vert_mask_chk)) then
+            print *,'    PASS subset_mask'
+         else
+            print *,'    FAIL subset_mask:', vert_mask, '/=', vert_mask_chk
+         end if
+         ! Finish
+
+         return
+
+      end subroutine remove_subset_assert_
+
+   end subroutine test_remove_subset_
+
+   !****
+
+   subroutine test_remove_orphans_()
+
+      type(indexer_t) :: indexer
+      integer         :: rank
+      integer         :: v_lin_seq(4)
+      integer         :: v_lin_seq_chk(4)
+      integer         :: c_lin_seq(1)
+      integer         :: c_lin_seq_chk(1)
+      logical         :: vert_mask(6)
+      logical         :: vert_mask_chk(6)
+
+      print *, '  remove_orphans'
+
+      call remove_orphans_arrange_()
+      call remove_orphans_act_()
+      call remove_orphans_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine remove_orphans_arrange_()
+
+         indexer = indexer_t([4, 4], [15, 10, 11, 6, 7, 8])
+
+         v_lin_seq_chk = [10, 11, 6, 7]
+         c_lin_seq_chk = [5]
+
+         vert_mask_chk = [.FALSE., .TRUE., .TRUE., .TRUE., .TRUE., .FALSE.]
+
+         ! Finish
+
+         return
+
+      end subroutine remove_orphans_arrange_
+
+      !****
+
+      subroutine remove_orphans_act_()
+
+         integer :: n_vert_seq
+         integer :: n_cell_seq
+         integer :: v_seq
+         integer :: c_seq
+
+         call remove_orphans(indexer, vert_mask)
+
+         call indexer%get_n_vert_seq(n_vert_seq)
+         call indexer%get_n_cell_seq(n_cell_seq)
+
+         do v_seq = 1, n_vert_seq
+            v_lin_seq(v_seq) = indexer%vert_linear(v_seq)
+         end do
+
+         do c_seq = 1, n_cell_seq
+            c_lin_seq(c_seq) = indexer%cell_linear(c_seq)
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine remove_orphans_act_
+
+      !****
+
+      subroutine remove_orphans_assert_()
+
+         if (ALL(v_lin_seq == v_lin_seq_chk)) then
+            print *,'    PASS v_lin_seq'
+         else
+            print *,'    FAIL v_lin_seq:', v_lin_seq, '/=', v_lin_seq_chk
+         end if
+
+         if (ALL(c_lin_seq == c_lin_seq_chk)) then
+            print *,'    PASS c_lin_seq'
+         else
+            print *,'    FAIL c_lin_seq:', c_lin_seq, '/=', c_lin_seq_chk
+         end if
+
+         if (ALL(vert_mask .EQV. vert_mask_chk)) then
+            print *,'    PASS vert_mask'
+         else
+            print *,'    FAIL vert_mask:', vert_mask, '/=', vert_mask_chk
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine remove_orphans_assert_
+
+   end subroutine test_remove_orphans_
+
+   !****
+
+   subroutine test_remove_space_()
+
+      type(indexer_t) :: indexer
+      integer         :: rank
+      integer         :: v_lin_seq(4)
+      integer         :: v_lin_seq_chk(4)
+      integer         :: c_lin_seq(1)
+      integer         :: c_lin_seq_chk(1)
+
+      print *, '  remove_space'
+
+      call remove_space_arrange_()
+      call remove_space_act_()
+      call remove_space_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine remove_space_arrange_()
+
+         indexer = indexer_t([4, 4], [10, 11, 6, 7])
+
+         v_lin_seq_chk = [3, 4, 1, 2]
+         c_lin_seq_chk = [1]
+
+         ! Finish
+
+         return
+
+      end subroutine remove_space_arrange_
+
+      !****
+
+      subroutine remove_space_act_()
+
+         integer :: n_vert_seq
+         integer :: n_cell_seq
+         integer :: v_seq
+         integer :: c_seq
+
+         call remove_space(indexer)
+
+         call indexer%get_n_vert_seq(n_vert_seq)
+         call indexer%get_n_cell_seq(n_cell_seq)
+
+         do v_seq = 1, n_vert_seq
+            v_lin_seq(v_seq) = indexer%vert_linear(v_seq)
+         end do
+
+         do c_seq = 1, n_cell_seq
+            c_lin_seq(c_seq) = indexer%cell_linear(c_seq)
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine remove_space_act_
+
+      !****
+
+      subroutine remove_space_assert_()
+
+         if (ALL(v_lin_seq == v_lin_seq_chk)) then
+            print *,'    PASS v_lin_seq'
+         else
+            print *,'    FAIL v_lin_seq:', v_lin_seq, '/=', v_lin_seq_chk
+         end if
+
+         if (ALL(c_lin_seq == c_lin_seq_chk)) then
+            print *,'    PASS c_lin_seq'
+         else
+            print *,'    FAIL c_lin_seq:', c_lin_seq, '/=', c_lin_seq_chk
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine remove_space_assert_
+
+   end subroutine test_remove_space_
+
+   !****
+
+   subroutine test_remove_degen_()
+
+      type(indexer_t) :: indexer
+      integer         :: rank
+      integer         :: v_lin_seq(4)
+      integer         :: v_lin_seq_chk(4)
+      integer         :: c_lin_seq(3)
+      integer         :: c_lin_seq_chk(3)
+      logical         :: dim_mask(2)
+      logical         :: dim_mask_chk(2)
+
+      print *, '  remove_degen'
+
+      call remove_degen_arrange_()
+      call remove_degen_act_()
+      call remove_degen_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine remove_degen_arrange_()
+
+         indexer = indexer_t([1, 4], [4, 3, 2, 1])
+
+         v_lin_seq_chk = [4, 3, 2, 1]
+         c_lin_seq_chk = [1, 2, 3]
+
+         dim_mask_chk = [.FALSE., .TRUE.]
+
+         ! Finish
+
+         return
+
+      end subroutine remove_degen_arrange_
+
+      !****
+
+      subroutine remove_degen_act_()
+
+         integer :: n_vert_seq
+         integer :: n_cell_seq
+         integer :: v_seq
+         integer :: c_seq
+
+         call remove_degen(indexer, dim_mask)
+
+         call indexer%get_n_vert_seq(n_vert_seq)
+         call indexer%get_n_cell_seq(n_cell_seq)
+
+         do v_seq = 1, n_vert_seq
+            v_lin_seq(v_seq) = indexer%vert_linear(v_seq)
+         end do
+
+         do c_seq = 1, n_cell_seq
+            c_lin_seq(c_seq) = indexer%cell_linear(c_seq)
+         end do
+
+         ! Finish
+
+         return
+
+      end subroutine remove_degen_act_
+
+      !****
+
+      subroutine remove_degen_assert_()
+
+         if (ALL(v_lin_seq == v_lin_seq_chk)) then
+            print *,'    PASS v_lin_seq'
+         else
+            print *,'    FAIL v_lin_seq:', v_lin_seq, '/=', v_lin_seq_chk
+         end if
+
+         if (ALL(c_lin_seq == c_lin_seq_chk)) then
+            print *,'    PASS c_lin_seq'
+         else
+            print *,'    FAIL c_lin_seq:', c_lin_seq, '/=', c_lin_seq_chk
+         end if
+
+         if (ALL(dim_mask .EQV. dim_mask_chk)) then
+            print *,'    PASS dim_mask'
+         else
+            print *,'    FAIL dim_mask:', dim_mask, '/=', dim_mask_chk
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine remove_degen_assert_
+
+   end subroutine test_remove_degen_
+
+end module utest_indexer_m

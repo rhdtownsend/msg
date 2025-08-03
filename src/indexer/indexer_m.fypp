@@ -89,6 +89,17 @@ module indexer_m
          type(indexer_t)     :: indexer
       end function indexer_t_map_
 
+      module subroutine set_vert_maps_(indexer, v_lin_seq)
+         implicit none (type, external)
+         type(indexer_t), intent(inout) :: indexer
+         integer, intent(in)            :: v_lin_seq(:)
+      end subroutine set_vert_maps_
+
+      module subroutine set_cell_maps_(indexer)
+         implicit none (type, external)
+         type(indexer_t), intent(inout) :: indexer
+      end subroutine set_cell_maps_
+
    end interface
 
    ! In indexer_attribs_sm
@@ -203,11 +214,46 @@ module indexer_m
 
    end interface
 
+   ! In indexer_operate_sm
+
+   interface
+
+      module subroutine remove_subset(indexer, i_min, i_max, vert_mask)
+         implicit none (type, external)
+         type(indexer_t), intent(inout) :: indexer
+         integer, intent(in)            :: i_min(:)
+         integer, intent(in)            :: i_max(:)
+         logical, intent(out), optional :: vert_mask(:)
+      end subroutine remove_subset
+
+      module subroutine remove_orphans(indexer, vert_mask)
+         implicit none (type, external)
+         type(indexer_t), intent(inout) :: indexer
+         logical, intent(out), optional :: vert_mask(:)
+      end subroutine remove_orphans
+
+      module subroutine remove_space(indexer)
+         implicit none (type, external)
+         type(indexer_t), intent(inout) :: indexer
+      end subroutine remove_space
+
+      module subroutine remove_degen(indexer, dim_mask)
+         implicit none (type, external)
+         type(indexer_t), intent(inout) :: indexer
+         logical, intent(out), optional :: dim_mask(:)
+      end subroutine remove_degen
+
+   end interface
+
    ! Access specifiers
 
    private
 
-   public :: indexer_t
    public :: NULL_NODE
+   public :: indexer_t
+   public :: remove_subset
+   public :: remove_orphans
+   public :: remove_space
+   public :: remove_degen
 
 end module indexer_m
