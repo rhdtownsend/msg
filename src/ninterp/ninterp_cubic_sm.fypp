@@ -347,7 +347,7 @@ contains
 
       n_vert_max = MAXVAL(n_vert)
 
-      @:ASSERT_DEBUG(n_vert_max >= 4, 'maximal number of vertices is too small')
+      @:ASSERT_DEBUG(n_vert_max >= 2**rank, 'maximal number of vertices is too small')
 
       edge_masks = .TRUE.
 
