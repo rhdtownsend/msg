@@ -51,8 +51,9 @@ module vgrid_m
       procedure, public :: get_shape
       procedure, public :: get_axis
       procedure, public :: get_n_vert_seq
-!      procedure, public :: subset_mask
       procedure, public :: subset
+      procedure, public :: remove_verts
+      procedure, public :: find_orphans
       procedure         :: interp_0_
       procedure         :: interp_1_
       generic, public   :: interp => interp_0_, interp_1_
@@ -96,6 +97,11 @@ module vgrid_m
          type(vgrid_t)            :: vgrid
       end function vgrid_t_map_
 
+      module subroutine setup_cache_(vgrid)
+         implicit none (type, external)
+         type(vgrid_t), intent(inout) :: vgrid
+      end subroutine setup_cache_
+
    end interface
 
    ! In vgrid_attribs_sm
@@ -133,33 +139,26 @@ module vgrid_m
 
    interface
 
-      module subroutine subset(self, subset_mask, vgrid)
+      module subroutine subset(self, x_min, x_max, vert_mask, dim_mask)
          implicit none (type, external)
-         class(vgrid_t), intent(in)               :: self
-         logical, intent(in)                      :: subset_mask(:)
-         class(vgrid_t), intent(out), allocatable :: vgrid
+         class(vgrid_t), intent(inout)  :: self
+         real(RD), intent(in)           :: x_min(:)
+         real(RD), intent(in)           :: x_max(:)
+         logical, intent(out), optional :: vert_mask(:)
+         logical, intent(out), optional :: dim_mask(:)
       end subroutine subset
 
-   end interface
+      module subroutine remove_verts(self, vert_mask)
+         implicit none (type, external)
+         class(vgrid_t), intent(inout)  :: self
+         logical, intent(in)            :: vert_mask(:)
+      end subroutine remove_verts
 
-   ! In vgrid_mask_sm
-
-   interface
-
-      ! module function subset_mask(self, x_min, x_max) result(subset_mask)
-      !    implicit none (type, external)
-      !    class(vgrid_t), intent(in) :: self
-      !    real(RD), intent(in)       :: x_min(:)
-      !    real(RD), intent(in)       :: x_max(:)
-      !    logical                    :: subset_mask(self%n_vert_seq)
-      ! end function subset_mask
-
-      ! module subroutine generate_reduction_masks(indexer, axis_mask, vert_seq_mask)
-      !    implicit none (type, external)
-      !    type(indexer_t), intent(in)       :: indexer
-      !    logical, allocatable, intent(out) :: axis_mask(:)
-      !    logical, allocatable, intent(out) :: vert_seq_mask(:)
-      ! end subroutine generate_reduction_masks
+      module subroutine find_orphans(self, vert_mask)
+         implicit none (type, external)
+         class(vgrid_t), intent(in) :: self
+         logical, intent(out)       :: vert_mask(:)
+      end subroutine find_orphans
 
    end interface
 
@@ -281,6 +280,5 @@ module vgrid_m
    private
 
    public :: vgrid_t
-!   public :: generate_reduction_masks
 
 end module vgrid_m

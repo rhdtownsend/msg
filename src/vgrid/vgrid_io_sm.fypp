@@ -197,9 +197,9 @@ contains
       integer        :: r
       type(hdf5io_t) :: hdf5io_axis
 
-      integer              :: v_seq
       integer              :: n_vert_seq
       integer, allocatable :: v_lin_seq(:)
+      integer              :: v_seq
 
       ! Write the vgrid
 
@@ -219,6 +219,8 @@ contains
       end do axis_loop
 
       call self%get_n_vert_seq(n_vert_seq)
+
+      allocate(v_lin_seq(n_vert_seq))
 
       do v_seq = 1, n_vert_seq
          v_lin_seq(v_seq) = self%indexer%vert_linear(v_seq)

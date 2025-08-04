@@ -207,79 +207,103 @@ contains
 
    !****
 
-   subroutine setup_cache_(vgrid)
+   module procedure setup_cache_
 
-      type(vgrid_t), intent(inout) :: vgrid
-
-      integer  :: n_vert_seq
-      integer  :: v_seq
-      integer  :: v_lin
-      integer  :: v_vec(vgrid%rank)
-      integer  :: v_vec_i(vgrid%rank)
-      integer  :: i
-      logical  :: vert_mask(3**vgrid%rank)
-      integer  :: r
-      integer  :: j
-      real(RD) :: x(3)
-      real(RD) :: edge_deltas(2,vgrid%rank)
+      integer              :: n_vert_seq
+      logical, allocatable :: orphan_mask(:)
+      logical              :: warned
+      integer              :: v_seq
+      integer              :: v_lin
+      integer              :: v_vec(vgrid%rank)
+      integer              :: v_vec_i(vgrid%rank)
+      integer              :: i
+      logical              :: vert_mask(3**vgrid%rank)
+      integer              :: r
+      integer              :: j
+      real(RD)             :: x(3)
+      real(RD)             :: edge_deltas(2,vgrid%rank)
 
       ! For each sequential vertex, cache data to be used later by
       ! data_kernel_cubic_cached
 
+      ! Find orphan vertices, so as to avoid caching them. At some
+      ! point in the future, when a strict prohibition on orphanless
+      ! grids is enacted, this shouldn't be necessary
+
       call vgrid%indexer%get_n_vert_seq(n_vert_seq)
+
+      allocate(orphan_mask(n_vert_seq))
+      call vgrid%indexer%find_orphans(orphan_mask)
+
+      ! Loop over sequential vertices, caching data
 
       allocate(vgrid%vert_cache(3*vgrid%rank*2, n_vert_seq))
 
+      warned = .FALSE.
+
       do v_seq = 1, n_vert_seq
 
-         v_lin = vgrid%indexer%vert_linear(v_seq)
-         v_vec = vgrid%indexer%vert_vector(v_lin)
+         if (.NOT. orphan_mask(v_seq)) then
 
-         ! Set up the vert_mask
+            v_lin = vgrid%indexer%vert_linear(v_seq)
+            v_vec = vgrid%indexer%vert_vector(v_lin)
 
-         do i = 1, 3**vgrid%rank
+            ! Set up the vert_mask
 
-            v_vec_i = v_vec - 1 + vgrid%indexer%offset_vector(i, 3)
+            do i = 1, 3**vgrid%rank
 
-            if (ALL(v_vec_i >= 1 .AND. v_vec_i <= vgrid%shape)) then
+               v_vec_i = v_vec - 1 + vgrid%indexer%offset_vector(i, 3)
 
-               v_lin = vgrid%indexer%vert_linear(v_vec_i)
+               if (ALL(v_vec_i >= 1 .AND. v_vec_i <= vgrid%shape)) then
 
-               vert_mask(i) = vgrid%indexer%vert_sequence(v_lin) /= NULL_NODE
+                  v_lin = vgrid%indexer%vert_linear(v_vec_i)
 
-            else
+                  vert_mask(i) = vgrid%indexer%vert_sequence(v_lin) /= NULL_NODE
 
-               vert_mask(i) = .FALSE.
-
-            end if
-
-         end do
-
-         ! Set up edge_deltas
-
-         do r = 1, vgrid%rank
-
-            do j = 1, 3
-
-               i = v_vec(r) + j - 2
-
-               if (i < 1) then
-                  x(j) = -HUGE(0._RD)
-               elseif (i > vgrid%shape(r)) then
-                  x(j) = HUGE(0._RD)
                else
-                  call vgrid%axes(r)%fetch(i, x(j))
-               endif
+
+                  vert_mask(i) = .FALSE.
+
+               end if
 
             end do
 
-            edge_deltas(:,r) = x(2:3) - x(1:2)
+            ! Set up edge_deltas
 
-         end do
+            do r = 1, vgrid%rank
 
-         ! Cache the data
+               do j = 1, 3
 
-         vgrid%vert_cache(:,v_seq) = vertex_cache_cubic(vgrid%rank, vert_mask, edge_deltas)
+                  i = v_vec(r) + j - 2
+
+                  if (i < 1) then
+                     x(j) = -HUGE(0._RD)
+                  elseif (i > vgrid%shape(r)) then
+                     x(j) = HUGE(0._RD)
+                  else
+                     call vgrid%axes(r)%fetch(i, x(j))
+                  endif
+
+               end do
+
+               edge_deltas(:,r) = x(2:3) - x(1:2)
+
+            end do
+
+            ! Cache the data
+
+            vgrid%vert_cache(:,v_seq) = vertex_cache_cubic(vgrid%rank, vert_mask, edge_deltas)
+
+         else
+
+            vgrid%vert_cache(:,v_seq) = 0._RD
+
+            if (.NOT. warned) then
+               write(OUTPUT_UNIT, *) 'vgrid has orphan vertices'
+               warned = .TRUE.
+            end if
+
+         end if
 
       end do
 
@@ -287,6 +311,6 @@ contains
 
       return
 
-   end subroutine setup_cache_
+   end procedure setup_cache_
 
 end submodule vgrid_construct_sm

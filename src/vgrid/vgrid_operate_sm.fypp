@@ -29,63 +29,103 @@ contains
 
    module procedure subset
 
-      integer               :: n_vert_seq
-      real(RD), allocatable :: x_vecs(:,:)
-      integer               :: n_vert_seq
-      integer               :: v_seq
-      integer               :: v_lin
-      integer               :: v_vec(self%rank)
-      integer               :: r
-      character(LABEL_LEN)  :: labels(self%rank)
+      integer  :: i_min(self%rank)
+      integer  :: i_max(self%rank)
+      integer  :: r
+      integer  :: i
+      real(RD) :: x
+      logical  :: dim_mask_(self%rank)
 
-      ! Subset the vgrid to contain only the sequential vertices
-      ! selected by subset_mask
+      @:CHECK_BOUNDS(SIZE(x_min), self%rank)
+      @:CHECK_BOUNDS(SIZE(x_max), self%rank)
 
-      ! Determine the selected vertex coordinates
+      if (PRESENT(dim_mask)) then
+         @:CHECK_BOUNDS(SIZE(dim_mask), self%rank)
+      end if
 
-      call vgrid%indexer%get_n_vert_seq(n_vert_seq)
+      ! Subset the vgrid by retaining only those vertices with
+      ! coordinates in the range defined by x_min and x_max (i.e.,
+      ! x_min <= x_vec <= x_max along each dimension). This
+      ! potentially changes the rank, by removing degenerate
+      ! dimensions
+      !
+      ! If vert_mask is present, it records which sequential vertices
+      ! were retained. Likewise, if dim_mask is present, it records which
+      ! dimensions were retained
 
-      @:CHECK_BOUNDS(SIZE(subset_mask), n_vert_seq)
+      ! Determine the index range from the coordinate range
 
-      allocate(x_vecs(self%rank,n_vert_seq))
+      @:ASSERT_DEBUG(ALL(x_max >= x_min), 'invalid subset')
 
-      n_vert_seq = 0
-
-      do v_seq = 1, n_vert_seq
-
-         if (subset_mask(v_seq)) then
-
-            v_lin = self%indexer%vert_linear(v_seq)
-            v_vec = self%indexer%vert_vector(v_lin)
-
-            n_vert_seq = n_vert_seq + 1
-
-            do r = 1, self%rank
-               call self%axes(r)%fetch(v_vec(r), x_vecs(r,n_vert_seq))
-            end do
-
-         end if
-
-      end do
-
-      x_vecs = x_vecs(:,:n_vert_seq)
-
-      ! Reduce
-
-      ! Extract axis labels
+      i_min = HUGE(0)
+      i_max = -HUGE(0)
 
       do r = 1, self%rank
-         call self%axes(r)%get_label(labels(r))
+
+         do i = 1, self%shape(r)
+
+            call self%axes(r)%fetch(i, x)
+
+            if (x >= x_min(r)) i_min(r) = MIN(i_min(r), i)
+            if (x <= x_max(r)) i_max(r) = MAX(i_max(r), i)
+
+         end do
+
       end do
 
-      ! Create the vgrid
+      ! Subset the indexer
 
-      vgrid = vgrid_t_coords_(x_vecs, labels)
+      call self%indexer%subset(i_min, i_max, vert_mask, dim_mask_)
+
+      ! Update the rank, shape and axes
+
+      self%rank = COUNT(dim_mask_)
+      self%shape = PACK(i_max-i_min+1, MASK=dim_mask_)
+
+      self%axes = PACK(self%axes, MASK=dim_mask_)
+
+      call self%axes%subset(PACK(i_min, MASK=dim_mask_), PACK(i_max, MASK=dim_mask_))
+
+      ! Update the cache
+
+      deallocate(self%vert_cache)
+
+      call setup_cache_(self)
+
+      ! If necessary, return dim_mask
+
+      if (PRESENT(dim_mask)) dim_mask = dim_mask_
 
       ! Finish
 
       return
 
    end procedure subset
+
+   !****
+
+   module procedure remove_verts
+
+      ! Remove sequential vertices from the vgrid, as selected by
+      ! vert_mask
+
+      call self%indexer%remove_verts(vert_mask)
+
+      ! Finish
+
+      return
+
+   end procedure remove_verts
+
+   !****
+
+   module procedure find_orphans
+
+      ! Find orphaned vertices in the indexer (i.e., ones that aren't
+      ! a corner of any cell), returning them in vert_mask
+
+      call self%indexer%find_orphans(vert_mask)
+
+   end procedure find_orphans
 
 end submodule vgrid_operate_sm
