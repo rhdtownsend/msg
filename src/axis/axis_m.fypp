@@ -49,6 +49,7 @@ module axis_m
       procedure, public :: get_x_min
       procedure, public :: get_x_max
       procedure, public :: get_label
+      procedure, public :: subset
       procedure, public :: fetch
       procedure, public :: locate
       procedure, public :: locate_u
@@ -102,6 +103,19 @@ module axis_m
          class(axis_t), intent(in)         :: self
          character(LABEL_LEN), intent(out) :: label
       end subroutine get_label
+
+   end interface
+
+   ! In axis_operate_sm
+
+   interface
+
+      module impure elemental subroutine subset(self, i_min, i_max)
+         implicit none (type, external)
+         class(axis_t), intent(inout) :: self
+         integer, intent(in)          :: i_min
+         integer, intent(in)          :: i_max
+      end subroutine subset
 
    end interface
 

@@ -29,6 +29,8 @@ contains
 
    module procedure axis_t_data_
 
+      @:ASSERT_DEBUG(SIZE(x) >= 2, 'axis too short')
+
       ! Construct the axis from the supplied data
 
       axis%x = x
