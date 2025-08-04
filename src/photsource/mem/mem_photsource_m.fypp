@@ -42,6 +42,7 @@ module mem_photsource_m
    contains
       private
       procedure, public :: get_n
+      procedure, public :: subset
       procedure, public :: fetch
    end type mem_photsource_t
 
@@ -72,6 +73,18 @@ module mem_photsource_m
          class(mem_photsource_t), intent(in) :: self
          integer, intent(out)                :: n
       end subroutine get_n
+
+   end interface
+
+   ! In mem_photsource_operate_sm
+
+   interface
+
+      module subroutine subset(self, mask)
+         implicit none (type, external)
+         class(mem_photsource_t), intent(inout) :: self
+         logical, intent(in)                    :: mask(:)
+      end subroutine subset
 
    end interface
 

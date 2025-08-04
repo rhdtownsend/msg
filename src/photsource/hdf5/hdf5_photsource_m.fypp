@@ -45,6 +45,7 @@ module hdf5_photsource_m
    contains
       private
       procedure, public :: get_n
+      procedure, public :: subset
       procedure, public :: fetch
    end type hdf5_photsource_t
 
@@ -76,6 +77,18 @@ module hdf5_photsource_m
          class(hdf5_photsource_t), intent(in) :: self
          integer, intent(out)                 :: n
       end subroutine get_n
+
+   end interface
+
+   ! In hdf5_photsource_operate_sm
+
+   interface
+
+      module subroutine subset(self, mask)
+         implicit none (type, external)
+         class(hdf5_photsource_t), intent(inout) :: self
+         logical, intent(in)                     :: mask(:)
+      end subroutine subset
 
    end interface
 

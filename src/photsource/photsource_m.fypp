@@ -29,8 +29,9 @@ module photsource_m
    type, abstract :: photsource_t
    contains
       private
-      procedure(get_n), deferred, public :: get_n
-      procedure(fetch), deferred, public :: fetch
+      procedure(get_n), deferred, public  :: get_n
+      procedure(subset), deferred, public :: subset
+      procedure(fetch), deferred, public  :: fetch
    end type photsource_t
 
    ! Interfaces
@@ -43,6 +44,13 @@ module photsource_m
          class(photsource_t), intent(in) :: self
          integer, intent(out)            :: n
       end subroutine get_n
+
+      subroutine subset(self, mask)
+         import photsource_t
+         implicit none (type, external)
+         class(photsource_t), intent(inout) :: self
+         logical, intent(in)                :: mask(:)
+      end subroutine subset
 
       subroutine fetch(self, i, photint, stat)
          use photint_m

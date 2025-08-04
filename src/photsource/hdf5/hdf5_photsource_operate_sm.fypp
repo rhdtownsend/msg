@@ -1,0 +1,46 @@
+! Submodule : hdf5_photsource_operate_sm
+! Purpose   : Operation routines for hdf5_photsource_t
+!
+! Copyright 2021-2022 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (hdf5_photsource_m) hdf5_photsource_operate_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure subset
+
+      @:CHECK_BOUNDS(SIZE(mask), self%n)
+
+      ! Subset the photsource to contain only the entries selected by
+      ! mask
+
+      self%file_names = PACK(self%file_names, MASK=mask)
+      self%group_names = PACK(self%group_names, MASK=mask)
+
+      self%n = COUNT(mask)
+
+      ! Finish
+
+   end procedure subset
+
+end submodule hdf5_photsource_operate_sm
