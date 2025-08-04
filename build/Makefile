@@ -28,9 +28,9 @@ ifeq ($(TOOLS),yes)
   BIN_TARGETS += ascii_to_specint synspec_to_specint ferre_to_specint	\
                  c3k_to_specint specint_to_specint			\
                  specgrid_to_photgrid specint_to_specgrid		\
-#                 make_bb_photgrid make_passband make_photon_passband	\
                  make_passband make_photon_passband	\
-                 inspect_grid subset_specgrid
+                 inspect_grid subset_specgrid subset_photgrid # make_bb_photgrid
+
   ifneq ($(FITS_LDFLAGS),)
     BIN_TARGETS += goettingen_to_specint coelho_to_specint
   endif
@@ -43,7 +43,7 @@ endif
 # xxx_LIBS = library files required to link xxx
 
 axis_SRCS = axis_m.fypp axis_construct_sm.fypp axis_attribs_sm.fypp \
-            axis_locate_sm.fypp axis_io_sm.fypp
+            axis_operate_sm.fypp axis_locate_sm.fypp axis_io_sm.fypp
 
 ninterp_SRCS = ninterp_m.fypp ninterp_linear_sm.fypp ninterp_cubic_sm.fypp \
                basis_m.fypp
@@ -51,7 +51,7 @@ ninterp_SRCS = ninterp_m.fypp ninterp_linear_sm.fypp ninterp_cubic_sm.fypp \
 indexer_SRCS = indexer_m.fypp indexer_construct_sm.fypp indexer_attribs_sm.fypp \
                indexer_index_sm.fypp indexer_operate_sm.fypp
 
-vgrid_SRCS = vgrid_m.fypp vgrid_construct_sm.fypp vgrid_mask_sm.fypp \
+vgrid_SRCS = vgrid_m.fypp vgrid_construct_sm.fypp \
              vgrid_attribs_sm.fypp vgrid_operate_sm.fypp vgrid_io_sm.fypp \
              vgrid_interp_sm.fypp vgrid_interp_linear_sm.fypp vgrid_interp_cubic_sm.fypp
 
@@ -59,18 +59,18 @@ photcache_SRCS = photcache_m.fypp photcache_construct_sm.fypp photcache_attribs_
                  photcache_access_sm.fypp
 
 photgrid_SRCS = photgrid_m.fypp photgrid_construct_sm.fypp photgrid_attribs_sm.fypp \
-                photgrid_interp_sm.fypp photgrid_io_sm.fypp
+                photgrid_operate_sm.fypp photgrid_interp_sm.fypp photgrid_io_sm.fypp
 
 photint_SRCS = photint_m.fypp photint_sm.fypp \
                limb_photint_m.fypp limb_photint_construct_sm.fypp limb_photint_attribs_sm.fypp \
                limb_photint_interp_sm.fypp limb_photint_io_sm.fypp
 
 photsource_SRCS = photsource_m.fypp \
-                  hdf5_photsource_m.fypp hdf5_photsource_construct_sm.fypp \
+                  hdf5_photsource_m.fypp hdf5_photsource_construct_sm.fypp hdf5_photsource_operate_sm.fypp \
                   hdf5_photsource_attribs_sm.fypp hdf5_photsource_access_sm.fypp \
-                  mem_photsource_m.fypp mem_photsource_construct_sm.fypp \
+                  mem_photsource_m.fypp mem_photsource_construct_sm.fypp mem_photsource_operate_sm.fypp \
                   mem_photsource_attribs_sm.fypp mem_photsource_access_sm.fypp \
-                  spec_photsource_m.fypp spec_photsource_construct_sm.fypp \
+                  spec_photsource_m.fypp spec_photsource_construct_sm.fypp spec_photsource_operate_sm.fypp \
                   spec_photsource_attribs_sm.fypp spec_photsource_access_sm.fypp
 
 speccache_SRCS = speccache_m.fypp speccache_construct_sm.fypp speccache_attribs_sm.fypp \
@@ -186,6 +186,10 @@ inspect_grid_LIBS = libmsg
 subset_specgrid_SRCS = subset_specgrid.fypp
 subset_specgrid_USES = $(libmsg_SRCS)
 subset_specgrid_LIBS = libmsg
+
+subset_photgrid_SRCS = subset_photgrid.fypp
+subset_photgrid_USES = $(libmsg_SRCS)
+subset_photgrid_LIBS = libmsg
 
 utest_file_SRCS = utest_file.fypp utest_file_m.fypp
 utest_file_USES = $(libmsg_SRCS)
