@@ -101,11 +101,10 @@ module hdf5_specsource_m
 
    interface
 
-      module subroutine subset(self, mask, specsource)
+      module subroutine subset(self, mask)
          implicit none (type, external)
-         class(hdf5_specsource_t), intent(in)          :: self
-         logical, intent(in)                           :: mask(:)
-         class(specsource_t), allocatable, intent(out) :: specsource
+         class(hdf5_specsource_t), intent(inout) :: self
+         logical, intent(in)                     :: mask(:)
       end subroutine subset
 
    end interface
