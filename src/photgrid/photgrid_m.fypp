@@ -50,7 +50,7 @@ module photgrid_m
       procedure, public :: get_cache_limit
       procedure, public :: get_cache_usage
       procedure, public :: set_cache_limit
-      procedure, public :: flush_cache
+      procedure, public :: subset
       procedure, public :: interp_intensity
       procedure, public :: interp_E_moment
       procedure, public :: interp_D_moment
@@ -59,6 +59,7 @@ module photgrid_m
       procedure, public :: adjust_x_vec
       procedure, public :: read
       procedure, public :: write
+      procedure, public :: flush_cache
    end type photgrid_t
 
    ! Interfaces
@@ -121,6 +122,19 @@ module photgrid_m
          integer, intent(in)              :: cache_limit
          integer, intent(out), optional   :: stat
       end subroutine set_cache_limit
+
+   end interface
+
+   ! In photrid_operate_sm
+
+   interface
+
+      module subroutine subset(self, x_min, x_max)
+         implicit none (type, external)
+         class(photgrid_t), intent(inout) :: self
+         real(RD), intent(in)             :: x_min(:)
+         real(RD), intent(in)             :: x_max(:)
+      end subroutine subset
 
    end interface
 
