@@ -1,0 +1,119 @@
+! Module   : subset_specgrid
+! Purpose  : Subset a specgrid
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program subset_specgrid
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Variables
+
+   character(:), allocatable  :: input_file_name
+   character(:), allocatable  :: output_file_name
+
+   type(hdf5io_t)            :: hdf5io
+   type(specgrid_t)          :: specgrid
+   integer                   :: rank
+   real(RD), allocatable     :: x_min(:)
+   real(RD), allocatable     :: x_max(:)
+   real(RD)                  :: lam_min
+   real(RD)                  :: lam_max
+   integer                   :: r
+   type(axis_t)              :: axis
+   character(LABEL_LEN)      :: axis_label
+   character(:), allocatable :: label
+   integer                   :: i
+
+   ! Read command-line arguments
+
+   @:ASSERT(n_arg() >= 5 .AND. MOD(n_arg()-2, 3)==0, 'Syntax: subset_specgrid input_file_name output_file_name label x_min x_max [label x_min x_max]')
+
+   call get_arg(1, input_file_name)
+   call get_arg(2, output_file_name)
+
+   ! Load the input grid
+
+   hdf5io = hdf5io_t(input_file_name, OPEN_FILE_RO)
+   call specgrid%read(hdf5io)
+   call hdf5io%final()
+
+   ! Loop over axes, setting up x_min and x_max
+
+   call specgrid%get_rank(rank)
+
+   allocate(x_min(rank))
+   allocate(x_max(rank))
+
+   x_min = -HUGE(0._RD)
+   x_max = HUGE(0._RD)
+
+   lam_min = -HUGE(0._RD)
+   lam_max = HUGE(0._RD)
+
+   do r = 1, rank
+
+      call specgrid%get_axis(r, axis)
+
+      call axis%get_label(axis_label)
+
+      ! See if the current axis needs subsetting
+
+      do i = 3, n_arg(), 3
+
+         call get_arg(i, label)
+
+         if (label == 'lambda') then
+
+            stop 'not yet implemented'
+
+            call get_arg(i+1, lam_min)
+            call get_arg(i+2, lam_max)
+
+         elseif (label == axis_label) then
+
+            call get_arg(i+1, x_min(r))
+            call get_arg(i+2, x_max(r))
+
+         end if
+
+      end do
+
+   end do
+
+   ! Perform the subsetting
+
+   call specgrid%subset(x_min, x_max)
+
+   ! Write the output specgrid
+
+   hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
+   call specgrid%write(hdf5io)
+   call hdf5io%final()
+
+   ! Finish
+
+end program subset_specgrid
