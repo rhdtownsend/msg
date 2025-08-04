@@ -40,11 +40,13 @@ program subset_specgrid
    integer                   :: rank
    real(RD), allocatable     :: x_min(:)
    real(RD), allocatable     :: x_max(:)
-   real(RD)                  :: lam_min
-   real(RD)                  :: lam_max
+   real(RD)                  :: specgrid_lam_min
+   real(RD)                  :: specgrid_lam_max
    integer                   :: r
    type(axis_t)              :: axis
    character(LABEL_LEN)      :: axis_label
+   real(RD)                  :: lam_min
+   real(RD)                  :: lam_max
    character(:), allocatable :: label
    integer                   :: i
 
@@ -88,8 +90,6 @@ program subset_specgrid
 
          if (label == 'lambda') then
 
-            stop 'not yet implemented'
-
             call get_arg(i+1, lam_min)
             call get_arg(i+2, lam_max)
 
@@ -105,6 +105,12 @@ program subset_specgrid
    end do
 
    ! Perform the subsetting
+
+   call specgrid%get_lam_min(specgrid_lam_min)
+   call specgrid%get_lam_max(specgrid_lam_max)
+
+   if (lam_min > specgrid_lam_min) call specgrid%set_cache_lam_min(lam_min)
+   if (lam_max < specgrid_lam_max) call specgrid%set_cache_lam_max(lam_max)
 
    call specgrid%subset(x_min, x_max)
 
