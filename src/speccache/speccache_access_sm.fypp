@@ -47,7 +47,6 @@ contains
 
       #:endif
 
-      integer                       :: j
       class(specint_t), allocatable :: specint_full
       real(RD)                      :: lam_min
       real(RD)                      :: lam_max
