@@ -219,7 +219,7 @@ contains
       @:HDF5_CALL(h5sget_simple_extent_dims_f, space_id, shape, max_shape)
       @:HDF5_CALL(h5sclose_f, space_id)
 
-      n = shape(1)
+      n = INT(shape(1), KIND=IS)
 
       ! Get the file datatype
 

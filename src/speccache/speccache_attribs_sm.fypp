@@ -57,7 +57,7 @@ contains
 
       ! Get the memory usage (megabytes)
 
-      usage = self%ssize/(1024*1024)
+      usage = INT(self%ssize/(1024*1024), KIND=IS)
 
       ! Finish
 
