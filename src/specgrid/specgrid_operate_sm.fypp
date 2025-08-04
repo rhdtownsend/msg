@@ -42,21 +42,11 @@ contains
 
       allocate(vert_mask(n))
 
-      print *,'in specsource%subset'
-
-      print *,'subsetting vgrid'
-
       call self%vgrid%subset(x_min, x_max, vert_mask=vert_mask)
-
-      print *,'subsetting specsource'
 
       call self%specsource%subset(vert_mask)
 
-      print *,'flushing cache'
-
       call self%flush_cache()
-
-      print *,'done flushing cache'
 
       ! Finish
 
