@@ -29,21 +29,28 @@ contains
 
    module procedure indexer_t_map_
 
+      logical :: vert_mask(SIZE(v_lin_seq))
+
       ! Construct indexer from the shape and the sequence-to-linear
       ! vertex map
+
+      @:ASSERT_DEBUG(ALL(shape > 0), 'invalid shape')
+
+      ! Generate the vertex and cell index maps
+
+      call generate_vert_maps_(shape, v_lin_seq, indexer%vert_lin_seq, indexer%vert_seq_lin)
+      call generate_cell_maps_(shape, v_lin_seq, indexer%cell_lin_seq, indexer%cell_seq_lin)
+
+      ! Set up the other components
 
       indexer%shape = shape
       indexer%rank = SIZE(shape)
 
-      @:ASSERT_DEBUG(ALL(shape > 0), 'invalid shape')
+      indexer%n_vert = PRODUCT(shape)
+      indexer%n_vert_seq = SIZE(indexer%vert_lin_seq)
 
       indexer%n_cell = PRODUCT(shape-1)
-      indexer%n_vert = PRODUCT(shape)
-
-      ! Set vertex and cell index maps
-
-      call set_vert_maps_(indexer, v_lin_seq)
-      call set_cell_maps_(indexer)
+      indexer%n_cell_seq = SIZE(indexer%cell_lin_seq)
 
       ! Finish
 
@@ -53,17 +60,16 @@ contains
 
    !****
 
-   module procedure set_vert_maps_
+   module procedure generate_vert_maps_
 
+      integer :: n_vert
+      integer :: n_vert_seq
       integer :: v_seq
 
-      @:ASSERT_DEBUG(MINVAL(v_lin_seq) >= 1, 'invalid v_lin_seq')
-      @:ASSERT_DEBUG(MAXVAL(v_lin_seq) <= indexer%n_vert, 'invalid v_lin_seq')
-
-      ! Set the vertex index maps in indexer:
+      ! Generate vertex index maps:
       !
-      !   indexer%vert_lin_seq(v_seq) -> v_lin
-      !   indexer%vert_seq_lin(v_seq) -> v_seq
+      !   vert_lin_seq(v_seq) -> v_lin
+      !   vert_seq_lin(v_seq) -> v_seq
       !
       ! vert_lin_seq is directly copied from v_lin_seq. Currently,
       ! the code works fine if the entries in v_lin_seq are not
@@ -71,36 +77,42 @@ contains
       ! smell; shouldn't sequential indices satisft
       ! vert_lin_seq(i+1) > vert_lin_seq(i)?
 
-      indexer%n_vert_seq = SIZE(v_lin_seq)
+      n_vert = PRODUCT(shape)
+      n_vert_seq = SIZE(v_lin_seq)
 
-      indexer%vert_lin_seq = v_lin_seq
+      @:ASSERT_DEBUG(MINVAL(v_lin_seq) >= 1, 'invalid v_lin_seq')
+      @:ASSERT_DEBUG(MAXVAL(v_lin_seq) <= n_vert, 'invalid v_lin_seq')
 
-      if (ALLOCATED(indexer%vert_seq_lin)) deallocate(indexer%vert_seq_lin)
-      allocate(indexer%vert_seq_lin(indexer%n_vert))
+      vert_lin_seq = v_lin_seq
 
-      indexer%vert_seq_lin = NULL_NODE
-      indexer%vert_seq_lin(indexer%vert_lin_seq) = [(v_seq, v_seq=1,indexer%n_vert_seq)]
+      allocate(vert_seq_lin(n_vert))
+
+      vert_seq_lin = NULL_NODE
+      vert_seq_lin(vert_lin_seq) = [(v_seq, v_seq=1,n_vert_seq)]
 
       ! Finish
 
       return
 
-   end procedure set_vert_maps_
+   end procedure generate_vert_maps_
 
    !****
 
-   module procedure set_cell_maps_
+   module procedure generate_cell_maps_
 
-      logical :: mask(indexer%n_cell)
-      integer :: c_lin
-      integer :: c_vec(indexer%rank)
-      integer :: i
-      integer :: v_vec(indexer%rank)
-      integer :: v_lin
-      integer :: v_seq
-      integer :: c_seq
+      integer              :: n_cell
+      type(indexer_t)      :: indexer
+      logical, allocatable :: mask(:)
+      integer              :: c_lin
+      integer              :: c_vec(SIZE(shape))
+      integer              :: i
+      integer              :: v_vec(SIZE(shape))
+      integer              :: v_lin
+      integer              :: v_seq
+      integer              :: n_cell_seq
+      integer              :: c_seq
 
-      ! Set cell index maps:
+      ! Generate cell index maps:
       !
       !   indexer%cell_lin_seq(c_seq) -> c_lin
       !   indexer%cell_seq_lin(c_seq) -> c_seq
@@ -108,12 +120,29 @@ contains
       ! Unlike the case with the vertex index maps, cell_lin_seq is
       ! monotonic-increasing
 
-      ! First, generate a mask for which cells have all corner
-      ! vertices defined
+      n_cell = PRODUCT(shape-1)
+
+      ! Create a bootstrap indexer with sufficient information to
+      ! allow cell_vector() and vert_*() to work
+
+      call generate_vert_maps_(shape, v_lin_seq, indexer%vert_lin_seq, indexer%vert_seq_lin)
+
+      indexer%shape = shape
+      indexer%rank = SIZE(shape)
+
+      indexer%n_vert = PRODUCT(shape)
+      indexer%n_vert_seq = SIZE(indexer%vert_lin_seq)
+
+      indexer%n_cell = n_cell
+
+      ! Set up a mask for which cells have all corner vertices
+      ! defined
+
+      allocate(mask(n_cell))
 
       mask = .TRUE.
 
-      cell_loop: do c_lin = 1, indexer%n_cell
+      cell_loop: do c_lin = 1, n_cell
 
          c_vec = indexer%cell_vector(c_lin)
 
@@ -134,22 +163,21 @@ contains
 
       end do cell_loop
 
-      ! Now set the cell index maps
+      n_cell_seq = COUNT(mask)
 
-      indexer%n_cell_seq = COUNT(mask)
+      ! Now generate the cell index maps
 
-      indexer%cell_lin_seq = PACK([(c_lin, c_lin=1,indexer%n_cell)], MASK=mask)
+      cell_lin_seq = PACK([(c_lin, c_lin=1,n_cell)], MASK=mask)
 
-      if (ALLOCATED(indexer%cell_seq_lin)) deallocate(indexer%cell_seq_lin)
-      allocate(indexer%cell_seq_lin(indexer%n_cell))
+      allocate(cell_seq_lin(n_cell))
 
-      indexer%cell_seq_lin = NULL_NODE
-      indexer%cell_seq_lin(indexer%cell_lin_seq) = [(c_seq, c_seq=1,indexer%n_cell_seq)]
+      cell_seq_lin = NULL_NODE
+      cell_seq_lin(cell_lin_seq) = [(c_seq, c_seq=1,n_cell_seq)]
 
       ! Finish
 
       return
 
-   end procedure set_cell_maps_
+   end procedure generate_cell_maps_
 
 end submodule indexer_construct_sm

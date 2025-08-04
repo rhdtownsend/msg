@@ -27,201 +27,187 @@ submodule (indexer_m) indexer_operate_sm
 
 contains
 
-   module procedure remove_subset
+   module procedure subset
 
-      logical :: mask(indexer%n_vert_seq)
-      integer :: v_seq
-      integer :: v_lin
-      integer :: v_vec(indexer%rank)
+      logical              :: vert_mask_(self%n_vert_seq)
+      integer              :: v_seq
+      integer              :: v_lin
+      integer              :: v_vec(self%rank)
+      integer, allocatable :: v_lin_seq(:)
+      integer, allocatable :: shape_new(:)
+      logical              :: dim_mask_(self%rank)
+      integer              :: rank_new
+      type(indexer_t)      :: indexer
+      integer, allocatable :: v_vec_new(:)
+
+      @:CHECK_BOUNDS(SIZE(i_min), self%rank)
+      @:CHECK_BOUNDS(SIZE(i_max), self%rank)
 
       if (PRESENT(vert_mask)) then
-         @:CHECK_BOUNDS(SIZE(vert_mask), indexer%n_vert_seq)
+         @:CHECK_BOUNDS(SIZE(vert_mask), self%n_vert_seq)
       end if
 
-      ! Remove vertices from the indexer whose coordinates fall
-      ! outside the subset defined by i_min, i_max (i.e., v_vec <
-      ! i_min or v_vec > i_max along any dimension
+      if (PRESENT(dim_mask)) then
+         @:CHECK_BOUNDS(SIZE(dim_mask), self%rank)
+      end if
 
-      ! Build a mask indicating which sequential vertices are
-      ! to be retained
+      ! Subset the indexer by retaining only those vertices with
+      ! vector indices in the range defined by i_min and i_max (i.e.,
+      ! i_min <= v_vec <= i_max). This potentially changes the rank,
+      ! by removing degenerate dimensions
+      !
+      ! If vert_mask is present, it records which sequential vertices
+      ! were retained. Likewise, if dim_mask is present, it records which
+      ! dimensions were retained
 
-      mask = .FALSE.
+      ! Build vert_mask_, indicating which sequential vertices are to
+      ! be retained
 
-      do v_seq = 1, indexer%n_vert_seq
+      @:ASSERT_DEBUG(ALL(i_max >= i_min), 'invalid subset')
 
-         v_lin = indexer%vert_linear(v_seq)
-         v_vec = indexer%vert_vector(v_lin)
+      vert_mask_ = .FALSE.
+
+      do v_seq = 1, self%n_vert_seq
+
+         v_lin = self%vert_linear(v_seq)
+         v_vec = self%vert_vector(v_lin)
 
          if (ALL(v_vec >= i_min .AND. v_vec <= i_max)) then
-            mask(v_seq) = .TRUE.
+            vert_mask_(v_seq) = .TRUE.
          end if
 
       end do
 
-      ! Update the indexer
+      ! Update the vertex index maps with the retained vertices
+      ! (there's no point in updating the cell index maps yet)
 
-      indexer = indexer_t(indexer%shape, PACK(indexer%vert_lin_seq, MASK=mask))
+      v_lin_seq = PACK(self%vert_lin_seq, MASK=vert_mask_)
 
-      ! If necessary, return mask as vert_mask
+      call generate_vert_maps_(self%shape, v_lin_seq, self%vert_lin_seq, self%vert_seq_lin)
 
-      if (PRESENT(vert_mask)) vert_mask = mask
+      self%n_vert_seq = SIZE(self%vert_lin_seq)
+
+      ! Determine the new shape and rank
+
+      dim_mask_ = i_max > i_min
+
+      shape_new = PACK(i_max-i_min+1, dim_mask_)
+
+      rank_new = SIZE(shape_new)
+
+      ! Create a bootstrap indexer with sufficient information to
+      ! allow vert_linear_vec_() to work
+
+      indexer%shape = shape_new
+      indexer%rank = rank_new
+
+      ! Generate a revised v_lin_seq
+
+      allocate(v_vec_new(rank_new))
+
+      do v_seq = 1, self%n_vert_seq
+
+         v_lin = self%vert_linear(v_seq)
+         v_vec = self%vert_vector(v_lin)
+
+         v_vec_new = PACK(v_vec - i_min + 1, MASK=dim_mask_)
+
+         v_lin_seq(v_seq) = indexer%vert_linear(v_vec_new)
+
+      end do
+
+      ! Update the vertex and cell index maps
+
+      call generate_vert_maps_(shape_new, v_lin_seq, self%vert_lin_seq, self%vert_seq_lin)
+      call generate_cell_maps_(shape_new, v_lin_seq, self%cell_lin_seq, self%cell_seq_lin)
+
+      ! Update the other components
+
+      self%shape = shape_new
+      self%rank = SIZE(shape_new)
+
+      self%n_vert = PRODUCT(shape_new)
+      self%n_vert_seq = SIZE(self%vert_lin_seq)
+
+      self%n_cell = PRODUCT(shape_new-1)
+      self%n_cell_seq = SIZE(self%cell_lin_seq)
+
+      ! If necessary, return vert_mask and/or dim_mask
+
+      if (PRESENT(vert_mask)) vert_mask = vert_mask_
+      if (PRESENT(dim_mask)) dim_mask = dim_mask_
 
       ! Finish
 
       return
 
-   end procedure remove_subset
+   end procedure subset
 
    !****
 
-   module procedure remove_orphans
+   module procedure remove_verts
 
-      logical :: mask(indexer%n_vert_seq)
+      integer :: v_lin_seq(COUNT(.NOT. vert_mask))
+
+      ! Remove sequential vertices from the indexer, as selected by
+      ! vert_mask
+
+      v_lin_seq = PACK(self%vert_lin_seq, MASK=.NOT. vert_mask)
+
+      call generate_vert_maps_(self%shape, v_lin_seq, self%vert_lin_seq, self%vert_seq_lin)
+      call generate_cell_maps_(self%shape, v_lin_seq, self%cell_lin_seq, self%cell_seq_lin)
+
+      self%n_vert_seq = SIZE(self%vert_lin_seq)
+      self%n_cell_seq = SIZE(self%cell_lin_seq)
+
+      ! Finish
+
+      return
+
+   end procedure remove_verts
+
+   !****
+
+   module procedure find_orphans
+
       integer :: c_seq
       integer :: c_lin
-      integer :: c_vec(indexer%rank)
+      integer :: c_vec(self%rank)
       integer :: i
-      integer :: v_vec(indexer%rank)
+      integer :: v_vec(self%rank)
       integer :: v_lin
       integer :: v_seq
 
-      if (PRESENT(vert_mask)) then
-         @:CHECK_BOUNDS(SIZE(vert_mask), indexer%n_vert_seq)
-      end if
+      @:CHECK_BOUNDS(SIZE(vert_mask), self%n_vert_seq)
 
-      ! Remove orphaned vertices from the indexer (i.e., ones that
-      ! aren't a corner of any cell)
+      ! Find orphaned vertices in the indexer (i.e., ones that aren't
+      ! a corner of any cell), returning them in vert_mask
 
-      ! Build a mask indicating which sequential vertices are
-      ! to be retained
+      vert_mask = .TRUE.
 
-      mask = .FALSE.
+      do c_seq = 1, self%n_cell_seq
 
-      do c_seq = 1, indexer%n_cell_seq
+         c_lin = self%cell_linear(c_seq)
+         c_vec = self%cell_vector(c_lin)
 
-         c_lin = indexer%cell_linear(c_seq)
-         c_vec = indexer%cell_vector(c_lin)
+         do i = 1, 2**self%rank
 
-         do i = 1, 2**indexer%rank
+            v_vec = c_vec + self%offset_vector(i, 2)
+            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= self%shape), 'out-of-bounds v_vec')
 
-            v_vec = c_vec + indexer%offset_vector(i, 2)
-            @:ASSERT_DEBUG(ALL(v_vec >= 1 .AND. v_vec <= indexer%shape), 'out-of-bounds v_vec')
+            v_lin = self%vert_linear(v_vec)
+            v_seq = self%vert_sequence(v_lin)
 
-            v_lin = indexer%vert_linear(v_vec)
-            v_seq = indexer%vert_sequence(v_lin)
-
-            mask(v_seq) = .TRUE.
+            vert_mask(v_seq) = .FALSE.
 
          end do
 
       end do
 
-      ! Update the indexer
-
-      indexer = indexer_t(indexer%shape, PACK(indexer%vert_lin_seq, MASK=mask))
-
-      ! If necessary, return mask as vert_mask
-
-      if (PRESENT(vert_mask)) vert_mask = mask
-
       ! Finish
 
       return
 
-   end procedure remove_orphans
-
-   !****
-
-   module procedure remove_space
-
-      integer :: i_min(indexer%rank)
-      integer :: i_max(indexer%rank)
-      integer :: v_seq
-      integer :: v_lin
-      integer :: v_vec(indexer%rank)
-      integer :: shape_old(indexer%rank)
-      integer :: shape_new(indexer%rank)
-      integer :: v_lin_seq(indexer%n_vert_seq)
-
-      ! Remove superfluos space from the indexer
-
-      ! Determine the range of vector vertex indices spanned by
-      ! sequential vertices
-
-      i_min = HUGE(0)
-      i_max = -HUGE(0)
-
-      do v_seq = 1, indexer%n_vert_seq
-
-         v_lin = indexer%vert_linear(v_seq)
-         v_vec = indexer%vert_vector(v_lin)
-
-         i_min = MIN(i_min, v_vec)
-         i_max = MAX(i_max, v_vec)
-
-      end do
-
-      @:ASSERT_DEBUG(ALL(i_min >= 1 .AND. i_min <= indexer%shape), 'invalid i_min')
-      @:ASSERT_DEBUG(ALL(i_max >= 1 .AND. i_max <= indexer%shape), 'invalid i_max')
-      @:ASSERT_DEBUG(ALL(i_max >= i_min), 'invalid i_min/i_max')
-
-      ! Set up the old and new shapes
-
-      shape_old = indexer%shape
-      shape_new = i_max - i_min + 1
-
-      ! Generate a new v_lin_seq
-
-      v_lin_seq = indexer%vert_lin_seq
-
-      do v_seq = 1, indexer%n_vert_seq
-
-         v_lin = indexer%vert_linear(v_seq)
-         v_vec = indexer%vert_vector(v_lin)
-
-         indexer%shape = shape_new
-         v_lin_seq(v_seq) = indexer%vert_linear(v_vec - i_min + 1)
-         indexer%shape = shape_old
-
-      end do
-
-      ! Update the indexer
-
-      indexer = indexer_t(shape_new, v_lin_seq)
-
-      ! Finish
-
-   end procedure remove_space
-
-   !****
-
-   module procedure remove_degen
-
-      logical :: mask(indexer%rank)
-
-      if (PRESENT(dim_mask)) then
-         @:CHECK_BOUNDS(SIZE(dim_mask), indexer%rank)
-      end if
-
-      ! Remove degenerate (length-1) dimensions from the indexer
-
-      ! Build a mask indicating which sequential vertices are
-      ! to be retained
-
-      mask = indexer%shape > 1
-
-      ! Update the indexer
-
-      indexer = indexer_t(PACK(indexer%shape, MASK=mask), indexer%vert_lin_seq)
-
-      ! If necessary, return mask as dim_mask
-
-      if (PRESENT(dim_mask)) dim_mask = mask
-
-      ! Finish
-
-      return
-
-   end procedure remove_degen
+   end procedure find_orphans
 
 end submodule indexer_operate_sm

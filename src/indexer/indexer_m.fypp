@@ -58,6 +58,9 @@ module indexer_m
       procedure, public :: get_n_vert
       procedure, public :: get_n_vert_seq
       procedure, public :: get_n_cell
+      procedure, public :: subset
+      procedure, public :: remove_verts
+      procedure, public :: find_orphans
       procedure         :: vert_linear_vec_
       procedure         :: vert_linear_seq_
       generic, public   :: vert_linear => vert_linear_seq_, vert_linear_vec_
@@ -89,16 +92,21 @@ module indexer_m
          type(indexer_t)     :: indexer
       end function indexer_t_map_
 
-      module subroutine set_vert_maps_(indexer, v_lin_seq)
+      module subroutine generate_vert_maps_(shape, v_lin_seq, vert_lin_seq, vert_seq_lin)
          implicit none (type, external)
-         type(indexer_t), intent(inout) :: indexer
-         integer, intent(in)            :: v_lin_seq(:)
-      end subroutine set_vert_maps_
+         integer, intent(in)               :: shape(:)
+         integer, intent(in)               :: v_lin_seq(:)
+         integer, allocatable, intent(out) :: vert_lin_seq(:)
+         integer, allocatable, intent(out) :: vert_seq_lin(:)
+      end subroutine generate_vert_maps_
 
-      module subroutine set_cell_maps_(indexer)
+      module subroutine generate_cell_maps_(shape, v_lin_seq, cell_lin_seq, cell_seq_lin)
          implicit none (type, external)
-         type(indexer_t), intent(inout) :: indexer
-      end subroutine set_cell_maps_
+         integer, intent(in)               :: shape(:)
+         integer, intent(in)               :: v_lin_seq(:)
+         integer, allocatable, intent(out) :: cell_lin_seq(:)
+         integer, allocatable, intent(out) :: cell_seq_lin(:)
+      end subroutine generate_cell_maps_
 
    end interface
 
@@ -141,6 +149,33 @@ module indexer_m
          class(indexer_t), intent(in) :: self
          integer, intent(out)         :: n_cell_seq
       end subroutine get_n_cell_seq
+
+   end interface
+
+   ! In indexer_operate_sm
+
+   interface
+
+      module subroutine subset(self, i_min, i_max, vert_mask, dim_mask)
+         implicit none (type, external)
+         class(indexer_t), intent(inout) :: self
+         integer, intent(in)             :: i_min(:)
+         integer, intent(in)             :: i_max(:)
+         logical, intent(out), optional  :: vert_mask(:)
+         logical, intent(out), optional  :: dim_mask(:)
+      end subroutine subset
+
+      module subroutine remove_verts(self, vert_mask)
+         implicit none (type, external)
+         class(indexer_t), intent(inout) :: self
+         logical, intent(in)             :: vert_mask(:)
+      end subroutine remove_verts
+
+      module subroutine find_orphans(self, vert_mask)
+         implicit none (type, external)
+         class(indexer_t), intent(in) :: self
+         logical, intent(out)         :: vert_mask(:)
+      end subroutine find_orphans
 
    end interface
 
@@ -214,46 +249,11 @@ module indexer_m
 
    end interface
 
-   ! In indexer_operate_sm
-
-   interface
-
-      module subroutine remove_subset(indexer, i_min, i_max, vert_mask)
-         implicit none (type, external)
-         type(indexer_t), intent(inout) :: indexer
-         integer, intent(in)            :: i_min(:)
-         integer, intent(in)            :: i_max(:)
-         logical, intent(out), optional :: vert_mask(:)
-      end subroutine remove_subset
-
-      module subroutine remove_orphans(indexer, vert_mask)
-         implicit none (type, external)
-         type(indexer_t), intent(inout) :: indexer
-         logical, intent(out), optional :: vert_mask(:)
-      end subroutine remove_orphans
-
-      module subroutine remove_space(indexer)
-         implicit none (type, external)
-         type(indexer_t), intent(inout) :: indexer
-      end subroutine remove_space
-
-      module subroutine remove_degen(indexer, dim_mask)
-         implicit none (type, external)
-         type(indexer_t), intent(inout) :: indexer
-         logical, intent(out), optional :: dim_mask(:)
-      end subroutine remove_degen
-
-   end interface
-
    ! Access specifiers
 
    private
 
    public :: NULL_NODE
    public :: indexer_t
-   public :: remove_subset
-   public :: remove_orphans
-   public :: remove_space
-   public :: remove_degen
 
 end module indexer_m
