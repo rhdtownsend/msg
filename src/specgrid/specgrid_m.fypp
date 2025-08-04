@@ -65,17 +65,17 @@ module specgrid_m
       procedure, public :: set_cache_lam_min
       procedure, public :: set_cache_lam_max
       procedure, public :: set_cache_limit
-      procedure, public :: flush_cache
+      procedure, public :: subset
+      procedure, public :: filter
       procedure, public :: interp_intensity
       procedure, public :: interp_E_moment
       procedure, public :: interp_D_moment
       procedure, public :: interp_irradiance
       procedure, public :: interp_flux
       procedure, public :: adjust_x_vec
-      procedure, public :: subset
-      procedure, public :: filter
       procedure, public :: read
       procedure, public :: write
+      procedure, public :: flush_cache
    end type specgrid_t
 
    ! Interfaces
@@ -179,6 +179,27 @@ module specgrid_m
 
    end interface
 
+   ! In specgrid_operate_sm
+
+   interface
+
+      module subroutine subset(self, x_min, x_max)
+         implicit none (type, external)
+         class(specgrid_t), intent(inout) :: self
+         real(RD), intent(in)             :: x_min(:)
+         real(RD), intent(in)             :: x_max(:)
+      end subroutine subset
+
+      module subroutine filter(self, passband, photgrid, stat)
+         implicit none (type, external)
+         class(specgrid_t), intent(in)  :: self
+         type(passband_t), intent(in)   :: passband
+         type(photgrid_t), intent(out)  :: photgrid
+         integer, intent(out), optional :: stat
+      end subroutine filter
+
+   end interface
+
    ! In specgrid_interp_sm
 
    interface
@@ -256,28 +277,6 @@ module specgrid_m
          real(RD), intent(out)          :: x_adj(:)
          integer, intent(out), optional :: stat
       end subroutine adjust_x_vec
-
-   end interface
-
-   ! In specgrid_operate_sm
-
-   interface
-
-      module subroutine subset(self, x_min, x_max, specgrid)
-         implicit none (type, external)
-         class(specgrid_t), intent(in)               :: self
-         real(RD), intent(in)                        :: x_min(:)
-         real(RD), intent(in)                        :: x_max(:)
-         class(specgrid_t), allocatable, intent(out) :: specgrid
-      end subroutine subset
-
-      module subroutine filter(self, passband, photgrid, stat)
-         implicit none (type, external)
-         class(specgrid_t), intent(in)  :: self
-         type(passband_t), intent(in)   :: passband
-         type(photgrid_t), intent(out)  :: photgrid
-         integer, intent(out), optional :: stat
-      end subroutine filter
 
    end interface
 

@@ -29,21 +29,34 @@ contains
 
    module procedure subset
 
-      logical, allocatable             :: mask(:)
-      class(vgrid_t), allocatable      :: vgrid
-      class(specsource_t), allocatable :: specsource
+      integer              :: n
+      logical, allocatable :: vert_mask(:)
 
-      ! Subset the specgrid to contain only the sequential vertices
-      ! selected by mask
+      ! Subset the specgrid by retaining only those vertices with
+      ! coordinates in the range defined by x_min and x_max (i.e.,
+      ! x_min <= x_vec <= x_max along each dimension). This
+      ! potentially changes the rank, by removing degenerate
+      ! dimensions
 
-      !mask = subset_mask(self%vgrid, x_min, x_max)
+      call self%specsource%get_n(n)
 
-      print *,'mask count', COUNT(mask), SIZE(mask)
+      allocate(vert_mask(n))
 
-      call self%vgrid%subset(mask, vgrid)
-      call self%specsource%subset(mask, specsource)
+      print *,'in specsource%subset'
 
-      specgrid = specgrid_t(specsource, vgrid)
+      print *,'subsetting vgrid'
+
+      call self%vgrid%subset(x_min, x_max, vert_mask=vert_mask)
+
+      print *,'subsetting specsource'
+
+      call self%specsource%subset(vert_mask)
+
+      print *,'flushing cache'
+
+      call self%flush_cache()
+
+      print *,'done flushing cache'
 
       ! Finish
 
