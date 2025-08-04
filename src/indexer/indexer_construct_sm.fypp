@@ -29,8 +29,6 @@ contains
 
    module procedure indexer_t_map_
 
-      logical :: vert_mask(SIZE(v_lin_seq))
-
       ! Construct indexer from the shape and the sequence-to-linear
       ! vertex map
 
