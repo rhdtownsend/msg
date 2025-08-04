@@ -45,6 +45,7 @@ contains
       call test_stat_()
       call test_attr_()
       call test_construct_()
+      call test_subset_()
       call test_interp_()
       call test_adjust_()
 
@@ -313,8 +314,6 @@ contains
 
       print *, '  constructors'
 
-      call build_vgrid_(vg)
-
       call construct_arrange_()
       call construct_act_()
       call construct_assert_()
@@ -401,6 +400,101 @@ contains
       end subroutine data_proc_
 
    end subroutine test_construct_
+
+   !****
+
+   subroutine test_subset_()
+
+      use axis_m
+
+      type(vgrid_t) :: vg
+      integer       :: rank
+      integer       :: rank_chk
+      integer       :: shape(1)
+      integer       :: shape_chk(1)
+      logical       :: vert_mask(8)
+      logical       :: vert_mask_chk(8)
+      logical       :: dim_mask(2)
+      logical       :: dim_mask_chk(2)
+
+      print *, '  subset'
+
+      call build_vgrid_(vg)
+
+      call subset_arrange_()
+      call subset_act_()
+      call subset_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine subset_arrange_()
+
+         rank_chk = 1
+         shape_chk = [2]
+
+         vert_mask_chk = [.FALSE., .FALSE., .FALSE., .TRUE., .FALSE., .FALSE., .TRUE., .FALSE.]
+         dim_mask_chk = [.FALSE., .TRUE.]
+
+         ! Finish
+
+         return
+
+      end subroutine subset_arrange_
+
+      !****
+
+      subroutine subset_act_()
+
+         call vg%subset([0._RD, 0.5_RD], [0.5_RD, 2._RD], vert_mask=vert_mask, dim_mask=dim_mask)
+
+         call vg%get_rank(rank)
+         call vg%get_shape(shape)
+
+         ! Finish
+
+         return
+
+      end subroutine subset_act_
+
+      !****
+
+      subroutine subset_assert_()
+
+         if (rank == rank_chk) then
+            print *,'    PASS rank'
+         else
+            print *,'    FAIL rank:', rank, '/=', rank_chk
+         end if
+
+         if (ALL(shape == shape_chk)) then
+            print *,'    PASS shape'
+         else
+            print *,'    FAIL shape:', shape, '/=', shape_chk
+         end if
+
+         if (ALL(vert_mask .EQV. vert_mask_chk)) then
+            print *,'    PASS vert_mask'
+         else
+            print *,'    FAIL vert_mask:', vert_mask, '/=', vert_mask_chk
+         end if
+
+         if (ALL(dim_mask .EQV. dim_mask_chk)) then
+            print *,'    PASS dim_mask'
+         else
+            print *,'    FAIL dim_mask:', dim_mask, '/=', dim_mask_chk
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine subset_assert_
+
+   end subroutine test_subset_
 
    !****
 
