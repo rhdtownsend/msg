@@ -72,10 +72,11 @@ module photgrid_m
 
    interface
 
-      module function photgrid_t_(photsource, vgrid) result (photgrid)
+      module function photgrid_t_(photsource, vgrid, remove_orphans) result (photgrid)
          implicit none (type, external)
          class(photsource_t), intent(in) :: photsource
          type(vgrid_t), intent(in)       :: vgrid
+         logical, intent(in), optional   :: remove_orphans
          type(photgrid_t)                :: photgrid
       end function photgrid_t_
 

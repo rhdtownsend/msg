@@ -29,25 +29,52 @@ contains
 
    module procedure specgrid_t_
 
-      integer  :: n
-      real(RD) :: lam_min
-      real(RD) :: lam_max
-      integer  :: n_vert_seq
+      logical              :: remove_orphans_
+      integer              :: n_vert_seq
+      logical, allocatable :: orphan_mask(:)
+      integer              :: n
+      real(RD)             :: lam_min
+      real(RD)             :: lam_max
+
+      if (PRESENT(remove_orphans)) then
+         remove_orphans_ = remove_orphans
+      else
+         remove_orphans_ = .FALSE.
+      end if
 
       ! Construct specgrid from the supplied data
 
-      call specsource%get_n(n)
-      call specsource%get_lam_min(lam_min)
-      call specsource%get_lam_max(lam_max)
+      ! Set up the vgrid and specsource
 
-      call vgrid%get_n_vert_seq(n_vert_seq)
+      specgrid%vgrid = vgrid
+      specgrid%specsource = specsource
+
+      ! If necessary, remove orphaned vertices
+
+      if (remove_orphans_) then
+
+         call specgrid%vgrid%get_n_vert_seq(n_vert_seq)
+
+         allocate(orphan_mask(n_vert_seq))
+
+         call specgrid%vgrid%find_orphans(orphan_mask)
+         call specgrid%vgrid%remove_verts(orphan_mask)
+
+         call specgrid%specsource%subset(.NOT. orphan_mask)
+
+      end if
+
+      call specgrid%vgrid%get_n_vert_seq(n_vert_seq)
+      call specgrid%specsource%get_n(n)
 
       @:CHECK_BOUNDS(n, n_vert_seq)
 
-      specgrid%specsource = specsource
-      specgrid%speccache = speccache_t(n, lam_min, lam_max)
+      ! Set up the cache
 
-      specgrid%vgrid = vgrid
+      call specgrid%specsource%get_lam_min(lam_min)
+      call specgrid%specsource%get_lam_max(lam_max)
+
+      specgrid%speccache = speccache_t(n, lam_min, lam_max)
 
       specgrid%lam_min = lam_min
       specgrid%lam_max = lam_max
