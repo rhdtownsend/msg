@@ -178,12 +178,12 @@ contains
       integer :: v_lin
       integer :: v_seq
 
-      @:CHECK_BOUNDS(SIZE(vert_mask), self%n_vert_seq)
+      @:CHECK_BOUNDS(SIZE(orphan_mask), self%n_vert_seq)
 
       ! Find orphaned vertices in the indexer (i.e., ones that aren't
-      ! a corner of any cell), returning them in vert_mask
+      ! a corner of any cell), returning them in orphan_mask
 
-      vert_mask = .TRUE.
+      orphan_mask = .TRUE.
 
       do c_seq = 1, self%n_cell_seq
 
@@ -198,7 +198,7 @@ contains
             v_lin = self%vert_linear(v_vec)
             v_seq = self%vert_sequence(v_lin)
 
-            vert_mask(v_seq) = .FALSE.
+            orphan_mask(v_seq) = .FALSE.
 
          end do
 
