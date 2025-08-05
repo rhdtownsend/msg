@@ -10,3 +10,5 @@ echo "==============="
 echo " Passes:   " `grep -c PASS test.out`
 echo " Failures: " `grep -c FAIL test.out`
 echo "==============="
+
+rm -f test.out
