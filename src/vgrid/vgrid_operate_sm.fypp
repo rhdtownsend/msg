@@ -122,9 +122,9 @@ contains
    module procedure find_orphans
 
       ! Find orphaned vertices in the indexer (i.e., ones that aren't
-      ! a corner of any cell), returning them in vert_mask
+      ! a corner of any cell), returning them in orphan_mask
 
-      call self%indexer%find_orphans(vert_mask)
+      call self%indexer%find_orphans(orphan_mask)
 
    end procedure find_orphans
 

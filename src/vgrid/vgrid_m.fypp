@@ -154,10 +154,10 @@ module vgrid_m
          logical, intent(in)            :: vert_mask(:)
       end subroutine remove_verts
 
-      module subroutine find_orphans(self, vert_mask)
+      module subroutine find_orphans(self, orphan_mask)
          implicit none (type, external)
          class(vgrid_t), intent(in) :: self
-         logical, intent(out)       :: vert_mask(:)
+         logical, intent(out)       :: orphan_mask(:)
       end subroutine find_orphans
 
    end interface
