@@ -116,6 +116,8 @@ program subset_specgrid
 
    ! Write the output specgrid
 
+   call specgrid%set_cache_limit(0)
+
    hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
    call specgrid%write(hdf5io)
    call hdf5io%final()

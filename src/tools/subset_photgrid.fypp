@@ -103,6 +103,8 @@ program subset_photgrid
 
    ! Write the output photgrid
 
+   call photgrid%set_cache_limit(0)
+
    hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
    call photgrid%write(hdf5io)
    call hdf5io%final()
