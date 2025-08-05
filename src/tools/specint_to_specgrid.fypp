@@ -67,12 +67,11 @@ program specint_to_specgrid
 
    ! Write the grid
 
+   call specgrid%set_cache_limit(0)
+
    hdf5io = hdf5io_t(specgrid_file_name, CREATE_FILE)
-
    call specgrid%write(hdf5io)
-
    call hdf5io%write_attr('label', label)
-
    call hdf5io%final()
 
    ! Finish
@@ -207,12 +206,13 @@ contains
       integer                          :: n_smetas
       integer                          :: rank
       real(RD), allocatable            :: x_vecs(:,:)
-      logical, allocatable             :: mask(:)
       integer                          :: i
       type(vgrid_t)                    :: vgrid
       character(NAME_LEN), allocatable :: file_names(:)
       character(NAME_LEN), allocatable :: group_names(:)
       type(hdf5_specsource_t)          :: specsource
+      real(RD), allocatable            :: x_min(:)
+      real(RD), allocatable            :: x_max(:)
 
       ! Create the vgrid
 
@@ -227,32 +227,12 @@ contains
          x_vecs(:,i) = smetas(i)%x_vec
       enddo
 
-      ! Optimize it
-
-      write(OUTPUT_UNIT, 100) 'Optimizing...'
-100   format(A)
-
-      allocate(mask(n_smetas))
-
-      call optimize(x_vecs, mask)
-
-      smetas = PACK(smetas, mask)
-
-      n_smetas = SIZE(smetas)
-
-      deallocate(x_vecs)
-      allocate(x_vecs(rank,n_smetas))
-
-      do i = 1, n_smetas
-         x_vecs(:,i) = smetas(i)%x_vec
-      enddo
-
-      write(OUTPUT_UNIT, 110) 'Number of spectra:', n_smetas
-110   format(2X,A,1X,I0)
-
       ! Construct the vgrid
 
       vgrid = vgrid_t(x_vecs, labels)
+
+      write(OUTPUT_UNIT, 100) 'Number of spectra:', n_smetas
+100   format(2X,A,1X,I0)
 
       ! Set up the file/group name lists
 
@@ -267,11 +247,20 @@ contains
 
       ! Create specgrid
 
-      write(OUTPUT_UNIT, 100) 'Building specgrid...'
+      write(OUTPUT_UNIT, 110) 'Building specgrid...'
+110   format(A)
 
-      specgrid = specgrid_t(specsource, vgrid)
+      specgrid = specgrid_t(specsource, vgrid, remove_orphans=.TRUE.)
 
-      call specgrid%set_cache_limit(0)
+      ! Subset it to remove any superfluous data
+
+      allocate(x_min(rank))
+      allocate(x_max(rank))
+
+      x_min = -HUGE(0._RD)
+      x_max = HUGE(0._RD)
+
+      call specgrid%subset(x_min, x_max)
 
       ! Finish
 
