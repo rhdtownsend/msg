@@ -29,30 +29,15 @@ contains
 
    module procedure photgrid_t_
 
-      logical              :: remove_orphans_
-      integer              :: n_vert_seq
-      logical, allocatable :: orphan_mask(:)
-      integer              :: n
+      integer :: n_vert_seq
+      integer :: n
 
       ! Construct photgrid from the supplied data
 
       photgrid%vgrid = vgrid
       photgrid%photsource = photsource
 
-      ! If necessary, remove orphaned vertices
-
-      if (remove_orphans_) then
-
-         call photgrid%vgrid%get_n_vert_seq(n_vert_seq)
-
-         allocate(orphan_mask(n_vert_seq))
-
-         call photgrid%vgrid%find_orphans(orphan_mask)
-         call photgrid%vgrid%remove_verts(orphan_mask)
-
-         call photgrid%photsource%subset(.NOT. orphan_mask)
-
-      end if
+      ! Check for consistency
 
       call photgrid%vgrid%get_n_vert_seq(n_vert_seq)
       call photgrid%photsource%get_n(n)
