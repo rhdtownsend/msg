@@ -56,6 +56,40 @@ contains
 
    !****
 
+   module procedure remove_orphans
+
+      integer              :: n_vert_seq
+      logical, allocatable :: orphan_mask(:)
+      integer              :: n
+
+      ! Remove orphaned vertices from the specgrid
+
+      call self%vgrid%get_n_vert_seq(n_vert_seq)
+
+      allocate(orphan_mask(n_vert_seq))
+
+      call self%vgrid%find_orphans(orphan_mask)
+      call self%vgrid%remove_verts(orphan_mask)
+
+      call self%specsource%subset(.NOT. orphan_mask)
+
+      call self%flush_cache()
+
+      ! Check for consistency
+
+      call self%vgrid%get_n_vert_seq(n_vert_seq)
+      call self%specsource%get_n(n)
+
+      @:CHECK_BOUNDS(n, n_vert_seq)
+
+      ! Finish
+
+      return
+
+   end procedure remove_orphans
+
+   !****
+
    module procedure filter
 
       ! Apply the passband to create a photgrid

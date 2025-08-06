@@ -66,6 +66,7 @@ module specgrid_m
       procedure, public :: set_cache_lam_max
       procedure, public :: set_cache_limit
       procedure, public :: subset
+      procedure, public :: remove_orphans
       procedure, public :: filter
       procedure, public :: interp_intensity
       procedure, public :: interp_E_moment
@@ -88,11 +89,10 @@ module specgrid_m
 
    interface
 
-      module function specgrid_t_(specsource, vgrid, remove_orphans) result (specgrid)
+      module function specgrid_t_(specsource, vgrid) result (specgrid)
          implicit none (type, external)
          class(specsource_t), intent(in) :: specsource
          type(vgrid_t), intent(in)       :: vgrid
-         logical, intent(in), optional   :: remove_orphans
          type(specgrid_t)                :: specgrid
       end function specgrid_t_
 
@@ -190,6 +190,11 @@ module specgrid_m
          real(RD), intent(in)             :: x_min(:)
          real(RD), intent(in)             :: x_max(:)
       end subroutine subset
+
+      module subroutine remove_orphans(self)
+         implicit none (type, external)
+         class(specgrid_t), intent(inout) :: self
+      end subroutine remove_orphans
 
       module subroutine filter(self, passband, photgrid, stat)
          implicit none (type, external)

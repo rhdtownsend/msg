@@ -29,18 +29,10 @@ contains
 
    module procedure specgrid_t_
 
-      logical              :: remove_orphans_
-      integer              :: n_vert_seq
-      logical, allocatable :: orphan_mask(:)
-      integer              :: n
-      real(RD)             :: lam_min
-      real(RD)             :: lam_max
-
-      if (PRESENT(remove_orphans)) then
-         remove_orphans_ = remove_orphans
-      else
-         remove_orphans_ = .FALSE.
-      end if
+      integer  :: n_vert_seq
+      integer  :: n
+      real(RD) :: lam_min
+      real(RD) :: lam_max
 
       ! Construct specgrid from the supplied data
 
@@ -49,20 +41,7 @@ contains
       specgrid%vgrid = vgrid
       specgrid%specsource = specsource
 
-      ! If necessary, remove orphaned vertices
-
-      if (remove_orphans_) then
-
-         call specgrid%vgrid%get_n_vert_seq(n_vert_seq)
-
-         allocate(orphan_mask(n_vert_seq))
-
-         call specgrid%vgrid%find_orphans(orphan_mask)
-         call specgrid%vgrid%remove_verts(orphan_mask)
-
-         call specgrid%specsource%subset(.NOT. orphan_mask)
-
-      end if
+      ! Check for consistency
 
       call specgrid%vgrid%get_n_vert_seq(n_vert_seq)
       call specgrid%specsource%get_n(n)
