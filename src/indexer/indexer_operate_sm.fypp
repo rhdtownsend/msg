@@ -78,14 +78,9 @@ contains
 
       end do
 
-      ! Update the vertex index maps with the retained vertices
-      ! (there's no point in updating the cell index maps yet)
+      ! Remove the non-retained vertices
 
-      v_lin_seq = PACK(self%vert_lin_seq, MASK=vert_mask_)
-
-      call generate_vert_maps_(self%shape, v_lin_seq, self%vert_lin_seq, self%vert_seq_lin)
-
-      self%n_vert_seq = SIZE(self%vert_lin_seq)
+      call self%remove_verts(.NOT. vert_mask_)
 
       ! Determine the new shape and rank
 
@@ -103,6 +98,8 @@ contains
 
       ! Generate a revised v_lin_seq
 
+      allocate(v_lin_seq(COUNT(vert_mask_)))
+
       allocate(v_vec_new(rank_new))
 
       do v_seq = 1, self%n_vert_seq
@@ -116,21 +113,14 @@ contains
 
       end do
 
-      ! Update the vertex and cell index maps
+      ! Update the indexer
 
-      call generate_vert_maps_(shape_new, v_lin_seq, self%vert_lin_seq, self%vert_seq_lin)
-      call generate_cell_maps_(shape_new, v_lin_seq, self%cell_lin_seq, self%cell_seq_lin)
-
-      ! Update the other components
-
-      self%shape = shape_new
-      self%rank = SIZE(shape_new)
-
-      self%n_vert = PRODUCT(shape_new)
-      self%n_vert_seq = SIZE(self%vert_lin_seq)
-
-      self%n_cell = PRODUCT(shape_new-1)
-      self%n_cell_seq = SIZE(self%cell_lin_seq)
+      select type(self)
+      type is(indexer_t)
+         self = indexer_t(shape_new, v_lin_seq)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! If necessary, return vert_mask and/or dim_mask
 
@@ -154,11 +144,12 @@ contains
 
       v_lin_seq = PACK(self%vert_lin_seq, MASK=.NOT. vert_mask)
 
-      call generate_vert_maps_(self%shape, v_lin_seq, self%vert_lin_seq, self%vert_seq_lin)
-      call generate_cell_maps_(self%shape, v_lin_seq, self%cell_lin_seq, self%cell_seq_lin)
-
-      self%n_vert_seq = SIZE(self%vert_lin_seq)
-      self%n_cell_seq = SIZE(self%cell_lin_seq)
+      select type(self)
+      type is(indexer_t)
+         self = indexer_t(self%shape, v_lin_seq)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! Finish
 
