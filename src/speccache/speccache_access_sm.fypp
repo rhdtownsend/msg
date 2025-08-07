@@ -47,7 +47,7 @@ contains
 
       #:endif
 
-      class(specint_t), allocatable :: specint_full
+      class(specint_t), allocatable :: specint_fetch
       real(RD)                      :: lam_min
       real(RD)                      :: lam_max
       integer(ID)                   :: ssize
@@ -89,26 +89,24 @@ contains
 
             ! Fetch the specint
 
-            call fetch_proc(i, specint_full, stat)
+            call fetch_proc(i, specint_fetch, stat)
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) exit fetch_block
             end if
 
-            call specint_full%get_lam_min(lam_min)
-            call specint_full%get_lam_min(lam_max)
+            call specint_fetch%get_lam_min(lam_min)
+            call specint_fetch%get_lam_min(lam_max)
 
             if (lam_min < self%lam_min .OR. lam_max > self%lam_max) then
 
-               call specint_full%subset(self%lam_min, self%lam_max, self%specint_elements(i)%specint, stat)
+               call specint_fetch%subset(self%lam_min, self%lam_max, stat)
                if (PRESENT(stat)) then
                   if (stat /= STAT_OK) exit fetch_block
                end if
 
-            else
+            end if
 
-               self%specint_elements(i)%specint = specint_full
-
-            endif
+            self%specint_elements(i)%specint = specint_fetch
 
             ! Update the storage size
 
