@@ -2,6 +2,3 @@
 	path = src/forum
 	url = ../forum.git
 	
-[submodule "src/f90getopt"]
-	path = src/f90getopt
-	url = https://github.com/haniibrahim/f90getopt.git
