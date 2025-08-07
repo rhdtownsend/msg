@@ -24,7 +24,6 @@ program subset_specgrid
    use forum_m
    use msg_m
 
-   use arg_parser_m
    use tools_utils_m
 
    use ISO_FORTRAN_ENV

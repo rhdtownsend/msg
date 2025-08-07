@@ -24,7 +24,6 @@ program rebin_specint
    use forum_m, PI_ => PI
    use msg_m
 
-   use arg_parser_m
    use tools_utils_m
 
    use ISO_FORTRAN_ENV

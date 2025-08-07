@@ -36,8 +36,6 @@ program c3k_to_specint
    use forum_m
    use msg_m
 
-   use arg_parser_m
-
    use hdf5
 
    use ISO_FORTRAN_ENV
