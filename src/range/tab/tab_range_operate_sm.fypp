@@ -84,7 +84,7 @@ contains
       type is(tab_range_t)
          self = tab_range_t(self%x(i_min:i_max))
       class default
-         @:ABORT('subset is not defined for subclass of tab_range_t')
+         @:ABORT('invalid type')
       end select
 
       ! Finish

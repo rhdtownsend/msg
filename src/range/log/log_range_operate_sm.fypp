@@ -90,7 +90,7 @@ contains
       type is(log_range_t)
          self = log_range_t(self%logx_0+self%dlogx*(i_min-1), self%dlogx, i_max-i_min+1)
       class default
-         @:ABORT('subset is not defined for subclass of log_range_t')
+         @:ABORT('invalid type')
       end select
 
       ! Finish

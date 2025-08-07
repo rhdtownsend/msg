@@ -86,7 +86,7 @@ contains
       type is(lin_range_t)
          self = lin_range_t(self%x_0+self%dx*(i_min-1), self%dx, i_max-i_min+1)
       class default
-         @:ABORT('subset is not defined for subclass of lin_range_t')
+         @:ABORT('invalid type')
       end select
 
       ! Finish

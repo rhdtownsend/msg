@@ -130,7 +130,7 @@ contains
       type is(comp_range_t)
          self = comp_range_t_elements_(range_elements)
       class default
-         @:ABORT('subset is not defined for subclass of comp_range_t')
+         @:ABORT('invalid type')
       end select
 
       ! Finish

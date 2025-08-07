@@ -35,7 +35,6 @@ contains
 
       integer                     :: i_min
       integer                     :: i_max
-      integer                     :: n_lam
       class(range_t), allocatable :: range
 
       ! Subset the specint
@@ -81,7 +80,7 @@ contains
       type is(limb_specint_t)
          self = limb_specint_t(self%c(:,i_min:i_max-1), range, self%limb, self%precise)
       class default
-         @:ABORT('subset is not defined for subclass of limb_specint_t')
+         @:ABORT('invalid type')
       end select
 
       ! Finish
