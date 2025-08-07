@@ -3,65 +3,56 @@
 synspec_to_specint
 ~~~~~~~~~~~~~~~~~~
 
-The :command:`synspec_to_specint` tool extracts an single intensity
-spectrum from a :file:`fort.18` data file produced by the SYNSPEC
-spectral synthesis package :ads_citep:`lanz:2003`, and writes it to a
-:f-schema:`specint` file. It accepts the following
-command-line arguments:
-
 .. program:: synspec_to_specint
 
-.. option:: <synspec_file_name>
+Synopsis
+--------
 
-   Name of input SYNSPEC file.	      
+.. code-block:: text
 
-.. option:: <n_mu>
+   synspec_to_specint <input_file_name> <output_file_name> [options]
 
-   Number of :math:`\mu` values in input file (as specified by the
-   ``nmu`` parameter in the :file:`fort.55` SYNSPEC control file).
+Description
+-----------
 
-.. option:: <mu_0>
+The :command:`synspec_to_specint` tool extracts spectral data from a
+file produced by the SYNSPEC spectral synthesis package
+:ads_citep:`lanz:2003`, and writes it to a :f-schema:`specint`
+file.
 
-   Minimum :math:`\mu` value in input file (as specified by the
-   ``ang0`` parameter in the :file:`fort.55` SYNSPEC control file).
-
-.. option:: <lam_min>
-
-   Minimum wavelength of output file (:math:`\angstrom`).
-
-.. option:: <lam_max>
-
-   Maximum wavelength in output file (:math:`\angstrom`).
-
-.. option:: <R>
-
-   Resolution :math:`\mathcal{R}=\lambda/\Delta\lambda` in output file.
-
-.. option:: <law_str>
-     
-   Limb-darkening law in output file (see :ref:`here
-   <limb-darkening-laws>` for a list of options).
-
-.. option:: <specint_file_name>
-
-   Name of output :f-schema:`specint` file.
-
-.. option:: <label> (optional)
-
-   Label of atmosphere parameter (must be accompanied by a
-   corresponding :option:`<value>` argument).
-
-.. option:: <value> (optional)
-
-   Value of atmosphere parameter (must be accompanied by a
-   corresponding :option:`<label>` argument).
-
-Note that :option:`<label>` and :option:`<value>` parameters must be
-paired; and that there can be multiple of these pairs. For the law
-selected by the :option:`<law_str>` option, the tool calculates the
-limb-darkening coefficients at each wavelength via a least-squares fit
-to the function
+For the law selected by the :option:`--limb-law` option, the tool
+calculates the limb-darkening coefficients at each wavelength via a
+least-squares fit to the function
 
 .. math::
 
    y(\mu) = 1 - \frac{I_{\lambda}(\mu)}{I_{\lambda}(1)}.
+
+Options
+-------
+
+.. option:: --file-type <type>
+
+   Type of SYNSPEC file. Valid choices are :code:`flux` (usually
+   written by SYNSPEC to the file :file:`fort.7`; default) and
+   :code:`intensity` (usually written by SYNSPEC to the file
+   :file:`fort.18`).
+
+.. option:: --limb-law <law>	 
+
+   Limb-darkening law in output file (see :ref:`here
+   <limb-darkening-laws>` for a list of valid choices). Only used for
+   :code:`intensity` file types.
+   
+.. option:: --mu-range <mu_0>:<n_mu>
+
+   Lower limit and number of points for SYNSPEC's angular
+   (:math:`\mu`) grid (as specified by the ``ang0`` and ``nmu``
+   parameters, respectively, in the :file:`fort.55` SYNSPEC control
+   file). Only used for :code:`intensity` file types.
+
+.. option:: --label <name>:<value>
+
+   Name and value of photospheric parameter label. Can be specified
+   multiple times, to define multiple parameters.
+

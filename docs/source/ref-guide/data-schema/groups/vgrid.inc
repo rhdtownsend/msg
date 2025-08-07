@@ -15,7 +15,7 @@
    * - :code:`REVISION`
      - attribute
      - integer
-     - literal :code:`2`.
+     - literal :code:`3`.
    * - :code:`shape`
      - attribute
      - integer(:code:`rank`)
@@ -24,6 +24,10 @@
      - attribute
      - integer
      - rank of grid.
+   * - :code:`v_lin_seq`
+     - dataset
+     - integer(:code:`:`)
+     - vertex sequence-to-linear mapping.
    * - :code:`axes[i]`
      - group
      - :g-schema:`axis`

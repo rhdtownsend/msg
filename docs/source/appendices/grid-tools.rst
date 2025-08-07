@@ -24,7 +24,7 @@ grids into one or more :f-schema:`specint` files:
    grid-tools/goettingen_to_specint.rst
    grid-tools/c3k_to_specint.rst
    grid-tools/ascii_to_specint.rst
-   grid-tools/specint_to_specint.rst
+   grid-tools/rebin_specint.rst
 
 If you would like to convert spectra from a format that isn't covered by
 these tools, please :git:`open an issue <rhdtownsend/msg/issues>`
@@ -52,6 +52,8 @@ The following tools help with managing grid files:
    :maxdepth: 2
 
    grid-tools/inspect_grid.rst
+   grid-tools/subset_specgrid.rst
+   grid-tools/subset_photgrid.rst
 
 .. _creating-passbands:
 

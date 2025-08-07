@@ -3,31 +3,34 @@
 goettingen_to_specint
 ~~~~~~~~~~~~~~~~~~~~~
 
+.. program:: goettingen_to_specint
+
+Synopsis
+--------
+
+.. code-block:: text
+
+   goettingen_to_specint <input_file_name> <output_file_name> [options]
+
+Description
+-----------
+
 The :command:`goettingen_to_specint` tool extracts a flux spectrum
 from a data file in FITS format (with the schema described by
 :ads_citealp:`husser:2013`), and writes it to a
-:f-schema:`specint` file. This tool accepts the following
-command-line arguments:
+:f-schema:`specint` file.
 
-.. program:: goettingen_to_specint
+Options
+-------
 
-.. option:: <fits_file_name>
+.. option:: --file-type <type>
 
-   Name of input FITS file.
-
-.. option:: <wave_type>
-
-   Type of wavelength abscissa. This determines the number and
-   distribution of points to assume for the input file. Supported
-   options, corresponding to the different grids described by
-   :ads_citet:`husser:2013`, are :code:`HiRes` (high-resolution),
-   :code:`MedRes-A1` (medium-resolution, :math:`\Delta \lambda =
-   1\,\angstrom`) and :code:`MedRes-R10000` (medium resolution,
-   :math:`\mathcal{R}=10\,000`).
-
-.. option:: <specint_file_name>
-
-   Name of output :f-schema:`specint` file.
+   Type of input file. This determines the wavelength abscissa adopted
+   for the input file. Valid choices, corresponding to the different
+   grids described by :ads_citet:`husser:2013`, are :code:`HiRes`
+   (high-resolution; default), :code:`MedRes-A1` (medium-resolution,
+   :math:`\Delta \lambda = 1\,\angstrom`) and :code:`MedRes-R10000`
+   (medium resolution, :math:`\mathcal{R}=10\,000`).
 
 .. note::
 

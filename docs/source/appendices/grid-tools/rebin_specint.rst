@@ -1,38 +1,40 @@
-.. _grid-tools-specint_to_specint:
+.. _grid-tools-rebin_specint:
 
-specint_to_specint
-~~~~~~~~~~~~~~~~~~
+rebin_specint
+~~~~~~~~~~~~~
 
-The :command:`specint_to_specint` tool subsets and/or rebins data in
-an existing :f-schema:`specint` file It accepts the
-following command-line arguments:
+.. program:: rebin_to_specint
 
-.. program:: specint_to_specint
+Synopsis
+--------
 
-.. option:: <specint_file_name_in>
+.. code-block:: text
 
-   Name of input :f-schema:`specint` file.
+   rebin_specint <input_file_name> <output_file_name> [options]
 
-.. option:: <specint_file_name_out>
 
-   Name of output :f-schema:`specint` file.
+Description
+-----------
 
-.. option:: lam_min=<value> (optional)
+The :command:`specint_to_specint` reads data from a
+:f-schema:`specint` file, subsets and/or rebins the data, and then
+writes it to a :f-schema:`specgrid` file.
 
-   Subset to have a minimum wavelength of at least `<value>` (:math:`\angstrom`).
+Options
+-------
 
-.. option:: lam_max=<value> (optional)
+.. option:: --lam-range <min>:<max>
 
-   Subset to have a maximum wavelength of at most `<value>` (:math:`\angstrom`).
+   Range of wavelength values to include in subset.
 
-.. option:: R=<value> (optional)
+.. option:: --sampling <type>:<value>
 
-   Rebin to have a uniform resolution :math:`\mathcal{R}` of `<value>`.
+   Wavelength sampling to use when rebinning. Valid choices for
+   :code:`<type>` are :code:`R` (fixed resolution) and
+   :code:`delta_lam` (fixed spacing).
 
-.. option:: dlam=<value> (optional)
+.. option:: --alignment <align>
 
-   Rebin to have a uniform wavelength spacing :math:`\Delta \lambda` of `<value>` (:math:`\angstrom`).
-
-.. option:: just=<L|R> (optional)
-
-   Justify the new wavelength abscissa to the left (:code:`L`) or right (:code:`R`).
+   Alignment of the wavelength abscissa, relative to the wavelength
+   range. Valid choices are :code:`L` (left), :code:`C` (center;
+   default) and :code:`R` (right).

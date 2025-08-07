@@ -3,39 +3,41 @@
 ascii_to_specint
 ~~~~~~~~~~~~~~~~
 
-The :command:`ascii_to_specint` tool reads a generic flux spectrum
-from an ASCII text file, and writes it to a :f-schema:`specint`
-file. It accepts the following command-line arguments:
-
 .. program:: ascii_to_specint
 
-.. option:: <ascii_file_name>
+Synopsis
+--------
 
-   Name of input ASCII text file (see below).
+.. code-block:: text
 
-.. option:: <lam_units>
+   ascii_to_specint <input_file_name> <output_file_name> [options]
 
-   Units of wavelength data in input file. Possible choices are :code:`'A'` (:math:`\angstrom`).
+Description
+-----------
 
-.. option:: <flux_units>
+The :command:`ascii_to_specint` tool reads a generic flux spectrum
+from an ASCII text file, and writes it to a :f-schema:`specint`
+file.
 
-   Units of flux data in input file. Possible choices are :code:`'erg/cm^2/s/A'` (:math:`\erg\,\cm^{-2}\,\second^{-1}\,\angstrom^{-1}`).
+The ASCII text file should contain one or more lines, each consisting
+of a wavelength value followed by a flux value. Blank lines and lines
+beginning with :code:`#` are ignored.
 
-.. option:: <specint_file_name>
+Options
+-------
 
-   Name of output :f-schema:`specint` file.
+.. option:: --lam_units <units>
 
-.. option:: <label> (optional)
+   Units of wavelength data in input file. Valid choices are
+   :code:`A` (:math:`\angstrom`; default) and :code:`micron` (:math:`\mu`).
 
-   Label of atmosphere parameter (must be accompanied by a
-   corresponding :option:`<value>` argument).
+.. option:: --flux_units <units>
 
-.. option:: <value> (optional)
+   Units of flux data in input file. Valid choices are
+   :code:`erg/cm^2/s/A`
+   (:math:`\erg\,\cm^{-2}\,\second^{-1}\,\angstrom^{-1}`; default).
 
-   Value of atmosphere parameter (must be accompanied by a
-   corresponding :option:`<label>` argument).
+.. option:: --label <name>:<value>
 
-Note that :option:`<label>` and :option:`<value>` parameters must be
-paired; and that there can be multiple of these pairs. The input ASCII
-text file should contain one or more lines, each consisting of a
-wavelength value followed by a flux value.
+   Name and value of photospheric parameter label. Can be specified
+   multiple times, to define multiple parameters.

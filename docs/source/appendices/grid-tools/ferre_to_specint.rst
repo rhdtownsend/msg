@@ -3,26 +3,31 @@
 ferre_to_specint
 ~~~~~~~~~~~~~~~~
 
-The :command:`ferre_to_specint` tool extracts a series of flux spectra
-from a data file in `FERRE <http://www.as.utexas.edu/~hebe/ferre>`__
-format, and writes them to :f-schema:`specint` files. It accepts the
-following command-line arguments:
-
 .. program:: ferre_to_specint
 
-.. option:: <ferre_file_name>
+Synopsis
+--------
 
-   Name of input FERRE file.
+.. code-block:: text
 
-.. option:: <ferre_file_type>
+   ferre_to_specint <input_file_name> <output_file_name> [options]
+
+Description
+-----------
+
+The :command:`ferre_to_specint` tool extracts a series of flux spectra
+from a data file in `FERRE <http://www.as.utexas.edu/~hebe/ferre>`__
+format, and writes them to :f-schema:`specint` files. Output files
+have the name :file:`<output_file_prefix>-NNNNNNNN.h5`, where
+:file:`NNNNNNNN` is the zero-padded index of the spectrum (starting at
+1).
+
+Options
+-------
+
+.. option:: --file_type <type>
 
    Type of input file. This determines the mapping between
    photospheric parameters given in the input file, and photospheric
-   parameters written to the output file. Supported options are
-   :code:`CAP18` (for the :ads_citealp:`allende:2018` grids).
-
-.. option:: <specint_prefix>
-
-   Prefix of output :f-schema:`specint` files; these will have the name
-   :file:`<specint_prefix>-NNNNNNNN.h5`, where :file:`NNNNNNNN` is the
-   zero-padded index of the spectrum (starting at 1).
+   parameters written to the output file. Valid choices are
+   :code:`CAP18` (for the :ads_citealp:`allende:2018` grids; default).
