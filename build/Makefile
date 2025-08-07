@@ -18,7 +18,8 @@ endif
 
 ifeq ($(TESTS),yes)
   UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_axis \
-                   utest_indexer utest_vgrid utest_specgrid utest_photgrid
+                   utest_indexer utest_vgrid utest_specgrid utest_photgrid test_parser \
+                   utest_lin_range utest_log_range utest_tab_range utest_comp_range
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_vgrid time_specgrid
   BIN_TARGETS += $(UTEST_TARGETS) $(STRESS_TARGETS) $(TIME_TARGETS)
@@ -26,9 +27,9 @@ endif
 
 ifeq ($(TOOLS),yes)
   BIN_TARGETS += ascii_to_specint synspec_to_specint ferre_to_specint	\
-                 c3k_to_specint specint_to_specint			\
+                 c3k_to_specint rebin_specint				\
                  specgrid_to_photgrid specint_to_specgrid		\
-                 make_passband make_photon_passband	\
+                 make_passband make_photon_passband			\
                  inspect_grid subset_specgrid subset_photgrid # make_bb_photgrid
 
   ifneq ($(FITS_LDFLAGS),)
@@ -110,7 +111,7 @@ libmsg_SRCS = msg_m.fypp \
               $(speccache_SRCS) $(specgrid_SRCS) $(specint_SRCS) $(specsource_SRCS) \
               $(limb_SRCS) $(passband_SRCS) $(range_SRCS) \
               cubint_m.fypp stat_m.fypp file_m.fypp	\
-              fit_m.fypp math_m.fypp
+              fit_m.fypp math_m.fypp arg_parser_m.fypp tools_utils_m.fypp
 
 libfmsg_SRCS = fmsg_m.fypp
 libfmsg_USES = $(libmsg_SRCS)
@@ -139,21 +140,17 @@ c3k_to_specint_SRCS = c3k_to_specint.fypp
 c3k_to_specint_USES = $(libmsg_SRCS)
 c3k_to_specint_LIBS = libmsg
 
-goettingen_to_specint_SRCS = goettingen_to_specint.fypp tools_utils_m.fypp
+goettingen_to_specint_SRCS = goettingen_to_specint.fypp fits_m.fypp
 goettingen_to_specint_USES = $(libmsg_SRCS)
 goettingen_to_specint_LIBS = libmsg
 
-coelho_to_specint_SRCS = coelho_to_specint.fypp tools_utils_m.fypp
+coelho_to_specint_SRCS = coelho_to_specint.fypp fits_m.fypp
 coelho_to_specint_USES = $(libmsg_SRCS)
 coelho_to_specint_LIBS = libmsg
 
-parse_wavelen_SRCS = parse_wavelen.fypp
-parse_wavelen_USES = $(libmsg_SRCS)
-parse_wavelen_LIBS = libmsg
-
-specint_to_specint_SRCS = specint_to_specint.fypp
-specint_to_specint_USES = $(libmsg_SRCS)
-specint_to_specint_LIBS = libmsg
+rebin_specint_SRCS = rebin_specint.fypp
+rebin_specint_USES = $(libmsg_SRCS)
+rebin_specint_LIBS = libmsg
 
 specgrid_to_photgrid_SRCS = specgrid_to_photgrid.fypp
 specgrid_to_photgrid_USES = $(libmsg_SRCS)
@@ -223,6 +220,26 @@ utest_indexer_SRCS = utest_indexer.fypp utest_indexer_m.fypp
 utest_indexer_USES = $(libmsg_SRCS)
 utest_indexer_LIBS = libmsg
 
+utest_lin_range_SRCS = utest_lin_range.fypp utest_lin_range_m.fypp
+utest_lin_range_USES = $(libmsg_SRCS)
+utest_lin_range_LIBS = libmsg
+
+utest_log_range_SRCS = utest_log_range.fypp utest_log_range_m.fypp
+utest_log_range_USES = $(libmsg_SRCS)
+utest_log_range_LIBS = libmsg
+
+utest_tab_range_SRCS = utest_tab_range.fypp utest_tab_range_m.fypp
+utest_tab_range_USES = $(libmsg_SRCS)
+utest_tab_range_LIBS = libmsg
+
+utest_comp_range_SRCS = utest_comp_range.fypp utest_comp_range_m.fypp
+utest_comp_range_USES = $(libmsg_SRCS)
+utest_comp_range_LIBS = libmsg
+
+test_parser_SRCS = test_parser.fypp
+test_parser_USES = $(libmsg_SRCS)
+test_parser_LIBS = libmsg
+
 utest_specgrid_SRCS = utest_specgrid.fypp utest_specgrid_m.fypp
 utest_specgrid_USES = $(libmsg_SRCS) $(libfmsg_SRCS)
 utest_specgrid_LIBS = libmsg libfmsg
@@ -253,7 +270,7 @@ FFLAGS = -I$(FORUM_INC_DIR)
 
 FPPFLAGS = -I$(FORUM_INC_DIR)
 
-LDFLAGS = `lapack_link` `hdf5_link` `lapack95_link` -L$(FORUM_LIB_DIR) -lforum
+LDFLAGS = `lapack_link` `hdf5_link` `lapack95_link` -L$(FORUM_LIB_DIR) -lforum $(FITS_LDFLAGS)
 
 # Include standard rules
 

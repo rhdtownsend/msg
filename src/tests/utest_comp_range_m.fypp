@@ -1,0 +1,271 @@
+! Module  : utest_comp_range_m
+! Purpose : Test implementations for utest_comp_range
+!
+! Copyright 2021-2023 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+module utest_comp_range_m
+
+  ! Uses
+
+  use forum_m
+
+  use lin_range_m
+  use comp_range_m
+  use stat_m
+
+  use ISO_FORTRAN_ENV
+
+  ! No implicit typing
+
+  implicit none (type, external)
+
+  ! Access specifiers
+
+  private
+
+  public :: test
+
+contains
+
+   subroutine test()
+
+      call test_attr_()
+      call test_unpack_()
+      call test_subset_()
+
+   end subroutine test
+
+   !****
+
+   subroutine test_attr_()
+
+      type(comp_range_t) :: range
+      integer            :: n
+      integer            :: n_chk
+      real(RD)           :: x_min
+      real(RD)           :: x_min_chk
+      real(RD)           :: x_max
+      real(RD)           :: x_max_chk
+
+      print *, '  attributes'
+
+      call attr_arrange_()
+      call attr_act_()
+      call attr_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine attr_arrange_()
+
+         range = comp_range_t([lin_range_t(0._RD, 1._RD, 3), lin_range_t(3._RD, 2._RD, 3)])
+
+         n_chk = 6
+         x_min_chk = 0._RD
+         x_max_chk = 7._RD
+
+         ! Finish
+
+         return
+
+      end subroutine attr_arrange_
+
+      !****
+
+      subroutine attr_act_()
+
+         call range%get_n(n)
+         call range%get_x_min(x_min)
+         call range%get_x_max(x_max)
+
+         ! Finish
+
+         return
+
+      end subroutine attr_act_
+
+      !****
+
+      subroutine attr_assert_()
+
+         if (n == n_chk) then
+            print *,'    PASS n'
+         else
+            print *,'    FAIL n:', n, '/=', n_chk
+         end if
+
+         if (x_min == x_min_chk) then
+            print *,'    PASS x_min'
+         else
+            print *,'    FAIL x_max:', x_min, '/=', x_min_chk
+         end if
+
+         if (x_max == x_max_chk) then
+            print *,'    PASS x_max'
+         else
+            print *,'    FAIL x_max:', x_max, '/=', x_max_chk
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine attr_assert_
+
+   end subroutine test_attr_
+
+   !****
+
+   subroutine test_unpack_()
+
+      type(comp_range_t) :: range
+      real(RD)           :: x(6)
+      real(RD)           :: x_chk(6)
+
+      print *, '  unpack'
+
+      call unpack_arrange_()
+      call unpack_act_()
+      call unpack_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine unpack_arrange_()
+
+         range = comp_range_t([lin_range_t(0._RD, 1._RD, 3), lin_range_t(3._RD, 2._RD, 3)])
+
+         x_chk = [0._RD, 1._RD, 2._RD, 3._RD, 5._RD, 7._RD]
+
+        ! Finish
+
+         return
+
+      end subroutine unpack_arrange_
+
+      !****
+
+      subroutine unpack_act_()
+
+         call range%unpack(x)
+
+         ! Finish
+
+         return
+
+      end subroutine unpack_act_
+
+      !****
+
+      subroutine unpack_assert_()
+
+         real(RD), parameter :: tol = 0._RD
+
+         real(RD) :: x_err(6)
+
+         x_err = x - x_chk
+
+         if (ALL(ABS(x_err) <= tol)) then
+            print *,'    PASS x'
+         else
+            print *,'    FAIL x:', x, '/=', x_chk
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine unpack_assert_
+
+   end subroutine test_unpack_
+
+   !****
+
+   subroutine test_subset_()
+
+      type(comp_range_t) :: range
+      real(RD)          :: x(4)
+      real(RD)          :: x_chk(4)
+
+      print *, '  subset'
+
+      call subset_arrange_()
+      call subset_act_()
+      call subset_assert_()
+
+      ! Finish
+
+      return
+
+   contains
+
+      subroutine subset_arrange_()
+
+         range = comp_range_t([lin_range_t(0._RD, 1._RD, 3), lin_range_t(3._RD, 2._RD, 3)])
+
+         x_chk = [1._RD, 2._RD, 3._RD, 5._RD]
+
+        ! Finish
+
+         return
+
+      end subroutine subset_arrange_
+
+      !****
+
+      subroutine subset_act_()
+
+         call range%subset(2, 5)
+         call range%unpack(x)
+
+         ! Finish
+
+         return
+
+      end subroutine subset_act_
+
+      !****
+
+      subroutine subset_assert_()
+
+         real(RD), parameter :: tol = 0._RD
+
+         real(RD) :: x_err(4)
+
+         x_err = x - x_chk
+
+         if (ALL(ABS(x_err) <= tol)) then
+            print *,'    PASS x'
+         else
+            print *,'    FAIL x:', x, '/=', x_chk
+         end if
+
+         ! Finish
+
+         return
+
+      end subroutine subset_assert_
+
+   end subroutine test_subset_
+
+end module utest_comp_range_m
