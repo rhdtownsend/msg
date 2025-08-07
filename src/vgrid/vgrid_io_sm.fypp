@@ -155,14 +155,16 @@ contains
       subroutine read_rev3_()
 
          integer                   :: rank
-         integer, allocatable      :: v_lin_seq(:)
+         integer, allocatable      :: shape(:)
          type(axis_t), allocatable :: axes(:)
          integer                   :: r
+         integer, allocatable      :: v_lin_seq(:)
          type(hdf5io_t)            :: hdf5io_axis
 
          call hdf5io%read_attr('rank', rank)
 
          allocate(axes(rank))
+         allocate(shape(rank))
 
          axis_loop : do r = 1, rank
             hdf5io_axis = hdf5io_t(hdf5io, axis_group_name_(r))
@@ -171,13 +173,14 @@ contains
             if (PRESENT(stat)) then
                if (stat /= STAT_OK) return
             endif
+            call axes(r)%get_n(shape(r))
          end do axis_loop
 
          call hdf5io%alloc_read_dset('v_lin_seq', v_lin_seq)
 
          select type(self)
          type is(vgrid_t)
-            self = vgrid_t_map_(axes, v_lin_seq)
+            self = vgrid_t_indexer_(axes, indexer_t(shape, v_lin_seq))
          class default
             @:ABORT('invalid type')
          end select

@@ -29,8 +29,11 @@ contains
 
    module procedure vgrid_t_coords_
 
-      type(axis_t), allocatable :: axes(:)
-      integer, allocatable      :: v_lin_seq(:)
+      integer              :: r
+      real(RD)             :: x(SIZE(x_vecs, 2))
+      type(axis_t)         :: axes(SIZE(x_vecs, 1))
+      integer              :: shape(SIZE(x_vecs, 1))
+      integer, allocatable :: v_lin_seq(:)
 
       @:CHECK_BOUNDS(SIZE(labels), SIZE(x_vecs, 1))
 
@@ -39,7 +42,17 @@ contains
 
       ! Build the axes
 
-      axes = axes_(x_vecs, labels)
+      do r = 1, SIZE(x_vecs, 1)
+
+         x = x_vecs(r,:)
+
+         associate (u => unique_indices(x))
+            axes(r) = axis_t(x(u), labels(r))
+         end associate
+
+         call axes(r)%get_n(shape(r))
+
+      end do
 
       ! Set up the vertex sequence-to-linear index map
 
@@ -47,7 +60,7 @@ contains
 
       ! Construct vgrid
 
-      vgrid = vgrid_t_map_(axes, v_lin_seq)
+      vgrid = vgrid_t_indexer_(axes, indexer_t(shape, v_lin_seq))
 
       ! Finish
 
@@ -59,16 +72,13 @@ contains
 
    module procedure vgrid_t_map_
 
-      integer         :: shape(SIZE(axes))
-      type(indexer_t) :: indexer
+      integer :: shape(SIZE(axes))
 
       ! Construct vgrid from the axes and sequence-to-linear index map
 
       call axes%get_n(shape)
 
-      indexer = indexer_t(shape, v_lin_seq)
-
-      vgrid = vgrid_t_indexer_(axes, indexer)
+      vgrid = vgrid_t_indexer_(axes, indexer_t(shape, v_lin_seq))
 
       ! Finish
 
@@ -122,9 +132,10 @@ contains
 
    module procedure vgrid_t_mask_
 
-      integer              :: n_v_lin
-      integer, allocatable :: v_lin_seq(:)
-      integer              :: v_lin
+      integer :: n_v_lin
+      integer :: v_lin_seq(COUNT(mask))
+      integer :: v_lin
+      integer :: shape(SIZE(axes))
 
       ! Construct vgrid from the axes and occupancy mask. This is a
       ! compatibility constructor for grids read in the "old" (rev <=
@@ -138,45 +149,15 @@ contains
 
       ! Construct vgrid
 
-      vgrid = vgrid_t_map_(axes, v_lin_seq)
+      call axes%get_n(shape)
+
+      vgrid = vgrid_t_indexer_(axes, indexer_t(shape, v_lin_seq))
 
       ! Finish
 
       return
 
    end procedure vgrid_t_mask_
-
-   !****
-
-   function axes_(x_vecs, labels) result(axes)
-
-      real(RD), intent(in)      :: x_vecs(:,:)
-      character(*), intent(in)  :: labels(:)
-      type(axis_t)              :: axes(SIZE(labels))
-
-      integer  :: r
-      real(RD) :: x(SIZE(x_vecs, 2))
-
-      @:CHECK_BOUNDS(SIZE(x_vecs, 1), SIZE(labels))
-
-      ! Generate a set of axes from the vertex coordinate list and
-      ! labels
-
-      do r = 1, SIZE(x_vecs, 1)
-
-         x = x_vecs(r,:)
-
-         associate (u => unique_indices(x))
-            axes(r) = axis_t(x(u), labels(r))
-         end associate
-
-      end do
-
-      ! Finish
-
-      return
-
-   end function axes_
 
    !****
 
