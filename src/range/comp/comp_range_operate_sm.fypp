@@ -57,17 +57,17 @@ contains
 
    module procedure subset
 
-      integer                            :: j_a
-      integer                            :: j_b
+      integer                            :: j_min
+      integer                            :: j_max
       integer                            :: n_ranges
       type(range_element_t), allocatable :: range_elements(:)
       integer                             :: j
-      integer                             :: k_a
-      integer                             :: k_b
+      integer                             :: k_min
+      integer                             :: k_max
 
       ! Subset the range
 
-      if (i_a < 1) then
+      if (i_min < 1) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_RANGE_LO
             return
@@ -76,7 +76,7 @@ contains
          end if
       end if
 
-      if (i_b > self%i_bdy(self%n_ranges+1)-1) then
+      if (i_max > self%i_bdy(self%n_ranges+1)-1) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_RANGE_HI
             return
@@ -85,7 +85,7 @@ contains
          end if
       end if
 
-      if (i_b < i_a) then
+      if (i_max < i_min) then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_ARGUMENT
             return
@@ -94,39 +94,44 @@ contains
          end if
       end if
 
-      ! First determine where in ranges i_a and i_b are located
+      ! First determine where in ranges i_min and i_max are located
 
-      call locate(self%i_bdy, i_a, j_a)
-      call locate(self%i_bdy, i_b, j_b)
+      call locate(self%i_bdy, i_min, j_min)
+      call locate(self%i_bdy, i_max, j_max)
 
-      @:ASSERT(j_a >= 1,'out-of-bounds')
-      @:ASSERT(j_b <= self%n_ranges,'out-of-bounds')
+      @:ASSERT(j_min >= 1,'out-of-bounds')
+      @:ASSERT(j_max <= self%n_ranges,'out-of-bounds')
 
       ! Create the subset
 
-      n_ranges = j_b - j_a + 1
+      n_ranges = j_max - j_min + 1
 
-      allocate(range_elements(n_ranges))
+      range_elements = self%range_elements(j_min:j_max)
 
-      ranges_loop : do j = j_a, j_b
+      ranges_loop : do j = j_min, j_max
 
-         if (j == j_a) then
-            k_a = i_a - self%i_bdy(j) + 1
+         if (j == j_min) then
+            k_min = i_min - self%i_bdy(j) + 1
          else
-            k_a = 1
+            k_min = 1
          end if
 
-         if (j == j_b) then
-            k_b = i_b - self%i_bdy(j) + 1
+         if (j == j_max) then
+            k_max = i_max - self%i_bdy(j) + 1
          else
-            k_b = self%i_bdy(j+1) - self%i_bdy(j)
+            k_max = self%i_bdy(j+1) - self%i_bdy(j)
          end if
 
-         call self%range_elements(j)%range%subset(k_a, k_b, range_elements(j-j_a+1)%range)
+         call range_elements(j-j_min+1)%range%subset(k_min, k_max)
 
       end do ranges_loop
 
-      range = comp_range_t_elements_(range_elements)
+      select type(self)
+      type is(comp_range_t)
+         self = comp_range_t_elements_(range_elements)
+      class default
+         @:ABORT('subset is not defined for subclass of comp_range_t')
+      end select
 
       ! Finish
 

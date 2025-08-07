@@ -54,14 +54,14 @@ module limb_specint_m
       procedure, public :: get_lam_max
       procedure, public :: get_precise
       procedure, public :: get_ssize
+      procedure, public :: subset
+      procedure, public :: rebin
+      procedure, public :: filter
       procedure, public :: interp_intensity
       procedure, public :: interp_E_moment
       procedure, public :: interp_D_moment
       procedure, public :: interp_flux
       procedure         :: interp_f_
-      procedure, public :: subset
-      procedure, public :: rebin
-      procedure, public :: filter
       procedure, public :: read
       procedure, public :: write
    end type limb_specint_t
@@ -128,6 +128,35 @@ module limb_specint_m
 
    end interface
 
+   ! In limb_specint_operate_sm
+
+   interface
+
+      module subroutine subset(self, lam_min, lam_max, stat)
+         implicit none (type, external)
+         class(limb_specint_t), intent(inout) :: self
+         real(RD), intent(in)                 :: lam_min
+         real(RD), intent(in)                 :: lam_max
+         integer, intent(out), optional       :: stat
+      end subroutine subset
+
+      module subroutine rebin(self, range, stat)
+         implicit none (type, external)
+         class(limb_specint_t), intent(inout) :: self
+         class(range_t), intent(in)           :: range
+         integer, intent(out), optional       :: stat
+      end subroutine rebin
+
+      module subroutine filter(self, passband, photint, stat)
+         implicit none (type, external)
+         class(limb_specint_t), intent(in)          :: self
+         type(passband_t), intent(in)               :: passband
+         class(photint_t), allocatable, intent(out) :: photint
+         integer, intent(out), optional             :: stat
+      end subroutine filter
+
+   end interface
+
    ! In limb_specint_interp_sm
 
    interface
@@ -180,37 +209,6 @@ module limb_specint_m
          real(RD), intent(out)             :: f(:)
          integer, intent(out), optional    :: stat
       end subroutine interp_f_
-
-   end interface
-
-   ! In limb_specint_operate_sm
-
-   interface
-
-      module subroutine subset(self, lam_min, lam_max, specint, stat)
-         implicit none (type, external)
-         class(limb_specint_t), intent(in)          :: self
-         real(RD), intent(in)                       :: lam_min
-         real(RD), intent(in)                       :: lam_max
-         class(specint_t), allocatable, intent(out) :: specint
-         integer, intent(out), optional             :: stat
-      end subroutine subset
-
-      module subroutine rebin(self, range, specint, stat)
-         implicit none (type, external)
-         class(limb_specint_t), intent(in)          :: self
-         class(range_t), intent(in)                 :: range
-         class(specint_t), allocatable, intent(out) :: specint
-         integer, intent(out), optional             :: stat
-      end subroutine rebin
-
-      module subroutine filter(self, passband, photint, stat)
-         implicit none (type, external)
-         class(limb_specint_t), intent(in)          :: self
-         type(passband_t), intent(in)               :: passband
-         class(photint_t), allocatable, intent(out) :: photint
-         integer, intent(out), optional             :: stat
-      end subroutine filter
 
    end interface
 

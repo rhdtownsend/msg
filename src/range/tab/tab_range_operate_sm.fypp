@@ -53,7 +53,7 @@ contains
 
       ! Subset the range
 
-      if (i_a < 1) then
+      if (i_min < 1) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_RANGE_LO
             return
@@ -62,7 +62,7 @@ contains
          end if
       end if
 
-      if (i_b > self%n) then
+      if (i_max > self%n) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_RANGE_HI
             return
@@ -71,7 +71,7 @@ contains
          end if
       end if
 
-      if (i_b < i_a) then
+      if (i_max < i_min) then
          if (PRESENT(stat)) then
             stat = STAT_INVALID_ARGUMENT
             return
@@ -80,7 +80,12 @@ contains
          end if
       end if
 
-      range = tab_range_t(self%x(i_a:i_b))
+      select type(self)
+      type is(tab_range_t)
+         self = tab_range_t(self%x(i_min:i_max))
+      class default
+         @:ABORT('subset is not defined for subclass of tab_range_t')
+      end select
 
       ! Finish
 

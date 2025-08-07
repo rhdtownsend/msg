@@ -111,13 +111,12 @@ module lin_range_m
          real(RD), intent(out)          :: x(:)
       end subroutine unpack
 
-      module subroutine subset(self, i_a, i_b, range, stat)
+      module subroutine subset(self, i_min, i_max, stat)
          implicit none (type, external)
-         class(lin_range_t), intent(in)           :: self
-         integer, intent(in)                      :: i_a
-         integer, intent(in)                      :: i_b
-         class(range_t), allocatable, intent(out) :: range
-         integer, intent(out), optional           :: stat
+         class(lin_range_t), intent(inout) :: self
+         integer, intent(in)               :: i_min
+         integer, intent(in)               :: i_max
+         integer, intent(out), optional    :: stat
       end subroutine subset
 
    end interface

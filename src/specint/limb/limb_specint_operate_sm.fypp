@@ -33,11 +33,12 @@ contains
 
    module procedure subset
 
-      integer                     :: i_a
-      integer                     :: i_b
+      integer                     :: i_min
+      integer                     :: i_max
+      integer                     :: n_lam
       class(range_t), allocatable :: range
 
-      ! Subset specint
+      ! Subset the specint
 
       if (lam_max < lam_min) then
          if (PRESENT(stat)) then
@@ -48,10 +49,10 @@ contains
          end if
       end if
 
-      call locate(self%lam, lam_min, i_a, right=.FALSE.)
-      call locate(self%lam, lam_max, i_b, right=.TRUE.)
+      call locate(self%lam, lam_min, i_min, right=.FALSE.)
+      call locate(self%lam, lam_max, i_max, right=.TRUE.)
 
-      if (i_a < 1) then
+      if (i_min < 1) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_LAM_LO
             return
@@ -60,21 +61,28 @@ contains
          end if
       end if
 
-      if (i_a > self%n_lam) then
+      if (i_max > self%n_lam) then
          if (PRESENT(stat)) then
             stat = STAT_OUT_OF_BOUNDS_LAM_LO
             return
          else
-            @:ABORT('out-of-bounds (lo) lam')
+            @:ABORT('out-of-bounds (hi) lam')
          end if
       end if
 
-      call self%range%subset(i_a, i_b, range, stat)
+      range = self%range
+
+      call range%subset(i_min, i_max, stat)
       if (PRESENT(stat)) then
          if (stat /= STAT_OK) return
       end if
 
-      specint = limb_specint_t(self%c(:,i_a:i_b-1), range, self%limb, self%precise)
+      select type(self)
+      type is(limb_specint_t)
+         self = limb_specint_t(self%c(:,i_min:i_max-1), range, self%limb, self%precise)
+      class default
+         @:ABORT('subset is not defined for subclass of limb_specint_t')
+      end select
 
       ! Finish
 
@@ -115,7 +123,13 @@ contains
 
       end do
 
-      specint = limb_specint_t(c, range, self%limb, self%precise)
+      self%c = self%c
+
+      self%lam = lam
+
+      self%range = range
+
+      self%n_lam = n_lam
 
       ! Finish
 
