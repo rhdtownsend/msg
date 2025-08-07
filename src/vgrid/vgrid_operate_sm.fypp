@@ -29,12 +29,14 @@ contains
 
    module procedure subset
 
-      integer  :: i_min(self%rank)
-      integer  :: i_max(self%rank)
-      integer  :: r
-      integer  :: i
-      real(RD) :: x
-      logical  :: dim_mask_(self%rank)
+      integer                   :: i_min(self%rank)
+      integer                   :: i_max(self%rank)
+      integer                   :: r
+      integer                   :: i
+      real(RD)                  :: x
+      type(indexer_t)           :: indexer
+      logical                   :: dim_mask_(self%rank)
+      type(axis_t), allocatable :: axes(:)
 
       @:CHECK_BOUNDS(SIZE(x_min), self%rank)
       @:CHECK_BOUNDS(SIZE(x_max), self%rank)
@@ -73,24 +75,24 @@ contains
 
       end do
 
-      ! Subset the indexer
+      ! Subset the indexer and axes
 
-      call self%indexer%subset(i_min, i_max, vert_mask, dim_mask_)
+      indexer = self%indexer
 
-      ! Update the rank, shape and axes
+      call indexer%subset(i_min, i_max, vert_mask, dim_mask_)
 
-      self%rank = COUNT(dim_mask_)
-      self%shape = PACK(i_max-i_min+1, MASK=dim_mask_)
+      axes = PACK(self%axes, MASK=dim_mask_)
 
-      self%axes = PACK(self%axes, MASK=dim_mask_)
+      call axes%subset(PACK(i_min, MASK=dim_mask_), PACK(i_max, MASK=dim_mask_))
 
-      call self%axes%subset(PACK(i_min, MASK=dim_mask_), PACK(i_max, MASK=dim_mask_))
+      ! Update the vgrid
 
-      ! Update the cache
-
-      deallocate(self%vert_cache)
-
-      call setup_cache_(self)
+      select type(self)
+      type is(vgrid_t)
+         self = vgrid_t_indexer_(axes, indexer)
+      class default
+         @:ABORT('invalid type')
+      end select
 
       ! If necessary, return dim_mask
 

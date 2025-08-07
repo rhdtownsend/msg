@@ -97,10 +97,12 @@ module vgrid_m
          type(vgrid_t)            :: vgrid
       end function vgrid_t_map_
 
-      module subroutine setup_cache_(vgrid)
+      module function vgrid_t_indexer_(axes, indexer) result(vgrid)
          implicit none (type, external)
-         type(vgrid_t), intent(inout) :: vgrid
-      end subroutine setup_cache_
+         type(axis_t), intent(in)    :: axes(:)
+         type(indexer_t), intent(in) :: indexer
+         type(vgrid_t)               :: vgrid
+      end function vgrid_t_indexer_
 
    end interface
 

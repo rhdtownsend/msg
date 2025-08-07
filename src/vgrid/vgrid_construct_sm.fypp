@@ -59,22 +59,54 @@ contains
 
    module procedure vgrid_t_map_
 
+      integer         :: shape(SIZE(axes))
+      type(indexer_t) :: indexer
+
       ! Construct vgrid from the axes and sequence-to-linear index map
 
-      ! Initialize axes, rank and shape
+      call axes%get_n(shape)
+
+      indexer = indexer_t(shape, v_lin_seq)
+
+      vgrid = vgrid_t_indexer_(axes, indexer)
+
+      ! Finish
+
+      return
+
+   end procedure vgrid_t_map_
+
+   !****
+
+   module procedure vgrid_t_indexer_
+
+      integer              :: rank_axes
+      integer              :: shape_axes(SIZE(axes))
+      integer              :: rank_indexer
+      integer, allocatable :: shape_indexer(:)
+
+      ! Construct vgrid from the axes and indexer
+
+      rank_axes = SIZE(axes)
+
+      call axes%get_n(shape_axes)
+
+      @:ASSERT_DEBUG(ALL(shape_axes > 1), 'grid has degenerate axes')
+
+      call indexer%get_rank(rank_indexer)
+
+      @:ASSERT_DEBUG(rank_indexer == rank_axes, 'mismatched ranks')
+
+      allocate(shape_indexer(rank_indexer))
+      call indexer%get_shape(shape_indexer)
+
+      @:ASSERT_DEBUG(ALL(shape_indexer == shape_indexer), 'mismatched shape')
 
       vgrid%axes = axes
+      vgrid%indexer = indexer
 
-      vgrid%rank = SIZE(axes)
-
-      allocate(vgrid%shape(vgrid%rank))
-      call axes%get_n(vgrid%shape)
-
-      @:ASSERT_DEBUG(ALL(vgrid%shape > 1), 'grid has degenerate axis')
-
-      ! Set up the indexer
-
-      vgrid%indexer = indexer_t(vgrid%shape, v_lin_seq)
+      vgrid%shape = shape_indexer
+      vgrid%rank = rank_indexer
 
       ! Set up the per-vertex cache
 
@@ -84,7 +116,7 @@ contains
 
       return
 
-   end procedure vgrid_t_map_
+   end procedure vgrid_t_indexer_
 
    !****
 
@@ -207,7 +239,9 @@ contains
 
    !****
 
-   module procedure setup_cache_
+   subroutine setup_cache_(vgrid)
+
+      type(vgrid_t), intent(inout) :: vgrid
 
       integer              :: n_vert_seq
       logical, allocatable :: orphan_mask(:)
@@ -311,6 +345,6 @@ contains
 
       return
 
-   end procedure setup_cache_
+   end subroutine setup_cache_
 
 end submodule vgrid_construct_sm
