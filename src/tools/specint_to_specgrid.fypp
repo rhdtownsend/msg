@@ -250,7 +250,7 @@ contains
       write(OUTPUT_UNIT, 110) 'Building specgrid...'
 110   format(A)
 
-      specgrid = specgrid_t(specsource, vgrid, remove_orphans=.TRUE.)
+      specgrid = specgrid_t(specsource, vgrid)
 
       ! Subset it to remove any superfluous data
 

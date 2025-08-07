@@ -25,6 +25,9 @@ program synspec_to_specint
    use math_m
    use msg_m
 
+   use arg_parser_m
+   use tools_utils_m
+
    use ISO_FORTRAN_ENV
    use IEEE_ARITHMETIC
 
@@ -34,100 +37,62 @@ program synspec_to_specint
 
    ! Variables
 
-   character(:), allocatable :: synspec_file_name
-   integer                   :: n_mu
-   real(RD)                  :: mu_0
-   real(RD)                  :: R
-   real(RD)                  :: lam_min
-   real(RD)                  :: lam_max
-   character(:), allocatable :: law_str
-   character(:), allocatable :: specint_file_name
+   character(:), allocatable :: input_file_name
+   character(:), allocatable :: output_file_name
+   character(:), allocatable :: file_type
+   character(:), allocatable :: limb_law
+   character(:), allocatable :: mu_range
+   character(:), allocatable :: labels(:)
 
-   type(limb_t)              :: limb
-   real(RD), allocatable     :: I_in(:,:)
-   real(RD), allocatable     :: lam_in(:)
-   real(RD)                  :: w_0
-   real(RD)                  :: dw
-   integer                   :: n_lam
-   integer                   :: j
-   real(RD), allocatable     :: mu(:)
-   type(log_range_t)         :: range
-   real(RD), allocatable     :: lam(:)
-   real(RD), allocatable     :: I(:,:)
+   type(arg_parser_t)        :: arg_parser
    type(limb_specint_t)      :: specint
    type(hdf5io_t)            :: hdf5io
    type(hdf5io_t)            :: hdf5io_labels
+   integer                   :: j
    character(:), allocatable :: label
+   character(:), allocatable :: name
    real(RD)                  :: value
 
-   ! Read command-line arguments
+   ! Parse command-line arguments
 
-   @:ASSERT(n_arg() >= 8 .AND. MOD(n_arg(), 2)==0, 'Syntax: synspec_to_specint synspec_file_name n_mu mu_0 lam_min lam_max R law_str specint_file_name [label value]')
+   file_type = 'flux'
 
-   call get_arg(1, synspec_file_name)
-   call get_arg(2, n_mu)
-   call get_arg(3, mu_0)
-   call get_arg(4, lam_min)
-   call get_arg(5, lam_max)
-   call get_arg(6, R)
-   call get_arg(7, law_str)
-   call get_arg(8, specint_file_name)
+   arg_parser = arg_parser_t()
 
-   ! Set up the limb-darkening law & angle axis
+   call arg_parser%define_option('file-type', OPT_REQUIRED_ARG)
+   call arg_parser%define_option('mu-range', OPT_REQUIRED_ARG)
+   call arg_parser%define_option('label', OPT_REQUIRED_ARG)
 
-   if (n_mu >= 2) then
-      limb = limb_t(law_str)
-      mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
-   else
-      limb = limb_t('CONST')
-      n_mu = 1
-      mu = [1._RD]
-   end if
+   call arg_parser%parse(arg_proc, opt_proc)
 
-   ! Read data from the synspec file
+   if (.NOT. allocated(input_file_name)) call synopsis()
+   if (.NOT. allocated(output_file_name)) call synopsis()
 
-   call read_data(synspec_file_name, n_mu, lam_in, I_in)
+   ! Create the specint
 
-   @:ASSERT(lam_min >= lam_in(1),'out-of-bounds lam_min')
-   @:ASSERT(lam_max <= lam_in(SIZE(lam_in)),'out-of-bounds lam_max')
+   select case(file_type)
+   case('flux')
+      call create_flux_specint(input_file_name, specint)
+   case('intensity')
+      call create_intensity_specint(input_file_name, limb_law, mu_range, specint)
+   case default
+      @:ABORT('invalid file_type')
+   end select
 
-   ! Set up the output wavelength axis (uniform resolution)
+   ! Write the output file
 
-   dw = 1._RD/R
-   w_0 = LOG(lam_min)
-   n_lam = FLOOR((LOG(lam_max) - LOG(lam_min))/dw) + 1
-
-   range = log_range_t(w_0, dw, n_lam)
-
-   allocate(lam(n_lam))
-   call range%unpack(lam)
-
-   lam(1) = MAX(lam_in(1), lam_min)
-   lam(n_lam) = MIN(lam_in(SIZE(lam_in)), lam(n_lam))
-
-   write(OUTPUT_UNIT, *) 'output lam range:', lam(1), lam(n_lam)
-
-   ! Bin the data onto this axis
-
-   call bin_data(lam_in, I_in, lam, I)
-
-   ! Create specint
-
-   specint = limb_specint_t(I, mu, range, limb, precise=.FALSE.)
-
-   ! Write it (together with labels)
-
-   hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
+   hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
 
    call specint%write(hdf5io)
 
    hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
-   do j = 9, n_arg(), 2
-      call get_arg(j, label)
-      call get_arg(j+1, value)
-      call hdf5io_labels%write_attr(label, value)
-   end do
+   if (ALLOCATED(labels)) then
+      do j = 1, SIZE(labels)
+         call parse_name_value(labels(j), name, value)
+         call hdf5io_labels%write_attr(name, value)
+      end do
+   end if
 
    call hdf5io_labels%final()
 
@@ -137,92 +102,126 @@ program synspec_to_specint
 
 contains
 
-   subroutine read_data (file_name, n_mu, lam, I)
+   subroutine arg_proc(a, value)
 
-      character(*), intent(in)           :: file_name
-      integer, intent(in)                :: n_mu
-      real(RD), allocatable, intent(out) :: lam(:)
-      real(RD), allocatable, intent(out) :: I(:,:)
+      integer, intent(in)      :: a
+      character(*), intent(in) :: value
 
-      integer, allocatable :: ind(:)
-      integer              :: d_lam
-      integer              :: n_lam
-      integer              :: i_lam
-      integer              :: n_dup
+      select case(a)
+      case(1)
+         input_file_name = value
+      case(2)
+         output_file_name = value
+      case default
+         call synopsis()
+      end select
 
-      ! Determine the type of file to read based on n_mu:
-      !  n_mu >= 2 -- intensity (SYNSPEC fort.10/fort.18 files)
-      !  n_mu < 2  -- flux (SYNSPEC fort.7 file)
+   end subroutine arg_proc
 
-      if (n_mu >= 2) then
-         call read_data_int(file_name, n_mu, lam, I)
-      else
-         call read_data_flx(file_name, lam, I)
-      end if
+   !****
 
-      ! Sort the data by wavelength
+   subroutine opt_proc(name, value)
 
-      ind = sort_indices(lam)
+      character(*), intent(in) :: name
+      character(*), intent(in) :: value
 
-      lam = lam(ind)
-      I = I(:,ind)
+      select case(name)
+      case('mu-range')
+         mu_range = value
+      case default
+         @:ABORT('invalid option name')
+      end select
 
-      ! Merge duplicate points
+   end subroutine opt_proc
 
-      n_lam = 1
-      d_lam = SIZE(lam)
+   !****
 
-      n_dup = 0
+   subroutine synopsis()
 
-      merge_loop : do i_lam = 2,d_lam
+      write(OUTPUT_UNIT, *) 'Synopsis: synspec_to_specint <input_file_name> <output_file_name> [options]'
+      stop
 
-         if(lam(i_lam) == lam(n_lam)) then
+   end subroutine synopsis
 
-            I(:,n_lam) = I(:,n_lam) + I(:,i_lam)
-            n_dup = n_dup + 1
+   !****
 
-         else
+   subroutine create_intensity_specint(input_file_name, limb_law, mu_range, specint)
 
-            if(n_dup > 0) then
+      character(*), intent(in)               :: input_file_name
+      character(:), allocatable,  intent(in) :: limb_law
+      character(:), allocatable, intent(in)  :: mu_range
+      type(limb_specint_t), intent(out)      :: specint
 
-               I(:,n_lam) = I(:,n_lam)/(n_dup + 1)
-               n_dup = 0
+      type(limb_t)          :: limb
+      real(RD)              :: mu_0
+      integer               :: n_mu
+      real(RD), allocatable :: mu(:)
+      integer               :: j
+      real(RD), allocatable :: lam(:)
+      real(RD), allocatable :: I(:,:)
 
-            endif
+      ! Set up the limb-darkening law & angle axis
 
-            n_lam = n_lam + 1
+      limb = limb_t(limb_law)
 
-            lam(n_lam) = lam(i_lam)
-            I(:,n_lam) = I(:,i_lam)
+      @:ASSERT(ALLOCATED(limb_law), '--limb-law must be specified')
+      @:ASSERT(ALLOCATED(mu_range), '--mu-range must be specified')
 
-         endif
+      call parse_values(mu_range, mu_0, n_mu)
 
-      end do merge_loop
+      mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
 
-      if(n_dup > 0) then
-         I(:,n_lam) = I(:,n_lam)/(n_dup + 1)
-      endif
+      ! Read the intensity data
 
-      d_lam = n_lam
+      call read_intensity_data(input_file_name, n_mu, lam, I)
 
-      call reallocate(lam, [d_lam])
-      call reallocate(I, [n_mu,d_lam])
+      ! Create the specint
 
-      write(OUTPUT_UNIT, *) 'n_lam (merged)  :', n_lam
-      write(OUTPUT_UNIT, *) 'lam_min (read)  :', lam(1)
-      write(OUTPUT_UNIT, *) 'lam_max (read)  :', lam(n_lam)
+      specint = limb_specint_t(I, mu, tab_range_t(lam), limb, precise=.FALSE.)
 
       ! Finish
 
       return
 
-   end subroutine read_data
+   end subroutine create_intensity_specint
 
    !****
 
-   subroutine read_data_int (file_name, n_mu, lam, I)
+   subroutine create_flux_specint(input_file_name, specint)
 
-      character(*), intent(in)           :: file_name
+      character(*), intent(in)          :: input_file_name
+      type(limb_specint_t), intent(out) :: specint
+
+      type(limb_t)          :: limb
+      real(RD), allocatable :: lam(:)
+      real(RD), allocatable :: I(:,:)
+      integer               :: n_lam
+
+      ! Set up the limb-darkening law & angle axis
+
+      limb = limb_t('CONST')
+
+      ! Read the flux data
+
+      call read_flux_data(input_file_name, lam, I)
+
+      ! Create the specint
+
+      n_lam = SIZE(lam)
+
+      specint = limb_specint_t(I, [1._RD], tab_range_t(lam), limb, precise=.FALSE.)
+
+      ! Finish
+
+      return
+
+   end subroutine create_flux_specint
+
+   !****
+
+   subroutine read_intensity_data(input_file_name, n_mu, lam, I)
+
+      character(*), intent(in)           :: input_file_name
       integer, intent(in)                :: n_mu
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
@@ -236,7 +235,7 @@ contains
 
       ! Determine the format of the input file
 
-      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM='UNFORMATTED')
+      open(NEWUNIT=unit, FILE=input_file_name, STATUS='OLD', FORM='UNFORMATTED')
       read(unit) header
       close(unit)
 
@@ -248,7 +247,7 @@ contains
 
       ! Open the input file
 
-      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM=form)
+      open(NEWUNIT=unit, FILE=input_file_name, STATUS='OLD', FORM=form)
 
       if (form == 'UNFORMATTED') then
          read(unit) header
@@ -318,17 +317,21 @@ contains
 
       write(OUTPUT_UNIT, *) 'n_lam (as read) :', n_lam
 
+      ! Process the data
+
+      call process_data(lam, I)
+
       ! Finish
 
       return
 
-   end subroutine read_data_int
+   end subroutine read_intensity_data
 
    !****
 
-   subroutine read_data_flx (file_name, lam, I)
+   subroutine read_flux_data(input_file_name, lam, I)
 
-      character(*), intent(in)           :: file_name
+      character(*), intent(in)           :: input_file_name
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
 
@@ -341,7 +344,7 @@ contains
 
       ! Determine the format of the input file
 
-      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM='UNFORMATTED')
+      open(NEWUNIT=unit, FILE=input_file_name, STATUS='OLD', FORM='UNFORMATTED')
       read(unit) header
       close(unit)
 
@@ -353,7 +356,7 @@ contains
 
       ! Open the input file
 
-      open(NEWUNIT=unit, FILE=file_name, STATUS='OLD', FORM=form)
+      open(NEWUNIT=unit, FILE=input_file_name, STATUS='OLD', FORM=form)
 
       if (form == 'UNFORMATTED') then
          read(unit) header
@@ -418,45 +421,85 @@ contains
 
       write(OUTPUT_UNIT, *) 'n_lam (as read) :', n_lam
 
+      ! Process the data
+
+      call process_data(lam, I)
+
       ! Finish
 
       return
 
-   end subroutine read_data_flx
+   end subroutine read_flux_data
 
    !****
 
-   subroutine bin_data(lam_in, I_in, lam, I)
+   subroutine process_data(lam, I)
 
-      real(RD), intent(in)               :: lam_in(:)
-      real(RD), intent(in)               :: I_in(:,:)
-      real(RD), intent(in)               :: lam(:)
-      real(RD), allocatable, intent(out) :: I(:,:)
+      real(RD), allocatable, intent(inout) :: lam(:)
+      real(RD), allocatable, intent(inout) :: I(:,:)
 
-      integer  :: n_mu
-      integer  :: n_lam
-      integer  :: k
-      integer  :: j
+      integer :: ind(SIZE(lam))
+      integer :: d_lam
+      integer :: n_lam
+      integer :: i_lam
+      integer :: n_dup
 
-      @:CHECK_BOUNDS(SIZE(I_in, 2), SIZE(lam_in))
+      ! Sort the data by wavelength
 
-      ! Convert the piecewise-linear intensity data I_in(:,lam_in) to the binned data I(:,lam)
+      ind = sort_indices(lam)
 
-      n_mu = SIZE(I_in, 1)
-      n_lam = SIZE(lam)
+      lam = lam(ind)
+      I = I(:,ind)
 
-      ALLOCATE(I(n_mu,n_lam-1))
+      ! Merge duplicate points
 
-      mu_loop : do j = 1, n_mu
+      n_lam = 1
+      d_lam = SIZE(lam)
 
-         lam_loop : do k = 1, n_lam-1
-            I(j,k) = integrate_lin(lam_in, I_in(j,:), lam(k), lam(k+1))/(lam(k+1) - lam(k))
-         end do lam_loop
+      n_dup = 0
 
-      end do mu_loop
+      merge_loop : do i_lam = 2,d_lam
+
+         if(lam(i_lam) == lam(n_lam)) then
+
+            I(:,n_lam) = I(:,n_lam) + I(:,i_lam)
+            n_dup = n_dup + 1
+
+         else
+
+            if(n_dup > 0) then
+
+               I(:,n_lam) = I(:,n_lam)/(n_dup + 1)
+               n_dup = 0
+
+            endif
+
+            n_lam = n_lam + 1
+
+            lam(n_lam) = lam(i_lam)
+            I(:,n_lam) = I(:,i_lam)
+
+         endif
+
+      end do merge_loop
+
+      if(n_dup > 0) then
+         I(:,n_lam) = I(:,n_lam)/(n_dup + 1)
+      endif
+
+      ! Convert sampled intensities to averaged intensities
+
+      lam = lam(1:n_lam)
+      I = 0.5_RD*(I(:,1:n_lam-1) + I(:,2:n_lam))
+
+      write(OUTPUT_UNIT, *) 'n_lam (merged)  :', n_lam
+      write(OUTPUT_UNIT, *) 'lam_min (read)  :', lam(1)
+      write(OUTPUT_UNIT, *) 'lam_max (read)  :', lam(n_lam)
 
       ! Finish
 
-   end subroutine bin_data
+      return
+
+   end subroutine process_data
 
 end program synspec_to_specint

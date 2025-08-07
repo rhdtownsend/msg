@@ -29,128 +29,265 @@ module tools_utils_m
 
    implicit none
 
+   ! Interfaces
+
+   interface parse_name_value
+      module procedure parse_name_value_r_
+      module procedure parse_name_value_a_
+   end interface parse_name_value
+
+   interface parse_name_values
+      module procedure parse_name_values_r_r_
+   end interface parse_name_values
+
+   interface parse_values
+      module procedure parse_values_r_r_
+      module procedure parse_values_r_i_
+   end interface parse_values
+
    ! Access specifiers
 
    private
 
-   public :: read_fits_file
+   public :: append_string
+   public :: parse_name_value
+   public :: parse_name_values
+   public :: parse_values
 
    ! Routines
 
 contains
 
-   subroutine read_fits_file(file_name, data, head_labels, head_values)
+   subroutine append_string(strings, string)
 
-      character(*), intent(in)           :: file_name
-      real(RD), allocatable, intent(out) :: data(:)
-      character(*), intent(in), optional :: head_labels(:)
-      real(RD), intent(out), optional    :: head_values(:)
+      character(:), intent(inout), allocatable :: strings(:)
+      character(*), intent(in)                 :: string
 
-      interface
-         subroutine FTGIOU(unit, status)
-            integer, intent(out)   :: unit
-            integer, intent(inout) :: status
-         end subroutine FTGIOU
-         subroutine FTDKOPN(unit, filename, rwmode, blocksize, status)
-            integer, intent(in)      :: unit
-            character(*), intent(in) :: filename
-            integer, intent(in)      :: rwmode
-            integer, intent(out)     :: blocksize
-            integer, intent(inout)   :: status
-         end subroutine FTDKOPN
-         subroutine FTGKYD(unit, keyword, keyval, comment, status)
-            import RD
-            integer, intent(in)       :: unit
-            character(*), intent(in)  :: keyword
-            real(RD), intent(out)     :: keyval
-            character(*), intent(out) :: comment
-            integer, intent(inout)    :: status
-         end subroutine FTGKYD
-         subroutine FTGKYJ(unit, keyword, keyval, comment, status)
-            integer, intent(in)       :: unit
-            character(*), intent(in)  :: keyword
-            integer, intent(out)      :: keyval
-            character(*), intent(out) :: comment
-            integer, intent(inout)    :: status
-         end subroutine FTGKYJ
-         subroutine FTGTVD(unit, group, fpixel, nelements, nullval, values, anyf, status)
-            import RD
-            integer, intent(in)    :: unit
-            integer, intent(in)    :: group
-            integer, intent(in)    :: fpixel
-            integer, intent(in)    :: nelements
-            real(RD), intent(in)   :: nullval
-            real(RD), intent(out)  :: values(*)
-            logical, intent(out)   :: anyf
-            integer, intent(inout) :: status
-         end subroutine FTGTVD
-      end interface
+      integer                   :: n
+      integer                   :: strings_len
+      character(:), allocatable :: strings_new(:)
 
-      integer       :: unit
-      integer       :: buffersize
-      integer       :: status
-      character(80) :: comment
-      integer       :: naxis
-      integer       :: naxis1
-      integer       :: n
-      logical       :: anyf
-      integer       :: j
+      ! Append a string to the list of strings
 
-      ! Open the file
+      if (ALLOCATED(strings)) then
 
-      status = 0
+         n = SIZE(strings)
 
-      call FTGIOU(unit, status)      
-      @:ASSERT(status == 0,'error allocaring unit number')
+         strings_len = MAX(LEN(strings), LEN(string))
 
-      call FTDKOPN(unit, file_name, 0, buffersize, status)
-      @:ASSERT(status == 0,'error opening file')
+         allocate(character(strings_len)::strings_new(n+1))
 
-      ! Determine the data size
+         strings_new(:n) = strings
+         strings_new(n+1) = string
 
-      call FTGKYJ(unit, 'NAXIS', naxis, comment, status)
-      @:ASSERT(status == 0,'error reading NAXIS keyword')
+         call MOVE_ALLOC(strings_new, strings)
 
-      @:ASSERT(naxis == 1,'Invalid number of axes')
+      else
 
-      call FTGKYJ(unit, 'NAXIS1', naxis1, comment, status)
-      @:ASSERT(status == 0,'error reading NAXIS1 keyword')
+         strings_len = LEN(string)
 
-      ! Read the data
+         allocate(character(strings_len)::strings(1))
 
-      n = naxis1
-
-      allocate(data(n))
-
-      call FTGPVD(unit, 0, 1, n, 0._RD, data, anyf, status)
-      @:ASSERT(status == 0,'error reading data')
-      @:ASSERT(.NOT. anyf,'undefined values encountered in data')
-
-      ! If necessary, read additional header values
-
-      if (PRESENT(head_labels) .AND. PRESENT(head_values)) then
-
-         @:CHECK_BOUNDS(SIZE(head_labels), SIZE(head_values))
-
-         do j = 1, SIZE(head_labels)
-            call FTGKYd(unit, head_labels(j), head_values(j), comment, status)
-            @:ASSERT(status == 0,'error reading keyword')
-         end do
+         strings(1) = string
 
       end if
-      
-      ! Close the file
-
-      call FTCLOS(unit, status)
-      @:ASSERT(status == 0,'error closing file')
-
-      call FTFIOU(unit, status)
-      @:ASSERT(status == 0,'error releasing unit number')
 
       ! Finish
 
       return
 
-   end subroutine read_fits_file
+   end subroutine append_string
+
+   !****
+
+   subroutine parse_name_value_r_(name_value, name, value)
+
+      character(*), intent(in)               :: name_value
+      character(:), allocatable, intent(out) :: name
+      real(RD), intent(out)                  :: value
+
+      integer :: i
+      integer :: len
+
+      ! Parse the colon-separated name-value pair into a name and a value
+
+      i = INDEX(name_value, ':')
+
+      if (i > 1) then
+
+         len = LEN_TRIM(name_value)
+
+         if (i < len) then
+            name = name_value(1:i-1)
+            read(name_value(i+1:len), *) value
+         else
+            @:ABORT('missing value in name-value pair "'//TRIM(name_value)//'"')
+         end if
+
+      elseif (i == 1) then
+
+         @:ABORT('missing name in name-value pair "'//TRIM(name_value)//'"')
+
+      else
+
+         @:ABORT('missing colon in name-value pair "'//TRIM(name_value)//'"')
+
+      end if
+
+      ! Finish
+
+      return
+
+   end subroutine parse_name_value_r_
+
+   !****
+
+   subroutine parse_name_value_a_(name_value, name, value)
+
+      character(*), intent(in)               :: name_value
+      character(:), allocatable, intent(out) :: name
+      character(:), allocatable, intent(out) :: value
+
+      integer :: i
+      integer :: len
+
+      ! Parse the colon-separated name-value pair into a name and a value
+
+      i = INDEX(name_value, ':')
+
+      if (i > 1) then
+
+         len = LEN_TRIM(name_value)
+
+         if (i < len) then
+            name = name_value(1:i-1)
+            value = name_value(i+1:len)
+         else
+            @:ABORT('missing value in name-value pair "'//TRIM(name_value)//'"')
+         end if
+
+      elseif (i == 1) then
+
+         @:ABORT('missing name in name-value pair "'//TRIM(name_value)//'"')
+
+      else
+
+         @:ABORT('missing colon in name-value pair "'//TRIM(name_value)//'"')
+
+      end if
+
+      ! Finish
+
+      return
+
+   end subroutine parse_name_value_a_
+
+   !****
+
+   subroutine parse_name_values_r_r_(name_values, name, value_a, value_b)
+
+      character(*), intent(in)               :: name_values
+      character(:), allocatable, intent(out) :: name
+      real(RD), intent(out)                  :: value_a
+      real(RD), intent(out)                  :: value_b
+
+      character(:), allocatable :: values
+
+      ! Parse the colon-separated name-values triplet into a name and
+      ! a pair of values
+
+      call parse_name_value(name_values, name, values)
+
+      call parse_values(values, value_a, value_b)
+
+      ! Finish
+
+      return
+
+   end subroutine parse_name_values_r_r_
+
+   !****
+
+   subroutine parse_values_r_r_(values, value_a, value_b)
+
+      character(*), intent(in) :: values
+      real(RD), intent(out)    :: value_a
+      real(RD), intent(out)    :: value_b
+
+      integer :: i
+      integer :: len
+
+      ! Parse the colon-separated values pair into a pair of values
+
+      i = INDEX(values, ':')
+
+      if (i > 1) then
+
+         len = LEN_TRIM(values)
+
+         if (i < len) then
+            read(values(1:i-1), *) value_a
+            read(values(i+1:len), *) value_b
+         else
+            @:ABORT('missing second value in value pair "'//TRIM(values)//'"')
+         end if
+
+      elseif (i == 1) then
+
+         @:ABORT('missing first value in value pair "'//TRIM(values)//'"')
+
+      else
+
+         @:ABORT('missing colon in values pair "'//TRIM(values)//'"')
+
+      end if
+
+      ! Finish
+
+      return
+
+   end subroutine parse_values_r_r_
+
+   !****
+
+   subroutine parse_values_r_i_(values, value_a, value_b)
+
+      character(*), intent(in) :: values
+      real(RD), intent(out)    :: value_a
+      integer, intent(out)     :: value_b
+
+      integer :: i
+      integer :: len
+
+      ! Parse the colon-separated values pair into a pair of values
+
+      i = INDEX(values, ':')
+
+      if (i > 1) then
+
+         len = LEN_TRIM(values)
+
+         if (i < len) then
+            read(values(1:i-1), *) value_a
+            read(values(i+1:len), *) value_b
+         else
+            @:ABORT('missing second value in value pair "'//TRIM(values)//'"')
+         end if
+
+      elseif (i == 1) then
+
+         @:ABORT('missing first value in value pair "'//TRIM(values)//'"')
+
+      else
+
+         @:ABORT('missing colon in values pair "'//TRIM(values)//'"')
+
+      end if
+
+      ! Finish
+
+      return
+
+   end subroutine parse_values_r_i_
 
 end module tools_utils_m

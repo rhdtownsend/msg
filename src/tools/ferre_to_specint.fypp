@@ -24,6 +24,8 @@ program ferre_to_specint
    use forum_m
    use msg_m
 
+   use arg_parser_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -51,29 +53,35 @@ program ferre_to_specint
 
    ! Variables
 
-   character(:), allocatable :: ferre_file_name
-   character(:), allocatable :: ferre_file_type
-   character(:), allocatable :: specint_prefix
+   character(:), allocatable :: input_file_name
+   character(:), allocatable :: output_file_prefix
+   character(:), allocatable :: file_type
 
+   type(arg_parser_t)    :: arg_parser
    integer               :: unit
    type(ferre_hdr_t)     :: fh
    integer, allocatable  :: vi(:)
    real(RD), allocatable :: H_lambda(:)
    integer               :: l
    integer               :: j
-   character(CHAR_LEN)   :: specint_file_name
+   character(CHAR_LEN)   :: output_file_name
 
-   ! Read command-line arguments
+   ! Parse command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: ferre_to_specint ferre_file_name ferre_file_type specint_prefix')
+   file_type = 'CAP18'
 
-   call get_arg(1, ferre_file_name)
-   call get_arg(2, ferre_file_type)
-   call get_arg(3, specint_prefix)
+   arg_parser = arg_parser_t()
+
+   call arg_parser%define_option('file_type', OPT_REQUIRED_ARG)
+
+   call arg_parser%parse(arg_proc, opt_proc)
+
+   if (.NOT. allocated(input_file_name)) call synopsis()
+   if (.NOT. allocated(output_file_prefix)) call synopsis()
 
    ! Open the FERRE file
 
-   open(NEWUNIT=unit, FILE=ferre_file_name, STATUS='OLD')
+   open(NEWUNIT=unit, FILE=input_file_name, STATUS='OLD')
 
    ! Read the header
 
@@ -94,14 +102,14 @@ program ferre_to_specint
 
       ! Process the data
 
-      write(specint_file_name, 100) specint_prefix, l, '.h5'
+      write(output_file_name, 100) output_file_prefix, l, '.h5'
 100   format(A,I8.8,A)
 
-      select case (ferre_file_type)
+      select case (file_type)
       case ('CAP18')
-         call process_data_cap18(fh, H_lambda, vi, specint_file_name)
+         call process_data_cap18(fh, H_lambda, vi, output_file_name)
       case default
-         @:ABORT('invalid ferre_file_type')
+         @:ABORT('invalid file_type')
       end select
 
       ! Update vi
@@ -139,6 +147,49 @@ program ferre_to_specint
    ! Finish
 
 contains
+
+   subroutine arg_proc(a, value)
+
+      integer, intent(in)      :: a
+      character(*), intent(in) :: value
+
+      select case(a)
+      case(1)
+         input_file_name = value
+      case(2)
+         output_file_prefix = value
+      case default
+         call synopsis()
+      end select
+
+   end subroutine arg_proc
+
+   !****
+
+   subroutine opt_proc(name, value)
+
+      character(*), intent(in) :: name
+      character(*), intent(in) :: value
+
+      select case(name)
+      case('file_type')
+         file_type = value
+      case default
+         @:ABORT('invalid option name')
+      end select
+
+   end subroutine opt_proc
+
+   !****
+
+   subroutine synopsis()
+
+      write(OUTPUT_UNIT, *) 'Synopsis: ferre_to_specint <input_file_name> <output_file_prefix> [options]'
+      stop
+
+   end subroutine synopsis
+
+   !****
 
    subroutine read_ferre_hdr(unit, fh)
 
@@ -216,12 +267,12 @@ contains
 
    !****
 
-   subroutine process_data_cap18(fh, H_lambda, vi, specint_file_name)
+   subroutine process_data_cap18(fh, H_lambda, vi, output_file_name)
 
       type(ferre_hdr_t), intent(in) :: fh
       real(RD), intent(in)          :: H_lambda(:)
       integer, intent(in)           :: vi(:)
-      character(*), intent(in)      :: specint_file_name
+      character(*), intent(in)      :: output_file_name
 
       character(LABEL_LEN), allocatable :: labels(:)
       real(RD), allocatable             :: values(:)
@@ -281,7 +332,7 @@ contains
 
       ! Write it
 
-      hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
+      hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
 
       call specint%write(hdf5io)
 

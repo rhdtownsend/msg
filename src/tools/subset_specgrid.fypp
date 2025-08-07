@@ -1,5 +1,5 @@
 ! Module   : subset_specgrid
-! Purpose  : Subset a specgrid
+! Purpose  : Subset a specgrid file
 !
 ! Copyright 2021-2023 Rich Townsend & The MSG Team
 !
@@ -24,6 +24,9 @@ program subset_specgrid
    use forum_m
    use msg_m
 
+   use arg_parser_m
+   use tools_utils_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -34,85 +37,103 @@ program subset_specgrid
 
    character(:), allocatable  :: input_file_name
    character(:), allocatable  :: output_file_name
+   character(:), allocatable  :: lam_range
+   character(:), allocatable  :: param_ranges(:)
+   logical                    :: remove_orphans
 
+   type(arg_parser_t)        :: arg_parser
    type(hdf5io_t)            :: hdf5io
    type(specgrid_t)          :: specgrid
+   real(RD)                  :: lam_min
+   real(RD)                  :: lam_max
+   integer                   :: i
    integer                   :: rank
    real(RD), allocatable     :: x_min(:)
    real(RD), allocatable     :: x_max(:)
-   real(RD)                  :: specgrid_lam_min
-   real(RD)                  :: specgrid_lam_max
    integer                   :: r
    type(axis_t)              :: axis
-   character(LABEL_LEN)      :: axis_label
-   real(RD)                  :: lam_min
-   real(RD)                  :: lam_max
-   character(:), allocatable :: label
-   integer                   :: i
+   character(LABEL_LEN)      :: label
+   character(:), allocatable :: range_label
+   real(RD)                  :: range_min
+   real(RD)                  :: range_max
 
-   ! Read command-line arguments
+   ! Parse command-line arguments
 
-   @:ASSERT(n_arg() >= 5 .AND. MOD(n_arg()-2, 3)==0, 'Syntax: subset_specgrid input_file_name output_file_name label x_min x_max [label x_min x_max]')
+   remove_orphans = .FALSE.
 
-   call get_arg(1, input_file_name)
-   call get_arg(2, output_file_name)
+   arg_parser = arg_parser_t()
 
-   ! Load the input grid
+   call arg_parser%define_option('lam-range', OPT_REQUIRED_ARG)
+   call arg_parser%define_option('param-range', OPT_REQUIRED_ARG)
+   call arg_parser%define_option('remove-orphans', OPT_NO_ARG)
+
+   call arg_parser%parse(arg_proc, opt_proc)
+
+   if (.NOT. allocated(input_file_name)) call synopsis()
+   if (.NOT. allocated(output_file_name)) call synopsis()
+
+   ! Read the input specgrid
 
    hdf5io = hdf5io_t(input_file_name, OPEN_FILE_RO)
    call specgrid%read(hdf5io)
    call hdf5io%final()
 
-   ! Loop over axes, setting up x_min and x_max
+   ! Determine the wavelength range
+
+   call specgrid%get_lam_min(lam_min)
+   call specgrid%get_lam_max(lam_max)
+
+   if (ALLOCATED(lam_range)) then
+
+      call parse_values(lam_range, range_min, range_max)
+      lam_min = MAX(lam_min, range_min)
+      lam_max = MIN(lam_max, range_max)
+
+   end if
+
+   ! Determine the axis ranges
 
    call specgrid%get_rank(rank)
 
    allocate(x_min(rank))
    allocate(x_max(rank))
 
-   x_min = -HUGE(0._RD)
-   x_max = HUGE(0._RD)
-
-   lam_min = -HUGE(0._RD)
-   lam_max = HUGE(0._RD)
-
    do r = 1, rank
 
       call specgrid%get_axis(r, axis)
 
-      call axis%get_label(axis_label)
+      call axis%get_label(label)
 
-      ! See if the current axis needs subsetting
+      call axis%get_x_min(x_min(r))
+      call axis%get_x_max(x_max(r))
 
-      do i = 3, n_arg(), 3
+      ! See if a range is defined for this axis
 
-         call get_arg(i, label)
+      if (ALLOCATED(param_ranges)) then
 
-         if (label == 'lambda') then
+         do i = 1, SIZE(param_ranges)
+            call parse_name_values(param_ranges(i), range_label, range_min, range_max)
+            if (range_label == label) then
+               x_min(r) = MAX(x_min(r), range_min)
+               x_max(r) = MIN(x_max(r), range_max)
+               exit
+            end if
+         end do
 
-            call get_arg(i+1, lam_min)
-            call get_arg(i+2, lam_max)
-
-         elseif (label == axis_label) then
-
-            call get_arg(i+1, x_min(r))
-            call get_arg(i+2, x_max(r))
-
-         end if
-
-      end do
+      end if
 
    end do
 
    ! Perform the subsetting
 
-   call specgrid%get_lam_min(specgrid_lam_min)
-   call specgrid%get_lam_max(specgrid_lam_max)
-
-   if (lam_min > specgrid_lam_min) call specgrid%set_cache_lam_min(lam_min)
-   if (lam_max < specgrid_lam_max) call specgrid%set_cache_lam_max(lam_max)
+   call specgrid%set_cache_lam_min(lam_min)
+   call specgrid%set_cache_lam_max(lam_max)
 
    call specgrid%subset(x_min, x_max)
+
+   ! If necessary, remove orphans
+
+   if (remove_orphans) call specgrid%remove_orphans()
 
    ! Write the output specgrid
 
@@ -123,5 +144,52 @@ program subset_specgrid
    call hdf5io%final()
 
    ! Finish
+
+contains
+
+   subroutine arg_proc(a, value)
+
+      integer, intent(in)      :: a
+      character(*), intent(in) :: value
+
+      select case(a)
+      case(1)
+         input_file_name = value
+      case(2)
+         output_file_name = value
+      case default
+         call synopsis()
+      end select
+
+   end subroutine arg_proc
+
+   !****
+
+   subroutine opt_proc(name, value)
+
+      character(*), intent(in) :: name
+      character(*), intent(in) :: value
+
+      select case(name)
+      case('lam-range')
+         lam_range = value
+      case('param-range')
+         call append_string(param_ranges, value)
+      case('remove-orphans')
+         remove_orphans = .TRUE.
+      case default
+         @:ABORT('invalid option name')
+      end select
+
+   end subroutine opt_proc
+
+   !****
+
+   subroutine synopsis()
+
+      write(OUTPUT_UNIT, *) 'Synopsis: subset_specgrid <input_file_name> <output_file_name> [options]'
+      stop
+
+   end subroutine synopsis
 
 end program subset_specgrid

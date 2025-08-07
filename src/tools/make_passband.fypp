@@ -24,6 +24,9 @@ program make_passband
    use forum_m
    use msg_m
 
+   use arg_parser_m
+   use tools_utils_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -32,29 +35,37 @@ program make_passband
 
    ! Variables
 
-   character(:), allocatable :: table_file_name
-   real(RD)                  :: F_0
-   character(:), allocatable :: passband_file_name
+   character(:), allocatable :: input_file_name
+   character(:), allocatable :: zero_point
+   character(:), allocatable :: output_file_name
 
+   type(arg_parser_t)    :: arg_parser
    integer               :: unit
    integer               :: n
    real(RD), allocatable :: lam(:)
    real(RD), allocatable :: S(:)
    integer               :: i
+   real(RD)              :: F_0
    type(passband_t)      :: passband
    type(hdf5io_t)        :: hdf5io
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: make_passband table_file_name F_0 passband_file_name')
+   ! Parse command-line arguments
 
-   call get_arg(1, table_file_name)
-   call get_arg(2, F_0)
-   call get_arg(3, passband_file_name)
+   arg_parser = arg_parser_t()
 
-   ! Read the table data
+   call arg_parser%define_option('zero_point', OPT_REQUIRED_ARG)
 
-   open(NEWUNIT=unit, STATUS='OLD', FILE=table_file_name)
+   call arg_parser%parse(arg_proc, opt_proc)
+
+   if (.NOT. allocated(input_file_name)) call synopsis()
+   if (.NOT. allocated(zero_point)) call synopsis()
+   if (.NOT. allocated(output_file_name)) call synopsis()
+
+   ! Read the input file
+
+   open(NEWUNIT=unit, STATUS='OLD', FILE=input_file_name)
 
    n = 0
 
@@ -78,14 +89,61 @@ program make_passband
 
    ! Create the passband
 
+   @:ASSERT(ALLOCATED(zero_point), '--zero-point must be specified')
+
+   read(zero_point, *) F_0
+
    passband = passband_t(S, lam, F_0)
 
-   ! Write the passband_t
+   ! Write the output file
 
-   hdf5io = hdf5io_t(passband_file_name, CREATE_FILE)
+   hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
    call passband%write(hdf5io)
    call hdf5io%final()
 
    ! Finish
+
+contains
+
+   subroutine arg_proc(a, value)
+
+      integer, intent(in)      :: a
+      character(*), intent(in) :: value
+
+      select case(a)
+      case(1)
+         input_file_name = value
+      case(2)
+         output_file_name = value
+      case default
+         call synopsis()
+      end select
+
+   end subroutine arg_proc
+
+   !****
+
+   subroutine opt_proc(name, value)
+
+      character(*), intent(in) :: name
+      character(*), intent(in) :: value
+
+      select case(name)
+      case('zero_point')
+         zero_point = value
+      case default
+         @:ABORT('invalid option name')
+      end select
+
+   end subroutine opt_proc
+
+   !****
+
+   subroutine synopsis()
+
+      write(OUTPUT_UNIT, *) 'Synopsis: make_passband <input_file_name> <output_file_name> [options]'
+      stop
+
+   end subroutine synopsis
 
 end program make_passband

@@ -46,7 +46,7 @@ program make_photon_passband
 
    ! Read command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: make_photon_passband lam_min lam_max passband_file_name}')
+   @:ASSERT(n_arg() == 3, 'Syntax: make_photon_passband lam_min lam_max passband_file_name')
 
    call get_arg(1, lam_min)
    call get_arg(2, lam_max)
