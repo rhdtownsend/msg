@@ -199,7 +199,7 @@ contains
 
             call axes(r)%locate(x_vecs(r,v_seq), i)
 
-            #:if DEBUG
+            #:if defined('DEBUG')
                call axes(r)%fetch(i, x)
                @:ASSERT(x == x_vecs(r,v_seq), 'mismatched vertex position')
             #:endif
