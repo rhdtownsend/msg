@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: text
 
-   goettingen_to_specint <input_file_name> <output_file_name> [options]
+   goettingen_to_specint GOETTINGEN_FILE SPECINT_FILE [options]
 
 Description
 -----------
@@ -23,9 +23,13 @@ from a data file in FITS format (with the schema described by
 Options
 -------
 
-.. option:: --file-type <type>
+.. option:: -h, --help
 
-   Type of input file. This determines the wavelength abscissa adopted
+   Print a summary of options.
+
+.. option:: -t, --file-type=TYPE
+
+   Input file type. This determines the wavelength abscissa adopted
    for the input file. Valid choices, corresponding to the different
    grids described by :ads_citet:`husser:2013`, are :code:`HiRes`
    (high-resolution; default), :code:`MedRes-A1` (medium-resolution,
@@ -34,7 +38,8 @@ Options
 
 .. note::
 
-   In order for :command:`goettingen_to_specint` to build, you must
-   first uncomment/edit the line in :file:`$MSG_DIR/build/Makefile`
-   that defines the `FITS_LDFLAGS` variable. This variable defines the
-   flags used to link against your system's FITS library.
+   In order for the :command:`goettingen_to_specint` tool to be built,
+   you must first uncomment/edit the line in
+   :file:`$MSG_DIR/build/Makefile` that defines the `FITS_LDFLAGS`
+   variable. This variable defines the flags used to link against your
+   system's FITS library.

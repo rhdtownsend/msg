@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: text
 
-   ascii_to_specint <input_file_name> <output_file_name> [options]
+   ascii_to_specint ASCII_FILE SPECINT_FILE [options]
 
 Description
 -----------
@@ -26,18 +26,21 @@ beginning with :code:`#` are ignored.
 Options
 -------
 
-.. option:: --lam_units <units>
+.. option:: -h, --help
 
-   Units of wavelength data in input file. Valid choices are
-   :code:`A` (:math:`\angstrom`; default) and :code:`micron` (:math:`\mu`).
+   Print a summary of options.
 
-.. option:: --flux_units <units>
+.. option:: --lambda-units=UNITS
 
-   Units of flux data in input file. Valid choices are
-   :code:`erg/cm^2/s/A`
+   Wavelength units of input file. Valid choices are :code:`A`
+   (:math:`\angstrom`; default) and :code:`micron` (:math:`\mu`).
+
+.. option:: --flux-units=UNITS
+
+   Flux units of input file. Valid choices are :code:`erg/cm^2/s/A`
    (:math:`\erg\,\cm^{-2}\,\second^{-1}\,\angstrom^{-1}`; default).
 
-.. option:: --label <name>:<value>
+.. option:: -l, --label=NAME:VALUE
 
-   Name and value of photospheric parameter label. Can be specified
-   multiple times, to define multiple parameters.
+   Photospheric parameter name/value. Can be specified multiple times,
+   to define multiple parameters.

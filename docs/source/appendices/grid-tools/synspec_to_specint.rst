@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: text
 
-   synspec_to_specint <input_file_name> <output_file_name> [options]
+   synspec_to_specint SYNSPEC_FILE SPECINT_FILE [options]
 
 Description
 -----------
@@ -31,28 +31,40 @@ least-squares fit to the function
 Options
 -------
 
-.. option:: --file-type <type>
+.. option:: -h, --help
+
+   Print a summary of options.
+
+.. option:: -t, --file-type=TYPE
 
    Type of SYNSPEC file. Valid choices are :code:`flux` (usually
    written by SYNSPEC to the file :file:`fort.7`; default) and
    :code:`intensity` (usually written by SYNSPEC to the file
    :file:`fort.18`).
 
-.. option:: --limb-law <law>	 
+.. option:: --limb-law=LAW
 
    Limb-darkening law in output file (see :ref:`here
-   <limb-darkening-laws>` for a list of valid choices). Only used for
-   :code:`intensity` file types.
+   <limb-darkening-laws>` for a list of valid choices; default
+   :code:`CONST`). Required for :code:`intensity` file types.
    
-.. option:: --mu-range <mu_0>:<n_mu>
+.. option:: --mu-min=MIN
 
-   Lower limit and number of points for SYNSPEC's angular
-   (:math:`\mu`) grid (as specified by the ``ang0`` and ``nmu``
-   parameters, respectively, in the :file:`fort.55` SYNSPEC control
-   file). Only used for :code:`intensity` file types.
+   Minimum :math:`\mu` value in SYNSPEC's angular grid (as specified
+   by the :code:`ang0` parameter in the :file:`fort.55` SYNSPEC
+   control file). Required for :code:`intensity` file types.
 
-.. option:: --label <name>:<value>
+.. option:: --n-mu=N
 
-   Name and value of photospheric parameter label. Can be specified
-   multiple times, to define multiple parameters.
+   Number of :math:`\mu` values in SYNSPEC's angular grid (as specified
+   by the :code:`nmu` parameter in the :file:`fort.55` SYNSPEC
+   control file). Required for :code:`intensity` file types.
 
+.. option:: -l, --label=NAME:VALUE
+
+   Photospheric parameter name/value. Can be specified multiple times,
+   to define multiple parameters.
+
+
+
+   

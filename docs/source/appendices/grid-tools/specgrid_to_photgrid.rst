@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: text
 
-   specgrid_to_photgrid <input_file_name> <passband_file_name> <output_file_name>
+   specgrid_to_photgrid SPECGRID_FILE PASSBAND_FILE PHOTGRID_FILE [options]
 
 Description
 -----------
@@ -19,8 +19,15 @@ The :command:`specgrid_to_photgrid` tool reads a :f-schema:`specgrid`
 file, convolves it with a passband from a :f-schema:`passband` file,
 and writes the data to a :f-schema:`photgrid` file.
 
+Options
+-------
+
+.. option:: -h, --help
+
+   Print a summary of options.
+
 .. note::
 
-   It's not always necessary to create :f-schema:`photgrid`
-   files, as MSG can convolve with passbands on the fly (as discussed in
+   It's not always necessary to create :f-schema:`photgrid` files,
+   because MSG can convolve with passbands on the fly (as discussed in
    the :ref:`photometric-colors` section).

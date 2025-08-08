@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: text
 
-   rebin_specint <input_file_name> <output_file_name> [options]
+   rebin_specint INPUT_FILE OUTPUT_FILE [options]
 
 
 Description
@@ -23,18 +23,29 @@ writes it to a :f-schema:`specgrid` file.
 Options
 -------
 
-.. option:: --lam-range <min>:<max>
+.. option:: -h, --help
 
-   Range of wavelength values to include in subset.
+   Print a summary of options.
 
-.. option:: --sampling <type>:<value>
+.. option:: --lambda-min=MIN
 
-   Wavelength sampling to use when rebinning. Valid choices for
-   :code:`<type>` are :code:`R` (fixed resolution) and
-   :code:`delta_lam` (fixed spacing).
+   Minimum wavelength (:math:`\angstrom`).
 
-.. option:: --alignment <align>
+.. option:: --lambda-max=MAX
 
-   Alignment of the wavelength abscissa, relative to the wavelength
-   range. Valid choices are :code:`L` (left), :code:`C` (center;
-   default) and :code:`R` (right).
+   Maximum wavelength (:math:`\angstrom`).
+
+.. option:: -t, --sampling-type=TYPE
+
+   Sampling type when rebinning. Valid choices are :code:`R` (fixed
+   wavelength resolution) and :code:`delta_lam` (fixed wavelength
+   spacing).
+
+.. option:: -t, --sampling-value=VALUE
+
+   Sampling value when rebinning.
+
+.. option:: -a, --sampling-alignment=ALIGN
+
+   Sampling alignment when rebinning. Valid choices are :code:`center`
+   (default), :code:`left` and :code:`right`.
