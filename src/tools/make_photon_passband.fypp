@@ -57,7 +57,7 @@ program make_photon_passband
 
    call arg_parser%parse(arg_proc, opt_proc)
 
-   if (.NOT. allocated(passband_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(passband_file_name)) call print_summary()
 
    if (.NOT. ALLOCATED(lam_min)) then
       @:STOP('--lambda-min must be specified')

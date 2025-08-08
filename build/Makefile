@@ -18,7 +18,7 @@ endif
 
 ifeq ($(TESTS),yes)
   UTEST_TARGETS := utest_file utest_fit utest_math utest_cubint utest_ninterp utest_axis \
-                   utest_indexer utest_vgrid utest_specgrid utest_photgrid test_parser \
+                   utest_indexer utest_vgrid utest_specgrid utest_photgrid \
                    utest_lin_range utest_log_range utest_tab_range utest_comp_range
   STRESS_TARGETS := stress_specgrid stress_photgrid
   TIME_TARGETS := time_vgrid time_specgrid
@@ -27,10 +27,10 @@ endif
 
 ifeq ($(TOOLS),yes)
   BIN_TARGETS += ascii_to_specint synspec_to_specint ferre_to_specint	\
-                 c3k_to_specint rebin_specint				\
+                 c3k_to_specint rebin_specint make_bb_photgrid     	\
                  specgrid_to_photgrid specint_to_specgrid		\
                  make_passband make_photon_passband			\
-                 inspect_grid subset_specgrid subset_photgrid # make_bb_photgrid
+                 inspect_grid subset_specgrid subset_photgrid
 
   ifneq ($(FITS_LDFLAGS),)
     BIN_TARGETS += goettingen_to_specint coelho_to_specint
@@ -111,7 +111,9 @@ libmsg_SRCS = msg_m.fypp \
               $(speccache_SRCS) $(specgrid_SRCS) $(specint_SRCS) $(specsource_SRCS) \
               $(limb_SRCS) $(passband_SRCS) $(range_SRCS) \
               cubint_m.fypp stat_m.fypp file_m.fypp	\
-              fit_m.fypp math_m.fypp arg_parser_m.fypp tools_utils_m.fypp
+              fit_m.fypp math_m.fypp
+
+# Libraries
 
 libfmsg_SRCS = fmsg_m.fypp
 libfmsg_USES = $(libmsg_SRCS)
@@ -124,69 +126,73 @@ libcmsg_LIBS = libmsg
 pycmsg_SRCS = pycmsg.c
 pycmsg_LIBS = libmsg libcmsg
 
-ascii_to_specint_SRCS = ascii_to_specint.fypp
+# Tools
+
+ascii_to_specint_SRCS = ascii_to_specint.fypp tools_utils_m.fypp
 ascii_to_specint_USES = $(libmsg_SRCS)
 ascii_to_specint_LIBS = libmsg
 
-synspec_to_specint_SRCS = synspec_to_specint.fypp
+synspec_to_specint_SRCS = synspec_to_specint.fypp tools_utils_m.fypp
 synspec_to_specint_USES = $(libmsg_SRCS)
 synspec_to_specint_LIBS = libmsg
 
-ferre_to_specint_SRCS = ferre_to_specint.fypp
+ferre_to_specint_SRCS = ferre_to_specint.fypp tools_utils_m.fypp
 ferre_to_specint_USES = $(libmsg_SRCS)
 ferre_to_specint_LIBS = libmsg
 
-c3k_to_specint_SRCS = c3k_to_specint.fypp
+c3k_to_specint_SRCS = c3k_to_specint.fypp tools_utils_m.fypp
 c3k_to_specint_USES = $(libmsg_SRCS)
 c3k_to_specint_LIBS = libmsg
 
-goettingen_to_specint_SRCS = goettingen_to_specint.fypp fits_m.fypp
+goettingen_to_specint_SRCS = goettingen_to_specint.fypp tools_utils_m.fypp fits_m.fypp
 goettingen_to_specint_USES = $(libmsg_SRCS)
 goettingen_to_specint_LIBS = libmsg
 
-coelho_to_specint_SRCS = coelho_to_specint.fypp fits_m.fypp
+coelho_to_specint_SRCS = coelho_to_specint.fypp tools_utils_m.fypp fits_m.fypp
 coelho_to_specint_USES = $(libmsg_SRCS)
 coelho_to_specint_LIBS = libmsg
 
-rebin_specint_SRCS = rebin_specint.fypp
+rebin_specint_SRCS = rebin_specint.fypp tools_utils_m.fypp
 rebin_specint_USES = $(libmsg_SRCS)
 rebin_specint_LIBS = libmsg
 
-specgrid_to_photgrid_SRCS = specgrid_to_photgrid.fypp
+specgrid_to_photgrid_SRCS = specgrid_to_photgrid.fypp tools_utils_m.fypp
 specgrid_to_photgrid_USES = $(libmsg_SRCS)
 specgrid_to_photgrid_LIBS = libmsg
 
-specint_to_specgrid_SRCS = specint_to_specgrid.fypp
+specint_to_specgrid_SRCS = specint_to_specgrid.fypp tools_utils_m.fypp
 specint_to_specgrid_USES = $(libmsg_SRCS)
 specint_to_specgrid_LIBS = libmsg
 
-make_photgrid_SRCS = make_photgrid.fypp
+make_photgrid_SRCS = make_photgrid.fypp tools_utils_m.fypp
 make_photgrid_USES = $(libmsg_SRCS)
 make_photgrid_LIBS = libmsg
 
-make_bb_photgrid_SRCS = make_bb_photgrid.fypp
+make_bb_photgrid_SRCS = make_bb_photgrid.fypp tools_utils_m.fypp
 make_bb_photgrid_USES = $(libmsg_SRCS)
 make_bb_photgrid_LIBS = libmsg
 
-make_passband_SRCS = make_passband.fypp
+make_passband_SRCS = make_passband.fypp tools_utils_m.fypp
 make_passband_USES = $(libmsg_SRCS)
 make_passband_LIBS = libmsg
 
-make_photon_passband_SRCS = make_photon_passband.fypp
+make_photon_passband_SRCS = make_photon_passband.fypp tools_utils_m.fypp
 make_photon_passband_USES = $(libmsg_SRCS)
 make_photon_passband_LIBS = libmsg
 
-inspect_grid_SRCS = inspect_grid.fypp
+inspect_grid_SRCS = inspect_grid.fypp tools_utils_m.fypp
 inspect_grid_USES = $(libmsg_SRCS)
 inspect_grid_LIBS = libmsg
 
-subset_specgrid_SRCS = subset_specgrid.fypp
+subset_specgrid_SRCS = subset_specgrid.fypp tools_utils_m.fypp
 subset_specgrid_USES = $(libmsg_SRCS)
 subset_specgrid_LIBS = libmsg
 
-subset_photgrid_SRCS = subset_photgrid.fypp
+subset_photgrid_SRCS = subset_photgrid.fypp tools_utils_m.fypp
 subset_photgrid_USES = $(libmsg_SRCS)
 subset_photgrid_LIBS = libmsg
+
+# Tests
 
 utest_file_SRCS = utest_file.fypp utest_file_m.fypp
 utest_file_USES = $(libmsg_SRCS)
@@ -235,10 +241,6 @@ utest_tab_range_LIBS = libmsg
 utest_comp_range_SRCS = utest_comp_range.fypp utest_comp_range_m.fypp
 utest_comp_range_USES = $(libmsg_SRCS)
 utest_comp_range_LIBS = libmsg
-
-test_parser_SRCS = test_parser.fypp
-test_parser_USES = $(libmsg_SRCS)
-test_parser_LIBS = libmsg
 
 utest_specgrid_SRCS = utest_specgrid.fypp utest_specgrid_m.fypp
 utest_specgrid_USES = $(libmsg_SRCS) $(libfmsg_SRCS)

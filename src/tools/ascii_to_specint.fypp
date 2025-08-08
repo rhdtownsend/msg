@@ -69,8 +69,8 @@ program ascii_to_specint
 
    call arg_parser%parse(arg_proc, opt_proc)
 
-   if (.NOT. allocated(ascii_file_name)) call print_summary()
-   if (.NOT. allocated(specint_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(ascii_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(specint_file_name)) call print_summary()
 
    ! Read data from the input file
 

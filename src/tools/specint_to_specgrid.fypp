@@ -125,7 +125,7 @@ contains
       end select
 
       if (stat /= STAT_OK) then
-         @:ABORT('invalid --'//name)
+         @:STOP('invalid --'//name)
       end if
 
    end subroutine opt_proc

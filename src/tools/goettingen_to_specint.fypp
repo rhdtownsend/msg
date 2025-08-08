@@ -64,8 +64,8 @@ program goettingen_to_specint
 
    call arg_parser%parse(arg_proc, opt_proc)
 
-   if (.NOT. allocated(goettingen_file_name)) call print_summary()
-   if (.NOT. allocated(specint_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(goettingen_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(specint_file_name)) call print_summary()
 
    ! Read data from the input file
  
@@ -95,7 +95,7 @@ program goettingen_to_specint
    case('MedRes-R10000')
       call create_range_medres_r10000(range)
    case default
-      @:ABORT('invalid --file-type')
+      @:STOP('invalid --file-type')
    end select
 
    ! Create specint
