@@ -61,9 +61,9 @@ program ascii_to_specint
    arg_parser = arg_parser_t('ascii_to_specint ASCII_FILE SPECINT_FILE', auto_help=.TRUE.)
 
    call arg_parser%define_option('lambda-units', OPT_REQUIRED_ARG, &
-      usage='--lambda-units=UNITS', description='wavelength units of ascii_file ( A | micron)')
+      usage='--lambda-units=UNITS', description='wavelength units of input file ( A | micron)')
    call arg_parser%define_option('flux-units', OPT_REQUIRED_ARG, &
-      usage='--flux-units=UNITS', description='flux units of ascii_file ( erg/cm^2/s/A | W/m^2/m )')
+      usage='--flux-units=UNITS', description='flux units of input file ( erg/cm^2/s/A | W/m^2/m )')
    call arg_parser%define_option('label', OPT_REQUIRED_ARG, short_name='l', &
       usage='--label=NAME:VALUE', description='photospheric parameter name/value')
 

@@ -68,7 +68,7 @@ program synspec_to_specint
       usage='--mu-min=MIN', description='minimum mu value')
    call arg_parser%define_option('n-mu', OPT_REQUIRED_ARG, &
       usage='--n-mu=N', description='number of mu values')
-   call arg_parser%define_option('label', OPT_REQUIRED_ARG, &
+   call arg_parser%define_option('label', OPT_REQUIRED_ARG, short_name='l', &
       usage='--label=NAME:VALUE', description='photospheric parameter name/value')
 
    call arg_parser%parse(arg_proc, opt_proc)

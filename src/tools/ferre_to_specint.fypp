@@ -71,7 +71,7 @@ program ferre_to_specint
    arg_parser = arg_parser_t('ferre_to_specint FERRE_FILE SPECINT_PREFIX', auto_help=.TRUE.)
 
    call arg_parser%define_option('file-type', OPT_REQUIRED_ARG, short_name='t', &
-      usage='--file-type=TYPE', description='FERRE file type ( CAP18 )')
+      usage='--file-type=TYPE', description='input file type ( CAP18 )')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
