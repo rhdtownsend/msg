@@ -33,119 +33,228 @@ program inspect_grid
    ! Variables
 
    character(:), allocatable :: grid_file_name
+   logical, allocatable      :: show_type
+   logical, allocatable      :: show_label
+   logical, allocatable      :: show_axes
+   logical, allocatable      :: show_lam
 
-   type(hdf5io_t)   :: hdf5io
-   character(1024)  :: label
-   type(specgrid_t) :: specgrid
-   type(photgrid_t) :: photgrid
-   integer          :: stat
+   type(arg_parser_t) :: arg_parser
+   type(hdf5io_t)     :: hdf5io
+   character(1024)    :: grid_label
+   type(specgrid_t)   :: specgrid
+   type(photgrid_t)   :: photgrid
+   integer            :: stat
 
-   ! Read command-line arguments
+   ! Parse command-line arguments
 
-   @:ASSERT(n_arg() == 1, 'Syntax: inspect_specgrid grid_file_name')
+   show_type = .FALSE.
+   show_label = .FALSE.
+   show_axes = .FALSE.
+   show_lam = .FALSE.
 
-   call get_arg(1, grid_file_name)
+   arg_parser = arg_parser_t('inspect_grid GRID_FILE', auto_help=.TRUE.)
 
-   ! Read & inspect the grid
+   call arg_parser%define_option('type', OPT_NO_ARG, short_name='t', &
+      description='show grid type')
+   call arg_parser%define_option('grid-label', OPT_NO_ARG, short_name='l', &
+      description='show grid label')
+   call arg_parser%define_option('axes', OPT_NO_ARG, short_name='x', &
+      description='show axes data')
+   call arg_parser%define_option('lambda', OPT_NO_ARG, short_name='a', &
+      description='show wavelength data')
+   call arg_parser%define_option('all', OPT_NO_ARG, &
+      description='show everything')
+
+   call arg_parser%parse(arg_proc, opt_proc)
+
+   if (.NOT. ALLOCATED(grid_file_name)) call print_summary()
+
+   ! Read the grid & dispatch to the appropriate routine
 
    hdf5io = hdf5io_t(grid_file_name, OPEN_FILE_RO)
 
-   call specgrid%read(hdf5io, stat)
+   read_block: block
 
-   if (stat == STAT_OK) then
+      call specgrid%read(hdf5io, stat)
 
-      write(OUTPUT_UNIT, 100) 'Type  :', 'specgrid'
-100   format(A,1X,A)
+      if (stat == STAT_OK) then
 
-      if (hdf5io%attr_exists('label')) then
-         call hdf5io%read_attr('label', label)
-      else
-         label = ''
+         if (hdf5io%attr_exists('label')) then
+            call hdf5io%read_attr('label', grid_label)
+         else
+            grid_label = ''
+         end if
+
+         call inspect_specgrid(specgrid, grid_label)
+
+         exit read_block
+
       end if
-
-      write(OUTPUT_UNIT, 110) 'Label :', TRIM(label)
-110   format(A,1X,A)
-
-      call hdf5io%final()
-
-      call inspect_specgrid_(specgrid)
-
-   else
 
       call photgrid%read(hdf5io, stat)
 
-      write(OUTPUT_UNIT, 100) 'Type  :', 'photgrid'
+      if (stat == STAT_OK) then
 
-      if (hdf5io%attr_exists('label')) then
-         call hdf5io%read_attr('label', label)
-      else
-         label = ''
+         if (hdf5io%attr_exists('label')) then
+            call hdf5io%read_attr('label', grid_label)
+         else
+            grid_label = ''
+         end if
+
+         call inspect_photgrid(photgrid, grid_label)
+
+         exit read_block
+
       end if
 
-      write(OUTPUT_UNIT, 110) 'Label :', TRIM(label)
-
       call hdf5io%final()
+      @:STOP('unable to determine file type')
 
-      call inspect_photgrid_(photgrid)
+   end block read_block
 
-   end if
+   call hdf5io%final()
 
    ! Finish
 
 contains
 
+   subroutine arg_proc(a, value)
+
+      integer, intent(in)      :: a
+      character(*), intent(in) :: value
+
+      select case(a)
+      case(1)
+         grid_file_name = value
+      case default
+         call print_summary()
+      end select
+
+   end subroutine arg_proc
+
+   !****
+
+   subroutine opt_proc(name, value)
+
+      character(*), intent(in) :: name
+      character(*), intent(in) :: value
+
+      integer :: stat
+
+      stat = STAT_OK
+
+      select case(name)
+      case('file-type')
+         show_type = .TRUE.
+      case('grid-label')
+         show_label = .TRUE.
+      case('axes')
+         show_axes = .TRUE.
+      case('lambda')
+         show_lam = .TRUE.
+      case('all')
+         show_type = .TRUE.
+         show_label = .TRUE.
+         show_axes = .TRUE.
+         show_lam = .TRUE.
+      case('help')
+         call print_summary()
+      case default
+         @:ABORT('invalid option name')
+      end select
+
+      if (stat /= STAT_OK) then
+         @:STOP('invalid --'//name)
+      end if
+
+   end subroutine opt_proc
+
+   subroutine print_summary()
+
+      call arg_parser%print_summary()
+      @:STOP()
+
+   end subroutine print_summary
+
+   !****
+
    #:for name, type in (('specgrid', 'specgrid_t'),  &
                         ('photgrid', 'photgrid_t'))
 
-      subroutine inspect_${name}$_(grid)
+      subroutine inspect_${name}$(grid, grid_label)
 
          type(${type}$), intent(in) :: grid
+         character(*), intent(in)   :: grid_label
 
          integer              :: rank
          integer              :: r
          type(axis_t)         :: axis
+         integer              :: n
          real(RD)             :: x_min
          real(RD)             :: x_max
          character(LABEL_LEN) :: label
          #:if type == 'specgrid_t'
-            real(RD)             :: lam_min
-            real(RD)             :: lam_max
+            real(RD)          :: lam_min
+            real(RD)          :: lam_max
          #:endif
 
          ! Inspect the grid
 
-         call grid%get_rank(rank)
+         ! Type
 
-         write(OUTPUT_UNIT, 110) 'Rank  :', rank
-110      format(A,1X,I0)
+         if (show_type) then
 
-         do r = 1, rank
+            write(OUTPUT_UNIT, 100) '${name}$'
+100         format('Type: ',A)
 
-            call grid%get_axis(r, axis)
+         end if
 
-            call axis%get_x_min(x_min)
-            call axis%get_x_max(x_max)
+         ! Label
 
-            call axis%get_label(label)
+         if (show_label) then
 
-            write(OUTPUT_UNIT, 120) 'Axis', r
-120         format(A,1X,I0)
+            write(OUTPUT_UNIT, 110) TRIM(grid_label)
+110         format('Label: ',A)
+         end if
 
-            write(OUTPUT_UNIT, 130) 'Label :', TRIM(label)
-130         format(3X,A,1X,A)
+         ! Axes
 
-            write(OUTPUT_UNIT, 140) 'Range :', x_min, '->', x_max
-140         format(3X,A,1X,F9.2,1X,A,1X,F9.2)
+         if (show_axes) then
 
-         end do
+            call grid%get_rank(rank)
+
+            write(OUTPUT_UNIT, 120) rank
+120         format('Axes [',I0,'] :')
+
+            do r = 1, rank
+
+               call grid%get_axis(r, axis)
+
+               call axis%get_n(n)
+
+               call axis%get_x_min(x_min)
+               call axis%get_x_max(x_max)
+
+               call axis%get_label(label)
+
+               write(OUTPUT_UNIT, 130) TRIM(label), n, x_min, x_max
+130            format(2X,A,' [',I0,']: ',T20,'(',G0,' -> ',G0,')')
+
+            end do
+
+         end if
 
          #:if type == 'specgrid_t'
 
-            call grid%get_lam_min(lam_min)
-            call grid%get_lam_max(lam_max)
+            if(show_lam) then
 
-            write(OUTPUT_UNIT, 150) 'Wavelength range:', lam_min, '->', lam_max
-150         format(A,1X,F11.2,1X,A,1X,F11.2)
+               call grid%get_lam_min(lam_min)
+               call grid%get_lam_max(lam_max)
+
+               write(OUTPUT_UNIT, 140) lam_min, lam_max
+140            format('Wavelength: ',T20,'(',G0,' -> ',G0,')')
+
+            end if
 
          #:endif
 
@@ -153,7 +262,7 @@ contains
 
          return
 
-      end subroutine inspect_${name}$_
+      end subroutine inspect_${name}$
 
    #:endfor
 

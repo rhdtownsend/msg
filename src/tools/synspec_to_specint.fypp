@@ -36,11 +36,12 @@ program synspec_to_specint
 
    ! Variables
 
-   character(:), allocatable :: input_file_name
-   character(:), allocatable :: output_file_name
+   character(:), allocatable :: synspec_file_name
+   character(:), allocatable :: specint_file_name
    character(:), allocatable :: file_type
    character(:), allocatable :: limb_law
-   character(:), allocatable :: mu_range
+   real(RD), allocatable     :: mu_min
+   integer, allocatable      :: n_mu
    character(:), allocatable :: labels(:)
 
    type(arg_parser_t)        :: arg_parser
@@ -48,49 +49,79 @@ program synspec_to_specint
    type(hdf5io_t)            :: hdf5io
    type(hdf5io_t)            :: hdf5io_labels
    integer                   :: j
-   character(:), allocatable :: label
    character(:), allocatable :: name
-   real(RD)                  :: value
+   real(RD), allocatable     :: value
+   integer                   :: stat
 
    ! Parse command-line arguments
 
    file_type = 'flux'
+   limb_law = 'CONST'
 
-   arg_parser = arg_parser_t()
+   arg_parser = arg_parser_t('synspec_to_specint SYNSPEC_FILE SPECINT_FILE', auto_help=.TRUE.)
 
-   call arg_parser%define_option('file-type', OPT_REQUIRED_ARG)
-   call arg_parser%define_option('mu-range', OPT_REQUIRED_ARG)
-   call arg_parser%define_option('label', OPT_REQUIRED_ARG)
+   call arg_parser%define_option('file-type', OPT_REQUIRED_ARG, short_name='t', &
+      usage='--file-type=TYPE', description='SYNSPEC file type ( flux | intensity )')
+   call arg_parser%define_option('limb-law', OPT_REQUIRED_ARG, &
+      usage='--limb-law=LAW', description='limb-darkening law ( CONST | LINEAR | SQRT | QUAD | CLARET )')
+   call arg_parser%define_option('mu-min', OPT_REQUIRED_ARG, &
+      usage='--mu-min=MIN', description='minimum mu value')
+   call arg_parser%define_option('n-mu', OPT_REQUIRED_ARG, &
+      usage='--n-mu=N', description='number of mu values')
+   call arg_parser%define_option('label', OPT_REQUIRED_ARG, &
+      usage='--label=NAME:VALUE', description='photospheric parameter name/value')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
-   if (.NOT. allocated(input_file_name)) call synopsis()
-   if (.NOT. allocated(output_file_name)) call synopsis()
+   if (.NOT. ALLOCATED(synspec_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(specint_file_name)) call print_summary()
 
    ! Create the specint
 
    select case(file_type)
+
    case('flux')
-      call create_flux_specint(input_file_name, specint)
+
+      call create_flux_specint(synspec_file_name, specint)
+
    case('intensity')
-      call create_intensity_specint(input_file_name, limb_law, mu_range, specint)
+
+      if (.NOT. ALLOCATED(mu_min)) then
+         @:STOP('--file-type choice requires --mu-min')
+      end if
+
+      if (.NOT. ALLOCATED(n_mu)) then
+         @:STOP('--file-type choice requires --n_mu')
+      end if
+
+      call create_intensity_specint(synspec_file_name, limb_law, mu_min, n_mu, specint)
+
    case default
-      @:ABORT('invalid file_type')
+
+      @:ABORT('invalid --file-type')
+
    end select
 
    ! Write the output file
 
-   hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
+   hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
 
    call specint%write(hdf5io)
 
    hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
    if (ALLOCATED(labels)) then
+
       do j = 1, SIZE(labels)
-         call parse_name_value(labels(j), name, value)
+
+         call parse_name_value(labels(j), name, value, stat)
+         if (stat /= STAT_OK) then
+            @:STOP('invalid --label')
+         end if
+
          call hdf5io_labels%write_attr(name, value)
       end do
+
    end if
 
    call hdf5io_labels%final()
@@ -108,11 +139,11 @@ contains
 
       select case(a)
       case(1)
-         input_file_name = value
+         synspec_file_name = value
       case(2)
-         output_file_name = value
+         specint_file_name = value
       case default
-         call synopsis()
+         call print_summary()
       end select
 
    end subroutine arg_proc
@@ -124,36 +155,53 @@ contains
       character(*), intent(in) :: name
       character(*), intent(in) :: value
 
+      integer :: stat
+
+      stat = STAT_OK
+
       select case(name)
-      case('mu-range')
-         mu_range = value
+      case('file-type')
+         file_type = value
+      case('limb-law')
+         limb_law = value
+      case('mu-min')
+         call parse_value(value, mu_min, stat)
+      case('n-mu')
+         call parse_value(value, n_mu, stat)
+      case('label')
+         call append_string(labels, value)
+      case('help')
+         call print_summary()
       case default
          @:ABORT('invalid option name')
       end select
+
+      if (stat /= STAT_OK) then
+         @:ABORT('invalid --'//name)
+      end if
 
    end subroutine opt_proc
 
    !****
 
-   subroutine synopsis()
+   subroutine print_summary()
 
-      write(OUTPUT_UNIT, *) 'Synopsis: synspec_to_specint <input_file_name> <output_file_name> [options]'
-      stop
+      call arg_parser%print_summary()
+      @:STOP()
 
-   end subroutine synopsis
+   end subroutine print_summary
 
    !****
 
-   subroutine create_intensity_specint(input_file_name, limb_law, mu_range, specint)
+   subroutine create_intensity_specint(synspec_file_name, limb_law, mu_min, n_mu, specint)
 
-      character(*), intent(in)               :: input_file_name
-      character(:), allocatable,  intent(in) :: limb_law
-      character(:), allocatable, intent(in)  :: mu_range
-      type(limb_specint_t), intent(out)      :: specint
+      character(*), intent(in)          :: synspec_file_name
+      character(*), intent(in)          :: limb_law
+      real(RD), intent(in)              :: mu_min
+      integer, intent(in)               :: n_mu
+      type(limb_specint_t), intent(out) :: specint
 
       type(limb_t)          :: limb
-      real(RD)              :: mu_0
-      integer               :: n_mu
       real(RD), allocatable :: mu(:)
       integer               :: j
       real(RD), allocatable :: lam(:)
@@ -163,16 +211,11 @@ contains
 
       limb = limb_t(limb_law)
 
-      @:ASSERT(ALLOCATED(limb_law), '--limb-law must be specified')
-      @:ASSERT(ALLOCATED(mu_range), '--mu-range must be specified')
-
-      call parse_values(mu_range, mu_0, n_mu)
-
-      mu = [((mu_0*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
+      mu = [((mu_min*(n_mu-j) + 1._RD*(j-1))/(n_mu-1), j=1,n_mu)]
 
       ! Read the intensity data
 
-      call read_intensity_data(input_file_name, n_mu, lam, I)
+      call read_intensity_data(synspec_file_name, n_mu, lam, I)
 
       ! Create the specint
 
@@ -186,9 +229,9 @@ contains
 
    !****
 
-   subroutine create_flux_specint(input_file_name, specint)
+   subroutine create_flux_specint(synspec_file_name, specint)
 
-      character(*), intent(in)          :: input_file_name
+      character(*), intent(in)          :: synspec_file_name
       type(limb_specint_t), intent(out) :: specint
 
       type(limb_t)          :: limb
@@ -202,7 +245,7 @@ contains
 
       ! Read the flux data
 
-      call read_flux_data(input_file_name, lam, I)
+      call read_flux_data(synspec_file_name, lam, I)
 
       ! Create the specint
 
@@ -218,9 +261,9 @@ contains
 
    !****
 
-   subroutine read_intensity_data(input_file_name, n_mu, lam, I)
+   subroutine read_intensity_data(synspec_file_name, n_mu, lam, I)
 
-      character(*), intent(in)           :: input_file_name
+      character(*), intent(in)           :: synspec_file_name
       integer, intent(in)                :: n_mu
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
@@ -234,7 +277,7 @@ contains
 
       ! Determine the format of the input file
 
-      open(NEWUNIT=unit, FILE=input_file_name, STATUS='OLD', FORM='UNFORMATTED')
+      open(NEWUNIT=unit, FILE=synspec_file_name, STATUS='OLD', FORM='UNFORMATTED')
       read(unit) header
       close(unit)
 
@@ -246,7 +289,7 @@ contains
 
       ! Open the input file
 
-      open(NEWUNIT=unit, FILE=input_file_name, STATUS='OLD', FORM=form)
+      open(NEWUNIT=unit, FILE=synspec_file_name, STATUS='OLD', FORM=form)
 
       if (form == 'UNFORMATTED') then
          read(unit) header
@@ -328,9 +371,9 @@ contains
 
    !****
 
-   subroutine read_flux_data(input_file_name, lam, I)
+   subroutine read_flux_data(synspec_file_name, lam, I)
 
-      character(*), intent(in)           :: input_file_name
+      character(*), intent(in)           :: synspec_file_name
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: I(:,:)
 
@@ -343,7 +386,7 @@ contains
 
       ! Determine the format of the input file
 
-      open(NEWUNIT=unit, FILE=input_file_name, STATUS='OLD', FORM='UNFORMATTED')
+      open(NEWUNIT=unit, FILE=synspec_file_name, STATUS='OLD', FORM='UNFORMATTED')
       read(unit) header
       close(unit)
 
@@ -355,7 +398,7 @@ contains
 
       ! Open the input file
 
-      open(NEWUNIT=unit, FILE=input_file_name, STATUS='OLD', FORM=form)
+      open(NEWUNIT=unit, FILE=synspec_file_name, STATUS='OLD', FORM=form)
 
       if (form == 'UNFORMATTED') then
          read(unit) header

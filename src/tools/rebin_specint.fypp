@@ -36,9 +36,11 @@ program rebin_specint
 
    character(:), allocatable :: input_file_name
    character(:), allocatable :: output_file_name
-   character(:), allocatable :: lam_range
-   character(:), allocatable :: sampling
-   character(:), allocatable :: alignment
+   real(RD), allocatable     :: lam_min
+   real(RD), allocatable     :: lam_max
+   character(:), allocatable :: samp_type
+   real(RD), allocatable     :: samp_value
+   character(:), allocatable :: samp_align
 
    type(arg_parser_t)                :: arg_parser
    type(hdf5io_t)                    :: hdf5io
@@ -49,27 +51,30 @@ program rebin_specint
    integer                           :: n_labels
    real(RD), allocatable             :: values(:)
    integer                           :: j
-   real(RD)                          :: lam_min
-   real(RD)                          :: lam_max
-   real(RD)                          :: range_min
-   real(RD)                          :: range_max
-   character(:), allocatable         :: sampling_type
-   real(RD)                          :: sampling_value
+   real(RD)                          :: spec_lam_min
+   real(RD)                          :: spec_lam_max
 
    ! Parse command-line arguments
 
-   alignment = 'C'
+   samp_align = 'center'
 
-   arg_parser = arg_parser_t()
+   arg_parser = arg_parser_t('rebin_specint INPUT_FILE OUTPUT_FILE', auto_help=.TRUE.)
 
-   call arg_parser%define_option('lam_range', OPT_REQUIRED_ARG)
-   call arg_parser%define_option('sampling', OPT_REQUIRED_ARG)
-   call arg_parser%define_option('alignment', OPT_REQUIRED_ARG)
+   call arg_parser%define_option('lambda-min', OPT_REQUIRED_ARG, &
+      usage='--lamda-min=MIN', description='minimum wavelength')
+   call arg_parser%define_option('lambda-max', OPT_REQUIRED_ARG, &
+      usage='--lamda-max=MAX', description='maximum wavelength')
+   call arg_parser%define_option('sampling-type', OPT_REQUIRED_ARG, short_name='t', &
+      usage='--sampling-type=TYPE', description='sampling type ( R | delta_lam )')
+   call arg_parser%define_option('sampling-value', OPT_REQUIRED_ARG, short_name='v', &
+      usage='--sampling-value=VALUE', description='sampling value')
+   call arg_parser%define_option('sampling-align', OPT_REQUIRED_ARG, short_name='a', &
+      usage='--sampling-align=ALIGN', description='sampling alingment ( center | left | right )')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
-   if (.NOT. allocated(input_file_name)) call synopsis()
-   if (.NOT. allocated(output_file_name)) call synopsis()
+   if (.NOT. ALLOCATED(input_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(output_file_name)) call print_summary()
 
    ! Read the input specint
 
@@ -96,30 +101,36 @@ program rebin_specint
 
    ! Determine the wavelength range
 
-   call specint%get_lam_min(lam_min)
-   call specint%get_lam_max(lam_max)
+   call specint%get_lam_min(spec_lam_min)
+   call specint%get_lam_max(spec_lam_max)
 
-   if (ALLOCATED(lam_range)) then
+   if (ALLOCATED(lam_min)) then
+      lam_min = MAX(lam_min, spec_lam_min)
+   else
+      lam_min = spec_lam_min
+   end if
 
-      call parse_values(lam_range, range_min, range_max)
-      lam_min = MAX(lam_min, range_min)
-      lam_max = MIN(lam_max, range_max)
-
+   if (ALLOCATED(lam_max)) then
+      lam_max = MIN(lam_max, spec_lam_max)
+   else
+      lam_max = spec_lam_max
    end if
 
    ! Rebin the specint
 
-   if (ALLOCATED(sampling)) then
+   if (ALLOCATED(samp_type)) then
 
-      call parse_name_value(sampling, sampling_type, sampling_value)
+      if (.NOT. ALLOCATED(samp_value)) then
+         @:STOP('--sampling-type requires --sampling-value')
+      end if
 
-      select case(sampling_type)
+      select case(samp_type)
       case('delta_lam')
-         call rebin_spacing(specint, lam_min, lam_max, sampling_value, alignment)
+         call rebin_spacing(specint, lam_min, lam_max, samp_value, samp_align)
       case('R')
-         call rebin_resolution(specint, lam_min, lam_max, sampling_value, alignment)
+         call rebin_resolution(specint, lam_min, lam_max, samp_value, samp_align)
       case default
-         @:ABORT('invalid sampling type')
+         @:STOP('invalid --sampling-type')
       end select
 
    else
@@ -159,7 +170,7 @@ contains
       case(2)
          output_file_name = value
       case default
-         call synopsis()
+         call print_summary()
       end select
 
    end subroutine arg_proc
@@ -171,37 +182,51 @@ contains
       character(*), intent(in) :: name
       character(*), intent(in) :: value
 
+      integer :: stat
+
+      stat = STAT_OK
+
       select case(name)
-      case('range')
-         lam_range = value
-      case('sampling')
-         sampling = value
-      case('alignment')
-         alignment = value
+      case('lambda-min')
+         call parse_value(value, lam_min)
+      case('lambda-max')
+         call parse_value(value, lam_max)
+      case('sampling-type')
+         samp_type = value
+      case('sampling-value')
+         call parse_value(value, samp_value)
+      case('sampling-align')
+         samp_align = value
+      case('help')
+         call print_summary()
       case default
          @:ABORT('invalid option name')
       end select
+
+      if (stat /= STAT_OK) then
+         @:STOP('invalid --'//name)
+      end if
 
    end subroutine opt_proc
 
    !****
 
-   subroutine synopsis()
+   subroutine print_summary()
 
-      write(OUTPUT_UNIT, *) 'Synopsis: rebin_specint <input_file_name> <output_file_name> [options]'
-      stop
+      call arg_parser%print_summary()
+      @:STOP()
 
-   end subroutine synopsis
+   end subroutine print_summary
 
    !****
 
-   subroutine rebin_spacing(specint, lam_min, lam_max, delta_lam, alignment)
+   subroutine rebin_spacing(specint, lam_min, lam_max, delta_lam, samp_align)
 
       class(specint_t), intent(inout) :: specint
       real(RD), intent(in)            :: lam_min
       real(RD), intent(in)            :: lam_max
       real(RD), intent(in)            :: delta_lam
-      character(*), intent(in)        :: alignment
+      character(*), intent(in)        :: samp_align
 
       real(RD) :: dx
       integer  :: n
@@ -213,15 +238,15 @@ contains
 
       n = FLOOR((lam_max - lam_min)/dx) + 1
 
-      select case (alignment)
-      case ('L')
+      select case (samp_align)
+      case ('left')
          x_0 = lam_min
-      case ('R')
+      case ('right')
          x_0 = lam_max - dx*(n-1)
-      case ('C')
+      case ('center')
          x_0 = 0.5_RD*(lam_min + lam_max - dx*(n-1))
       case default
-         @:ABORT('invalid alignment')
+         @:STOP('invalid --sampling-align')
       end select
 
       x_0 = MAX(x_0, lam_min)
@@ -238,14 +263,13 @@ contains
 
    !****
 
-   subroutine rebin_resolution(specint, lam_min, lam_max, R, alignment)
+   subroutine rebin_resolution(specint, lam_min, lam_max, R, samp_align)
 
       class(specint_t), intent(inout) :: specint
       real(RD), intent(in)            :: lam_min
       real(RD), intent(in)            :: lam_max
       real(RD), intent(in)            :: R
-      character(*), intent(in)        :: alignment
-      type(log_range_t)               :: range
+      character(*), intent(in)        :: samp_align
 
       real(RD) :: dx
       integer  :: n
@@ -257,15 +281,15 @@ contains
 
       n = FLOOR((LOG(lam_max) - LOG(lam_min))/dx) + 1
 
-      select case (alignment)
-      case ('L')
+      select case (samp_align)
+      case ('left')
          x_0 = LOG(lam_min)
-      case ('R')
+      case ('right')
          x_0 = LOG(lam_max) - dx*(n-1)
-      case ('C')
+      case ('center')
          x_0 = 0.5_RD*(LOG(lam_min) + LOG(lam_max) - dx*(n-1))
       case default
-         @:ABORT('invalid alignment')
+         @:STOP('invalid --sampling-align')
       end select
 
       x_0 = MAX(x_0, LOG(lam_min))

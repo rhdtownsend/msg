@@ -48,35 +48,98 @@ program specint_to_specgrid
 
    character(:), allocatable :: manifest_file_name
    character(:), allocatable :: specgrid_file_name
-   character(:), allocatable :: label
+   character(:), allocatable :: grid_label
 
-   type(specgrid_t) :: specgrid
-   type(hdf5io_t)   :: hdf5io
+   type(arg_parser_t) :: arg_parser
+   type(specgrid_t)   :: specgrid
+   type(hdf5io_t)     :: hdf5io
 
-   ! Read command-line arguments
+   ! Parse command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: specint_to_specgrid manifest_file_name specgrid_file_name label')
+   arg_parser = arg_parser_t('specint_to_specgrid MANIFEST_FILE SPECGRID_FILE', auto_help=.TRUE.)
 
-   call get_arg(1, manifest_file_name)
-   call get_arg(2, specgrid_file_name)
-   call get_arg(3, label)
+   call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, short_name='l', &
+      usage='--grid-label=NAME', description='grid label')
+
+   call arg_parser%parse(arg_proc, opt_proc)
+
+   if (.NOT. ALLOCATED(manifest_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(specgrid_file_name)) call print_summary()
 
    ! Create the grid
 
    call create_grid(manifest_file_name,  specgrid)
 
-   ! Write the grid
+   ! Write the output file
 
    call specgrid%set_cache_limit(0)
 
    hdf5io = hdf5io_t(specgrid_file_name, CREATE_FILE)
+
    call specgrid%write(hdf5io)
-   call hdf5io%write_attr('label', label)
+
+   if (ALLOCATED(grid_label)) then
+      call hdf5io%write_attr('label', grid_label)
+   end if
+
    call hdf5io%final()
 
    ! Finish
 
 contains
+
+   subroutine arg_proc(a, value)
+
+      integer, intent(in)      :: a
+      character(*), intent(in) :: value
+
+      select case(a)
+      case(1)
+         manifest_file_name = value
+      case(2)
+         specgrid_file_name = value
+      case default
+         call print_summary()
+      end select
+
+   end subroutine arg_proc
+
+   !****
+
+   subroutine opt_proc(name, value)
+
+      character(*), intent(in) :: name
+      character(*), intent(in) :: value
+
+      integer :: stat
+
+      stat = STAT_OK
+
+      select case(name)
+      case('grid-label')
+         grid_label = value
+      case('help')
+         call print_summary()
+      case default
+         @:ABORT('invalid option name')
+      end select
+
+      if (stat /= STAT_OK) then
+         @:ABORT('invalid --'//name)
+      end if
+
+   end subroutine opt_proc
+
+   !****
+
+   subroutine print_summary()
+
+      call arg_parser%print_summary()
+      @:STOP()
+
+   end subroutine print_summary
+
+   !****
 
    subroutine create_grid(manifest_file_name, specgrid)
 

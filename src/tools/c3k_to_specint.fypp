@@ -50,8 +50,8 @@ program c3k_to_specint
 
    ! Variables
 
-   character(:), allocatable :: input_file_name
-   character(:), allocatable :: output_file_prefix
+   character(:), allocatable :: c3k_file_name
+   character(:), allocatable :: specint_file_prefix
 
    type(arg_parser_t)                :: arg_parser
    type(hdf5io_t)                    :: hdf5io
@@ -67,7 +67,7 @@ program c3k_to_specint
    real(RD), allocatable             :: F(:)
    real(RD), allocatable             :: I(:,:)
    integer                           :: j
-   character(CHAR_LEN)               :: output_file_name
+   character(CHAR_LEN)               :: specint_file_name
    type(hdf5io_t)                    :: hdf5io_specint
    type(hdf5io_t)                    :: hdf5io_labels
    integer                           :: r
@@ -75,16 +75,16 @@ program c3k_to_specint
 
    ! Parse command-line arguments
 
-   arg_parser = arg_parser_t()
+   arg_parser = arg_parser_t('c3k_to_specint C3K_FILE SPECINT_PREFIX', auto_help=.TRUE.)
 
    call arg_parser%parse(arg_proc, opt_proc)
 
-   if (.NOT. allocated(input_file_name)) call synopsis()
-   if (.NOT. allocated(output_file_prefix)) call synopsis()
+   if (.NOT. allocated(c3k_file_name)) call print_summary()
+   if (.NOT. allocated(specint_file_prefix)) call print_summary()
 
    ! Open the input file
 
-   hdf5io = hdf5io_t(input_file_name, OPEN_FILE_RO)
+   hdf5io = hdf5io_t(c3k_file_name, OPEN_FILE_RO)
 
    ! Read photospheric parameters
 
@@ -116,7 +116,7 @@ program c3k_to_specint
 
    spect_loop: do j = 1, n
 
-      write(output_file_name, 100) output_file_prefix, j, '.h5'
+      write(specint_file_name, 100) specint_file_prefix, j, '.h5'
 100   format(A,I8.8,A)
 
       ! Set up the bin-averaged intensity (also converting from
@@ -132,7 +132,7 @@ program c3k_to_specint
 
       ! Write it
 
-      hdf5io_specint = hdf5io_t(output_file_name, CREATE_FILE)
+      hdf5io_specint = hdf5io_t(specint_file_name, CREATE_FILE)
 
       call specint%write(hdf5io_specint)
 
@@ -174,11 +174,11 @@ contains
 
       select case(a)
       case(1)
-         input_file_name = value
+         c3k_file_name = value
       case(2)
-         output_file_prefix = value
+         specint_file_prefix = value
       case default
-         call synopsis()
+         call print_summary()
       end select
 
    end subroutine arg_proc
@@ -191,18 +191,22 @@ contains
       character(*), intent(in) :: value
 
       select case(name)
+      case('help')
+         call print_summary()
       case default
          @:ABORT('invalid option name')
       end select
 
    end subroutine opt_proc
 
-   subroutine synopsis()
+   !****
 
-      write(OUTPUT_UNIT, *) 'Synopsis: c3k_to_specinit <input_file_name> <output_file_prefix>'
-      stop
+   subroutine print_summary()
 
-   end subroutine synopsis
+      call arg_parser%print_summary()
+      @:STOP()
+
+   end subroutine print_summary
 
    !****
 

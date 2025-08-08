@@ -34,9 +34,9 @@ program make_passband
 
    ! Variables
 
-   character(:), allocatable :: input_file_name
-   character(:), allocatable :: zero_point
-   character(:), allocatable :: output_file_name
+   character(:), allocatable :: response_file_name
+   real(RD), allocatable     :: F_0
+   character(:), allocatable :: passband_file_name
 
    type(arg_parser_t)    :: arg_parser
    integer               :: unit
@@ -44,27 +44,28 @@ program make_passband
    real(RD), allocatable :: lam(:)
    real(RD), allocatable :: S(:)
    integer               :: i
-   real(RD)              :: F_0
    type(passband_t)      :: passband
    type(hdf5io_t)        :: hdf5io
 
-   ! Read command-line arguments
-
    ! Parse command-line arguments
 
-   arg_parser = arg_parser_t()
+   arg_parser = arg_parser_t('make_passband RESPONSE_FILE PASSBAND_FILE', auto_help=.TRUE.)
 
-   call arg_parser%define_option('zero_point', OPT_REQUIRED_ARG)
+   call arg_parser%define_option('zero_point', OPT_REQUIRED_ARG, short_name='z', &
+      usage='--zero-point=F_0', description='zero-point flux of the photometric system')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
-   if (.NOT. allocated(input_file_name)) call synopsis()
-   if (.NOT. allocated(zero_point)) call synopsis()
-   if (.NOT. allocated(output_file_name)) call synopsis()
+   if (.NOT. ALLOCATED(response_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(passband_file_name)) call print_summary()
+
+   if (.NOT. ALLOCATED(F_0)) then
+      @:STOP('--zero-point must be specified')
+   end if
 
    ! Read the input file
 
-   open(NEWUNIT=unit, STATUS='OLD', FILE=input_file_name)
+   open(NEWUNIT=unit, STATUS='OLD', FILE=response_file_name)
 
    n = 0
 
@@ -88,15 +89,11 @@ program make_passband
 
    ! Create the passband
 
-   @:ASSERT(ALLOCATED(zero_point), '--zero-point must be specified')
-
-   read(zero_point, *) F_0
-
    passband = passband_t(S, lam, F_0)
 
    ! Write the output file
 
-   hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
+   hdf5io = hdf5io_t(passband_file_name, CREATE_FILE)
    call passband%write(hdf5io)
    call hdf5io%final()
 
@@ -111,11 +108,11 @@ contains
 
       select case(a)
       case(1)
-         input_file_name = value
+         response_file_name = value
       case(2)
-         output_file_name = value
+         passband_file_name = value
       case default
-         call synopsis()
+         call print_summary()
       end select
 
    end subroutine arg_proc
@@ -127,22 +124,32 @@ contains
       character(*), intent(in) :: name
       character(*), intent(in) :: value
 
+      integer :: stat
+
+      stat = STAT_OK
+
       select case(name)
       case('zero_point')
-         zero_point = value
+         call parse_value(value, F_0, stat)
+      case('help')
+         call print_summary()
       case default
          @:ABORT('invalid option name')
       end select
+
+      if (stat /= STAT_OK) then
+         @:STOP('invalid --'//name)
+      end if
 
    end subroutine opt_proc
 
    !****
 
-   subroutine synopsis()
+   subroutine print_summary()
 
-      write(OUTPUT_UNIT, *) 'Synopsis: make_passband <input_file_name> <output_file_name> [options]'
-      stop
+      call arg_parser%print_summary()
+      @:STOP()
 
-   end subroutine synopsis
+   end subroutine print_summary
 
 end program make_passband

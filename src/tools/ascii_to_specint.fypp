@@ -34,8 +34,8 @@ program ascii_to_specint
 
    ! Variables
 
-   character(:), allocatable :: input_file_name
-   character(:), allocatable :: output_file_name
+   character(:), allocatable :: ascii_file_name
+   character(:), allocatable :: specint_file_name
    character(:), allocatable :: lam_units
    character(:), allocatable :: flux_units
    character(:), allocatable :: labels(:)
@@ -50,27 +50,31 @@ program ascii_to_specint
    type(hdf5io_t)            :: hdf5io_labels
    integer                   :: j
    character(:), allocatable :: name
-   real(RD)                  :: value
+   real(RD), allocatable     :: value
+   integer                   :: stat
 
    ! Parse command-line arguments
 
    lam_units = 'A'
    flux_units = 'erg/cm^2/s/A'
 
-   arg_parser = arg_parser_t()
+   arg_parser = arg_parser_t('ascii_to_specint ASCII_FILE SPECINT_FILE', auto_help=.TRUE.)
 
-   call arg_parser%define_option('lam_units', OPT_REQUIRED_ARG)
-   call arg_parser%define_option('flux_units', OPT_REQUIRED_ARG)
-   call arg_parser%define_option('label', OPT_REQUIRED_ARG)
+   call arg_parser%define_option('lambda-units', OPT_REQUIRED_ARG, &
+      usage='--lambda-units=UNITS', description='wavelength units of ascii_file ( A | micron)')
+   call arg_parser%define_option('flux-units', OPT_REQUIRED_ARG, &
+      usage='--flux-units=UNITS', description='flux units of ascii_file ( erg/cm^2/s/A | W/m^2/m )')
+   call arg_parser%define_option('label', OPT_REQUIRED_ARG, short_name='l', &
+      usage='--label=NAME:VALUE', description='photospheric parameter name/value')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
-   if (.NOT. allocated(input_file_name)) call synopsis()
-   if (.NOT. allocated(output_file_name)) call synopsis()
+   if (.NOT. allocated(ascii_file_name)) call print_summary()
+   if (.NOT. allocated(specint_file_name)) call print_summary()
 
    ! Read data from the input file
 
-   call read_ascii_file(input_file_name, lam_units, flux_units, lam, F)
+   call read_ascii_file(ascii_file_name, lam_units, flux_units, lam, F)
 
    ! Set up the bin-averaged intensity
 
@@ -84,19 +88,27 @@ program ascii_to_specint
 
    specint = limb_specint_t(I, [1._RD], tab_range_t(lam), limb_t('CONST'), precise=.FALSE.)
 
-   ! Write it (together with the labels)
+   ! Write the output file
 
-   hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
+   hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
 
    call specint%write(hdf5io)
 
    hdf5io_labels = hdf5io_t(hdf5io, 'labels')
 
    if (ALLOCATED(labels)) then
+
       do j = 1, SIZE(labels)
-         call parse_name_value(labels(j), name, value)
+
+         call parse_name_value(labels(j), name, value, stat)
+         if (stat /= STAT_OK) then
+            @:STOP('invalid --label')
+         end if
+
          call hdf5io_labels%write_attr(name, value)
+
       end do
+
    end if
 
    call hdf5io_labels%final()
@@ -114,11 +126,11 @@ contains
 
       select case(a)
       case(1)
-         input_file_name = value
+         ascii_file_name = value
       case(2)
-         output_file_name = value
+         specint_file_name = value
       case default
-         call synopsis()
+         call print_summary()
       end select
 
    end subroutine arg_proc
@@ -131,12 +143,14 @@ contains
       character(*), intent(in) :: value
 
       select case(name)
-      case('lam_units')
+      case('lam-units')
          lam_units = value
-      case('flux_units')
+      case('flux-units')
          flux_units = value
       case('label')
          call append_string(labels, value)
+      case('help')
+         call print_summary()
       case default
          @:ABORT('invalid option name')
       end select
@@ -145,12 +159,12 @@ contains
 
    !****
 
-   subroutine synopsis()
+   subroutine print_summary()
 
-      write(OUTPUT_UNIT, *) 'Synopsis: ascii_to_specint <input_file_name> <output_file_name> [options]'
-      stop
+      call arg_parser%print_summary()
+      @:STOP()
 
-   end subroutine synopsis
+   end subroutine print_summary
 
    !****
 
@@ -221,7 +235,7 @@ contains
       case('micron')
          lam = lam*1E4_RD
       case default
-         @:ABORT('Invalid lam_units')
+         @:STOP('invalid --lambda-units')
       end select
 
       select case(flux_units)
@@ -229,7 +243,7 @@ contains
       case('W/m^2/m')
          F = F*1E-7_RD
       case default
-         @:ABORT('Invalid flux_units')
+         @:STOP('invalid --flux-units')
       end select
 
       ! Finish

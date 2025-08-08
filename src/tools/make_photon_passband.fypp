@@ -25,6 +25,7 @@ program make_photon_passband
    use msg_m
 
    use cubint_m
+   use tools_utils_m
 
    use ISO_FORTRAN_ENV
 
@@ -34,23 +35,37 @@ program make_photon_passband
 
    ! Variables
 
-   real(RD)                  :: lam_min
-   real(RD)                  :: lam_max
    character(:), allocatable :: passband_file_name
+   real(RD), allocatable     :: lam_min
+   real(RD), allocatable     :: lam_max
 
-   type(cubint_t)   :: cubint
-   real(RD)         :: Delta
-   real(RD)         :: F_0
-   type(passband_t) :: passband
-   type(hdf5io_t)   :: hdf5io
+   type(arg_parser_t) :: arg_parser
+   type(cubint_t)     :: cubint
+   real(RD)           :: Delta
+   real(RD)           :: F_0
+   type(passband_t)   :: passband
+   type(hdf5io_t)     :: hdf5io
 
-   ! Read command-line arguments
+   ! Parse command-line arguments
 
-   @:ASSERT(n_arg() == 3, 'Syntax: make_photon_passband lam_min lam_max passband_file_name')
+   arg_parser = arg_parser_t('make_photon_passband PASSBAND_FILE', auto_help=.TRUE.)
 
-   call get_arg(1, lam_min)
-   call get_arg(2, lam_max)
-   call get_arg(3, passband_file_name)
+   call arg_parser%define_option('lambda-min', OPT_REQUIRED_ARG, &
+      usage='--lamda-min=MIN', description='minimum wavelength')
+   call arg_parser%define_option('lambda-max', OPT_REQUIRED_ARG, &
+      usage='--lamda-max=MAX', description='maximum wavelength')
+
+   call arg_parser%parse(arg_proc, opt_proc)
+
+   if (.NOT. allocated(passband_file_name)) call print_summary()
+
+   if (.NOT. ALLOCATED(lam_min)) then
+      @:STOP('--lambda-min must be specified')
+   end if
+
+   if (.NOT. ALLOCATED(lam_max)) then
+      @:STOP('--lambda-max must be specified')
+   end if
 
    ! Create the cubic interpolant (a straight line)
 
@@ -66,12 +81,65 @@ program make_photon_passband
 
    passband = passband_t(cubint, F_0)
 
-   ! Write the passband_t
+   ! Write the output file
 
    hdf5io = hdf5io_t(passband_file_name, CREATE_FILE)
    call passband%write(hdf5io)
    call hdf5io%final()
 
    ! Finish
+
+contains
+
+   subroutine arg_proc(a, value)
+
+      integer, intent(in)      :: a
+      character(*), intent(in) :: value
+
+      select case(a)
+      case(1)
+         passband_file_name = value
+      case default
+         call print_summary()
+      end select
+
+   end subroutine arg_proc
+
+   !****
+
+   subroutine opt_proc(name, value)
+
+      character(*), intent(in) :: name
+      character(*), intent(in) :: value
+
+      integer :: stat
+
+      stat = STAT_OK
+
+      select case(name)
+      case('lambda-min')
+         call parse_value(value, lam_min, stat)
+      case('lambda-max')
+         call parse_value(value, lam_max, stat)
+      case('help')
+         call print_summary()
+      case default
+         @:ABORT('invalid option name')
+      end select
+
+      if (stat /= STAT_OK) then
+         @:STOP('invalid --'//name)
+      end if
+
+   end subroutine opt_proc
+
+   !****
+
+   subroutine print_summary()
+
+      call arg_parser%print_summary()
+      @:STOP()
+
+   end subroutine print_summary
 
 end program make_photon_passband

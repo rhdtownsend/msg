@@ -1,5 +1,5 @@
 ! Module   : tools_utils_m.fypp
-! Purpose  : support routines for tools
+! Purpose  : Support routines for tools
 !
 ! Copyright 2021-2023 Rich Townsend & The MSG Team
 !
@@ -23,6 +23,8 @@ module tools_utils_m
 
    use forum_m
 
+   use stat_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -31,28 +33,36 @@ module tools_utils_m
 
    ! Interfaces
 
+   interface parse_value
+      module procedure parse_value_i_
+      module procedure parse_value_r_
+   end interface parse_value
+
+   interface parse_values
+      module procedure parse_values_i_
+      module procedure parse_values_r_
+      module procedure parse_values_a_
+   end interface parse_values
+
    interface parse_name_value
       module procedure parse_name_value_r_
-      module procedure parse_name_value_a_
+      module procedure parse_name_value_i_
    end interface parse_name_value
 
    interface parse_name_values
-      module procedure parse_name_values_r_r_
+      module procedure parse_name_values_r_
+      module procedure parse_name_values_i_
    end interface parse_name_values
-
-   interface parse_values
-      module procedure parse_values_r_r_
-      module procedure parse_values_r_i_
-   end interface parse_values
 
    ! Access specifiers
 
    private
 
    public :: append_string
+   public :: parse_value
+   public :: parse_values
    public :: parse_name_value
    public :: parse_name_values
-   public :: parse_values
 
    ! Routines
 
@@ -100,194 +110,177 @@ contains
 
    !****
 
-   subroutine parse_name_value_r_(name_value, name, value)
+   #:for type, suffix in (('integer', 'i'), ('real(RD)', 'r'))
 
-      character(*), intent(in)               :: name_value
-      character(:), allocatable, intent(out) :: name
-      real(RD), intent(out)                  :: value
+      subroutine parse_value_${suffix}$_(string, value, stat)
 
-      integer :: i
-      integer :: len
+         character(*), intent(in)           :: string
+         ${type}$, allocatable, intent(out) :: value
+         integer, intent(out), optional     :: stat
 
-      ! Parse the colon-separated name-value pair into a name and a value
+         integer :: iostat
 
-      i = INDEX(name_value, ':')
+         ! Parse the string into a value
 
-      if (i > 1) then
+         parse_block: block
 
-         len = LEN_TRIM(name_value)
+            allocate(value)
 
-         if (i < len) then
-            name = name_value(1:i-1)
-            read(name_value(i+1:len), *) value
+            read(string, FMT=*, IOSTAT=iostat) value
+            if (iostat /= 0) exit parse_block
+
+            return
+
+         end block parse_block
+
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
          else
-            @:ABORT('missing value in name-value pair "'//TRIM(name_value)//'"')
+            @:ABORT('invalid argument')
          end if
 
-      elseif (i == 1) then
+         ! Finish
 
-         @:ABORT('missing name in name-value pair "'//TRIM(name_value)//'"')
+         return
 
-      else
-
-         @:ABORT('missing colon in name-value pair "'//TRIM(name_value)//'"')
-
-      end if
-
-      ! Finish
-
-      return
-
-   end subroutine parse_name_value_r_
+      end subroutine parse_value_${suffix}$_
 
    !****
 
-   subroutine parse_name_value_a_(name_value, name, value)
+      subroutine parse_values_${suffix}$_(string, value_a, value_b, stat, delim)
 
-      character(*), intent(in)               :: name_value
-      character(:), allocatable, intent(out) :: name
-      character(:), allocatable, intent(out) :: value
+         character(*), intent(in)           :: string
+         ${type}$, allocatable, intent(out) :: value_a
+         ${type}$, allocatable, intent(out) :: value_b
+         integer, intent(out), optional     :: stat
+         character(*), intent(in), optional :: delim
 
-      integer :: i
-      integer :: len
+         character(:), allocatable :: value_a_str
+         character(:), allocatable :: value_b_str
+         integer                   :: iostat
 
-      ! Parse the colon-separated name-value pair into a name and a value
+         ! Parse the string into a pair of values, with delim as the
+         ! separator
 
-      i = INDEX(name_value, ':')
+         call parse_values(string, value_a_str, value_b_str)
 
-      if (i > 1) then
+         parse_block: block
 
-         len = LEN_TRIM(name_value)
+            allocate(value_a)
 
-         if (i < len) then
-            name = name_value(1:i-1)
-            value = name_value(i+1:len)
+            read(value_a_str, FMT=*, IOSTAT=iostat) value_a
+            if (iostat /= 0) exit parse_block
+
+            allocate(value_b)
+
+            read(value_b_str, FMT=*, IOSTAT=iostat) value_b
+            if (iostat /= 0) exit parse_block
+
+            return
+
+         end block parse_block
+
+         if (PRESENT(stat)) then
+            stat = STAT_INVALID_ARGUMENT
          else
-            @:ABORT('missing value in name-value pair "'//TRIM(name_value)//'"')
+            @:ABORT('invalid argument')
          end if
 
-      elseif (i == 1) then
+         ! Finish
 
-         @:ABORT('missing name in name-value pair "'//TRIM(name_value)//'"')
+         return
 
-      else
+      end subroutine parse_values_${suffix}$_
 
-         @:ABORT('missing colon in name-value pair "'//TRIM(name_value)//'"')
+      !****
 
-      end if
+      subroutine parse_name_value_${suffix}$_(string, name, value, stat, delim)
 
-      ! Finish
+         character(*), intent(in)               :: string
+         character(:), allocatable, intent(out) :: name
+         ${type}$, allocatable, intent(out)     :: value
+         integer, intent(out), optional         :: stat
+         character(*), intent(in), optional     :: delim
 
-      return
+         character(:), allocatable :: value_str
 
-   end subroutine parse_name_value_a_
+         ! Parse the string into a name and a value, with delim as the
+         ! separator
+
+         call parse_values(string, name, value_str, stat, delim)
+         if (PRESENT(stat)) then
+            if (stat /= 0) return
+         end if
+
+         allocate(value)
+
+         call parse_value(value_str, value, stat)
+
+         ! Finish
+
+         return
+
+      end subroutine parse_name_value_${suffix}$_
+
+      !****
+
+      subroutine parse_name_values_${suffix}$_(string, name, value_a, value_b, stat, delim)
+
+         character(*), intent(in)               :: string
+         character(:), allocatable, intent(out) :: name
+         ${type}$, allocatable, intent(out)     :: value_a
+         ${type}$, allocatable, intent(out)     :: value_b
+         integer, intent(out), optional         :: stat
+         character(*), intent(in), optional     :: delim
+
+         character(:), allocatable :: values_str
+
+         ! Parse the string into a name and a pair of values, with delim
+         ! as the separator
+
+         call parse_values(string, name, values_str, stat, delim)
+         if (PRESENT(stat)) then
+            if (stat /= 0) return
+         end if
+
+         call parse_values(values_str, value_a, value_b, stat, delim)
+
+         ! Finish
+
+         return
+
+      end subroutine parse_name_values_${suffix}$_
+
+   #:endfor
 
    !****
 
-   subroutine parse_name_values_r_r_(name_values, name, value_a, value_b)
+   subroutine parse_values_a_(string, value_a, value_b, stat, delim)
 
-      character(*), intent(in)               :: name_values
-      character(:), allocatable, intent(out) :: name
-      real(RD), intent(out)                  :: value_a
-      real(RD), intent(out)                  :: value_b
+      character(*), intent(in)               :: string
+      character(:), allocatable, intent(out) :: value_a
+      character(:), allocatable, intent(out) :: value_b
+      integer, intent(out), optional         :: stat
+      character(*), intent(in), optional     :: delim
 
-      character(:), allocatable :: values
+      character(:), allocatable :: delim_
 
-      ! Parse the colon-separated name-values triplet into a name and
-      ! a pair of values
-
-      call parse_name_value(name_values, name, values)
-
-      call parse_values(values, value_a, value_b)
-
-      ! Finish
-
-      return
-
-   end subroutine parse_name_values_r_r_
-
-   !****
-
-   subroutine parse_values_r_r_(values, value_a, value_b)
-
-      character(*), intent(in) :: values
-      real(RD), intent(out)    :: value_a
-      real(RD), intent(out)    :: value_b
-
-      integer :: i
-      integer :: len
-
-      ! Parse the colon-separated values pair into a pair of values
-
-      i = INDEX(values, ':')
-
-      if (i > 1) then
-
-         len = LEN_TRIM(values)
-
-         if (i < len) then
-            read(values(1:i-1), *) value_a
-            read(values(i+1:len), *) value_b
-         else
-            @:ABORT('missing second value in value pair "'//TRIM(values)//'"')
-         end if
-
-      elseif (i == 1) then
-
-         @:ABORT('missing first value in value pair "'//TRIM(values)//'"')
-
+      if (PRESENT(delim)) then
+         delim_ = delim
       else
-
-         @:ABORT('missing colon in values pair "'//TRIM(values)//'"')
-
+         delim_ = ':'
       end if
 
-      ! Finish
+      ! Parse the string into a pair of values, with delim as the
+      ! separator
 
-      return
-
-   end subroutine parse_values_r_r_
-
-   !****
-
-   subroutine parse_values_r_i_(values, value_a, value_b)
-
-      character(*), intent(in) :: values
-      real(RD), intent(out)    :: value_a
-      integer, intent(out)     :: value_b
-
-      integer :: i
-      integer :: len
-
-      ! Parse the colon-separated values pair into a pair of values
-
-      i = INDEX(values, ':')
-
-      if (i > 1) then
-
-         len = LEN_TRIM(values)
-
-         if (i < len) then
-            read(values(1:i-1), *) value_a
-            read(values(i+1:len), *) value_b
-         else
-            @:ABORT('missing second value in value pair "'//TRIM(values)//'"')
-         end if
-
-      elseif (i == 1) then
-
-         @:ABORT('missing first value in value pair "'//TRIM(values)//'"')
-
-      else
-
-         @:ABORT('missing colon in values pair "'//TRIM(values)//'"')
-
-      end if
+      value_a = string
+      call split(value_a, value_b, delim)
 
       ! Finish
 
       return
 
-   end subroutine parse_values_r_i_
+   end subroutine parse_values_a_
 
 end module tools_utils_m

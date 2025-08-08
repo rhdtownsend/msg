@@ -1,5 +1,5 @@
 ! Module   : make_bb_photgrid
-! Purpose  : create a blackbody/bolometric photgrid file
+! Purpose  : Create a blackbody/bolometric photgrid file
 !
 ! Copyright 2021 Rich Townsend & The MSG Team
 !
@@ -24,6 +24,8 @@ program make_bb_photgrid
    use forum_m
    use msg_m
 
+   use tools_utils_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -32,149 +34,192 @@ program make_bb_photgrid
 
    ! Variables
 
-   real(RD)                  :: Teff_min
-   real(RD)                  :: Teff_max
-   integer                   :: n_Teff
-   real(RD)                  :: logg_min
-   real(RD)                  :: logg_max
-   integer                   :: n_logg
-   integer                   :: n_mu
-   real(RD)                  :: u
-   character(:), allocatable :: law_str
    character(:), allocatable :: photgrid_file_name
-   real(RD)                  :: lambda
+   real(RD), allocatable     :: logT_min
+   real(RD), allocatable     :: logT_max
+   integer, allocatable      :: n_logT
+   real(RD), allocatable     :: u_limb
+   real(RD), allocatable     :: lambda
+   character(:), allocatable :: grid_label
 
-   integer                           :: n
+   type(arg_parser_t)                :: arg_parser
    real(RD), allocatable             :: x_vecs(:,:)
-   integer                           :: i
-   integer                           :: i_Teff
-   integer                           :: i_logg
-   real(RD)                          :: logT
-   real(RD)                          :: logg
+   integer                           :: i_logT
    type(vgrid_t)                     :: vgrid
+   real(RD)                          :: mu(2)
+   real(RD)                          :: f_mu(2)
    type(limb_t)                      :: limb
-   real(RD), allocatable             :: mu(:)
-   real(RD), allocatable             :: f_mu(:)
    type(limb_photint_t), allocatable :: photints(:)
+   real(RD)                          :: T
+   real(RD)                          :: I(2)
    type(mem_photsource_t)            :: photsource
    type(photgrid_t)                  :: photgrid
    type(hdf5io_t)                    :: hdf5io
 
-   ! Read command-line arguments
+   ! Parse command-line arguments
 
-   @:ASSERT(n_arg() == 10 .OR. n_arg() == 11, 'Syntax: make_bb_photgrid Teff_min Teff_max n_Teff logg_min logg_max n_logg n_mu u law_str photgrid_file_name [lambda/A]')
+   u_limb = 0._RD
 
-   call get_arg(1, Teff_min)
-   call get_arg(2, Teff_max)
-   call get_arg(3, n_Teff)
+   arg_parser = arg_parser_t('make_bb_photgrid PHOTGRID_FILE', auto_help=.TRUE.)
 
-   call get_arg(4, logg_min)
-   call get_arg(5, logg_max)
-   call get_arg(6, n_logg)
+   call arg_parser%define_option('logT-min', OPT_REQUIRED_ARG, &
+      usage='--logT-min=MIN', description='minimum log10(T)')
+   call arg_parser%define_option('logT-max', OPT_REQUIRED_ARG, &
+      usage='--logT-max=MAX', description='maximum log10(T)')
+   call arg_parser%define_option('n-logT', OPT_REQUIRED_ARG, &
+      usage='--n-logT=N', description='number of log10(T) values')
+   call arg_parser%define_option('u-limb', OPT_REQUIRED_ARG, &
+      usage='--u-limb=U', description='linear limb-darkening coefficient')
+   call arg_parser%define_option('lambda', OPT_REQUIRED_ARG, &
+      usage='--lambda=VALUE', description='wavelength sample point')
+   call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, &
+      usage='--grid-label=NAME', description='grid label')
 
-   call get_arg(7, n_mu)
-   call get_arg(8, u)
-   call get_arg(9, law_str)
+   call arg_parser%parse(arg_proc, opt_proc)
 
-   call get_arg(10, photgrid_file_name)
+   if (.NOT. ALLOCATED(photgrid_file_name)) call print_summary()
 
-   if (n_arg() == 11) then
-      call get_arg(11, lambda)
-   else
-      lambda = 0._RD
+   if (.NOT. ALLOCATED(logT_min)) then
+      @:STOP('--logT-min must be specified')
+   end if
+
+   if (.NOT. ALLOCATED(logT_max)) then
+      @:STOP('--logT-max must be specified')
+   end if
+
+   if (.NOT. ALLOCATED(n_logT)) then
+      @:STOP('--n-logT must be specified')
    end if
 
    ! Create the vertex coordinates
 
-   n = n_Teff*n_logg
+   allocate(x_vecs(1,n_logT))
 
-   allocate(x_vecs(2,n))
+   do i_logT = 1, n_logT
 
-   i = 1
-
-   do i_Teff = 1, n_Teff
-
-      logT = (LOG10(Teff_min)*(n_Teff-i_Teff) + LOG10(Teff_max)*(i_Teff-1))/(n_Teff-1)
-
-      do i_logg = 1, n_logg
-
-         logg = (logg_min*(n_logg-i_logg) + logg_max*(i_logg-1))/(n_logg-1)
-
-         x_vecs(1,i) = logT
-         x_vecs(2,i) = logg
-
-         i = i + 1
-
-      end do
+      x_vecs(1,i_logT) = (logT_min*(n_logT-i_logT) + logT_max*(i_logT-1))/(n_logT-1)
 
    end do
 
-   ! Create vgrid
+   ! Create the vgrid
 
-   vgrid = vgrid_t(x_vecs, ['logT', 'logg'])
+   vgrid = vgrid_t(x_vecs, ['logT'])
 
-   ! Set up limb-darkening stuff
+   ! Set up limb-darkening data
 
-   limb = limb_t(law_str)
+   mu = [0._RD, 1._RD]
+   f_mu = (1._RD - u_limb*(1._RD - mu))/(1._RD - u_limb/3._RD)
 
-   mu = [(REAL(i-1, RD)/(n_mu-1),i=1,n_mu)]
-   f_mu = (1._RD - u*(1._RD - mu))/(1._RD - u/3._RD)
+   limb = limb_t('LINEAR')
 
-   ! Create photints
+   ! Create the photints
 
-   allocate(photints(n))
+   allocate(photints(n_logT))
 
-   call vgrid%map(make_photint)
+   do i_logT = 1, n_logT
 
-   ! Create photsource
+      T = 10**x_vecs(1,i_logT)
+
+      if (ALLOCATED(lambda)) then
+
+         ! Planck function evaluated at lambda
+
+         associate (lambda => lambda*1E-8_RD)
+            I = 2._RD*H_PLANCK*C_LIGHT**2/lambda**5/ &
+               (EXP(H_PLANCK*C_LIGHT/(lambda*K_BOLTZMANN*T)) - 1._RD) * f_mu
+         end associate
+
+      else
+
+         ! Bolometric Planck function
+
+         I = (SIGMA_STEFAN/PI)*T**4 * f_mu
+
+      end if
+
+      photints(i_logT) = limb_photint_t(I, mu, limb)
+
+   end do
+
+   ! Create the photsource
 
    photsource = mem_photsource_t(photints)
 
-   ! Create photgrid
+   ! Create the photgrid
 
    photgrid = photgrid_t(photsource, vgrid)
 
-   ! Write it
+   ! Write the output file
 
    hdf5io = hdf5io_t(photgrid_file_name, CREATE_FILE)
+
    call photgrid%write(hdf5io)
+
+   if (ALLOCATED(grid_label)) then
+      call hdf5io%write_attr('label', grid_label)
+   end if
+
    call hdf5io%final()
 
    ! Finish
 
 contains
 
-   subroutine make_photint (v_seq, stat)
+   subroutine arg_proc(a, value)
 
-      integer, intent(in)            :: v_seq
-      integer, intent(out), optional :: stat
+      integer, intent(in)      :: a
+      character(*), intent(in) :: value
 
-      real(RD) :: Teff
-      real(RD) :: I(n_mu)
+      select case(a)
+      case(1)
+         photgrid_file_name = value
+      case default
+         call print_summary()
+      end select
 
-      ! Create intensity data
+   end subroutine arg_proc
 
-      Teff = 10**x_vecs(1,v_seq)
+   !****
 
-      if (lambda > 0._RD) then
-         associate (lambda => lambda*1E-8_RD)
-           I = 2._RD*H_PLANCK*C_LIGHT**2/lambda**5/ &
-                (EXP(H_PLANCK*C_LIGHT/(lambda*K_BOLTZMANN*Teff)) - 1._RD) * f_mu
-         end associate
-      else
-         I = (SIGMA_STEFAN/PI)*Teff**4 * f_mu
-      endif
+   subroutine opt_proc(name, value)
 
-      ! Construct the photint_t
+      character(*), intent(in) :: name
+      character(*), intent(in) :: value
 
-      photints(v_seq) = limb_photint_t(I, mu, limb)
+      integer :: stat
 
-      ! Finish
+      stat = STAT_OK
 
-      if (PRESENT(stat)) stat = STAT_OK
+      select case(name)
+      case('logT-min')
+         call parse_value(value, logT_min, stat)
+      case('logT-max')
+         call parse_value(value, logT_max, stat)
+      case('n-logT')
+         call parse_value(value, n_logT, stat)
+      case('u-limb')
+         call parse_value(value, u_limb, stat)
+      case('lambda')
+         call parse_value(value, lambda, stat)
+      case('grid-label')
+         grid_label = value
+      case('help')
+         call print_summary()
+      case default
+         @:ABORT('invalid option name')
+      end select
 
-      return
+      if (stat /= STAT_OK) then
+         @:STOP('invalid --'//name)
+      end if
 
-   end subroutine make_photint
+   end subroutine opt_proc
+
+   subroutine print_summary()
+
+      call arg_parser%print_summary()
+      @:STOP()
+
+   end subroutine print_summary
 
 end program make_bb_photgrid

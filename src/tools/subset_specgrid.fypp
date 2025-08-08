@@ -36,40 +36,48 @@ program subset_specgrid
 
    character(:), allocatable  :: input_file_name
    character(:), allocatable  :: output_file_name
-   character(:), allocatable  :: lam_range
+   real(RD), allocatable      :: lam_min
+   real(RD), allocatable      :: lam_max
    character(:), allocatable  :: param_ranges(:)
-   logical                    :: remove_orphans
+   logical, allocatable       :: remove_orphans
 
-   type(arg_parser_t)        :: arg_parser
-   type(hdf5io_t)            :: hdf5io
-   type(specgrid_t)          :: specgrid
-   real(RD)                  :: lam_min
-   real(RD)                  :: lam_max
-   integer                   :: i
-   integer                   :: rank
-   real(RD), allocatable     :: x_min(:)
-   real(RD), allocatable     :: x_max(:)
-   integer                   :: r
-   type(axis_t)              :: axis
-   character(LABEL_LEN)      :: label
-   character(:), allocatable :: range_label
-   real(RD)                  :: range_min
-   real(RD)                  :: range_max
+   type(arg_parser_t)                :: arg_parser
+   type(hdf5io_t)                    :: hdf5io
+   type(specgrid_t)                  :: specgrid
+   real(RD)                          :: grid_lam_min
+   real(RD)                          :: grid_lam_max
+   integer                           :: rank
+   character(LABEL_LEN), allocatable :: labels(:)
+   real(RD), allocatable             :: x_min(:)
+   real(RD), allocatable             :: x_max(:)
+   integer                           :: r
+   type(axis_t)                      :: axis
+   integer                           :: i
+   character(:), allocatable         :: range_label
+   real(RD), allocatable             :: range_min
+   real(RD), allocatable             :: range_max
+   integer                           :: stat
+   integer                           :: j
 
    ! Parse command-line arguments
 
    remove_orphans = .FALSE.
 
-   arg_parser = arg_parser_t()
+   arg_parser = arg_parser_t('subset_specgrid INPUT_FILE OUTPUT_FILE', auto_help=.TRUE.)
 
-   call arg_parser%define_option('lam-range', OPT_REQUIRED_ARG)
-   call arg_parser%define_option('param-range', OPT_REQUIRED_ARG)
-   call arg_parser%define_option('remove-orphans', OPT_NO_ARG)
+   call arg_parser%define_option('lambda-min', OPT_REQUIRED_ARG, &
+      usage='--lamda-min=MIN', description='minimum wavelength')
+   call arg_parser%define_option('lambda-max', OPT_REQUIRED_ARG, &
+      usage='--lamda-max=MAX', description='maximum wavelength')
+   call arg_parser%define_option('parameter-range', OPT_REQUIRED_ARG, 'p', &
+      usage='--parameter-range=NAME:MIN:MAX', description='photospheric parameter range')
+   call arg_parser%define_option('remove-orphans', OPT_NO_ARG, 'r', &
+      description='remove orphaned vertices')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
-   if (.NOT. allocated(input_file_name)) call synopsis()
-   if (.NOT. allocated(output_file_name)) call synopsis()
+   if (.NOT. ALLOCATED(input_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(output_file_name)) call print_summary()
 
    ! Read the input specgrid
 
@@ -79,18 +87,22 @@ program subset_specgrid
 
    ! Determine the wavelength range
 
-   call specgrid%get_lam_min(lam_min)
-   call specgrid%get_lam_max(lam_max)
+   call specgrid%get_lam_min(grid_lam_min)
+   call specgrid%get_lam_max(grid_lam_max)
 
-   if (ALLOCATED(lam_range)) then
-
-      call parse_values(lam_range, range_min, range_max)
-      lam_min = MAX(lam_min, range_min)
-      lam_max = MIN(lam_max, range_max)
-
+   if (ALLOCATED(lam_min)) then
+      lam_min = MAX(lam_min, grid_lam_min)
+   else
+      lam_min = grid_lam_min
    end if
 
-   ! Determine the axis ranges
+   if (ALLOCATED(lam_max)) then
+      lam_max = MIN(lam_max, grid_lam_max)
+   else
+      lam_max = grid_lam_max
+   end if
+
+   ! Extract the axis labels and ranges
 
    call specgrid%get_rank(rank)
 
@@ -101,27 +113,40 @@ program subset_specgrid
 
       call specgrid%get_axis(r, axis)
 
-      call axis%get_label(label)
+      call axis%get_label(labels(r))
 
       call axis%get_x_min(x_min(r))
       call axis%get_x_max(x_max(r))
 
-      ! See if a range is defined for this axis
-
-      if (ALLOCATED(param_ranges)) then
-
-         do i = 1, SIZE(param_ranges)
-            call parse_name_values(param_ranges(i), range_label, range_min, range_max)
-            if (range_label == label) then
-               x_min(r) = MAX(x_min(r), range_min)
-               x_max(r) = MIN(x_max(r), range_max)
-               exit
-            end if
-         end do
-
-      end if
-
    end do
+
+   ! Determine the subset ranges
+
+   if (ALLOCATED(param_ranges)) then
+
+      do i = 1, SIZE(param_ranges)
+
+         call parse_name_values(param_ranges(i), range_label, range_min, range_max, stat)
+         if (stat /= STAT_OK) then
+            @:STOP('invalid --parameter-range')
+         end if
+
+         j = FINDLOC(labels, range_label, DIM=1)
+
+         if (j > 0) then
+
+            x_min(r) = MAX(x_min(r), range_min)
+            x_max(r) = MAX(x_max(r), range_max)
+
+         else
+
+            @:STOP('invalid name in --parameter-range')
+
+         end if
+
+      end do
+
+   end if
 
    ! Perform the subsetting
 
@@ -157,7 +182,7 @@ contains
       case(2)
          output_file_name = value
       case default
-         call synopsis()
+         call print_summary()
       end select
 
    end subroutine arg_proc
@@ -169,26 +194,38 @@ contains
       character(*), intent(in) :: name
       character(*), intent(in) :: value
 
+      integer :: stat
+
+      stat = STAT_OK
+
       select case(name)
-      case('lam-range')
-         lam_range = value
-      case('param-range')
+      case('lambda-min')
+         call parse_value(value, lam_min, stat)
+      case('lambda-max')
+         call parse_value(value, lam_max, stat)
+      case('parameter-range')
          call append_string(param_ranges, value)
       case('remove-orphans')
          remove_orphans = .TRUE.
+      case('help')
+         call print_summary()
       case default
          @:ABORT('invalid option name')
       end select
+
+      if (stat /= STAT_OK) then
+         @:STOP('invalid --'//name)
+      end if
 
    end subroutine opt_proc
 
    !****
 
-   subroutine synopsis()
+   subroutine print_summary()
 
-      write(OUTPUT_UNIT, *) 'Synopsis: subset_specgrid <input_file_name> <output_file_name> [options]'
-      stop
+      call arg_parser%print_summary()
+      @:STOP()
 
-   end subroutine synopsis
+   end subroutine print_summary
 
 end program subset_specgrid
