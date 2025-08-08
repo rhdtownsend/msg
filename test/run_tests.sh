@@ -2,6 +2,8 @@
 
 rm -f test.out
 
+export OMP_CANCELLATION=TRUE
+
 for t in ${BIN_DIR}/utest_*; do
     $t 2>&1 | tee -a test.out
 done
