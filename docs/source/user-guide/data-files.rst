@@ -73,7 +73,7 @@ one file; for instance::
    specint-0002.h5
    specint-0003.h5
 
-Then, run the :command:`specint_to_specgrid` tool to create a
+Then, run the :program:`specint_to_specgrid` tool to create a
 :f-schema:`specgrid` file:
 
 .. code-block:: console
@@ -81,7 +81,7 @@ Then, run the :command:`specint_to_specgrid` tool to create a
    $ $MSG_DIR/bin/specint_to_specgrid manifest.txt specgrid.h5
 
 To build a :f-schema:`photgrid` file from the data in a
-:f-schema:`specgrid` file, run the :command:`specgrid_to_photgrid`
+:f-schema:`specgrid` file, run the :program:`specgrid_to_photgrid`
 tool:
 
 .. code-block:: console
@@ -92,3 +92,10 @@ tool:
 file to use. Note that it's not always necessary to create a
 :f-schema:`photgrid` file, as MSG can convolve with passbands on the
 fly (as discussed in the :ref:`photometric-colors` section).
+
+It's not always necessary to create :f-schema:`photgrid` files,
+because MSG supports loading a :f-schema:`specgrid` file and then
+convolving with a passband on-the-fly. This approach is used in the
+examples presented in the :ref:`walkthroughs` chapter. It has the
+advantage of convenience, but a disadvantage in the form of a
+performance penalty, as discussed in the :ref:`performance` chapter.

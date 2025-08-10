@@ -120,9 +120,9 @@ represented as a piecewise-constant function on a wavelength abscissa
 
    \intsy(\lambda) = I_{\lambda,i} \qquad \lambda_{i} \leq \lambda < \lambda_{i+1}.
 
-(for brevity, the dependence of :math:`\intsy` on :math:`\lambda`,
-:math:`\mu` and :math:`\vx` has been suppressed).  Mapping intensity
-data onto a new abscissa :math:`\lambda' =
+(for brevity, the dependence of :math:`\intsy` on :math:`\mu` and
+:math:`\vx` has been suppressed).  Mapping intensity data onto a new
+abscissa :math:`\lambda' =
 \{\lambda'_{1},\lambda'_{2},\ldots\,\lambda'_{M'}\}` is performed
 conservatively, according to the expression
 
@@ -204,11 +204,11 @@ The choice of law is made during grid construction (see the
 :ref:`grid-tools` appendix for more details). The coefficients
 appearing in the limb-darkening laws (e.g., :math:`c` and
 :math:`c_{j}`) are typically determined from least-squares fits to
-tabulations of the specific intensity. In cases where these
-tabulations include flux but not specific intensity data, the `CONST`
-law is used; the angle-independent specific intensity is determined so
-that it produces the correct flux when evaluated using equation
-:math:numref:`eq:elem-flux-axi`.
+tabulations of the specific intensity at each wavelength. In cases
+where these tabulations include flux but not specific intensity data,
+the `CONST` law is used; the angle-independent specific intensity is
+determined so that it produces the correct flux when evaluated using
+equation :math:numref:`eq:elem-flux-axi`.
    
 Photospheric Parameter Dependence
 ---------------------------------
@@ -278,6 +278,7 @@ antiparallel to :math:`\vdhat`. Setting :math:`-\vdhat \cdot \vnhat =
 \cos\theta = \mu`, the irradiance can be reduced to
 
 .. math::
+   :label: eq:irrad-reduce
 
    \irrad(\lambda) =
    \frac{2 \pi R^{2}}{d^{2}} \int_{0}^{1} \intsy(\lambda; \mu; \vx) \, \mu \, \diff{\mu}.
@@ -298,9 +299,9 @@ include flux spectra instead of specific intensity spectra.
 However, recall that equation :math:numref:`eq:irrad-flux` applies
 only to spherically symmetric stars. In more complex situations, for
 instance when the star is rotatiing, spotted, pulsating or even
-eclipsed, evaluation of :math:`\irrad` must proceed via the
-visible-area integration appearing in equation
-:math:numref:`eq:irrad`, which requires the specific intensity.
+eclipsed, evaluation of :math:`\irrad` must proceed via the disk
+integration appearing in equation :math:numref:`eq:irrad`, which
+requires the specific intensity.
 
 .. _photometric-colors:
 
@@ -335,21 +336,6 @@ and the apparent magnitude of the star in the adopted photometric system is
    m = -2.5 \log_{10} \left( \frac{\mirrad}{\fluxz} \right),
 
 where :math:`\fluxz` is the zero-point flux of the system.
-
-The convolution in :math:numref:`eq:conv` can be performed before or
-after the interpolations discussed above:
-
-* the 'before' option performs the convolution as a pre-processing
-  step using the :command:`specgrid_to_photgrid` tool to create a
-  :f-schema:`photgrid` file from a :f-schema:`specgrid` file (as
-  discussed in the :ref:`data-files-importing` section). This is
-  computationally more efficient, but requires a separate
-  :f-schema:`photgrid` file to be created for each passband.
-
-* the 'after' option loads data from a :f-schema:`specgrid` file, but
-  performs the convolution on-the-fly after each spectrum is
-  interpolated. This is computationally less efficient, but incurs no
-  storage requirements beyond the :f-schema:`specgrid` file.
 
 Summary of Routines
 ===================

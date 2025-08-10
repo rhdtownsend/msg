@@ -15,6 +15,7 @@ radian	{\rm rad}
 sterad	{\rm sr}
 barye	{\rm Ba}
 Msun	{\rm M}_{\odot}
+Rsun	{\rm R}_{\odot}
 diff	{\rm d}#1
 sderiv	\diff{#1}/\diff{#2}
 obs	{\rm obs}
@@ -40,3 +41,4 @@ mirrad	\overline{F}^{\obs}
 area	A
 areao	A^{\obs}
 grad	g_{\rm rad}
+vproj	v_{\rm p}

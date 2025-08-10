@@ -16,6 +16,19 @@ The first and most obvious step to improving performance is to make
 sure that MSG's data caching is appropriately configured. See the
 :ref:`data-caching` chapter for full details.
 
+Photgrid Files
+==============
+
+As mentioned in the :ref:`data-files-importing` section, MSG supports
+loading a :f-schema:`specgrid` file and then convolving with a
+passband on-the-fly. There is a performance penalty to this approach:
+when photmetric data are required and are not already in the cache,
+the corresponding spectroscopic data must be read from the
+:f-schema:`specgrid` file and then convolved. To avoid this penalty,
+consider instead creating a :f-schema:`photgrid` file using the
+:program:`specgrid_to_photgrid` tool (described in the
+:ref:`grid-tools` chapter), and working with this file directly.
+
 Linear Interpolation
 ====================
 

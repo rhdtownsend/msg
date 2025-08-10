@@ -192,6 +192,9 @@ latex_elements = {
     'preamble': latex_preamble
 }
 
+# Ignore temporary directories
+exclude_patterns = ['**/.virtual_documents']
+
 # Enable email obfuscation
 email_automode = True
 
