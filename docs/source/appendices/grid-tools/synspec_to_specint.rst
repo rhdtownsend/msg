@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`synspec_to_specint` tool extracts spectral data from a
+The :program:`synspec_to_specint` tool extracts spectral data from a
 file produced by the SYNSPEC spectral synthesis package
 :ads_citep:`lanz:2003`, and writes it to a :f-schema:`specint`
 file.

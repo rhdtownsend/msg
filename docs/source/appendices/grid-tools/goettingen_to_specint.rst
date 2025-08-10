@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`goettingen_to_specint` tool extracts a flux spectrum
+The :program:`goettingen_to_specint` tool extracts a flux spectrum
 from a data file in FITS format (with the schema described by
 :ads_citealp:`husser:2013`), and writes it to a
 :f-schema:`specint` file.
@@ -38,7 +38,7 @@ Options
 
 .. note::
 
-   In order for the :command:`goettingen_to_specint` tool to be built,
+   In order for the :program:`goettingen_to_specint` tool to be built,
    you must first uncomment/edit the line in
    :file:`$MSG_DIR/build/Makefile` that defines the `FITS_LDFLAGS`
    variable. This variable defines the flags used to link against your

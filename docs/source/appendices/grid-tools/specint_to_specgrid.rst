@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`specint_to_specgrid` tool packages together multiple
+The :program:`specint_to_specgrid` tool packages together multiple
 :f-schema:`specint` files to make a spectroscopic grid, writing it to a
 :f-schema:`specgrid`.
 
@@ -33,6 +33,6 @@ Options
 
    Print a summary of options.
 
-.. option:: -l --grid-label=NAME.
+.. option:: -l --grid-label=NAME
 
    Set the grid label.

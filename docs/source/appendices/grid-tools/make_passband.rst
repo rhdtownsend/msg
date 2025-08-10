@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`make_passband` tool reads response data from an ASCII
+The :program:`make_passband` tool reads response data from an ASCII
 text file, creates a passband function, and write it to a
 :f-schema:`passband` file.
 

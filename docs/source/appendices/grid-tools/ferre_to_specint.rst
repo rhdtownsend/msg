@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`ferre_to_specint` tool extracts a series of flux spectra
+The :program:`ferre_to_specint` tool extracts a series of flux spectra
 from a data file in `FERRE <http://www.as.utexas.edu/~hebe/ferre>`__
 format, and writes them to :f-schema:`specint` files. Output files
 have the name :file:`SPECINT_PREFIX-NNNNNNNN.h5`, where

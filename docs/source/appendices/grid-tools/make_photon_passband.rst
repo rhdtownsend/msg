@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`make_photon_passband` tool creates a passband function
+The :program:`make_photon_passband` tool creates a passband function
 for evaluating photon fluxes, and write it to a :f-schema:`passband`
 file.
 

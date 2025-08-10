@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`c3k_to_specint` tool extracts a series of flux spectra
+The :program:`c3k_to_specint` tool extracts a series of flux spectra
 from a data file in C3K format, and writes them to :f-schema:`specint`
 files. Output files have the name :file:`SPECINT_PREFIX-NNNNNNNN.h5`,
 where :file:`NNNNNNNN` is the zero-padded index of the spectrum

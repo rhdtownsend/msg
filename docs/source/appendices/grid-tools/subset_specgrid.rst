@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`subset_specgrid` reads a :f-schema:`specgrid` file,
+The :program:`subset_specgrid` tool reads a :f-schema:`specgrid` file,
 subsets it in photospheric parameter space and wavelength space, and
 then writes it to a :f-schema:`specgrid` file.
 
@@ -42,3 +42,7 @@ Options
 
    Remove orphaned vertices from the grid. This can reduce the output
    file size.
+
+.. option:: -l --grid-label=NAME
+
+   Set the grid label.

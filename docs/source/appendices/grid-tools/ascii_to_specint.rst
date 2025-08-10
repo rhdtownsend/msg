@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`ascii_to_specint` tool reads a generic flux spectrum
+The :program:`ascii_to_specint` tool reads a generic flux spectrum
 from an ASCII text file, and writes it to a :f-schema:`specint`
 file.
 

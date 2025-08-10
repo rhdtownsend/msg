@@ -16,7 +16,7 @@ Synopsis
 Description
 -----------
 
-The :command:`specint_to_specint` reads data from a
+The :program:`specint_to_specint` tool reads data from a
 :f-schema:`specint` file, subsets and/or rebins the data, and then
 writes it to a :f-schema:`specgrid` file.
 

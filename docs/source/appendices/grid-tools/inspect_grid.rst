@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`inspect_grid` tool extracts metadata from a :f-schema:`specgrid` or
+The :program:`inspect_grid` tool extracts metadata from a :f-schema:`specgrid` or
 :f-schema:`photgrid` file, and prints it to standard output.
 
 Options

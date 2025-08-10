@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-The :command:`specgrid_to_photgrid` tool reads a :f-schema:`specgrid`
+The :program:`specgrid_to_photgrid` tool reads a :f-schema:`specgrid`
 file, convolves it with a passband from a :f-schema:`passband` file,
 and writes the data to a :f-schema:`photgrid` file.
 
@@ -30,4 +30,4 @@ Options
 
    It's not always necessary to create :f-schema:`photgrid` files,
    because MSG can convolve with passbands on the fly (as discussed in
-   the :ref:`photometric-colors` section).
+   the :ref:`data-files-importing` section).
