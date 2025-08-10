@@ -60,9 +60,9 @@ program inspect_grid
       description='show grid label')
    call arg_parser%define_option('axes', OPT_NO_ARG, short_name='x', &
       description='show axes data')
-   call arg_parser%define_option('lambda', OPT_NO_ARG, short_name='a', &
+   call arg_parser%define_option('lambda', OPT_NO_ARG, &
       description='show wavelength data')
-   call arg_parser%define_option('all', OPT_NO_ARG, &
+   call arg_parser%define_option('all', OPT_NO_ARG, short_name='a', &
       description='show everything')
 
    call arg_parser%parse(arg_proc, opt_proc)
