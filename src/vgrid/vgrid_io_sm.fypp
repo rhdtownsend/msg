@@ -40,8 +40,6 @@ contains
 
       call hdf5io%read_attr('REVISION', revision)
 
-      print *,'revision:',revision
-
       select case(revision)
       case(1)
          call read_rev1_()

@@ -313,10 +313,14 @@ contains
 
             vgrid%vert_cache(:,v_seq) = 0._RD
 
-            if (.NOT. warned) then
-               write(OUTPUT_UNIT, *) 'vgrid has orphan vertices'
-               warned = .TRUE.
-            end if
+            #:if defined('DEBUG')
+
+               if (.NOT. warned) then
+                  write(OUTPUT_UNIT, *) 'vgrid has orphan vertices'
+                  warned = .TRUE.
+               end if
+
+            #:endif
 
          end if
 
