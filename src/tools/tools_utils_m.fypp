@@ -162,7 +162,7 @@ contains
          ! Parse the string into a pair of values, with delim as the
          ! separator
 
-         call parse_values(string, value_a_str, value_b_str)
+         call parse_values(string, value_a_str, value_b_str, stat, delim)
 
          parse_block: block
 
@@ -274,8 +274,10 @@ contains
       ! Parse the string into a pair of values, with delim as the
       ! separator
 
-      value_a = string
-      call split(value_a, value_b, delim)
+      value_b = string
+      call split(value_b, value_a, delim_)
+
+      if (PRESENT(stat)) stat = STAT_OK
 
       ! Finish
 
