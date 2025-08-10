@@ -34,10 +34,11 @@ program subset_photgrid
 
    ! Variables
 
-   character(:), allocatable  :: input_file_name
-   character(:), allocatable  :: output_file_name
-   character(:), allocatable  :: param_ranges(:)
-   logical, allocatable       :: remove_orphans
+   character(:), allocatable :: input_file_name
+   character(:), allocatable :: output_file_name
+   character(:), allocatable :: param_ranges(:)
+   logical, allocatable      :: remove_orphans
+   character(:), allocatable :: grid_label
 
    type(arg_parser_t)                :: arg_parser
    type(hdf5io_t)                    :: hdf5io
@@ -53,7 +54,6 @@ program subset_photgrid
    real(RD), allocatable             :: range_min
    real(RD), allocatable             :: range_max
    integer                           :: stat
-   integer                           :: j
 
    ! Parse command-line arguments
 
@@ -65,6 +65,8 @@ program subset_photgrid
       usage='--parameter-range=NAME:MIN:MAX', description='photospheric parameter range')
    call arg_parser%define_option('remove-orphans', OPT_NO_ARG, 'r', &
       description='remove orphaned vertices')
+   call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, short_name='l', &
+      usage='--grid-label=NAME', description='grid label')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
@@ -74,7 +76,14 @@ program subset_photgrid
    ! Read the input photgrid
 
    hdf5io = hdf5io_t(input_file_name, OPEN_FILE_RO)
+
    call photgrid%read(hdf5io)
+
+   if (hdf5io%attr_exists('label') .AND. .NOT. ALLOCATED(grid_label)) then
+      allocate(character(1024)::grid_label)
+      call hdf5io%read_attr('label', grid_label)
+   end if
+
    call hdf5io%final()
 
    ! Extract the axis labels and ranges
@@ -106,12 +115,12 @@ program subset_photgrid
             @:STOP('invalid --parameter-range')
          end if
 
-         j = FINDLOC(labels, range_label, DIM=1)
+         r = FINDLOC(labels, range_label, DIM=1)
 
-         if (j > 0) then
+         if (r > 0) then
 
             x_min(r) = MAX(x_min(r), range_min)
-            x_max(r) = MAX(x_max(r), range_max)
+            x_max(r) = MIN(x_max(r), range_max)
 
          else
 
@@ -136,7 +145,13 @@ program subset_photgrid
    call photgrid%set_cache_limit(0)
 
    hdf5io = hdf5io_t(output_file_name, CREATE_FILE)
+
    call photgrid%write(hdf5io)
+
+   if (ALLOCATED(grid_label)) then
+      call hdf5io%write_attr('label', grid_label)
+   end if
+
    call hdf5io%final()
 
    ! Finish
@@ -173,6 +188,8 @@ contains
          remove_orphans = .TRUE.
       case('help')
          call print_summary()
+      case('grid-label')
+         grid_label = value
       case default
          @:ABORT('invalid option name')
       end select
