@@ -63,11 +63,11 @@ program make_bb_photgrid
    arg_parser = arg_parser_t('make_bb_photgrid PHOTGRID_FILE', auto_help=.TRUE.)
 
    call arg_parser%define_option('logT-min', OPT_REQUIRED_ARG, &
-      usage='--logT-min=MIN', description='minimum log10(T)')
+      usage='--logT-min=MIN', description='minimum log(T)')
    call arg_parser%define_option('logT-max', OPT_REQUIRED_ARG, &
-      usage='--logT-max=MAX', description='maximum log10(T)')
+      usage='--logT-max=MAX', description='maximum log(T)')
    call arg_parser%define_option('n-logT', OPT_REQUIRED_ARG, &
-      usage='--n-logT=N', description='number of log10(T) values')
+      usage='--n-logT=N', description='number of log(T) values')
    call arg_parser%define_option('u-limb', OPT_REQUIRED_ARG, &
       usage='--u-limb=U', description='linear limb-darkening coefficient')
    call arg_parser%define_option('lambda', OPT_REQUIRED_ARG, &
