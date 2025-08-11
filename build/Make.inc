@@ -269,7 +269,7 @@ $(STATIC_LIB_FILES) :
 
 $(SHARED_LIB_FILES) :
 	@echo LD-LIB $@
-	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(SHARED_LIB_LDFLAGS)
+	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(SHARED_LIB_LDFLAGS)
 
 $(PYC_FILES) :
 	@echo LD_PYC $@
