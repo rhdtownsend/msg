@@ -277,6 +277,9 @@ contains
       integer                          :: rank
       real(RD), allocatable            :: x_vecs(:,:)
       integer                          :: i
+      integer                          :: r
+      integer                          :: shape(SIZE(labels))
+      logical                          :: dim_mask(SIZE(labels))
       type(vgrid_t)                    :: vgrid
       character(NAME_LEN), allocatable :: file_names(:)
       character(NAME_LEN), allocatable :: group_names(:)
@@ -297,9 +300,28 @@ contains
          x_vecs(:,i) = smetas(i)%x_vec
       enddo
 
+      ! Determine the shape of the grid
+
+      do r = 1, rank
+         shape(r) = SIZE(unique_indices(x_vecs(r,:)))
+      end do
+
+      ! Set up a mask for non-degenerate dimensions
+
+      dim_mask = shape > 1
+
+      ! Reconstruct x_vecs with only the non-degenerate dimensions
+
+      deallocate(x_vecs)
+      allocate(x_vecs(COUNT(dim_mask),n_smetas))
+
+      do i = 1, n_smetas
+         x_vecs(:,i) = PACK(smetas(i)%x_vec, dim_mask)
+      enddo
+
       ! Construct the vgrid
 
-      vgrid = vgrid_t(x_vecs, labels)
+      vgrid = vgrid_t(x_vecs, PACK(labels, dim_mask))
 
       ! Set up the file/group name lists
 
