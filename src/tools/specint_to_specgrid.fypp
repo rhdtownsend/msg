@@ -306,11 +306,11 @@ contains
          shape(r) = SIZE(unique_indices(x_vecs(r,:)))
       end do
 
-      ! Set up a mask for non-degenerate dimensions
+      ! Set up a mask for non-degenerate axes
 
       dim_mask = shape > 1
 
-      ! Reconstruct x_vecs with only the non-degenerate dimensions
+      ! Reconstruct x_vecs with only the non-degenerate axes
 
       deallocate(x_vecs)
       allocate(x_vecs(COUNT(dim_mask),n_smetas))

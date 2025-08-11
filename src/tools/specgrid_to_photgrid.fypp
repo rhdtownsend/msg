@@ -37,6 +37,8 @@ program specgrid_to_photgrid
    character(:), allocatable :: specgrid_file_name
    character(:), allocatable :: passband_file_name
    character(:), allocatable :: photgrid_file_name
+   logical, allocatable      :: remove_orphans
+   character(:), allocatable :: grid_label
 
    type(arg_parser_t) :: arg_parser
    type(hdf5io_t)     :: hdf5io
@@ -46,7 +48,14 @@ program specgrid_to_photgrid
 
    ! Parse command-line arguments
 
+   remove_orphans = .FALSE.
+
    arg_parser = arg_parser_t('specgrid_to_photgrid SPECGRID_FILE PASSBAND_FILE PHOTGRID_FILE', auto_help=.TRUE.)
+
+   call arg_parser%define_option('remove-orphans', OPT_NO_ARG, 'r', &
+      description='remove orphaned vertices')
+   call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, short_name='l', &
+      usage='--grid-label=NAME', description='grid label')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
@@ -63,17 +72,34 @@ program specgrid_to_photgrid
    ! Read the specgrid
 
    hdf5io = hdf5io_t(specgrid_file_name, OPEN_FILE_RO)
+
    call specgrid%read(hdf5io)
+
+   if (hdf5io%attr_exists('label') .AND. .NOT. ALLOCATED(grid_label)) then
+      allocate(character(1024)::grid_label)
+      call hdf5io%read_attr('label', grid_label)
+   end if
+
    call hdf5io%final()
 
    ! Create the photgrid
 
    call specgrid%filter(passband, photgrid)
 
-   ! Write the photgrid
+   ! If necessary, remove orphans
+
+   if (remove_orphans) call specgrid%remove_orphans()
+
+   ! Write the output photgrid
 
    hdf5io = hdf5io_t(photgrid_file_name, CREATE_FILE)
+
    call photgrid%write(hdf5io)
+
+   if (ALLOCATED(grid_label)) then
+      call hdf5io%write_attr('label', grid_label)
+   end if
+
    call hdf5io%final()
 
    ! Finish
@@ -106,10 +132,14 @@ contains
       character(*), intent(in) :: value
 
       select case(name)
-      case default
-         @:ABORT('invalid option name')
+      case('remove-orphans')
+         remove_orphans = .TRUE.
+      case('grid-label')
+         grid_label = value
       case('help')
          call print_summary()
+      case default
+         @:ABORT('invalid option name')
       end select
 
    end subroutine opt_proc
