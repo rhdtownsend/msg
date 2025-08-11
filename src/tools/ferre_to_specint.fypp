@@ -171,7 +171,7 @@ contains
       character(*), intent(in) :: value
 
       select case(name)
-      case('file_type')
+      case('file-type')
          file_type = value
       case('help')
          call print_summary()
