@@ -1,7 +1,7 @@
 .. _grid-tools-make_photon_passband:
 
-make_passband
-~~~~~~~~~~~~~
+make_photon_passband
+~~~~~~~~~~~~~~~~~~~~
 
 .. program:: make_photon_passband
 
@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: text
 
-   make_passband PASSBAND_FILE [options]
+   make_photon_passband PASSBAND_FILE [options]
 
 Description
 -----------

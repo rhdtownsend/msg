@@ -22,6 +22,7 @@ Specgral Grids (MSG) package.
 import os
 import sys
 import numpy as np
+import astropy.units as unt
 
 # Ensure that OpenMP cancellation is enabled
 os.environ['OMP_CANCELLATION'] = 'TRUE'

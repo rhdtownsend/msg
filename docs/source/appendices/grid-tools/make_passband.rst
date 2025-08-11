@@ -30,7 +30,7 @@ Options
 
    Print a summary of options.
 
-.. option:: -z, --zero_point=F_0
+.. option:: -z, --zero-point=F_0
 
    Zero-point flux
    (:math:`\erg\,\cm^{-2}\,\second^{-1}\,\angstrom^{-1}`) of the
