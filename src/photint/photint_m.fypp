@@ -33,7 +33,7 @@ module photint_m
       procedure(get_ssize), deferred, public        :: get_ssize
       procedure(interp_intensity), deferred, public :: interp_intensity
       procedure(interp_E_moment), deferred, public  :: interp_E_moment
-      procedure(interp_D_moment), deferred, public  :: interp_D_moment
+      procedure(interp_P_moment), deferred, public  :: interp_P_moment
       procedure(interp_flux), deferred, public      :: interp_flux
       procedure(read), deferred, public             :: read
       procedure(write), deferred, public            :: write
@@ -79,15 +79,15 @@ module photint_m
          integer, intent(out), optional :: stat
       end subroutine interp_E_moment
 
-      subroutine interp_D_moment(self, l, D, stat)
+      subroutine interp_P_moment(self, l, P, stat)
          use forum_m
          import photint_t
          implicit none (type, external)
          class(photint_t), intent(in)   :: self
          integer, intent(in)            :: l
-         real(RD), intent(out)          :: D
+         real(RD), intent(out)          :: P
          integer, intent(out), optional :: stat
-      end subroutine interp_D_moment
+      end subroutine interp_P_moment
 
       subroutine interp_flux(self, F, stat)
          use forum_m

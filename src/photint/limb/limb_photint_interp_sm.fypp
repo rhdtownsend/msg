@@ -33,7 +33,7 @@ contains
 
    #:for name, arg_var, arg_type, res_var in (('intensity', 'mu', 'real(RD)', 'I'), &
                                               ('E_moment', 'k', 'integer', 'E'), &
-                                              ('D_moment', 'l', 'integer', 'D'))
+                                              ('P_moment', 'l', 'integer', 'P'))
 
       module procedure interp_${name}$
 

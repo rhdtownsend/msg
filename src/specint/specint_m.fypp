@@ -38,7 +38,7 @@ module specint_m
       procedure(filter), deferred, public           :: filter
       procedure(interp_intensity), deferred, public :: interp_intensity
       procedure(interp_E_moment), deferred, public  :: interp_E_moment
-      procedure(interp_D_moment), deferred, public  :: interp_D_moment
+      procedure(interp_P_moment), deferred, public  :: interp_P_moment
       procedure(interp_flux), deferred, public      :: interp_flux
       procedure(read), deferred, public             :: read
       procedure(write), deferred, public            :: write
@@ -136,7 +136,7 @@ module specint_m
          integer, intent(out), optional :: stat
       end subroutine interp_E_moment
 
-      subroutine interp_D_moment(self, l, z, lam, D, stat)
+      subroutine interp_P_moment(self, l, z, lam, P, stat)
          use forum_m
          import specint_t
          implicit none (type, external)
@@ -144,9 +144,9 @@ module specint_m
          integer, intent(in)            :: l
          real(RD), intent(in)           :: z
          real(RD), intent(in)           :: lam(:)
-         real(RD), intent(out)          :: D(:)
+         real(RD), intent(out)          :: P(:)
          integer, intent(out), optional :: stat
-      end subroutine interp_D_moment
+      end subroutine interp_P_moment
 
       subroutine interp_flux(self, z, lam, F, stat)
          use forum_m

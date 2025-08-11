@@ -78,8 +78,8 @@ cdef extern from "cmsg.h":
     void interp_specgrid_E_moment(void *specgrid, int n, int r, double x_vec[], int k,
                                   double z, double lam[], double E[],
                                   Stat *stat, bool deriv_vec[], int *order)
-    void interp_specgrid_D_moment(void *specgrid, int n, int r, double x_vec[], int l,
-                                  double z, double lam[], double D[],
+    void interp_specgrid_P_moment(void *specgrid, int n, int r, double x_vec[], int l,
+                                  double z, double lam[], double P[],
                                   Stat *stat, bool deriv_vec[], int *order)
     void interp_specgrid_irradiance(void *specgrid, int n, int m, int r, double x_vec[], double[] mu, double[] dOmega,
                                     double[] z, double lam[], double F[],
@@ -115,8 +115,8 @@ cdef extern from "cmsg.h":
     void interp_photgrid_E_moment(void *photgrid, int r, double x_vec[], int k,
                                   double *E,
                                   Stat *stat, bool deriv_vec[], int *order)
-    void interp_photgrid_D_moment(void *photgrid, int r, double x_vec[], int l,
-                                  double *D,
+    void interp_photgrid_P_moment(void *photgrid, int r, double x_vec[], int l,
+                                  double *P,
                                   Stat *stat, bool deriv_vec[], int *order)
     void interp_photgrid_irradiance(void *photgrid, int m, int r, double x_vec[], double[] mu, double[] dOmega,
                                     double *F,

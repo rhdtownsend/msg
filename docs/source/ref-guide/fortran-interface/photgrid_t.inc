@@ -76,14 +76,14 @@
       :o integer order [in]: Interpolation order (1 or 3).
 
 
-   .. f:subroutine:: interp_D_moment(x_vec, l, D, stat, deriv_vec, order)
+   .. f:subroutine:: interp_P_moment(x_vec, l, P, stat, deriv_vec, order)
 
-      Interpolate the photometric D-moment for a photospheric element,
+      Interpolate the photometric P-moment for a photospheric element,
       normalized by the zero-point flux.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer l [in]: Harmonic degree of moment.
-      :p real(RD) D [out]: Photometric D-moment (dimensionless).
+      :p real(RD) P [out]: Photometric P-moment (dimensionless).
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags; length SIZE(x_vec).
       :o integer order [in]: Interpolation order (1 or 3).

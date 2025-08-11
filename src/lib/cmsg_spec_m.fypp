@@ -54,7 +54,7 @@ module cmsg_spec_m
    public :: flush_specgrid_cache
    public :: interp_specgrid_intensity
    public :: interp_specgrid_E_moment
-   public :: interp_specgrid_D_moment
+   public :: interp_specgrid_P_moment
    public :: interp_specgrid_irradiance
    public :: interp_specgrid_flux
    public :: adjust_specgrid_x_vec
@@ -323,7 +323,7 @@ contains
 
    #:for name, arg_var, arg_type, res_var in (('intensity', 'mu', 'real(C_DOUBLE)', 'I'), &
                                               ('E_moment', 'k', 'integer(C_INT)', 'E'), &
-                                              ('D_moment', 'l', 'integer(C_INT)', 'D'))
+                                              ('P_moment', 'l', 'integer(C_INT)', 'P'))
 
       subroutine interp_specgrid_${name}$(specgrid_ptr, n, r, x_vec, ${arg_var}$, z, lam, ${res_var}$, &
          stat, deriv_vec, order) bind(C, name='interp_specgrid_${name}$')

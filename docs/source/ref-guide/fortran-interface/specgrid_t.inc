@@ -127,16 +127,16 @@
       :o integer order [in]: Interpolation order (1 or 3).
 
 
-   .. f:subroutine:: interp_D_moment(x_vec, l, z, lam, D, stat, deriv_vec, order)
+   .. f:subroutine:: interp_P_moment(x_vec, l, z, lam, P, stat, deriv_vec, order)
 
-      Interpolate the spectroscopic intensity D-moment for a
+      Interpolate the spectroscopic intensity P-moment for a
       photospheric element.
 
       :p real(RD) x_vec(:) [in]: Photospheric parameter values.
       :p integer l [in]: Harmonic degree of moment.
       :p real(RD) z [in]: Redshift of element relative to observer's frame.
       :p real(RD) lam(:) [in]: Wavelength abscissa (Å) in observer's frame.
-      :p real(RD) D(:) [out]: Spectroscopic intensity D-moment (erg/cm^2/s/Å)
+      :p real(RD) P(:) [out]: Spectroscopic intensity P-moment (erg/cm^2/s/Å)
             in bins delineated by lam; length SIZE(lam)-1.
       :o integer stat [out]: Status code.
       :o logical deriv_vec(:) [in]: Derivative flags; length SIZE(x_vec).

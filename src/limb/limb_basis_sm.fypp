@@ -176,11 +176,11 @@ contains
 
    !****
 
-   module procedure eval_D_moment_basis
+   module procedure eval_P_moment_basis
 
       @:CHECK_BOUNDS(SIZE(b), self%n)
 
-      ! Evaluate the D (differential flux moment) basis functions
+      ! Evaluate the P (Legendre polynomial moment) basis functions
 
       if (l < 0) then
          if (PRESENT(stat)) then
@@ -194,32 +194,32 @@ contains
       select case (self%law_id)
       case (CONST_LAW)
          b = [                &
-              D_ls_(l, 1._RD) &
+              P_ls_(l, 1._RD) &
               ]
       case (LINEAR_LAW)
          b = [                                  &
-              D_ls_(l, 1._RD),                  &
-              D_ls_(l, 2._RD) - D_ls_(l, 1._RD) &
+              P_ls_(l, 1._RD),                  &
+              P_ls_(l, 2._RD) - P_ls_(l, 1._RD) &
               ]
       case (SQRT_LAW)
          b = [                                    &
-              D_ls_(l, 1._RD),                    &
-              D_ls_(l, 1.5_RD) - D_ls_(l, 1._RD), &
-              D_ls_(l, 2._RD) - D_ls_(l, 1._RD)   &
+              P_ls_(l, 1._RD),                    &
+              P_ls_(l, 1.5_RD) - P_ls_(l, 1._RD), &
+              P_ls_(l, 2._RD) - P_ls_(l, 1._RD)   &
               ]
       case (QUAD_LAW)
          b = [                                   &
-              D_ls_(l, 1._RD),                   &
-              D_ls_(l, 2._RD) - D_ls_(l, 1._RD), &
-              D_ls_(l, 3._RD) - D_ls_(l, 1._RD)  &
+              P_ls_(l, 1._RD),                   &
+              P_ls_(l, 2._RD) - P_ls_(l, 1._RD), &
+              P_ls_(l, 3._RD) - P_ls_(l, 1._RD)  &
               ]
       case (CLARET_LAW)
          b = [                                    &
-              D_ls_(l, 1._RD),                    &
-              D_ls_(l, 1.5_RD) - D_ls_(l, 1._RD), &
-              D_ls_(l, 2._RD) - D_ls_(l, 1._RD),  &
-              D_ls_(l, 2.5_RD) - D_ls_(l, 1._RD), &
-              D_ls_(l, 3._RD) - D_ls_(l, 1._RD)   &
+              P_ls_(l, 1._RD),                    &
+              P_ls_(l, 1.5_RD) - P_ls_(l, 1._RD), &
+              P_ls_(l, 2._RD) - P_ls_(l, 1._RD),  &
+              P_ls_(l, 2.5_RD) - P_ls_(l, 1._RD), &
+              P_ls_(l, 3._RD) - P_ls_(l, 1._RD)   &
               ]
       case default
          @:ABORT('invalid law')
@@ -233,33 +233,33 @@ contains
 
    contains
 
-      function D_ls_(l, s) result(D)
+      function P_ls_(l, s) result(P)
 
          integer, intent(in)  :: l
          real(RD), intent(in) :: s
-         real(RD)             :: D
+         real(RD)             :: P
 
          integer :: l_0
          integer :: m
 
-         ! Evaluate the integral mu^s Pl(mu) from 0 to 1, using the
+         ! Evaluate the integral mu^s P_l(mu) from 0 to 1, using the
          ! expressions (42-44) from Townsend (2003)
 
          l_0 = MOD(l, 2)
 
-         D = 1._RD/(1._RD + s + l_0)
+         P = 1._RD/(1._RD + s + l_0)
 
          do m = l_0, l-2, 2
-            D = (s - m)/(s + m + 3._RD)*D
+            P = (s - m)/(s + m + 3._RD)*P
          end do
 
          ! Finish
 
          return
 
-      end function D_ls_
+      end function P_ls_
 
-   end procedure eval_D_moment_basis
+   end procedure eval_P_moment_basis
 
    !****
 

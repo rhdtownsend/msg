@@ -48,7 +48,7 @@ module cmsg_phot_m
    public :: flush_photgrid_cache
    public :: interp_photgrid_intensity
    public :: interp_photgrid_E_moment
-   public :: interp_photgrid_D_moment
+   public :: interp_photgrid_P_moment
    public :: interp_photgrid_irradiance
    public :: interp_photgrid_flux
    public :: adjust_photgrid_x_vec
@@ -367,7 +367,7 @@ contains
 
    #:for name, arg_var, arg_type, res_var in (('intensity', 'mu', 'real(C_DOUBLE)', 'I'), &
                                               ('E_moment', 'k', 'integer(C_INT)', 'E'), &
-                                              ('D_moment', 'l', 'integer(C_INT)', 'D'))
+                                              ('P_moment', 'l', 'integer(C_INT)', 'P'))
 
       subroutine interp_photgrid_${name}$(photgrid_ptr, r, x_vec, ${arg_var}$, ${res_var}$, &
          stat, deriv_vec, order) bind(C, name='interp_photgrid_${name}$')

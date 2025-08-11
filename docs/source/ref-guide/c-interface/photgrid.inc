@@ -123,16 +123,16 @@
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 		  
 		
-.. c:function:: void interp_photgrid_D_moment(PhotGrid photgrid, int r, double x_vec[], int l, double *D, int *stat, bool deriv_vec[], int *order)
+.. c:function:: void interp_photgrid_P_moment(PhotGrid photgrid, int r, double x_vec[], int l, double *P, int *stat, bool deriv_vec[], int *order)
 
-   Interpolate the photometric intensity D-moment for a photospheric
+   Interpolate the photometric intensity P-moment for a photospheric
    element, normalized by the zero-point flux.
 
 :param photgrid: Grid object.
    :param r: Number of photospheric parameters.
    :param x_vec[r]: Photospheric parameter values.
    :param l: Harmonic degree of moment.
-   :param D: Photometric intensity D-moment (dimensionless).
+   :param D: Photometric intensity P-moment (dimensionless).
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).

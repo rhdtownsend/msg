@@ -166,9 +166,9 @@
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).
 
 		  
-.. c:function:: void interp_specgrid_D_moment(SpecGrid specgrid, int n, int r, double x_vec[], int l, double z, double lam[], double D[], Stat *stat, bool deriv_vec[], int *order)
+.. c:function:: void interp_specgrid_P_moment(SpecGrid specgrid, int n, int r, double x_vec[], int l, double z, double lam[], double P[], Stat *stat, bool deriv_vec[], int *order)
 
-   Interpolate the spectroscopic intensity D-moment.
+   Interpolate the spectroscopic intensity P-moment.
 
    :param specgrid: Grid object.
    :param n: Number of wavelength points.
@@ -177,7 +177,7 @@
    :param l: Harmonic degree of moment.
    :param z: Redshift of element relative to observer's frame.
    :param lam[n]: Wavelength abscissa (Å) in observer's frame.
-   :param D[n-1]: Spectroscopic intensity D-moment (erg/cm^2/s/Å) in bins delineated by lam.
+   :param D[n-1]: Spectroscopic intensity P-moment (erg/cm^2/s/Å) in bins delineated by lam.
    :param stat: Status code (set to :c:expr:`NULL` if not required).
    :param deriv_vec[r]: Derivative flags (set to :c:expr:`NULL` if not required).
    :param order: Interpolation order (1 or 3; set to :c:expr:`NULL` if not required).

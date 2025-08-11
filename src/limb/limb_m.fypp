@@ -53,7 +53,7 @@ module limb_m
       procedure, public :: eval_intensity_basis
       procedure, public :: eval_flux_basis
       procedure, public :: eval_E_moment_basis
-      procedure, public :: eval_D_moment_basis
+      procedure, public :: eval_P_moment_basis
       procedure         :: fit_intensity_0_
       procedure         :: fit_intensity_1_
       generic, public   :: fit_intensity => fit_intensity_0_, fit_intensity_1_
@@ -117,13 +117,13 @@ module limb_m
          integer, intent(out), optional :: stat
       end subroutine eval_E_moment_basis
 
-      module subroutine eval_D_moment_basis(self, l, b, stat)
+      module subroutine eval_P_moment_basis(self, l, b, stat)
          implicit none (type, external)
          class(limb_t), intent(in)      :: self
          integer, intent(in)            :: l
          real(RD), intent(out)          :: b(:)
          integer, intent(out), optional :: stat
-      end subroutine eval_D_moment_basis
+      end subroutine eval_P_moment_basis
 
       module subroutine eval_flux_basis(self, b, stat)
          implicit none (type, external)

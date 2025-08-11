@@ -329,8 +329,8 @@ contains
       real(RD)         :: I_chk(n_lam-1)
       real(RD)         :: E(n_lam-1)
       real(RD)         :: E_chk(n_lam-1)
-      real(RD)         :: D(n_lam-1)
-      real(RD)         :: D_chk(n_lam-1)
+      real(RD)         :: P(n_lam-1)
+      real(RD)         :: P_chk(n_lam-1)
       real(RD)         :: F_obs(n_lam-1)
       real(RD)         :: F_obs_chk(n_lam-1)
       real(RD)         :: F(n_lam-1)
@@ -360,7 +360,7 @@ contains
 
          I_chk = [28030282.999992810_RD, 15241389.849050688_RD]
          E_chk = [7692392.4361349288_RD, 4084491.8724862086_RD]
-         D_chk = [4811175.9311023634_RD, 2442872.3012035391_RD]
+         P_chk = [4811175.9311023634_RD, 2442872.3012035391_RD]
 
          F_obs_chk = 2._RD*I_chk
 
@@ -380,7 +380,7 @@ contains
 
          call sg%interp_intensity(x_vec, 0.5_RD, 0.0_RD, lam, I)
          call sg%interp_E_moment(x_vec, 1, 0.0_RD, lam, E)
-         call sg%interp_D_moment(x_vec, 2, 0.0_RD, lam, D)
+         call sg%interp_P_moment(x_vec, 2, 0.0_RD, lam, P)
 
          call sg%interp_irradiance( &
             SPREAD(x_vec, DIM=2, NCOPIES=2), &
@@ -404,13 +404,13 @@ contains
 
          real(RD) :: I_err(n_lam-1)
          real(RD) :: E_err(n_lam-1)
-         real(RD) :: D_err(n_lam-1)
+         real(RD) :: P_err(n_lam-1)
          real(RD) :: F_obs_err(n_lam-1)
          real(RD) :: F_err(n_lam-1)
 
          I_err = (I - I_chk)/I_chk
          E_err = (E - E_chk)/E_chk
-         D_err = (D - D_chk)/D_chk
+         P_err = (P - P_chk)/P_chk
 
          F_obs_err = (F_obs - F_obs_chk)/F_obs_chk
 
@@ -428,10 +428,10 @@ contains
             print *,'    FAIL E_moment:', MAXVAL(ABS(E_err)), '>', tol
          end if
 
-         if (ALL(ABS(D_err) < tol)) then
-            print *,'    PASS D_moment'
+         if (ALL(ABS(P_err) < tol)) then
+            print *,'    PASS P_moment'
          else
-            print *,'    FAIL D_moment:', MAXVAL(ABS(D_err)), '>', tol
+            print *,'    FAIL P_moment:', MAXVAL(ABS(P_err)), '>', tol
          end if
 
          if (ALL(ABS(F_obs_err) < tol)) then

@@ -76,8 +76,8 @@ void interp_specgrid_intensity(SpecGrid specgrid, int n, int r, double x_vec[], 
 void interp_specgrid_E_moment(SpecGrid specgrid, int n, int r, double x_vec[], int k,
 			      double z, double lam[], double E[],
 			      Stat *stat, bool deriv_vec[], int *order);
-void interp_specgrid_D_moment(SpecGrid specgrid, int n, int r, double x_vec[], int l,
-			      double z, double lam[], double D[],
+void interp_specgrid_P_moment(SpecGrid specgrid, int n, int r, double x_vec[], int l,
+			      double z, double lam[], double P[],
 			      Stat *stat, bool deriv_vec[], int *order);
 void interp_specgrid_irradiance(SpecGrid specgrid, int n, int m, int r, double x_vec[], double mu[], double dOmega[],
 				double z[], double lam[], double F[],
@@ -114,8 +114,8 @@ void interp_photgrid_intensity(PhotGrid photgrid, int r, double x_vec[], double 
 void interp_photgrid_E_moment(PhotGrid photgrid, int r, double x_vec[], int k,
 			      double *E,
 			      Stat *stat, bool deriv_vec[], int *order);
-void interp_photgrid_D_moment(PhotGrid photgrid, int r, double x_vec[], int l,
-			      double *D,
+void interp_photgrid_P_moment(PhotGrid photgrid, int r, double x_vec[], int l,
+			      double *P,
 			      Stat *stat, bool deriv_vec[], int *order);
 void interp_photgrid_irradiance(PhotGrid photgrid, int m, int r, double x_vec[], double mu[], double dOmega[],
 				double *F,

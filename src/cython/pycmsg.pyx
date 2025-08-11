@@ -194,21 +194,21 @@ def _interp_specgrid_E_moment(uintptr_t specgrid, double[:] x_vec, int k, double
     return np.asarray(E)
 
 
-def _interp_specgrid_D_moment(uintptr_t specgrid, double[:] x_vec, int l, double z, double[:] lam,
+def _interp_specgrid_P_moment(uintptr_t specgrid, double[:] x_vec, int l, double z, double[:] lam,
                               bool[:] deriv_vec, int order):
 
-    cdef double[:] D
+    cdef double[:] P
     cdef Stat stat
 
     n = len(lam)
     r = len(x_vec)
 
-    D = np.empty(n-1, dtype=np.double)
+    P = np.empty(n-1, dtype=np.double)
 
-    interp_specgrid_D_moment(<void *>specgrid, n, r, &x_vec[0], l, z, &lam[0], &D[0], &stat, &deriv_vec[0], &order)
+    interp_specgrid_P_moment(<void *>specgrid, n, r, &x_vec[0], l, z, &lam[0], &P[0], &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
-    return np.asarray(D)
+    return np.asarray(P)
 
 
 def _interp_specgrid_irradiance(uintptr_t specgrid, double[:,::1] x_vec, double[:] mu, double[:] dOmega,
@@ -383,17 +383,17 @@ def _interp_photgrid_E_moment(uintptr_t photgrid, double[:] x_vec, int k, bool[:
     return M
 
 
-def _interp_photgrid_D_moment(uintptr_t photgrid, double[:] x_vec, int l, bool[:] deriv_vec, int order):
+def _interp_photgrid_P_moment(uintptr_t photgrid, double[:] x_vec, int l, bool[:] deriv_vec, int order):
 
-    cdef double D
+    cdef double P
     cdef Stat stat
 
     r = len(x_vec)
 
-    interp_photgrid_D_moment(<void *>photgrid, r, &x_vec[0], l, &D, &stat, &deriv_vec[0], &order)
+    interp_photgrid_P_moment(<void *>photgrid, r, &x_vec[0], l, &P, &stat, &deriv_vec[0], &order)
     _handle_error(stat)
 
-    return D
+    return P
 
 
 def _interp_photgrid_irradiance(uintptr_t photgrid, double[:,::1] x_vec, double[:] mu, double[:] dOmega,

@@ -34,8 +34,8 @@ mflux	\overline{F}
 fluxz	F_{0}
 emom	\mathcal{E}^{k}_{\lambda}
 memom	\overline{\mathcal{E}}^{k}
-dmom	\mathcal{D}^{\ell}_{\lambda}
-mdmom	\overline{\mathcal{D}}^{\ell}
+pmom	\mathcal{P}^{\ell}_{\lambda}
+mpmom	\overline{\mathcal{P}}^{\ell}
 irrad	F_{\lambda}^{\obs}
 mirrad	\overline{F}^{\obs}
 area	A

@@ -274,8 +274,8 @@ class SpecGrid:
                                              lam, deriv_vec, order)
 
     
-    def D_moment(self, x, l, z, lam, deriv=None, order=3):
-        r"""Interpolate the spectroscopic intensity D-moment for a
+    def P_moment(self, x, l, z, lam, deriv=None, order=3):
+        r"""Interpolate the spectroscopic intensity P-moment for a
         photospheric element.
 
         Args:
@@ -293,7 +293,7 @@ class SpecGrid:
                 1 or 3.
 
         Returns:
-            numpy.ndarray: Spectroscopic intensity D-moment 
+            numpy.ndarray: Spectroscopic intensity P-moment
             (erg/cm^2/s/Å) in bins delineated by lam; length len(lam)-1.
 
         Raises:
@@ -308,7 +308,7 @@ class SpecGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_specgrid_D_moment(self._specgrid, x_vec, l,
+        return pyc._interp_specgrid_P_moment(self._specgrid, x_vec, l,
                                              z, lam,
                                              deriv_vec, order)
 
@@ -611,8 +611,8 @@ class PhotGrid:
         return pyc._interp_photgrid_E_moment(self._photgrid, x_vec, k, deriv_vec)
 
     
-    def D_moment(self, x, l, deriv=None, order=3):
-        r"""Interpolate the photometric intensity D-moment for a
+    def P_moment(self, x, l, deriv=None, order=3):
+        r"""Interpolate the photometric intensity P-moment for a
         photospheric element, normalized to the zero-point flux.
 
         Args:
@@ -627,7 +627,7 @@ class PhotGrid:
                 1 or 3.
 
         Returns:
-            float: Photometric intensity D-moment (dimensionless).
+            float: Photometric intensity P-moment (dimensionless).
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
@@ -641,7 +641,7 @@ class PhotGrid:
         x_vec = self._dict_to_x_vec(x)
         deriv_vec = self._dict_to_deriv_vec(deriv)
 
-        return pyc._interp_photgrid_D_moment(self._photgrid, x_vec, l, deriv_vec, order)
+        return pyc._interp_photgrid_P_moment(self._photgrid, x_vec, l, deriv_vec, order)
 
     
     def irradiance(self, x, mu, dOmega, deriv=None, order=3):

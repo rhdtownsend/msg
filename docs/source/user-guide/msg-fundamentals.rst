@@ -171,12 +171,12 @@ too, can the :ads_citet:`eddington:1926` intensity moments
 
    \emom(\lambda; \vx) = \frac{1}{2} \int_{0}^{1} \intsy(\lambda; \mu; \vx) \, \mu^{k} \,\diff{\mu},
 
-and the :ads_citet:`townsend:2003` differential flux functions
-(`D-moments`),
+and the Legendre polynomial moments (`P-moments`) introduced in
+:ads_citet:`townsend:2003`,
 
 .. math::
 
-   \dmom(\lambda; \vx) = \int_{0}^{1} \intsy(\lambda; \mu; \vx) \, \mu \, P_{\ell}(\mu) \,\diff{\mu}.
+   \pmom(\lambda; \vx) = \int_{0}^{1} \intsy(\lambda; \mu; \vx) \, \mu \, P_{\ell}(\mu) \,\diff{\mu}.
 
    
 .. _limb-darkening-laws:
@@ -362,7 +362,7 @@ provided by MSG.
      - :py:meth:`pymsg.SpecGrid.E_moment`
      - :f:func:`~fmsg_m/specgrid_t%interp_E_moment`
      - :c:func:`interp_specgrid_E_moment`
-   * - :math:`\dmom`
+   * - :math:`\pmom`
      - :py:meth:`pymsg.SpecGrid.D_moment`
      - :f:func:`~fmsg_m/specgrid_t%interp_D_moment`
      - :c:func:`interp_specgrid_D_moment`
@@ -382,7 +382,7 @@ provided by MSG.
      - :py:meth:`pymsg.PhotGrid.E_moment`
      - :f:func:`~fmsg_m/photgrid_t%interp_E_moment`
      - :c:func:`interp_photgrid_E_moment`
-   * - :math:`\mdmom/\fluxz`
+   * - :math:`\pdmom/\fluxz`
      - :py:meth:`pymsg.PhotGrid.D_moment`
      - :f:func:`~fmsg_m/photgrid_t%interp_D_moment`
      - :c:func:`interp_photgrid_D_moment`
@@ -395,7 +395,7 @@ provided by MSG.
      - :f:func:`~fmsg_m/photgrid_t%interp_flux`
      - :c:func:`interp_photgrid_flux`
   
-.. rubric:: footnote
+.. rubric:: Footnotes
 
 .. [#distant] The analysis here assumes that the distance to the
                center of the star is very large compared to its
