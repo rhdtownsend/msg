@@ -51,7 +51,7 @@ program make_passband
 
    arg_parser = arg_parser_t('make_passband RESPONSE_FILE PASSBAND_FILE', auto_help=.TRUE.)
 
-   call arg_parser%define_option('zero_point', OPT_REQUIRED_ARG, short_name='z', &
+   call arg_parser%define_option('zero-point', OPT_REQUIRED_ARG, short_name='z', &
       usage='--zero-point=F_0', description='zero-point flux of the photometric system')
 
    call arg_parser%parse(arg_proc, opt_proc)
@@ -129,7 +129,7 @@ contains
       stat = STAT_OK
 
       select case(name)
-      case('zero_point')
+      case('zero-point')
          call parse_value(value, F_0, stat)
       case('help')
          call print_summary()
