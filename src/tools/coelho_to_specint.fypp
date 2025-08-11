@@ -60,7 +60,7 @@ program coelho_to_specint
    arg_parser = arg_parser_t('coelho_to_specint COELHO_FILE SPECINT_FILE', auto_help=.TRUE.)
 
    call arg_parser%define_option('file-type', OPT_REQUIRED_ARG, short_name='t', &
-      usage='--file-type=TYPE', description='input file type ( linear | log10 )')
+      usage='--file-type=TYPE', description='input file type ( linear | log )')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
@@ -96,7 +96,7 @@ program coelho_to_specint
         range = lin_range_t(x_0, dx, n_lam)
       end associate
 
-   case('log10')
+   case('log')
       
       associate (logx_0 => head_values(5)*LOG(10._RD), &
                  dlogx => head_values(6)*LOG(10._RD))
