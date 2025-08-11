@@ -27,7 +27,7 @@ Options
 
 .. option:: -t, --type
 
-   Print the file type.
+   Print the grid type.
 
 .. option:: -l, --label
 
