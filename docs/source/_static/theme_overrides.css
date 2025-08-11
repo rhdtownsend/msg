@@ -27,3 +27,13 @@ td {
 div.nbinput.container {
   padding-bottom: 24px;
 }
+
+div.nboutput.container {
+  padding-bottom: 24px;
+}
+
+/* Place equation nubmers on the right */
+
+span.eqno {
+    float: right;
+}
