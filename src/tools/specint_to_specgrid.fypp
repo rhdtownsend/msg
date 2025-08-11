@@ -48,6 +48,7 @@ program specint_to_specgrid
 
    character(:), allocatable :: manifest_file_name
    character(:), allocatable :: specgrid_file_name
+   logical, allocatable      :: remove_orphans
    character(:), allocatable :: grid_label
 
    type(arg_parser_t) :: arg_parser
@@ -56,8 +57,12 @@ program specint_to_specgrid
 
    ! Parse command-line arguments
 
+   remove_orphans = .FALSE.
+
    arg_parser = arg_parser_t('specint_to_specgrid MANIFEST_FILE SPECGRID_FILE', auto_help=.TRUE.)
 
+   call arg_parser%define_option('remove-orphans', OPT_NO_ARG, 'r', &
+      description='remove orphaned vertices')
    call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, short_name='l', &
       usage='--grid-label=NAME', description='grid label')
 
@@ -66,7 +71,7 @@ program specint_to_specgrid
    if (.NOT. ALLOCATED(manifest_file_name)) call print_summary()
    if (.NOT. ALLOCATED(specgrid_file_name)) call print_summary()
 
-   ! Create the grid
+   ! Create the specgrid
 
    call create_grid(manifest_file_name,  specgrid)
 
@@ -116,6 +121,8 @@ contains
       stat = STAT_OK
 
       select case(name)
+      case('remove-orphans')
+         remove_orphans = .TRUE.
       case('grid-label')
          grid_label = value
       case('help')
@@ -294,9 +301,6 @@ contains
 
       vgrid = vgrid_t(x_vecs, labels)
 
-      write(OUTPUT_UNIT, 100) 'Number of spectra:', n_smetas
-100   format(2X,A,1X,I0)
-
       ! Set up the file/group name lists
 
       file_names = smetas%file_name
@@ -315,15 +319,9 @@ contains
 
       specgrid = specgrid_t(specsource, vgrid)
 
-      ! Subset it to remove any superfluous data
+      ! If necessary, remove orphans
 
-      allocate(x_min(rank))
-      allocate(x_max(rank))
-
-      x_min = -HUGE(0._RD)
-      x_max = HUGE(0._RD)
-
-      call specgrid%subset(x_min, x_max)
+      if (remove_orphans) call specgrid%remove_orphans()
 
       ! Finish
 
