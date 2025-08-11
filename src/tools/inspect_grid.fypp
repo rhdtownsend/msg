@@ -144,7 +144,7 @@ contains
       stat = STAT_OK
 
       select case(name)
-      case('file-type')
+      case('type')
          show_type = .TRUE.
       case('grid-label')
          show_label = .TRUE.
