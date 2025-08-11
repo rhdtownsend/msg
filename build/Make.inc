@@ -5,11 +5,11 @@
 # Checks
 #########
 
-MINIMUM_VERSION = 21.4.1
+MINIMUM_VERSION := 21.4.1
 
 ifneq ($(MAKECMDGOALS),clean)
 
-   VERSION_CHECK = $(shell ./check_sdk_version $(MINIMUM_VERSION))
+   VERSION_CHECK := $(shell ./check_sdk_version $(MINIMUM_VERSION))
 
    ifneq ($(VERSION_CHECK),passed)
       ifeq ($(VERSION_CHECK),SDK too old)
@@ -39,36 +39,36 @@ endif
 ############
 
 ifeq ($(shell uname -s),Darwin)
-   STATIC_LIB_SUFFIX = .a
-   SHARED_LIB_SUFFIX = .dylib
-   PYC_SUFFIX = $(shell python3-config --extension-suffix)
+   STATIC_LIB_SUFFIX := .a
+   SHARED_LIB_SUFFIX := .dylib
+   PYC_SUFFIX := $(shell python3-config --extension-suffix)
 else			   
-   STATIC_LIB_SUFFIX = .a
-   SHARED_LIB_SUFFIX = .so
-   PYC_SUFFIX = $(shell python3-config --extension-suffix)
+   STATIC_LIB_SUFFIX := .a
+   SHARED_LIB_SUFFIX := .so
+   PYC_SUFFIX := $(shell python3-config --extension-suffix)
 endif
 
 DEPEND_DIR = .depend
 
 BIN_FILES = $(BIN_TARGETS)
 
-STATIC_LIB_FILES = $(addsuffix $(STATIC_LIB_SUFFIX),$(LIB_TARGETS))
-SHARED_LIB_FILES = $(addsuffix $(SHARED_LIB_SUFFIX),$(LIB_TARGETS))
+STATIC_LIB_FILES := $(addsuffix $(STATIC_LIB_SUFFIX),$(LIB_TARGETS))
+SHARED_LIB_FILES := $(addsuffix $(SHARED_LIB_SUFFIX),$(LIB_TARGETS))
 
 ifeq ($(SHARED),yes)
-   LIB_FILES = $(STATIC_LIB_FILES) $(SHARED_LIB_FILES)
-   LIB_SUFFIX = $(SHARED_LIB_SUFFIX)
+   LIB_FILES := $(STATIC_LIB_FILES) $(SHARED_LIB_FILES)
+   LIB_SUFFIX := $(SHARED_LIB_SUFFIX)
 else
-   LIB_FILES = $(STATIC_LIB_FILES)
-   LIB_SUFFIX = $(STATIC_LIB_SUFFIX)
+   LIB_FILES := $(STATIC_LIB_FILES)
+   LIB_SUFFIX := $(STATIC_LIB_SUFFIX)
 endif
 
-PYC_FILES = $(addsuffix $(PYC_SUFFIX),$(PYC_TARGETS))
+PYC_FILES := $(addsuffix $(PYC_SUFFIX),$(PYC_TARGETS))
 
-ALL_SRCS = $(foreach target,$(BIN_TARGETS) $(LIB_TARGETS) $(PYC_TARGETS),$($(target)_SRCS) $($(target)_USES))
+ALL_SRCS := $(foreach target,$(BIN_TARGETS) $(LIB_TARGETS) $(PYC_TARGETS),$($(target)_SRCS) $($(target)_USES))
 
-ALL_DPPS = $(addprefix $(DEPEND_DIR)/,$(ALL_SRCS:%.fypp=%.dpp))
-ALL_DEPS = $(addprefix $(DEPEND_DIR)/,$(BIN_TARGETS:%=%.dep) $(LIB_TARGETS:%=%.dep))
+ALL_DPPS := $(addprefix $(DEPEND_DIR)/,$(ALL_SRCS:%.fypp=%.dpp))
+ALL_DEPS := $(addprefix $(DEPEND_DIR)/,$(BIN_TARGETS:%=%.dep) $(LIB_TARGETS:%=%.dep))
 
 ##########
 # Targets
@@ -121,9 +121,9 @@ vpath %.pyx $(SRC_DIRS)
 
 # Flags
 
-FPP = PYTHONPATH=$(MESASDK_ROOT)/lib/python ./fypp_deps
+FPP := PYTHONPATH=$(MESASDK_ROOT)/lib/python ./fypp_deps
 
-FPPOPTS = DEBUG OMP FPE
+FPPOPTS := DEBUG OMP FPE
 
 FPPFLAGS += --line-numbering $(addprefix -I,$(SRC_DIRS)) \
             $(foreach opt,$(FPPOPTS),$(if $(filter yes,$($(opt))),-D$(opt)=1,))
@@ -155,9 +155,9 @@ endif
 
 # Fortran flags
 
-FC = gfortran
+FC := gfortran
 
-MAKEDEP = awk -f makedepf08.awk
+MAKEDEP := awk -f makedepf08.awk
 
 FFLAGS += -std=f2018 -finit-real=snan -fbacktrace -fmax-errors=25 -fPIC
 
@@ -185,7 +185,7 @@ endif
 
 # C flags
 
-CC = gcc
+CC := gcc
 
 CFLAGS += -fPIC -I../src/include
 
@@ -242,14 +242,14 @@ AR = ar
 ifeq ($(shell uname -s),Darwin)
    SHARED_LIB_LDFLAGS = -shared -install_name $(LIB_DIR)/$@
    BIN_LDFLAGS =
-   PYC_LDFLAGS = -shared -install_name $(MSG_DIR)/python/$@ -undefined dynamic_lookup
+   PYC_LDFLAGS = $(SHARED_LIB_LDFLAGS) -undefined dynamic_lookup
    ARFLAGS = -cr
 else			   
    SHARED_LIB_LDFLAGS = -shared -Wl,-rpath -Wl,$(LIB_DIR)
    ifeq ($(SHARED),yes)
       BIN_LDFLAGS = -Wl,-rpath -Wl,$(LIB_DIR)
    endif
-   PYC_LDFLAGS = $(LIB_LDFLAGS)
+   PYC_LDFLAGS = $(SHARED_LIB_LDFLAGS)
    ARFLAGS = cr
 endif
 
@@ -269,7 +269,7 @@ $(STATIC_LIB_FILES) :
 
 $(SHARED_LIB_FILES) :
 	@echo LD-LIB $@
-	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(SHARED_LIB_LDFLAGS)
+	$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(SHARED_LIB_LDFLAGS)
 
 $(PYC_FILES) :
 	@echo LD_PYC $@
