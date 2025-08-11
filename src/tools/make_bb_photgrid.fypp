@@ -72,7 +72,7 @@ program make_bb_photgrid
       usage='--u-limb=U', description='linear limb-darkening coefficient')
    call arg_parser%define_option('lambda', OPT_REQUIRED_ARG, &
       usage='--lambda=VALUE', description='wavelength sample point')
-   call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, &
+   call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, short_name='l', &
       usage='--grid-label=NAME', description='grid label')
 
    call arg_parser%parse(arg_proc, opt_proc)
@@ -103,7 +103,7 @@ program make_bb_photgrid
 
    ! Create the vgrid
 
-   vgrid = vgrid_t(x_vecs, ['logT'])
+   vgrid = vgrid_t(x_vecs, ['log(T)'])
 
    ! Set up limb-darkening data
 
