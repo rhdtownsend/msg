@@ -90,6 +90,8 @@ program subset_photgrid
 
    call photgrid%get_rank(rank)
 
+   allocate(labels(rank))
+
    allocate(x_min(rank))
    allocate(x_max(rank))
 
