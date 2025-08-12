@@ -8,7 +8,7 @@
 
    .. f:subroutine:: get_rank(rank)
 
-      Get the rank (dimension) of the grid.
+      Get the number of dimensions (rank )of the grid.
 
       :p integer rank [out]: Returned rank.
 

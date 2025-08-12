@@ -34,7 +34,7 @@ combination of features unmatched by other packages:
   number of dimensions.
 
 * portability --- MSG is platform-agnostic and provide APIs for the
-  programming languages (Fortran, C, Python) most commonly used in
+  programming languages (Python, Fortran, C) most commonly used in
   Astronomy.
 
 * performance --- MSG provides smooth and accurate

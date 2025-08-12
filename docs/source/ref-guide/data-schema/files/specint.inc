@@ -8,11 +8,11 @@
      - Object Type
      - Data Type
      - Definition
-   * - :code:`/`
+   * - ``/``
      - group
      - :g-schema:`limb_specint`
      - specint
-   * - :code:`/labels/<label>`
+   * - ``/labels/<label>``
      - attribute
      - real
      - label value.

@@ -1,30 +1,30 @@
 .. rst:group-schema:: log_range
 
 .. list-table::
-   :widths: 15 10 10 65
+   :widths: 20 15 20 45
    :header-rows: 1
 
    * - Item
      - Object Type
      - Data Type
      - Definition
-   * - :code:`TYPE`
+   * - ``TYPE``
      - attribute
      - character
-     - literal :code:`'log_range_t'`.
-   * - :code:`REVISION`
+     - literal ``'log_range_t'``.
+   * - ``REVISION``
      - attribute
      - integer
-     - literal :code:`1`.
-   * - :code:`logx_0`
+     - literal ``1``.
+   * - ``logx_0``
      - attribute
      - real
      - logarithm of abscissa start value.
-   * - :code:`dlogx`
+   * - ``dlogx``
      - attribute
      - real
      - abscissa logarithmic spacing.
-   * - :code:`n`
+   * - ``n``
      - attribute
      - integer
      - number of points.

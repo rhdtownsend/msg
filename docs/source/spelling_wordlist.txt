@@ -12,9 +12,12 @@ photints
 photgrid
 rebin
 rebins
+rebinning
 specint
 specints
 specgrid
 Strömgren
 synspec
+x_vec
+
 

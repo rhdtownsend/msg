@@ -1,22 +1,22 @@
 .. rst:group-schema:: tab_range
 
 .. list-table::
-   :widths: 15 10 10 65
+   :widths: 20 15 20 45
    :header-rows: 1
 
    * - Item
      - Object Type
      - Data Type
      - Definition
-   * - :code:`TYPE`
+   * - ``TYPE``
      - attribute
      - character
-     - literal :code:`'tab_range_t'`.
-   * - :code:`REVISION`
+     - literal ``'tab_range_t'``.
+   * - ``REVISION``
      - attribute
      - integer
-     - literal :code:`1`.
-   * - :code:`x`
+     - literal ``1``.
+   * - ``x``
      - dataset
      - real(:)
      - abscissa values.

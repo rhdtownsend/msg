@@ -158,7 +158,7 @@
    :param r: Number of photospheric parameters.
    :param x_vec[r]: Photospheric parameter values.
    :param k: Degree of moment.
-   :param z: Redshift of element relative to obvserver's frame.
+   :param z: Redshift of element relative to observer's frame.
    :param lam[n]: Wavelength abscissa (Å) in observer's frame.
    :param D[n-1]: Spectroscopic intensity E-moment (erg/cm^2/s/Å) in bins delineated by lam.
    :param stat: Status code (set to :c:expr:`NULL` if not required).

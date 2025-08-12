@@ -17,7 +17,7 @@ Parameters
    Length of :f:type:`axis_t` labels.
 
 
-.. f:variable:: int ~fmsg_m/STAT_OK
+.. f:variable:: int STAT_OK
    :attrs: parameter
 
    Status code indicating procedure call completed without error.
@@ -81,6 +81,12 @@ Parameters
    :attrs: parameter
    
    Status code indicating procedure call encountered an invalid argument.
+
+
+.. f:variable:: int STAT_INVALID_DIMENSION
+   :attrs: parameter
+
+   Status code indicating procedure call encountered an argument with an invalid dimension.
 
 
 .. f:variable:: int STAT_FILE_NOT_FOUND

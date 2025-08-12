@@ -31,15 +31,15 @@ Options
 
    Input file type. This determines the wavelength abscissa adopted
    for the input file. Valid choices, corresponding to the different
-   grids described by :ads_citet:`husser:2013`, are :code:`HiRes`
-   (high-resolution; default), :code:`MedRes-A1` (medium-resolution,
-   :math:`\Delta \lambda = 1\,\angstrom`) and :code:`MedRes-R10000`
+   grids described by :ads_citet:`husser:2013`, are ``HiRes``
+   (high-resolution; default), ``MedRes-A1`` (medium-resolution,
+   :math:`\Delta \lambda = 1\,\angstrom`) and ``MedRes-R10000``
    (medium resolution, :math:`\mathcal{R}=10\,000`).
 
 .. note::
 
    In order for the :program:`goettingen_to_specint` tool to be built,
    you must first uncomment/edit the line in
-   :file:`$MSG_DIR/build/Makefile` that defines the `FITS_LDFLAGS`
-   variable. This variable defines the flags used to link against your
-   system's FITS library.
+   :file:`$MSG_DIR/build/Makefile` that sets the
+   :envvar:`FITS_LDFLAGS` variable. This variable defines the flags
+   used to link against your system's FITS library.

@@ -8,7 +8,7 @@
      - Object Type
      - Data Type
      - Definition
-   * - :code:`/`
+   * - ``/``
      - group
      - :g-schema:`specgrid`
      - specgrid.

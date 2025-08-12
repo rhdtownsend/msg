@@ -33,5 +33,5 @@ Options
 
    Input file type. This determines the mapping between photospheric
    parameters given in the input file, and photospheric parameters
-   written to the output file. Valid choices are :code:`CAP18` (for
+   written to the output file. Valid choices are ``CAP18`` (for
    the :ads_citealp:`allende:2018` grids; default).

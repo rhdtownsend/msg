@@ -1,30 +1,30 @@
 .. rst:group-schema:: lin_range
 
 .. list-table::
-   :widths: 15 10 10 65
+   :widths: 20 15 20 45
    :header-rows: 1
 
    * - Item
      - Object Type
      - Data Type
      - Definition
-   * - :code:`TYPE`
+   * - ``TYPE``
      - attribute
      - character
-     - literal :code:`'lin_range_t'`.
-   * - :code:`REVISION`
+     - literal ``'lin_range_t'``.
+   * - ``REVISION``
      - attribute
      - integer
-     - literal :code:`1`.
-   * - :code:`x_0`
+     - literal ``1``.
+   * - ``x_0``
      - attribute
      - real
      - abscissa start value.
-   * - :code:`dx`
+   * - ``dx``
      - attribute
      - real
      - abscissa spacing.
-   * - :code:`n`
+   * - ``n``
      - attribute
      - integer
      - number of points.

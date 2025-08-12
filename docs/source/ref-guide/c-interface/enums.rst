@@ -60,6 +60,11 @@ Enums
       Status code indicating function call encountered an invalid argument.
 
 
+   .. c:enumerator:: STAT_INVALID_DIMENSION
+      
+      Status code indicating function call encountered an argument with an invalid dimension.
+
+
    .. c:enumerator:: STAT_FILE_NOT_FOUND
       
       Status code indicating function call encountered a file that could not be found.

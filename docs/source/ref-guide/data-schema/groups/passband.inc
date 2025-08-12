@@ -1,26 +1,26 @@
 .. rst:group-schema:: passband
 
 .. list-table::
-   :widths: 15 10 10 65
+   :widths: 20 15 20 45
    :header-rows: 1
 
    * - Item
      - Object Type
      - Data Type
      - Definition
-   * - :code:`TYPE`
+   * - ``TYPE``
      - attribute
      - character
-     - literal :code:`'passband_t'`.
-   * - :code:`REVISION`
+     - literal ``'passband_t'``.
+   * - ``REVISION``
      - attribute
      - integer
-     - literal :code:`1`.
-   * - :code:`F_0`
+     - literal ``1``.
+   * - ``F_0``
      - attribute
      - real
      - normalizing flux (erg/cm^2/s).
-   * - :code:`cubint`
+   * - ``cubint``
      - group
      - :g-schema:`cubint`
      - filter interpolant.

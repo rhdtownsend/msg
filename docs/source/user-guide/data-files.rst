@@ -4,10 +4,10 @@
 Data Files
 **********
 
-This chapter discusses the files in which MSG stores its data. These
-files adopt the `HDF5 data format <https://www.hdfgroup.org/>`__, a
-platform-neutral binary storage format with advanced features such as
-transparent decompression.
+This chapter discusses the files used by MSG to store data on
+disk. These files adopt the `HDF5 data format
+<https://www.hdfgroup.org/>`__, a platform-neutral binary storage
+format with advanced features such as transparent decompression.
 
 File Types
 ==========
@@ -59,10 +59,10 @@ Additional files can be downloaded separately from the `grid files
 Importing Data
 ==============
 
-To import an existing spectroscopic grid into MSG, first convert the
-individual spectra into corresponding :f-schema:`specint` files. MSG
-provides a number of tools to assist with this conversion; see the
-:ref:`grid-tools` appendix for further details.
+To import an existing grid of spectra into the MSG ecosystem, first
+convert the individual spectra into corresponding :f-schema:`specint`
+files. MSG provides a number of tools to assist with this conversion;
+see the :ref:`grid-tools` appendix for further details.
 
 The next step is to create a manifest (named, say,
 :file:`manifest.txt`) listing all the :f-schema:`specint` files
@@ -89,13 +89,15 @@ tool:
    $ $MSG_DIR/bin/specgrid_to_photgrid specgrid.h5 passband.h5 photgrid.h5
 
 ...where :file:`passband.h5` is the name of the :f-schema:`passband`
-file to use. Note that it's not always necessary to create a
-:f-schema:`photgrid` file, as MSG can convolve with passbands on the
-fly (as discussed in the :ref:`photometric-colors` section).
+file to use.
 
-It's not always necessary to create :f-schema:`photgrid` files,
-because MSG supports loading a :f-schema:`specgrid` file and then
-convolving with a passband on-the-fly. This approach is used in the
-examples presented in the :ref:`walkthroughs` chapter. It has the
-advantage of convenience, but a disadvantage in the form of a
-performance penalty, as discussed in the :ref:`performance` chapter.
+.. _data-files-photgrid:
+
+.. note::
+
+   It's not always necessary to create :f-schema:`photgrid` files,
+   because MSG supports loading a :f-schema:`specgrid` file and then
+   convolving with a passband on-the-fly. This approach is used in the
+   examples presented in the :ref:`walkthroughs` chapter. It has the
+   advantage of convenience, but a disadvantage in the form of a
+   performance penalty, as discussed in the :ref:`performance` chapter.

@@ -56,7 +56,7 @@ Finally, compile MSG using the :command:`make` utility:
 
    $ make -j -C $MSG_DIR
    
-(the :command:`-j` flags tells :command:`make` to use multiple cores,
+(the ``-j`` flags tells :command:`make` to use multiple cores,
 speeding up the build).  If things go awry, consult the
 :ref:`troubleshooting` chapter.
 

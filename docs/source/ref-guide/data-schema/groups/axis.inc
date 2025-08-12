@@ -1,26 +1,26 @@
 .. rst:group-schema:: axis
 
 .. list-table::
-   :widths: 15 10 10 65
+   :widths: 20 15 20 45
    :header-rows: 1
 
    * - Item
      - Object Type
      - Data Type
      - Definition
-   * - :code:`TYPE`
+   * - ``TYPE``
      - attribute
      - character
-     - literal :code:`'axis_t'`.
-   * - :code:`REVISION`
+     - literal ``'axis_t'``.
+   * - ``REVISION``
      - attribute
      - integer
-     - literal :code:`1`.
-   * - :code:`label`
+     - literal ``1``.
+   * - ``label``
      - attribute
      - character
      - label.
-   * - :code:`x`
+   * - ``x``
      - dataset
      - real(:)
      - abscissa values.

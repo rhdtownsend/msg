@@ -8,7 +8,7 @@
 #define LABEL_LEN 16
 #define N_X_VEC 2
 #define N_LAM 501
-#define LAM_MIN 3000.
+#define LAM_MIN 3800.
 #define LAM_MAX 7000.
 
 int main(int argc, char *argv[]) {
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 
   FILE *fptr;
 
-  // Load the specgrid
+  // Create the specgrid object
 
   load_specgrid("sg-demo.h5", &specgrid, NULL);
 
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
       
   }
 
-  // Set the redshift of Sirius A
+  // Set the redshift
 
   z = -1.830E-5;
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     lam_c[i] = 0.5*(lam[i] + lam[i+1]);
   }
 
-  // Evaluate the flux
+  // Evaluate the irradiance
 
   interp_specgrid_flux(specgrid, N_LAM, N_X_VEC, x_vec, z, lam, F, NULL, NULL, NULL);
 
@@ -101,13 +101,13 @@ int main(int argc, char *argv[]) {
 
   fclose(fptr);
 
-  // Load the photgrids
+  // Create the photgrid objects
 
   load_photgrid_from_specgrid("sg-demo.h5", "pb-Generic-Johnson.U-Vega.h5", &photgrid_U, NULL);
   load_photgrid_from_specgrid("sg-demo.h5", "pb-Generic-Johnson.B-Vega.h5", &photgrid_B, NULL);
   load_photgrid_from_specgrid("sg-demo.h5", "pb-Generic-Johnson.V-Vega.h5", &photgrid_V, NULL);
 
-  // Evaluate fluxes
+  // Evaluate photometric irradiances
 
   interp_photgrid_flux(photgrid_U, N_X_VEC, x_vec, &F_U, NULL, NULL, NULL);
   interp_photgrid_flux(photgrid_B, N_X_VEC, x_vec, &F_B, NULL, NULL, NULL);

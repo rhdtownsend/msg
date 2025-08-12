@@ -1,30 +1,30 @@
 .. rst:group-schema:: limb_photint
 
 .. list-table::
-   :widths: 15 10 10 65
+   :widths: 20 15 20 45
    :header-rows: 1
 
    * - Item
      - Object Type
      - Data Type
      - Definition
-   * - :code:`TYPE`
+   * - ``TYPE``
      - attribute
      - character
-     - literal :code:`'limb_photint_t'`.
-   * - :code:`REVISION`
+     - literal ``'limb_photint_t'``.
+   * - ``REVISION``
      - attribute
      - integer
-     - literal :code:`1`.
-   * - :code:`precise`
+     - literal ``1``.
+   * - ``precise``
      - attribute
      - logical
      - precision of data (`.TRUE.` for 64-bit, `.FALSE.` for 32-bit).
-   * - :code:`c`
+   * - ``c``
      - dataset
      - real(:)
      - intensity coefficients (/sr).
-   * - :code:`limb`
+   * - ``limb``
      - group
      - :g-schema:`limb`
      - limb-darkening law.

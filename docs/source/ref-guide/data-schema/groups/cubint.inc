@@ -1,34 +1,34 @@
 .. rst:group-schema:: cubint
 
 .. list-table::
-   :widths: 15 10 10 65
+   :widths: 20 15 20 45
    :header-rows: 1
 
    * - Item
      - Object Type
      - Data Type
      - Definition
-   * - :code:`TYPE`
+   * - ``TYPE``
      - attribute
      - character
-     - literal :code:`'cubint_t'`.
-   * - :code:`REVISION`
+     - literal ``'cubint_t'``.
+   * - ``REVISION``
      - attribute
      - integer
-     - literal :code:`1`.
-   * - :code:`n`
+     - literal ``1``.
+   * - ``n``
      - attribute
      - integer
      - number of points.
-   * - :code:`x`
+   * - ``x``
      - dataset
-     - real(:code:`n`)
+     - real(``n``)
      - abscissa values.
-   * - :code:`f`
+   * - ``f``
      - dataset
-     - real(:code:`n`)
+     - real(``n``)
      - ordinate values.
-   * - :code:`df_dx`
+   * - ``df_dx``
      - dataset
-     - real(:code:`n`)
+     - real(``n``)
      - derivative values.

@@ -1,34 +1,34 @@
 .. rst:group-schema:: vgrid
 
 .. list-table::
-   :widths: 15 10 10 65
+   :widths: 20 15 20 45
    :header-rows: 1
 
    * - Item
      - Object Type
      - Data Type
      - Definition
-   * - :code:`TYPE`
+   * - ``TYPE``
      - attribute
      - character
-     - literal :code:`'vgrid_t'`.
-   * - :code:`REVISION`
+     - literal ``'vgrid_t'``.
+   * - ``REVISION``
      - attribute
      - integer
-     - literal :code:`3`.
-   * - :code:`shape`
+     - literal ``3``.
+   * - ``shape``
      - attribute
-     - integer(:code:`rank`)
+     - integer(``rank``)
      - shape of grid.
-   * - :code:`rank`
+   * - ``rank``
      - attribute
      - integer
      - rank of grid.
-   * - :code:`v_lin_seq`
+   * - ``v_lin_seq``
      - dataset
-     - integer(:code:`:`)
+     - integer(:)
      - vertex sequence-to-linear mapping.
-   * - :code:`axes[i]`
+   * - ``axes[i]``
      - group
      - :g-schema:`axis`
-     - grid axes (:code:`i = 1, ..., rank`).
+     - grid axes (``i = 1, ..., rank``).

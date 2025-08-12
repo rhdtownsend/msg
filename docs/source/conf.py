@@ -200,6 +200,7 @@ email_automode = True
 
 # Set up intersphinx
 intersphinx_mapping = {
+    'python': ('https://docs.python.org/3/', None),
     'numpy': ('https://numpy.org/doc/stable', None)
 }
 intersphinx_disabled_reftypes = ["std:doc"]

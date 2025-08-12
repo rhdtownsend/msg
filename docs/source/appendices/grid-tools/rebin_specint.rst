@@ -16,9 +16,9 @@ Synopsis
 Description
 -----------
 
-The :program:`specint_to_specint` tool reads data from a
+The :program:`rebin_specint` tool reads data from a
 :f-schema:`specint` file, subsets and/or rebins the data, and then
-writes it to a :f-schema:`specgrid` file.
+writes them to a :f-schema:`specgrid` file.
 
 Options
 -------
@@ -37,8 +37,8 @@ Options
 
 .. option:: -t, --sampling-type=TYPE
 
-   Sampling type when rebinning. Valid choices are :code:`R` (fixed
-   wavelength resolution) and :code:`delta_lam` (fixed wavelength
+   Sampling type when rebinning. Valid choices are ``R`` (fixed
+   wavelength resolution) and ``delta_lam`` (fixed wavelength
    spacing).
 
 .. option:: -t, --sampling-value=VALUE
@@ -47,5 +47,5 @@ Options
 
 .. option:: -a, --sampling-alignment=ALIGN
 
-   Sampling alignment when rebinning. Valid choices are :code:`center`
-   (default), :code:`left` and :code:`right`.
+   Sampling alignment when rebinning. Valid choices are ``center``
+   (default), ``left`` and ``right``.

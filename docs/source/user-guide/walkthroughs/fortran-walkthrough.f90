@@ -42,7 +42,7 @@ program fortran_walkthrough
    real(RD)             :: B
    real(RD)             :: V
 
-   ! Load the specgrid
+   ! Create the specgrid_t object
 
    call load_specgrid('sg-demo.h5', specgrid)
 
@@ -64,7 +64,7 @@ program fortran_walkthrough
 
    end do
 
-   ! Set the redshift of Sirius A
+   ! Set the redshift
 
    z = -1.83E-5_RD
    
@@ -76,10 +76,9 @@ program fortran_walkthrough
    ! Set up the wavelength abscissa
 
    lam = [((lam_min*(n_lam-i) + lam_max*(i-1))/(n_lam-1), i=1,n_lam)]
-
    lam_c = 0.5_RD*(lam(:n_lam-1) + lam(2:))
 
-   ! Evaluate the observed flux
+   ! Evaluate the irradiance
 
    call specgrid%interp_flux(x_vec, z, lam, F)
 
@@ -95,13 +94,13 @@ program fortran_walkthrough
 
    close(unit)
 
-   ! Load the photgrids
+   ! Load the photgrid_t objects
 
    call load_photgrid_from_specgrid('sg-demo.h5', 'pb-Generic-Johnson.U-Vega.h5', photgrid_U)
    call load_photgrid_from_specgrid('sg-demo.h5', 'pb-Generic-Johnson.B-Vega.h5', photgrid_B)
    call load_photgrid_from_specgrid('sg-demo.h5', 'pb-Generic-Johnson.V-Vega.h5', photgrid_V)
 
-   ! Evaluate fluxes
+   ! Evaluate photometric irradiances
 
    call photgrid_U%interp_flux(x_vec, F_U)
    call photgrid_B%interp_flux(x_vec, F_B)

@@ -1,38 +1,38 @@
 .. rst:group-schema:: specgrid
 
 .. list-table::
-   :widths: 15 10 10 65
+   :widths: 20 15 20 45
    :header-rows: 1
 
    * - Item
      - Object Type
      - Data Type
      - Definition
-   * - :code:`TYPE`
+   * - ``TYPE``
      - attribute
      - character
-     - literal :code:`'specgrid_t'`.
-   * - :code:`REVISION`
+     - literal ``'specgrid_t'``.
+   * - ``REVISION``
      - attribute
      - integer
-     - literal :code:`1`.
-   * - :code:`specsource/n`
+     - literal ``1``.
+   * - ``specsource/n``
      - attribute
      - integer
      - number of specints.
-   * - :code:`specsource/lam_min`
+   * - ``specsource/lam_min``
      - attribute
      - real
      - minimum wavelength (Å).
-   * - :code:`specsource/lam_max`
+   * - ``specsource/lam_max``
      - attribute
      - real
      - maximum wavelength (Å).
-   * - :code:`specsource/specints[i]`
+   * - ``specsource/specints[i]``
      - group
      - :g-schema:`limb_specint`
-     - grid specints (:code:`i = 1, ..., n`).
-   * - :code:`vgrid`
+     - grid specints (``i = 1, ..., n``).
+   * - ``vgrid``
      - group
      - :g-schema:`vgrid`
      - virtual grid.

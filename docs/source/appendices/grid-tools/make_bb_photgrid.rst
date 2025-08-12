@@ -44,7 +44,8 @@ Options
 
 .. option:: --lambda=VALUE
 
-   Wavelength of monochromatic intensity.
+   Wavelength of monochromatic intensity. If not specified, then bolometric
+   intensities are calculated. 
 
 .. option:: -l --grid-label=NAME
 

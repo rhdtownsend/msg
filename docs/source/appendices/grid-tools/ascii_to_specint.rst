@@ -21,7 +21,7 @@ file.
 
 The ASCII text file should contain one or more lines, each consisting
 of a wavelength value followed by a flux value. Blank lines and lines
-beginning with :code:`#` are ignored.
+beginning with ``#`` are ignored.
 
 Options
 -------
@@ -32,15 +32,15 @@ Options
 
 .. option:: --lambda-units=UNITS
 
-   Wavelength units of input file. Valid choices are :code:`A`
-   (:math:`\angstrom`; default) and :code:`micron` (:math:`\mu`).
+   Wavelength units of input file. Valid choices are ``A``
+   (:math:`\angstrom`; default) and ``micron`` (:math:`{\rm \mu\,m}`).
 
 .. option:: --flux-units=UNITS
 
-   Flux units of input file. Valid choices are :code:`erg/cm^2/s/A`
+   Flux units of input file. Valid choices are ``erg/cm^2/s/A``
    (:math:`\erg\,\cm^{-2}\,\second^{-1}\,\angstrom^{-1}`; default).
 
 .. option:: -l, --label=NAME:VALUE
 
-   Photospheric parameter name/value. Can be specified multiple times,
-   to define multiple parameters.
+   Photospheric parameter name and value. Can be specified multiple
+   times, to define multiple parameters.

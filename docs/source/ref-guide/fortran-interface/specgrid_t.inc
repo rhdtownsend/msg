@@ -9,7 +9,7 @@
 
    .. f:subroutine:: get_rank(rank)
 
-      Get the rank (dimension) of the grid.
+      Get the number of dimensions (rank) of the grid.
 
       :p integer rank [out]: Rank.
 
@@ -150,14 +150,14 @@
 
       :p real(RD) x_vec(:,:) [in]: Photospheric parameter values.
       :p real(RD) mu(:) [in]: Cosines of angles of emergence relative to element
-            normals; length SIZE(x, 2).
+            normals; length SIZE(x_vec, 2).
       :p real(RD) dOmega(:) [in]: Solid angles (sr) of elements; length SIZE(x_vec, 2).
       :p real(RD) z(:) [in]: Redshifts of elements relative to observer's frame; length SIZE(x_vec, 2).
       :p real(RD) lam(:) [in]: Wavelength abscissa (Å) in observer's frame.
       :p real(RD) F(:) [out]: Spectroscopic irradiance (erg/cm^2/s/Å)
             in bins delineated by lam; length SIZE(lam)-1.
       :o integer stat [out]: Status code.
-      :o logical deriv_vec(:) [in]: Derivative flags; length SIZE(x, 1).
+      :o logical deriv_vec(:) [in]: Derivative flags; length SIZE(x_vec, 1).
       :o integer order [in]: Interpolation order (1 or 3).
 
 

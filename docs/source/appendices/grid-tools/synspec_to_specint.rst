@@ -37,33 +37,33 @@ Options
 
 .. option:: -t, --file-type=TYPE
 
-   Type of SYNSPEC file. Valid choices are :code:`flux` (usually
+   Type of SYNSPEC file. Valid choices are ``flux`` (usually
    written by SYNSPEC to the file :file:`fort.7`; default) and
-   :code:`intensity` (usually written by SYNSPEC to the file
+   ``intensity`` (usually written by SYNSPEC to the file
    :file:`fort.18`).
 
 .. option:: --limb-law=LAW
 
    Limb-darkening law in output file (see :ref:`here
    <limb-darkening-laws>` for a list of valid choices; default
-   :code:`CONST`). Required for :code:`intensity` file types.
+   ``CONST``). Required for ``intensity`` file types.
    
 .. option:: --mu-min=MIN
 
    Minimum :math:`\mu` value in SYNSPEC's angular grid (as specified
-   by the :code:`ang0` parameter in the :file:`fort.55` SYNSPEC
-   control file). Required for :code:`intensity` file types.
+   by the ``ang0`` parameter in the :file:`fort.55`` SYNSPEC
+   control file). Required for ``intensity`` file types.
 
 .. option:: --n-mu=N
 
    Number of :math:`\mu` values in SYNSPEC's angular grid (as specified
-   by the :code:`nmu` parameter in the :file:`fort.55` SYNSPEC
-   control file). Required for :code:`intensity` file types.
+   by the ``nmu`` parameter in the :file:`fort.55`` SYNSPEC
+   control file). Required for ``intensity`` file types.
 
 .. option:: -l, --label=NAME:VALUE
 
-   Photospheric parameter name/value. Can be specified multiple times,
-   to define multiple parameters.
+   Photospheric parameter name and value. Can be specified multiple
+   times, to define multiple parameters.
 
 
 

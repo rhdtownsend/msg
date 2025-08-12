@@ -19,10 +19,10 @@ sure that MSG's data caching is appropriately configured. See the
 Photgrid Files
 ==============
 
-As mentioned in the :ref:`data-files-importing` section, MSG supports
+As :ref:`noted <data-files-photgrid>` in the :ref:`data-files` chapter, MSG supports
 loading a :f-schema:`specgrid` file and then convolving with a
 passband on-the-fly. There is a performance penalty to this approach:
-when photmetric data are required and are not already in the cache,
+when photometric data are required and are not already in the cache,
 the corresponding spectroscopic data must be read from the
 :f-schema:`specgrid` file and then convolved. To avoid this penalty,
 consider instead creating a :f-schema:`photgrid` file using the
@@ -39,7 +39,7 @@ the photospheric parameters :math:`\vx` (that is, the functions are
 :math:`C^{1}` continuous). If smoothness in the first derivatives is
 not required, then consider using linear interpolation instead.
 
-This can be achieved by setting the optional `order` argument to
+This can be achieved by setting the optional ``order`` argument to
 `1`. For instance, a call to the function
 :py:func:`pymsg.PhotGrid.flux` would look like this:
 
@@ -48,8 +48,8 @@ This can be achieved by setting the optional `order` argument to
    F = photgrid.flux(x, order=1)
 
 The performance boost from replacing cubic interpolation with linear
-can be significant --- of order :math:`4^N`, where :math:`N` is the
-number of photospheric parameters.
+can be significant, :math:`\sim 4^N` where :math:`N` is the number of
+dimensions spanned by the grid.
 
 Interface Language
 ==================
@@ -66,7 +66,7 @@ Parallelization
 ===============
 
 In situations where multiple, independent calls to MSG routines are
-required, cosider using `OpenMP <https://www.openmp.org/>`__
+required, consider using `OpenMP <https://www.openmp.org/>`__
 directives to run the calculations in parallel on multiple processor
 cores\ [#thread-safe]_. First, ensure that MSG has been built with the
 :envvar:`OMP` environment variable set to ``yes`` (see the
@@ -93,7 +93,7 @@ to its `global interpreter lock
 still benefits from OpenMP parallelization *within* MSG. Specifically,
 the routines for evaluating the spectroscopic irradiance
 :math:`\irrad` and photometric irradiance :math:`\mirrad` (see the
-:ref:`routine-mapping` table) add the contributions from each visible
+:ref:`interface-summary-python` table) add the contributions from each visible
 photospheric element in parallel.
 
 .. rubric:: footnote

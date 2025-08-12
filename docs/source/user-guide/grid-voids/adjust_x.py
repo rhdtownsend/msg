@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 import pymsg
 
-# Load the SpecGrid
+# Create the SpecGrid object
 
 MSG_DIR = os.environ['MSG_DIR']
 GRID_DIR = os.path.join(MSG_DIR, 'data', 'grids')
@@ -19,7 +19,7 @@ specgrid_file_name = os.path.join(GRID_DIR, 'sg-demo.h5')
 
 specgrid = pymsg.SpecGrid(specgrid_file_name)
 
-# Set up atmosphere parametets
+# Set up photospheric parametets
 
 x = {'Teff': 15000., 'log(g)': 2.3}
 
@@ -29,7 +29,7 @@ lam = np.array([3000., 4000., 5000.])
 
 try:
     
-    flux = specgrid.flux(x, lam)
+    flux = specgrid.flux(x, 0., lam)
     
 except LookupError:
 
@@ -41,5 +41,4 @@ except LookupError:
     
     # Attempt again
     
-    flux = specgrid.flux(x,lam)
-    
+    flux = specgrid.flux(x, 0., lam)
