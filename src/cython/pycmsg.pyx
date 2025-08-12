@@ -3,7 +3,7 @@
 # Module  : pycmsg
 # Purpose : Cython wrapper for libcmsg
 #
-# Copyright 2021-2022 Rich Townsend & The MSG Team
+# Copyright 2021-2025 Rich Townsend & The MSG Team
 #
 # This file is part of MSG. MSG is free software: you can redistribute
 # it and/or modify it under the terms of the GNU General Public
