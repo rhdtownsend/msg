@@ -202,7 +202,7 @@ class SpecGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             mu (float): Cosine of angle of emergence relative to
                 element normal.
             z (float): Redshift of element relative to observer's frame.
@@ -210,7 +210,7 @@ class SpecGrid:
                 frame.
             deriv (dict, optional): Flags indicating whether to evaluate
                 derivative with respect to each photospheric parameter;
-                keys must match the `axis_labels` property, values must
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -242,14 +242,14 @@ class SpecGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             k (int): Degree of moment.
             z (float): Redshift of element relative to observer's frame.
             lam (numpy.ndarray): Wavelength abscissa (Å) in observer's
                 frame.
             deriv (dict, optional): Flags indicating whether to evaluate 
                 derivative with respect to each photospheric parameter; 
-                keys must match the `axis_labels` property, values must 
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -280,14 +280,14 @@ class SpecGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             l (int): Harmonic degree of moment.
             z (float): Redshift of element relative to observer's frame.
             lam (numpy.ndarray): Wavelength abscissa in observer's
                 frame (Å).
             deriv (dict, optional): Flags indicating whether to evaluate
                 derivative with respect to each photospheric parameter; 
-                keys must match the `axis_labels` property, values must 
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -298,7 +298,7 @@ class SpecGrid:
 
         Raises:
             KeyError: If x does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If x, l, or any part of the wavelength
                 abscissa falls outside the bounds of the grid.
             LookupError: If x falls in a grid void.
@@ -318,7 +318,7 @@ class SpecGrid:
         of multiple photospheric elements.
 
         Args:
-            x (dict): Photospheric parameters; keys must match `axis_labels`
+            x (dict): Photospheric parameters; keys must match axis_labels
                 property, values must be numpy.ndarrays of equal length.
             mu (np.ndarray): Cosines of angles of emergence relative to
                 element normals; length len(x[]).
@@ -328,7 +328,7 @@ class SpecGrid:
                 frame.
             deriv (dict, optional): Flags indicating whether to evaluate
                 derivative with respect to each photospheric parameter;
-                keys must match the `axis_labels` property, values must
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -339,7 +339,7 @@ class SpecGrid:
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If `x`, `mu`, or any part of the wavelength
                 abscissa falls outside the bounds of the grid; or if the
                 or if mu, dOmega, or the values of x have mismatched length.
@@ -360,13 +360,13 @@ class SpecGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             z (float): Redshift of element relative to observer's frame.
             lam (numpy.ndarray): Wavelength abscissa (Å) in observer's
                 frame.
             deriv (dict, optional): Flags indicating whether to evaluate
                 derivative with respect to each photospheric parameter; 
-                keys must match the `axis_labels` property, values must 
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -377,7 +377,7 @@ class SpecGrid:
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If `x` or any part of the wavelength abscissa 
                 falls outside the bounds of the grid.
             LookupError: If `x` falls in a grid void.
@@ -398,9 +398,9 @@ class SpecGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             dx (dict): Photospheric parameter adjustment direction; keys 
-                must match `axis_labels` property, values must be float.
+                must match axis_labels property, values must be float.
                 The overall scaling is unimportant, but at least one value 
                 must be non-zero.
 
@@ -409,7 +409,7 @@ class SpecGrid:
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If no valid `x` can be found, or if `dx` is invalid;
                         or if x and dx have mismatched length.
         """
@@ -550,12 +550,12 @@ class PhotGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match 
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             mu (float): Cosine of angle of emergence relative to
                 element normal.
             deriv (dict, optional): Flags indicating whether to evaluate 
                 derivative with respect to each photospheric parameter; 
-                keys must match the `axis_labels` property, values must 
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -565,7 +565,7 @@ class PhotGrid:
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If `x` or `mu` falls outside the bounds of the 
                 grid.
             LookupError: If `x` falls in a grid void.
@@ -584,11 +584,11 @@ class PhotGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             k (int): Degree of moment.
             deriv (dict, optional): Flags indicating whether to evaluate 
                 derivative with respect to each photospheric parameter; 
-                keys must match the `axis_labels` property, values must 
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -598,7 +598,7 @@ class PhotGrid:
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If `x` or `k` falls outside the bounds of the 
                 grid.
             LookupError: If `x` falls in a grid void.
@@ -617,11 +617,11 @@ class PhotGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             l (int): Harmonic degree of moment.
             deriv (dict, optional): Flags indicating whether to evaluate 
                 derivative with respect to each photospheric parameter; 
-                keys must match the `axis_labels` property, values must 
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -631,7 +631,7 @@ class PhotGrid:
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If `x` or `l` falls outside the bounds of the 
                 grid.
             LookupError: If `x` falls in a grid void.
@@ -651,14 +651,14 @@ class PhotGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be numpy.ndarrays of
+                axis_labels property, values must be numpy.ndarrays of
                 equal length.
             mu (np.ndarray): Cosines of angles of emergence relative to
                 element normals; length len(x[]).
             dOmega (np.ndarray): Solid angles (sr) of elements; length len(x[]).
             deriv (dict, optional): Flags indicating whether to evaluate
                 derivative with respect to each photospheric parameter;
-                keys must match the `axis_labels` property, values must
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -668,7 +668,7 @@ class PhotGrid:
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If `x` or `mu` fall outside the bounds of the grid;
                 or if mu, dOmega, or the values of x have mismatched length.
             LookupError: If `x` falls in a grid void.
@@ -688,10 +688,10 @@ class PhotGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             deriv (dict, optional): Flags indicating whether to evaluate 
                 derivative with respect to each photospheric parameter; 
-                keys must match the `axis_labels` property, values must 
+                keys must match the axis_labels property, values must
                 be boolean.
             order (int, optional): Interpolation order; valid values are
                 1 or 3.
@@ -701,7 +701,7 @@ class PhotGrid:
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If `x` or `l` falls outside the bounds of the 
                 grid.
             LookupError: If `x` falls in a grid void.
@@ -720,9 +720,9 @@ class PhotGrid:
 
         Args:
             x (dict): Photospheric parameters; keys must match
-                `axis_labels` property, values must be float.
+                axis_labels property, values must be float.
             dx (dict): Photospheric parameter adjustment direction; keys 
-                must match `axis_labels` property, values must be float.
+                must match axis_labels property, values must be float.
                 The overall scaling is unimportant, but at least one value 
                 must be non-zero.
 
@@ -731,7 +731,7 @@ class PhotGrid:
 
         Raises:
             KeyError: If `x` does not define all keys appearing in the
-                `axis_labels` property.
+                axis_labels property.
             ValueError: If no valid `x` can be found, or if `dx` is invalid;
                         or if x and dx have mismatched length.
         """
