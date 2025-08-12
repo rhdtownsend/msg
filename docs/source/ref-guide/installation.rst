@@ -101,6 +101,9 @@ supported:
 :envvar:`DEBUG`
   Enable debugging mode (default ``no``)
 
+:envvar:`SHARED`
+  Enable building of shared libraries (default ``yes``)
+
 :envvar:`FPE`
   Enable floating point exception checks (default ``yes``)
 
