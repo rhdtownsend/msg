@@ -31,7 +31,6 @@ module stat_m
 
    enum, bind(C)
       enumerator :: STAT_OK
-      enumerator :: STAT_INVALID_DIMENSION
       enumerator :: STAT_OUT_OF_BOUNDS_RANGE_LO
       enumerator :: STAT_OUT_OF_BOUNDS_RANGE_HI
       enumerator :: STAT_OUT_OF_BOUNDS_AXIS_LO
@@ -42,6 +41,7 @@ module stat_m
       enumerator :: STAT_OUT_OF_BOUNDS_MU_HI
       enumerator :: STAT_UNAVAILABLE_DATA
       enumerator :: STAT_INVALID_ARGUMENT
+      enumerator :: STAT_INVALID_DIMENSION
       enumerator :: STAT_FILE_NOT_FOUND
       enumerator :: STAT_INVALID_FILE_TYPE
       enumerator :: STAT_INVALID_GROUP_TYPE
@@ -54,7 +54,6 @@ module stat_m
    private
 
    public :: STAT_OK
-   public :: STAT_INVALID_DIMENSION
    public :: STAT_OUT_OF_BOUNDS_RANGE_LO
    public :: STAT_OUT_OF_BOUNDS_RANGE_HI
    public :: STAT_OUT_OF_BOUNDS_AXIS_LO
@@ -65,6 +64,7 @@ module stat_m
    public :: STAT_OUT_OF_BOUNDS_MU_HI
    public :: STAT_UNAVAILABLE_DATA
    public :: STAT_INVALID_ARGUMENT
+   public :: STAT_INVALID_DIMENSION
    public :: STAT_FILE_NOT_FOUND
    public :: STAT_INVALID_FILE_TYPE
    public :: STAT_INVALID_GROUP_TYPE

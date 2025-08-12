@@ -58,6 +58,7 @@ module indexer_m
       procedure, public :: get_n_vert
       procedure, public :: get_n_vert_seq
       procedure, public :: get_n_cell
+      procedure, public :: get_n_cell_seq
       procedure, public :: subset
       procedure, public :: remove_verts
       procedure, public :: find_orphans
@@ -66,7 +67,6 @@ module indexer_m
       generic, public   :: vert_linear => vert_linear_seq_, vert_linear_vec_
       procedure, public :: vert_sequence
       procedure, public :: vert_vector
-      procedure, public :: get_n_cell_seq
       procedure         :: cell_linear_seq_
       procedure         :: cell_linear_vec_
       generic, public   :: cell_linear => cell_linear_seq_, cell_linear_vec_

@@ -457,8 +457,6 @@ def _handle_error(stat):
 
     if stat == STAT_OK:
         return
-    elif stat == STAT_INVALID_DIMENSION:
-        raise ValueError('invalid dimension')
     elif stat == STAT_OUT_OF_BOUNDS_AXIS_LO:
         raise ValueError('out-of-bounds (lo) axis')
     elif stat == STAT_OUT_OF_BOUNDS_AXIS_HI:
@@ -475,6 +473,8 @@ def _handle_error(stat):
         raise LookupError('unavailable data')
     elif stat == STAT_INVALID_ARGUMENT:
         raise ValueError('invalid argument')
+    elif stat == STAT_INVALID_DIMENSION:
+        raise ValueError('invalid dimension')
     elif stat == STAT_FILE_NOT_FOUND:
         raise FileNotFoundError('file not found')
     elif stat == STAT_INVALID_FILE_TYPE:

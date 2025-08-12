@@ -33,7 +33,6 @@ cdef extern from "cmsg.h":
 
     ctypedef enum Stat:
        STAT_OK,
-       STAT_INVALID_DIMENSION,
        STAT_OUT_OF_BOUNDS_RANGE_LO,
        STAT_OUT_OF_BOUNDS_RANGE_HI,
        STAT_OUT_OF_BOUNDS_AXIS_LO,
@@ -44,6 +43,7 @@ cdef extern from "cmsg.h":
        STAT_OUT_OF_BOUNDS_MU_HI,
        STAT_UNAVAILABLE_DATA,
        STAT_INVALID_ARGUMENT,
+       STAT_INVALID_DIMENSION,
        STAT_FILE_NOT_FOUND,
        STAT_INVALID_FILE_TYPE,
        STAT_INVALID_GROUP_TYPE,
