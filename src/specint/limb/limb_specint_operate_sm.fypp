@@ -122,7 +122,7 @@ contains
 
       end do
 
-      self%c = self%c
+      self%c = c
 
       self%lam = lam
 
