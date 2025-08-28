@@ -30,7 +30,7 @@ export PYTHON ?= yes
 
 # Link string for FITS library
 # (leave undefined if not available)
-export FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
+#export FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
 
 ############ DO NOT EDIT BELOW THIS LINE ############
 ### (unless you think you know what you're doing) ###
