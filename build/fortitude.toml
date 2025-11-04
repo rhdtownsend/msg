@@ -23,3 +23,8 @@ line-length = 132
  "C071", # assumed-size arrays
  "C072"  # assumed-size character intent
  ]
+"fits_m.f90" = [
+ "C003", # implicit none without external
+ "C071", # assumed-size arrays
+ "C072"  # assumed-size character intent 
+]

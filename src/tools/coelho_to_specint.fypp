@@ -31,7 +31,7 @@ program coelho_to_specint
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Variables
 
@@ -97,7 +97,7 @@ program coelho_to_specint
       end associate
 
    case('log')
-      
+
       associate (logx_0 => head_values(5)*LOG(10._RD), &
                  dlogx => head_values(6)*LOG(10._RD))
         range = log_range_t(logx_0, dlogx, n_lam)
@@ -126,7 +126,7 @@ program coelho_to_specint
    end do
 
    call hdf5io_labels%final()
-      
+
    call hdf5io%final()
 
    ! Finish

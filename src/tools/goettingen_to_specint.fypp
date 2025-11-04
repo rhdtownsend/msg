@@ -31,7 +31,7 @@ program goettingen_to_specint
 
    ! No implicit typing
 
-   implicit none
+   implicit none (type, external)
 
    ! Variables
 
@@ -68,7 +68,7 @@ program goettingen_to_specint
    if (.NOT. ALLOCATED(specint_file_name)) call print_summary()
 
    ! Read data from the input file
- 
+
    head_labels = ['PHXTEFF ', 'PHXLOGG ', 'PHXM_H  ', 'PHXALPHA']
 
    call read_fits_file(goettingen_file_name, F, head_labels, head_values)
@@ -115,7 +115,7 @@ program goettingen_to_specint
    end do
 
    call hdf5io_labels%final()
-      
+
    call hdf5io%final()
 
    ! Finish
@@ -229,4 +229,3 @@ contains
    end subroutine create_range_hires
 
 end program goettingen_to_specint
-
