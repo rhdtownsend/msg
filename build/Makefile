@@ -27,7 +27,8 @@ endif
 
 ifeq ($(TOOLS),yes)
   BIN_TARGETS += ascii_to_specint synspec_to_specint ferre_to_specint	\
-                 c3k_to_specint rebin_specint make_bb_photgrid     	\
+                 c3k_to_specint newera_to_specint			\
+                 rebin_specint make_bb_photgrid				\
                  specgrid_to_photgrid specint_to_specgrid		\
                  make_passband make_photon_passband			\
                  inspect_grid subset_specgrid subset_photgrid
@@ -151,6 +152,10 @@ goettingen_to_specint_LIBS = libmsg
 coelho_to_specint_SRCS = coelho_to_specint.fypp tools_utils_m.fypp fits_m.fypp
 coelho_to_specint_USES = $(libmsg_SRCS)
 coelho_to_specint_LIBS = libmsg
+
+newera_to_specint_SRCS = newera_to_specint.fypp tools_utils_m.fypp
+newera_to_specint_USES = $(libmsg_SRCS)
+newera_to_specint_LIBS = libmsg
 
 rebin_specint_SRCS = rebin_specint.fypp tools_utils_m.fypp
 rebin_specint_USES = $(libmsg_SRCS)

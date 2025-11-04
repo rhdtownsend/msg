@@ -1,0 +1,253 @@
+! Module   : newera_to_specint
+! Purpose  : create specint files from a NewEra file
+!
+! Copyright 2024 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+program newera_to_specint
+
+   ! Uses
+
+   use forum_m
+   use msg_m
+
+   use tools_utils_m
+
+   use ISO_FORTRAN_ENV
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Parameter defintiions
+
+   integer, parameter :: CHAR_LEN = 256
+
+   ! Variables
+
+   character(:), allocatable :: newera_file_name
+   character(:), allocatable :: specint_file_prefix
+   character(:), allocatable :: file_type
+
+   type(arg_parser_t)        :: arg_parser
+
+   ! Parse command-line arguments
+
+   file_type = 'LowRes'
+
+   arg_parser = arg_parser_t('ascii_to_specint NEWERA_FILE SPECINT_PREFIX', auto_help=.TRUE.)
+
+   call arg_parser%define_option('file-type', OPT_REQUIRED_ARG, &
+      usage='--file-type=TYPE', description='type of input file ( LowRes | HiRes )')
+
+   call arg_parser%parse(arg_proc, opt_proc)
+
+   if (.NOT. ALLOCATED(newera_file_name)) call print_summary()
+   if (.NOT. ALLOCATED(specint_file_prefix)) call print_summary()
+
+   ! Process the input file
+
+   select case(file_type)
+   case('LowRes')
+      call process_lowres_file(newera_file_name, specint_file_prefix)
+   case('HiRes')
+      @:STOP('--file-type=HiRes is not yet implemented')
+   case default
+      @:STOP('invalid --file-type')
+   end select
+
+   ! Finish
+
+contains
+
+   subroutine arg_proc(a, value)
+
+      integer, intent(in)      :: a
+      character(*), intent(in) :: value
+
+      select case(a)
+      case(1)
+         newera_file_name = value
+      case(2)
+         specint_file_prefix = value
+      case default
+         call print_summary()
+      end select
+
+   end subroutine arg_proc
+
+   !****
+
+   subroutine opt_proc(name, value)
+
+      character(*), intent(in) :: name
+      character(*), intent(in) :: value
+
+      select case(name)
+      case('file-type')
+         file_type = value
+      case default
+         @:ABORT('invalid option name')
+      end select
+
+   end subroutine opt_proc
+
+   !****
+
+   subroutine print_summary()
+
+      call arg_parser%print_summary()
+      @:STOP()
+
+   end subroutine print_summary
+
+   !****
+
+   subroutine process_lowres_file(newera_file_name, specint_file_prefix)
+
+      character(*), intent(in) :: newera_file_name
+      character(*), intent(in) :: specint_file_prefix
+
+      type(limb_t)                  :: limb
+      integer                       :: unit
+      integer                       :: l
+      character(1)                  :: header_1  ! 'star'
+      character(1)                  :: header_2  ! 'BPRP'
+      character(1)                  :: header_3  ! 'PHH'
+      character(1)                  :: header_4  ! date
+      character(1)                  :: header_5  !
+      character(1)                  :: header_6  ! 'PHOENIX1D'
+      character(1)                  :: header_7  ! '0'
+      character(1)                  :: header_16 !
+      real(RD)                      :: res
+      integer                       :: n_lam
+      real(RD)                      :: lam_min
+      real(RD)                      :: lam_max
+      real(RD)                      :: dlam
+      real(RD)                      :: Teff
+      real(RD)                      :: logg
+      real(RD)                      :: vturb
+      real(RD)                      :: Y
+      real(RD)                      :: Z
+      real(RD)                      :: Fe_H
+      real(RD)                      :: alpha_Fe
+      real(RD)                      :: abunds(7)
+      real(RD)                      :: M
+      real(RD), allocatable         :: F(:)
+      real(RD), allocatable         :: I(:,:)
+      class(range_t), allocatable   :: range
+      class(specint_t), allocatable :: specint
+      character(CHAR_LEN)           :: specint_file_name
+      type(hdf5io_t)                :: hdf5io
+      type(hdf5io_t)                :: hdf5io_labels
+
+      ! Create the limb function
+
+      limb = limb_t('CONST')
+
+      ! Open the input file
+
+      open(NEWUNIT=unit, FILE=newera_file_name, STATUS='OLD')
+
+      ! Read and process header/data line pairs
+
+      l = 0
+
+      process_loop: do
+
+         ! Read the header, converting nm -> A
+
+         read(unit, *, END=200) header_1, header_2, header_3, header_4, header_5, header_6, header_7, &
+            res, n_lam, lam_min, lam_max, dlam, Teff, logg, vturb, header_16, Y, Z, Fe_H, alpha_Fe, &
+            abunds, M
+
+         res = res*10._RD
+         lam_min = lam_min*10._RD
+         lam_max = lam_max*10._RD
+         dlam = dlam*10._RD
+
+         Fe_H = Fe_H - 7.5_RD
+
+         ! Read the flux data, converting to J/s/m^2/nm -> erg/s/cm^2/A
+
+         if (.NOT. ALLOCATED(F)) then
+            allocate(F(n_lam))
+         end if
+
+         if (SIZE(F) /= n_lam) then
+            deallocate(F)
+            allocate(F(n_lam))
+         end if
+
+         read(unit, *) F
+
+         F = F*1e2_RD
+
+         ! Set up the bin-averaged intensity
+
+         if (.NOT. ALLOCATED(I)) then
+            allocate(I(1,n_lam-1))
+         endif
+
+         if (SIZE(I, 2) /= n_lam-1) then
+            deallocate(I)
+            allocate(I(1,n_lam-1))
+         end if
+
+         I(1,:) = 0.5_RD*(F(:n_lam-1) + F(2:))/PI
+
+         ! Create the specint_t
+
+         range = lin_range_t(lam_min, dlam, n_lam)
+
+         specint = limb_specint_t(I, [1._RD], range, limb, precise=.FALSE.)
+
+         ! Write it
+
+         l = l + 1
+
+         write(specint_file_name, 100) specint_file_prefix, l, '.h5'
+100      format(A,I8.8,A)
+
+         hdf5io = hdf5io_t(specint_file_name, CREATE_FILE)
+
+         call specint%write(hdf5io)
+
+         hdf5io_labels = hdf5io_t(hdf5io, 'labels')
+
+         call hdf5io_labels%write_attr('Teff', Teff)
+         call hdf5io_labels%write_attr('log(g)', logg)
+         call hdf5io_labels%write_attr('vturb', vturb)
+         call hdf5io_labels%write_attr('[Fe/H]', Fe_H)
+         call hdf5io_labels%write_attr('[alpha/Fe]', alpha_Fe)
+
+         call hdf5io_labels%final()
+
+         call hdf5io%final()
+
+      end do process_loop
+
+200   continue
+
+      close(unit)
+
+      ! Finish
+
+      return
+
+   end subroutine process_lowres_file
+
+end program newera_to_specint
