@@ -49,6 +49,7 @@ program specint_to_specgrid
    character(:), allocatable :: manifest_file_name
    character(:), allocatable :: specgrid_file_name
    logical, allocatable      :: remove_orphans
+   logical, allocatable      :: dry_run
    character(:), allocatable :: grid_label
 
    type(arg_parser_t) :: arg_parser
@@ -58,11 +59,14 @@ program specint_to_specgrid
    ! Parse command-line arguments
 
    remove_orphans = .FALSE.
+   dry_run = .FALSE.
 
    arg_parser = arg_parser_t('specint_to_specgrid MANIFEST_FILE SPECGRID_FILE', auto_help=.TRUE.)
 
    call arg_parser%define_option('remove-orphans', OPT_NO_ARG, 'r', &
       description='remove orphaned vertices')
+   call arg_parser%define_option('dry-run', OPT_NO_ARG, 'd', &
+      description='perform a dry-run')
    call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, short_name='l', &
       usage='--grid-label=NAME', description='grid label')
 
@@ -77,17 +81,21 @@ program specint_to_specgrid
 
    ! Write the output file
 
-   call specgrid%set_cache_limit(0)
+   if (.NOT. dry_run) then
 
-   hdf5io = hdf5io_t(specgrid_file_name, CREATE_FILE)
+      call specgrid%set_cache_limit(0)
 
-   call specgrid%write(hdf5io)
+      hdf5io = hdf5io_t(specgrid_file_name, CREATE_FILE)
 
-   if (ALLOCATED(grid_label)) then
-      call hdf5io%write_attr('label', grid_label)
+      call specgrid%write(hdf5io)
+
+      if (ALLOCATED(grid_label)) then
+         call hdf5io%write_attr('label', grid_label)
+      end if
+
+      call hdf5io%final()
+
    end if
-
-   call hdf5io%final()
 
    ! Finish
 
@@ -123,6 +131,8 @@ contains
       select case(name)
       case('remove-orphans')
          remove_orphans = .TRUE.
+      case('dry-run')
+         dry_run = .TRUE.
       case('grid-label')
          grid_label = value
       case('help')
