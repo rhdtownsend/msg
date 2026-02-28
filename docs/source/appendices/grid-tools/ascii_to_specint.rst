@@ -40,6 +40,10 @@ Options
    Flux units of input file. Valid choices are ``erg/cm^2/s/A``
    (:math:`\erg\,\cm^{-2}\,\second^{-1}\,\angstrom^{-1}`; default).
 
+.. option:: --ignore-prefix=PREFIX
+
+   Ignore lines prefixed by PREFIX (default ``#``)
+
 .. option:: -l, --label=NAME:VALUE
 
    Photospheric parameter name and value. Can be specified multiple

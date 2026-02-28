@@ -38,6 +38,7 @@ program ascii_to_specint
    character(:), allocatable :: specint_file_name
    character(:), allocatable :: lam_units
    character(:), allocatable :: flux_units
+   character(:), allocatable :: ignore_prefix
    character(:), allocatable :: labels(:)
 
    type(arg_parser_t)        :: arg_parser
@@ -57,6 +58,7 @@ program ascii_to_specint
 
    lam_units = 'A'
    flux_units = 'erg/cm^2/s/A'
+   ignore_prefix = '#'
 
    arg_parser = arg_parser_t('ascii_to_specint ASCII_FILE SPECINT_FILE', auto_help=.TRUE.)
 
@@ -64,6 +66,8 @@ program ascii_to_specint
       usage='--lambda-units=UNITS', description='wavelength units of input file ( A | micron)')
    call arg_parser%define_option('flux-units', OPT_REQUIRED_ARG, &
       usage='--flux-units=UNITS', description='flux units of input file ( erg/cm^2/s/A | W/m^2/m )')
+   call arg_parser%define_option('ignore-prefix', OPT_REQUIRED_ARG, &
+      usage='--ignore-prefix=PREFIX', description='ignore lines prefixed by PREFIX')
    call arg_parser%define_option('label', OPT_REQUIRED_ARG, short_name='l', &
       usage='--label=NAME:VALUE', description='photospheric parameter name/value')
 
@@ -74,7 +78,7 @@ program ascii_to_specint
 
    ! Read data from the input file
 
-   call read_ascii_file(ascii_file_name, lam_units, flux_units, lam, F)
+   call read_ascii_file(ascii_file_name, lam_units, flux_units, ignore_prefix, lam, F)
 
    ! Set up the bin-averaged intensity
 
@@ -147,6 +151,8 @@ contains
          lam_units = value
       case('flux-units')
          flux_units = value
+      case('ignore-prefix')
+         ignore_prefix = value
       case('label')
          call append_string(labels, value)
       case('help')
@@ -168,11 +174,12 @@ contains
 
    !****
 
-   subroutine read_ascii_file(file_name, lam_units, flux_units, lam, F)
+   subroutine read_ascii_file(file_name, lam_units, flux_units, ignore_prefix, lam, F)
 
       character(*), intent(in)           :: file_name
       character(*), intent(in)           :: lam_units
       character(*), intent(in)           :: flux_units
+      character(*), intent(in)           :: ignore_prefix
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: F(:)
 
@@ -201,7 +208,7 @@ contains
          read(unit, 100, END=200) line
 100      format(A)
 
-         if (line == '' .OR. line(1:1) == '#') cycle read_loop
+         if (line == '' .OR. line(1:LEN(ignore_prefix)) == ignore_prefix) cycle read_loop
 
          ! If necessary, expand arrays
 
