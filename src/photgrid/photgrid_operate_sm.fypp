@@ -87,4 +87,19 @@ contains
       return
 
    end procedure remove_orphans
+
+   !****
+
+   module procedure compress_axes
+
+      ! Compress the photgrid axes
+
+      call self%vgrid%compress_axes()
+
+      ! Finish
+
+      return
+
+   end procedure compress_axes
+
 end submodule photgrid_operate_sm

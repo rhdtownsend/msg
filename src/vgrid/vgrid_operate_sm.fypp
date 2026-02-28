@@ -130,4 +130,61 @@ contains
 
    end procedure find_orphans
 
+   !****
+
+   module procedure compress_axes
+
+      integer  :: n_vert_seq
+      real(RD) :: x_min(self%rank)
+      real(RD) :: x_max(self%rank)
+      integer  :: v_seq
+      integer  :: v_lin
+      integer  :: v_vec(self%rank)
+      integer  :: r
+      real(RD) :: x
+      logical, allocatable :: vert_mask(:)
+
+      ! Compress the vgrid axes by restricting the coordinate range to
+      ! that spanned by sequential vertices. This potentially changes
+      ! the rank and shape, but no vertices are removed
+      !
+      ! If dim_mask is present, it records which dimensions were
+      ! retained
+
+      ! Determine the coordinate ranges
+
+      call self%indexer%get_n_vert_seq(n_vert_seq)
+
+      x_min = HUGE(0._RD)
+      x_max = -HUGE(0._RD)
+
+      do v_seq = 1, n_vert_seq
+
+         v_lin = self%indexer%vert_linear(v_seq)
+         v_vec = self%indexer%vert_vector(v_lin)
+
+         do r = 1, self%rank
+            call self%axes(r)%fetch(v_vec(r), x)
+            x_min(r) = MIN(x, x_min(r))
+            x_max(r) = MAX(x, x_max(r))
+         end do
+
+      end do
+
+      ! Update the vgrid via subsetting
+
+      allocate(vert_mask(n_vert_seq))
+
+      call self%subset(x_min, x_max, vert_mask, dim_mask)
+
+      ! Check that no vertices were removed
+
+      @:ASSERT(ALL(vert_mask), 'vertices were removed during compress_axes')
+
+      ! Finish
+
+      return
+
+   end procedure compress_axes
+
 end submodule vgrid_operate_sm

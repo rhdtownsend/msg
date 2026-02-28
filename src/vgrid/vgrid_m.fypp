@@ -54,6 +54,7 @@ module vgrid_m
       procedure, public :: subset
       procedure, public :: remove_verts
       procedure, public :: find_orphans
+      procedure, public :: compress_axes
       procedure         :: interp_0_
       procedure         :: interp_1_
       generic, public   :: interp => interp_0_, interp_1_
@@ -161,6 +162,12 @@ module vgrid_m
          class(vgrid_t), intent(in) :: self
          logical, intent(out)       :: orphan_mask(:)
       end subroutine find_orphans
+
+      module subroutine compress_axes(self, dim_mask)
+         implicit none (type, external)
+         class(vgrid_t), intent(inout)  :: self
+         logical, intent(out), optional :: dim_mask(:)
+      end subroutine compress_axes
 
    end interface
 

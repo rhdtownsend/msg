@@ -49,6 +49,7 @@ program specint_to_specgrid
    character(:), allocatable :: manifest_file_name
    character(:), allocatable :: specgrid_file_name
    logical, allocatable      :: remove_orphans
+   logical, allocatable      :: compress_axes
    logical, allocatable      :: dry_run
    character(:), allocatable :: grid_label
 
@@ -59,12 +60,15 @@ program specint_to_specgrid
    ! Parse command-line arguments
 
    remove_orphans = .FALSE.
+   compress_axes = .FALSE.
    dry_run = .FALSE.
 
    arg_parser = arg_parser_t('specint_to_specgrid MANIFEST_FILE SPECGRID_FILE', auto_help=.TRUE.)
 
    call arg_parser%define_option('remove-orphans', OPT_NO_ARG, 'r', &
       description='remove orphaned vertices')
+   call arg_parser%define_option('compress-axes', OPT_NO_ARG, 'c', &
+      description='compress axes ranges')
    call arg_parser%define_option('dry-run', OPT_NO_ARG, 'd', &
       description='perform a dry-run')
    call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, short_name='l', &
@@ -131,6 +135,8 @@ contains
       select case(name)
       case('remove-orphans')
          remove_orphans = .TRUE.
+      case('compress-axes')
+         compress_axes = .TRUE.
       case('dry-run')
          dry_run = .TRUE.
       case('grid-label')
@@ -354,6 +360,10 @@ contains
       ! If necessary, remove orphans
 
       if (remove_orphans) call specgrid%remove_orphans()
+
+      ! If necessary, compress axes
+
+      if (compress_axes) call specgrid%compress_axes()
 
       ! Finish
 

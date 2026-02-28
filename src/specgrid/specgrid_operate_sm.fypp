@@ -90,6 +90,20 @@ contains
 
    !****
 
+   module procedure compress_axes
+
+      ! Compress the specgrid axes
+
+      call self%vgrid%compress_axes()
+
+      ! Finish
+
+      return
+
+   end procedure compress_axes
+
+   !****
+
    module procedure filter
 
       ! Apply the passband to create a photgrid
