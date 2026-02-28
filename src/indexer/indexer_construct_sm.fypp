@@ -72,7 +72,7 @@ contains
       ! vert_lin_seq is directly copied from v_lin_seq. Currently,
       ! the code works fine if the entries in v_lin_seq are not
       ! monotonic increasing. However, this is a bit of a code
-      ! smell; shouldn't sequential indices satisft
+      ! smell; shouldn't sequential indices satisfy
       ! vert_lin_seq(i+1) > vert_lin_seq(i)?
 
       n_vert = PRODUCT(shape)
