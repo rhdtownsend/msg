@@ -47,7 +47,7 @@ Options
    Limb-darkening law in output file (see :ref:`here
    <limb-darkening-laws>` for a list of valid choices; default
    ``CONST``). Required for ``intensity`` file types.
-   
+
 .. option:: --mu-min=MIN
 
    Minimum :math:`\mu` value in SYNSPEC's angular grid (as specified
@@ -64,7 +64,3 @@ Options
 
    Photospheric parameter name and value. Can be specified multiple
    times, to define multiple parameters.
-
-
-
-   

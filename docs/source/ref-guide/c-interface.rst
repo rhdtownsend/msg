@@ -18,7 +18,7 @@ API Specification
    c-interface/enums.rst
    c-interface/funcs.rst
 
-   
+
 Compiling/Linking
 =================
 

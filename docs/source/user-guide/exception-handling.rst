@@ -18,7 +18,7 @@ When an exception occurs, how it's signaled depends on the language interface be
 
 Python
 ======
-  
+
 Using the Python interface, exceptions are signaled using the
 language's built-in exception handling capabilities. The list of
 exceptions that can be thrown by each class method is provided in the

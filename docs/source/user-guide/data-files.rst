@@ -50,7 +50,7 @@ MSG ships with a limited set of data files in the
 * :file:`passbands/pb-Generic-Johnson.*-Vega.h5` are
   :f-schema:`passband` files for the U, B and V filters of the Johnson
   photometric system.
-  
+
 Additional files can be downloaded separately from the `grid files
 <grid-files_>`__ and `passband files <passband-files_>`__ web pages.
 
@@ -85,7 +85,7 @@ To build a :f-schema:`photgrid` file from the data in a
 tool:
 
 .. code-block:: console
-	    
+
    $ $MSG_DIR/bin/specgrid_to_photgrid specgrid.h5 passband.h5 photgrid.h5
 
 ...where :file:`passband.h5` is the name of the :f-schema:`passband`

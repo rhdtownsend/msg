@@ -41,7 +41,7 @@ numfig = True
 extensions = [
     'sphinx_rtd_theme',
     'sphinx.ext.mathjax',
-    'sphinx.ext.extlinks', 
+    'sphinx.ext.extlinks',
     'sphinx.ext.intersphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
@@ -177,13 +177,13 @@ for key, value in macros.items():
         mathjax_macros[key] = value
         latex_preamble += f'\\newcommand{{\\{key}}}{{{value}}}\n'
 
-#mathjax_config = {                  
-#    'TeX': { 
+#mathjax_config = {
+#    'TeX': {
 #        'Macros': mathjax_macros
 #    }
 #}
-mathjax3_config = {                  
-    'tex': { 
+mathjax3_config = {
+    'tex': {
         'macros': mathjax_macros
     }
 }

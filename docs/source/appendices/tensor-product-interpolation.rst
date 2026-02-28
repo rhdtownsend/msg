@@ -78,7 +78,7 @@ functions are
 :math:`C^{1}` continuous, and reproduces :math:`f(x)` *and* its first
 derivative exactly at the grid points.
 
-=======================      
+=======================
 Bivariate Interpolation
 =======================
 
@@ -122,7 +122,7 @@ where the coefficients :math:`\mathcal{L}^{p,q}` can be expressed as the matrix
    f_{i,j} & f_{i,j+1} \\
    f_{i+1,j} & f_{i+1,j+1}
    \end{bmatrix}.
-   
+
 A corresponding piecewise-bicubic interpolating scheme can be written
 in the form
 
@@ -141,7 +141,7 @@ where the coefficients :math:`\mathcal{C}^{h}` can be expressed as the matrix
      h_{x} \partial_{x} f_{i,j} & h_{x} \partial_{x} f_{i,j+1} & h_{x} h_{y} \partial_{xy} f_{i,j} & h_{x} h_{y} \partial_{xy} f_{i,j+1} \\
      h_{x} \partial_{x} f_{i+1,j} & h_{x} \partial_{x} f_{i+1,j+1} & h_{x} h_{y} \partial_{xy} f_{i+1,j} & h_{x} h_{y} \partial_{xy} f_{i+1,j+1}
    \end{bmatrix}.
-     
+
 Constructing this matrix requires 16 values: the function at the four
 corners of the subinterval, the first derivatives with respect to
 :math:`x` and with respect to :math:`y` at the corners, and the cross

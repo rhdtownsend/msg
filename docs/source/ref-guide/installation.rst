@@ -55,7 +55,7 @@ Finally, compile MSG using the :command:`make` utility:
 .. code-block:: console
 
    $ make -j -C $MSG_DIR
-   
+
 (the ``-j`` flags tells :command:`make` to use multiple cores,
 speeding up the build).  If things go awry, consult the
 :ref:`troubleshooting` chapter.
@@ -141,7 +141,7 @@ features in the ``main`` branch can change without warning.
 .. rubric:: footnote
 
 .. [#realpath] The :command:`realpath` command is included in the GNU
-               `CoreUtils <https://www.gnu.org/software/coreutils/>`__
-               package. Mac OS users can install CoreUtils using
-               `MacPorts <https://www.macports.org/>`__ or `Homebrew
-               <https://brew.sh/>`__.
+       `CoreUtils <https://www.gnu.org/software/coreutils/>`__
+       package. Mac OS users can install CoreUtils using
+       `MacPorts <https://www.macports.org/>`__ or `Homebrew
+       <https://brew.sh/>`__.

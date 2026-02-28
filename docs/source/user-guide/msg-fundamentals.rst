@@ -54,7 +54,7 @@ specified wavelength and time intervals:
    :label: eq:diff-E
 
    \engy \equiv
-   \int_{\Omega} \diff{\engy} = 
+   \int_{\Omega} \diff{\engy} =
    \flux(\lambda; \vx) \,
    \diff{t} \,
    \diff{\lambda} \,
@@ -179,7 +179,7 @@ and the Legendre polynomial moments (`P-moments`) introduced in
 
    \pmom(\lambda; \vx) = \int_{0}^{1} \intsy(\lambda; \mu; \vx) \, \mu \, P_{\ell}(\mu) \,\diff{\mu}.
 
-   
+
 .. _limb-darkening-laws:
 
 MSG supports the following limb-darkening laws:
@@ -210,7 +210,7 @@ where these tabulations include flux but not specific intensity data,
 the `CONST` law is used; the angle-independent specific intensity is
 determined so that it produces the correct flux when evaluated using
 equation :math:numref:`eq:elem-flux-axi`.
-   
+
 Photospheric Parameter Dependence
 ---------------------------------
 
@@ -257,7 +257,7 @@ as 'observed'), where the `irradiance` is introduced as
 
 .. math::
    :label: eq:irrad
-   
+
    \irrad(\lambda) \equiv \frac{1}{d^{2}}
    \int_{\text{disk}} \intsy(\lambda; \vdhat; \vx) \, \vdhat \cdot \vnhat \, \diff{\area}.
 
@@ -332,7 +332,7 @@ irradiance then follows from equation :math:numref:`eq:irrad` as
 
    \mirrad = \frac{1}{d^{2}}
    \int_{\text{disk}} \mintsy(\vdhat; \vx) \, \vdhat \cdot \vnhat \, \diff{\area},
-   
+
 and the apparent magnitude of the star in the adopted photometric system is
 
 .. math::
@@ -344,8 +344,8 @@ where :math:`\fluxz` is the zero-point flux of the system.
 .. rubric:: Footnotes
 
 .. [#distant] The analysis here assumes that the distance to the
-               center of the star is very large compared to its
-               physical size, such that all parts of the photosphere
-               can be treated as if they were at the same distance
-               :math:`d` from the observer. This also allows the use
-               of the small-angle approximation.
+       center of the star is very large compared to its
+       physical size, such that all parts of the photosphere
+       can be treated as if they were at the same distance
+       :math:`d` from the observer. This also allows the use
+       of the small-angle approximation.

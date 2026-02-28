@@ -14,5 +14,3 @@ All MSG data files adhere to the following conventions:
 * Logical (boolean) values are written with HDF5 type `H5T_STD_I32LE`, with
   1 corresponding to true, and 0 corresponding to false.
 * Character values are written with HDF5 type `H5T_NATIVE_CHARACTER`.
-
-  

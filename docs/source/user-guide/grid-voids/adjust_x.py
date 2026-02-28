@@ -28,17 +28,17 @@ x = {'Teff': 15000., 'log(g)': 2.3}
 lam = np.array([3000., 4000., 5000.])
 
 try:
-    
+
     flux = specgrid.flux(x, 0., lam)
-    
+
 except LookupError:
 
     # Adjust parameters
-    
+
     dx = {'Teff': 0., 'log(g)': 1.0}
-    
+
     x = specgrid.adjust_x(x, dx)
-    
+
     # Attempt again
-    
+
     flux = specgrid.flux(x, 0., lam)

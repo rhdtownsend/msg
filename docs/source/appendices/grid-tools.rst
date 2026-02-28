@@ -31,7 +31,7 @@ If you would like to convert spectra from a format that isn't covered
 by these tools, please :git:`open an issue <rhdtownsend/msg/issues>`
 describing the format and/or pointing to relevant literature.
 
-   
+
 Creating Grids
 --------------
 
@@ -44,7 +44,7 @@ The following tools create :f-schema:`specgrid` and
    grid-tools/specint_to_specgrid.rst
    grid-tools/specgrid_to_photgrid.rst
    grid-tools/make_bb_photgrid.rst
-   
+
 
 Managing Grids
 --------------
@@ -70,4 +70,3 @@ The following tools create :f-schema:`passband` files:
 
    grid-tools/make_passband.rst
    grid-tools/make_photon_passband.rst
-

@@ -21,7 +21,7 @@ API Specification
    fortran-interface/params.rst
    fortran-interface/procs.rst
 
-   
+
 Compiling/Linking
 =================
 

@@ -25,7 +25,7 @@ the grid. The axes and the topology of the grid are automatically
 determined by the labels attached to each :f-schema:`specint` file. If
 two files have identical labels, then the one appearing first in the
 manifest file is used.
-	  
+
 Options
 -------
 
