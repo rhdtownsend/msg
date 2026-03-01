@@ -35,7 +35,8 @@ Compiling
 
 The next step is to compile the demo program. Make sure the
 :envvar:`MSG_DIR` environment variable is set, as described in the
-:ref:`quick-start` chapter. Then, enter the following on the command line:
+:ref:`quick-start` chapter. Then, run :command:`gcc` to compile the
+program:
 
 .. code-block:: console
 

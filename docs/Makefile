@@ -14,7 +14,7 @@ help:
 
 # Linter
 linter:
-	sphinx-lint -v
+	sphinx-lint -v -i pygyre -i sphinxfortran
 
 .PHONY: help Makefile linter
 
