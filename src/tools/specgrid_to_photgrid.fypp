@@ -37,7 +37,6 @@ program specgrid_to_photgrid
    character(:), allocatable :: specgrid_file_name
    character(:), allocatable :: passband_file_name
    character(:), allocatable :: photgrid_file_name
-   logical, allocatable      :: remove_orphans
    character(:), allocatable :: grid_label
 
    type(arg_parser_t) :: arg_parser
@@ -48,12 +47,8 @@ program specgrid_to_photgrid
 
    ! Parse command-line arguments
 
-   remove_orphans = .FALSE.
-
    arg_parser = arg_parser_t('specgrid_to_photgrid SPECGRID_FILE PASSBAND_FILE PHOTGRID_FILE', auto_help=.TRUE.)
 
-   call arg_parser%define_option('remove-orphans', OPT_NO_ARG, 'r', &
-      description='remove orphaned vertices')
    call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, short_name='l', &
       usage='--grid-label=NAME', description='grid label')
 
@@ -85,10 +80,6 @@ program specgrid_to_photgrid
    ! Create the photgrid
 
    call specgrid%filter(passband, photgrid)
-
-   ! If necessary, remove orphans
-
-   if (remove_orphans) call specgrid%remove_orphans()
 
    ! Write the output photgrid
 
@@ -132,8 +123,6 @@ contains
       character(*), intent(in) :: value
 
       select case(name)
-      case('remove-orphans')
-         remove_orphans = .TRUE.
       case('grid-label')
          grid_label = value
       case('help')

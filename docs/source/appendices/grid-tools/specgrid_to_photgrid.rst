@@ -26,11 +26,6 @@ Options
 
    Print a summary of options.
 
-.. option:: -r, --remove-orphans
-
-   Remove orphaned vertices from the grid. This can reduce the output
-   file size.
-
 .. option:: -l --grid-label=NAME
 
    Set the grid label.
