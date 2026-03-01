@@ -1,0 +1,13 @@
+prefix=${pcfiledir}/../..
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: MSG (Fortran)
+Description: Multidimensional Spectral Grids (Fortran interface)
+URL: https://github.com/rhdtownsend/msg
+Version: 2.0.2+dev
+Requires: msg = 2.0.2+dev
+Requires.private: forum
+Cflags: -I${includedir}
+Libs: -Wl,-rpath,${libdir} -L${libdir} -lfmsg
+

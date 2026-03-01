@@ -5,7 +5,7 @@
 # Checks
 #########
 
-MINIMUM_VERSION := 21.4.1
+MINIMUM_VERSION := 26.2.2
 
 ifneq ($(MAKECMDGOALS),clean)
 
@@ -76,6 +76,7 @@ ALL_DEPS := $(addprefix $(DEPEND_DIR)/,$(BIN_TARGETS:%=%.dep) $(LIB_TARGETS:%=%.
 
 install : $(addprefix $(BIN_DIR)/,$(BIN_FILES)) \
           $(addprefix $(LIB_DIR)/,$(LIB_FILES)) \
+	  $(addprefix $(PKG_DIR)/,$(PKG_FILES)) \
           $(addprefix $(LIB_DIR)/,$(PYC_FILES)) \
           $(addprefix $(INC_DIR)/,$(INC_FILES))
 	@:
@@ -84,18 +85,10 @@ build : $(BIN_FILES) $(LIB_FILES) $(PYC_FILES)
 	@:
 
 clean :
-	@rm -rf $(BIN_FILES) $(STATIC_LIB_FILES) $(SHARED_LIB_FILES) $(PYC_FILES) \
+	@rm -rf $(BIN_FILES) $(LIB_FILES) $(PKG_FILES) $(PYC_FILES) \
                 $(INC_FILES) $(DEPEND_DIR) *.f90 *.mod *.smod *.c *.o
 
-$(BIN_DIR)/% : %
-	@echo CP $* $@
-	@cp $< $@
-
-$(LIB_DIR)/% : %
-	@echo CP $* $@
-	@cp $< $@
-
-$(INC_DIR)/% : %
+$(BIN_DIR)/% $(LIB_DIR)/% $(PKG_DIR)/% $(INC_DIR)/%: %
 	@echo CP $* $@
 	@cp $< $@
 
@@ -111,6 +104,7 @@ $(DEPEND_DIR) :
 ########
 
 vpath %.fypp $(SRC_DIRS)
+vpath %.pc $(SRC_DIR)/pkgconfig
 vpath %.inc $(SRC_DIRS)
 vpath %.h $(SRC_DIRS)
 vpath %.pyx $(SRC_DIRS)
@@ -240,17 +234,20 @@ endif
 AR = ar
 
 ifeq ($(shell uname -s),Darwin)
-   SHARED_LIB_LDFLAGS = -shared -install_name $(LIB_DIR)/$@
-   BIN_LDFLAGS =
-   PYC_LDFLAGS = $(SHARED_LIB_LDFLAGS) -undefined dynamic_lookup
-   ARFLAGS = -cr
+   SHARED_LIB_LDFLAGS +=  -Wl,-dead_strip_dylibs -shared -install_name $(LIB_DIR)/$@
+   PYC_LDFLAGS += $(SHARED_LIB_LDFLAGS) -undefined dynamic_lookup
+   ARFLAGS := -cr
 else			   
-   SHARED_LIB_LDFLAGS = -shared -Wl,-rpath -Wl,$(LIB_DIR)
+   SHARED_LIB_LDFLAGS += -Wl,--as-needed -shared -Wl,-rpath -Wl,$(LIB_DIR)
    ifeq ($(SHARED),yes)
-      BIN_LDFLAGS = -Wl,-rpath -Wl,$(LIB_DIR)
+      BIN_LDFLAGS += -Wl,-rpath -Wl,$(LIB_DIR)
    endif
    PYC_LDFLAGS = $(SHARED_LIB_LDFLAGS)
-   ARFLAGS = cr
+   ARFLAGS := cr
+endif
+
+ifeq ($(OMP),yes)
+   LDFLAGS += -fopenmp
 endif
 
 ifeq ($(shell uname -s),Linux)
@@ -261,7 +258,7 @@ endif
 
 $(BIN_FILES) :
 	@echo LD $@
-	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(BIN_LDFLAGS)
+	@$(FC) -o $@ $^ $(LDFLAGS) $(BIN_LDFLAGS)
 
 $(STATIC_LIB_FILES) :
 	@echo AR-LIB $@
@@ -269,11 +266,11 @@ $(STATIC_LIB_FILES) :
 
 $(SHARED_LIB_FILES) :
 	@echo LD-LIB $@
-	@$(FC) $(FFLAGS) -o $@ $^ $(LDFLAGS) $(SHARED_LIB_LDFLAGS)
+	@$(FC) -o $@ $^ $(LDFLAGS) $(SHARED_LIB_LDFLAGS)
 
 $(PYC_FILES) :
 	@echo LD_PYC $@
-	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(PYC_LDFLAGS)
+	@$(CC) -o $@ $^ $(LDFLAGS) $(PYC_LDFLAGS)
 
 #######################
 # Secondary Expansions

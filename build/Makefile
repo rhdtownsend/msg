@@ -10,6 +10,7 @@ all:
 
 LIB_TARGETS = libmsg libfmsg libcmsg
 
+PKG_FILES = msg.pc fmsg.pc cmsg.pc
 INC_FILES = msg_m.mod fmsg_m.mod cmsg_m.mod cmsg.h
 
 ifeq ($(PYTHON),yes)
@@ -273,11 +274,22 @@ time_specgrid_LIBS = libmsg libfmsg
 
 # Build flags
 
-FFLAGS = -I$(FORUM_INC_DIR)
+PKGS = lapack lapack95 hdf5_fortran
 
-FPPFLAGS = -I$(FORUM_INC_DIR)
+PKGCONF_FLAGS =
 
-LDFLAGS = `lapack_link` `hdf5_link` `lapack95_link` -L$(FORUM_LIB_DIR) -lforum $(FITS_LDFLAGS)
+ifeq ($(EXTERNAL_FORUM),yes)
+   PKGS += $(EXTERNAL_FORUM_PKG)
+else
+   PKGS += forum
+   PKGCONF_FLAGS += --with-path=$(PKG_DIR)
+endif
+
+PKGCONF_FLAGS += --define-variable=math_slot=default
+
+FFLAGS := `pkgconf $(PKGCONF_FLAGS) --cflags $(PKGS)`
+FPPFLAGS := `pkgconf $(PKGCONF_FLAGS) --cflags-only-I $(PKGS)`
+LDFLAGS := `pkgconf $(PKGCONF_FLAGS) --libs $(PKGS)` $(FITS_LDFLAGS)
 
 # Include standard rules
 

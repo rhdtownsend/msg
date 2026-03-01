@@ -37,16 +37,15 @@ Compiling
 
 The next step is to compile the demo program. Make sure the
 :envvar:`MSG_DIR` environment variable is set, as described in the
-:ref:`quick-start` chapter. Then, enter the following on the command line:
+:ref:`quick-start` chapter. Then, run :command:`gfortran` to compile the
+program:
 
 .. code-block:: console
 
-   $ gfortran -o fortran-walkthrough fortran-walkthrough.f90 -I$MSG_DIR/include `$MSG_DIR/scripts/fmsg_link`
+   $ gfortran -o fortran-walkthrough fortran-walkthrough.f90 `pkgconf --with-path=$MSG_DIR/lib/pkgconfig --cflags --libs fmsg`
 
-The ``-I$MSG_DIR/include`` option tells the compiler where to find
-the module definition (:file:`.mod`) files, while the
-```$MSG_DIR/scripts/fmsg_link``` clause (note the enclosing
-backticks) runs a link script that returns the compiler flags
+The ```pkgconf ...``` clause (note the enclosing backticks) uses
+`pkgconf <http://pkgconf.org/>`__ to generate the compiler flags
 necessary to link the program against the appropriate libraries.
 
 Running

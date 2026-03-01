@@ -7,11 +7,13 @@ export TESTS ?= yes
 # Build tool executables
 export TOOLS ?= yes
 
-# Build ForUM internally. If not set to "yes", then
-# you must set FORUM_LIB_DIR and FORUM_INC_DIR to
-# point to where the ForUM library and module files,
-# respectively, are located
-export FORUM ?= yes
+# Link against an external ForUM library
+#
+# If set to "yes", then the build system will use pkgconf to search
+# for library, with a package name speficied by EXTERNAL_FORUM_PKG.
+# Otherwise, the ForUM library will be built and linked internally
+EXTERNAL_FORUM ?= no
+EXTERNAL_FORUM_PKG ?= forum
 
 # Enable debugging (with a performance penalty)
 export DEBUG ?= no
@@ -30,7 +32,7 @@ export PYTHON ?= yes
 
 # Link string for FITS library
 # (leave undefined if not available)
-export FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
+#export FITS_LDFLAGS = -L/opt/local/lib -lcfitsio
 
 ############ DO NOT EDIT BELOW THIS LINE ############
 ### (unless you think you know what you're doing) ###
@@ -45,9 +47,10 @@ MAKEFLAGS += --no-print-directory
 
 export BIN_DIR ?= $(CURDIR)/bin
 export LIB_DIR ?= $(CURDIR)/lib
+export PKG_DIR ?= $(LIB_DIR)/pkgconfig
 export INC_DIR ?= $(CURDIR)/include
 
-SRC_DIR := $(CURDIR)/src
+export SRC_DIR := $(CURDIR)/src
 export SRC_DIRS =: $(addprefix $(SRC_DIR)/, \
      axis common cython include indexer lib limb \
      math ninterp passband photcache photgrid \
@@ -59,14 +62,9 @@ export SRC_DIRS =: $(addprefix $(SRC_DIR)/, \
      specsource specsource/hdf5 \
      tests tools vgrid)
 
-ifeq ($(FORUM),yes)
-   export FORUM_LIB_DIR := $(LIB_DIR)
-   export FORUM_INC_DIR := $(INC_DIR)
-endif
-
 # Rules
 
-install : build | $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
+install : build | $(BIN_DIR) $(LIB_DIR) $(PKG_DIR) $(INC_DIR)
 	@$(MAKE) -C build $@
 
 build : install-forum
@@ -74,7 +72,7 @@ build : install-forum
 
 clean : clean-forum
 	@$(MAKE) -C build $@
-	@rm -rf $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
+	@rm -rf $(BIN_DIR) $(LIB_DIR) $(PKG_DIR) $(INC_DIR)
 
 test :
 	@$(MAKE) -C test $@
@@ -82,9 +80,9 @@ test :
 check_src :
 	@$(MAKE) -C build $@
 
-ifeq ($(FORUM),yes)
+ifneq ($(EXTERNAL_FORUM),yes)
 
-   install-forum : | $(BIN_DIR) $(LIB_DIR) $(INC_DIR)
+   install-forum : | $(BIN_DIR) $(LIB_DIR) $(PKG_DIR) $(INC_DIR)
 	@$(MAKE) -C $(SRC_DIR)/forum
 
    clean-forum :
@@ -101,5 +99,5 @@ endif
 
 .PHONY: install build clean test check_src install-forum clean-forum
 
-$(BIN_DIR) $(LIB_DIR) $(INC_DIR) :
+$(BIN_DIR) $(LIB_DIR) $(PKG_DIR) $(INC_DIR) :
 	@mkdir -p $@

@@ -29,10 +29,11 @@ The module file :file:`fmsg_m` for the Fortran interface is provided
 in the directory :file:`$MSG_DIR/include`, and executables should be
 linked against :file:`$MSG_DIR/lib/libfmsg.so` (Linux) or
 :file:`$MSG_DIR/lib/libfmsg.dylib` (MacOS). To simplify this process,
-a script :file:`$MSG_DIR/scripts/fmsg_link` is provided that writes
-the appropriate linker commands to standard output. This script can be
-used to compile/link a program with :command:`gfortran` as follows:
+a set of `pkgconf <http://pkgconf.org/>`__ package definition files
+are provided in the :file:`$MSG_DIR/lib/pkgconfig` subdirectory. These
+files can be used to compile/link a program with :command:`gfortran`
+as follows:
 
 .. code-block:: console
 
-   $ gfortran -o myprogram myprogram.f90 -I $MSG_DIR/include `$MSG_DIR/scripts/fmsg_link`
+   $ gfortran -o myprogram myprogram.f90 `pkgconf --with-path=$MSG_DIR/lib/pkgconfig --cflags --libs fmsg`

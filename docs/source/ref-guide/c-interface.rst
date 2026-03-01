@@ -26,10 +26,11 @@ Headers for the C interface are provided in the header file
 :file:`$MSG_DIR/include/cmsg.h`, and executables should be linked
 against :file:`$MSG_DIR/lib/libcmsg.so` (Linux) or
 :file:`$MSG_DIR/lib/libcmsg.dylib` (MacOS). To simplify this process,
-a script :file:`$MSG_DIR/scripts/cmsg_link` is provided that writes
-the appropriate linker commands to standard output. This script can be
-used to compile/link a program with :command:`gcc` as follows:
+a set of `pkgconf <http://pkgconf.org/>`__ package definition files
+are provided in the :file:`$MSG_DIR/lib/pkgconfig` subdirectory. These
+files can be used to compile/link a program with :command:`gcc`
+as follows:
 
 .. code-block:: console
 
-   $ gcc -o myprogram myprogram.c -I $MSG_DIR/include `$MSG_DIR/scripts/cmsg_link`
+   $ gcc -o myprogram myprogram.c `pkgconf --with-path=$MSG_DIR/lib/pkgconfig --cflags --libs cmsg`
