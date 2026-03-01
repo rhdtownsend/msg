@@ -43,6 +43,11 @@ Options
    Remove orphaned vertices from the grid. This can reduce the output
    file size.
 
+.. option:: -c, --compress-axes
+
+   Compress grid axes, ensuring that the axis ranges reflect the
+   available interpolation domain.
+
 .. option:: -l --grid-label=NAME
 
    Set the grid label.

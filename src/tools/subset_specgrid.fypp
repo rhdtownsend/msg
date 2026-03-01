@@ -40,6 +40,7 @@ program subset_specgrid
    real(RD), allocatable     :: lam_max
    character(:), allocatable :: param_ranges(:)
    logical, allocatable      :: remove_orphans
+   logical, allocatable      :: compress_axes
    character(:), allocatable :: grid_label
 
    type(arg_parser_t)                :: arg_parser
@@ -62,6 +63,7 @@ program subset_specgrid
    ! Parse command-line arguments
 
    remove_orphans = .FALSE.
+   compress_axes = .FALSE.
 
    arg_parser = arg_parser_t('subset_specgrid INPUT_FILE OUTPUT_FILE', auto_help=.TRUE.)
 
@@ -73,6 +75,8 @@ program subset_specgrid
       usage='--parameter-range=NAME:MIN:MAX', description='photospheric parameter range')
    call arg_parser%define_option('remove-orphans', OPT_NO_ARG, 'r', &
       description='remove orphaned vertices')
+   call arg_parser%define_option('compress-axes', OPT_NO_ARG, 'c', &
+      description='compress axes ranges')
    call arg_parser%define_option('grid-label', OPT_REQUIRED_ARG, short_name='l', &
       usage='--grid-label=NAME', description='grid label')
 
@@ -174,6 +178,10 @@ program subset_specgrid
 
    if (remove_orphans) call specgrid%remove_orphans()
 
+   ! If necessary, compress axes
+
+   if (compress_axes) call specgrid%compress_axes()
+
    ! Write the output specgrid
 
    call specgrid%set_cache_limit(0)
@@ -228,6 +236,8 @@ contains
          call append_string(param_ranges, value)
       case('remove-orphans')
          remove_orphans = .TRUE.
+      case('compress-axes')
+         compress_axes = .TRUE.
       case('grid-label')
          grid_label = value
       case('help')
