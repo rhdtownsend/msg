@@ -1,7 +1,7 @@
 ! Submodule : mem_photsource_operate_sm
 ! Purpose   : Operation routines for mem_photsource_t
 !
-! Copyright 2021-2025 Rich Townsend & The MSG Team
+! Copyright 2021-2026 Rich Townsend & The MSG Team
 !
 ! This file is part of MSG. MSG is free software: you can redistribute
 ! it and/or modify it under the terms of the GNU General Public
@@ -34,7 +34,8 @@ contains
       ! Subset the photsource to contain only the entries selected by
       ! mask
 
-      self%photints = PACK(self%photints, MASK=mask)
+      !self%photints = PACK(self%photints, MASK=mask)
+      @:ABORT('currently not implemented due to Internal Compiler Error in gfortran 15')
 
       self%n = COUNT(mask)
 
