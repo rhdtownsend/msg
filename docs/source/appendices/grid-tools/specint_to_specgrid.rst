@@ -43,6 +43,10 @@ Options
    Compress grid axes, ensuring that the axis ranges reflect the
    available interpolation domain.
 
+.. option:: -d, --dry-run
+
+   Perform a dry-run, without writing any files.
+
 .. option:: -l --grid-label=NAME
 
    Set the grid label.
