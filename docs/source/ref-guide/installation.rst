@@ -20,7 +20,7 @@ components:
 * The :git:`fypp <aradi/fypp>` Fortran pre-processor
 * The `HDF5 <https://www.hdfgroup.org/solutions/hdf5/>`__ data management library
 * The `pkgconf <http://pkgconf.org/>`__ package management tool
-  
+
 On Linux and MacOS platforms, these components are bundled together in
 the `MESA Software Development Kit (SDK) <mesa-sdk_>`__. Using this SDK
 is `strongly` recommended.
