@@ -157,7 +157,8 @@ contains
 
          stat_cancel = STAT_OK
 
-         !$OMP PARALLEL DO PRIVATE(c_vec, interp_kernel, i, v_vec, v_lin, v_seq, F) REDUCTION(+:f_int) SCHEDULE(STATIC)
+         !$OMP PARALLEL
+         !$OMP DO PRIVATE(c_vec, interp_kernel, i, v_vec, v_lin, v_seq, F) REDUCTION(+:f_int) SCHEDULE(STATIC)
          do j = 1, SIZE(x_vec, 2)
 
             !$OMP CANCELLATION POINT DO
@@ -205,6 +206,8 @@ contains
             end do
 
          end do
+         !$OMP END DO
+         !$OMP END PARALLEL
 
          ! Finish
 

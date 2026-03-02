@@ -59,8 +59,6 @@ contains
       real(RD)          :: x_min_chk
       real(RD)          :: x_max
       real(RD)          :: x_max_chk
-      integer(ID)       :: ssize
-      integer(ID)       :: ssize_chk
 
       print *, '  attributes'
 

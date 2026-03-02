@@ -111,7 +111,6 @@ contains
       subroutine cubint_act_()
 
          integer :: i
-         integer :: m
 
          ! Set up the cubic interpolant
 

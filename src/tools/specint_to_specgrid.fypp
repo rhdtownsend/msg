@@ -300,8 +300,6 @@ contains
       character(NAME_LEN), allocatable :: file_names(:)
       character(NAME_LEN), allocatable :: group_names(:)
       type(hdf5_specsource_t)          :: specsource
-      real(RD), allocatable            :: x_min(:)
-      real(RD), allocatable            :: x_max(:)
 
       ! Create the vgrid
 
