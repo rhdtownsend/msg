@@ -99,6 +99,8 @@ class SpecGrid:
         x_vec = np.empty([m,self._rank])
 
         for i, key in enumerate(self._axis_labels):
+            if len(x[key]) != m:
+                raise ValueError('arrays in x dict have different length')
             x_vec[:,i] = x[key]
 
         return x_vec
