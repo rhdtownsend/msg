@@ -154,6 +154,8 @@ contains
          end if
       end if
 
+      !$OMP CRITICAL (speccache)
+
       if (self%ref_counts(i) > 0) then
 
          ! Decrement the reference counter
@@ -169,6 +171,8 @@ contains
       ! Trim the cache
 
       call trim_(self)
+
+      !$OMP END CRITICAL (speccache)
 
       ! Finish
 
