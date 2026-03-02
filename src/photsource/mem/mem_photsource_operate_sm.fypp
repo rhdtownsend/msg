@@ -29,13 +29,19 @@ contains
 
    module procedure subset
 
+      class(photint_t), allocatable :: photints(:)
+
       @:CHECK_BOUNDS(SIZE(mask), self%n)
 
       ! Subset the photsource to contain only the entries selected by
       ! mask
 
-      !self%photints = PACK(self%photints, MASK=mask)
-      @:ABORT('currently not implemented due to Internal Compiler Error in gfortran 15')
+      ! The need for an intermediate photints array is a workaround for
+      ! an ICE on gfortran 15.2
+
+      photints = PACK(self%photints, MASK=mask)
+
+      call MOVE_ALLOC(photints, self%photints)
 
       self%n = COUNT(mask)
 
