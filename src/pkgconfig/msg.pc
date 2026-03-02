@@ -5,7 +5,7 @@ includedir=${prefix}/include
 Name: MSG (core)
 Description: Multidimensional Spectral Grids (core)
 URL: https://github.com/rhdtownsend/msg
-Version: 2.1.1
+Version: 2.1.1+dev
 Requires.private: forum
 Cflags: -I${includedir}
 Libs: -Wl,-rpath,${libdir} -L${libdir} -lmsg
