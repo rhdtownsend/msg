@@ -28,15 +28,15 @@ Options
 
 .. option:: --logT-min=MIN
 
-   Minimum :math:`\log(T)` value.
+   Minimum :math:`\log(T/\kelvin)` value.
 
 .. option:: --logT-max=MAX
 
-   Maximum :math:`\log(T)` value.
+   Maximum :math:`\log(T/\kelvin)` value.
 
 .. option:: --n-logT=N
 
-   Number of :math:`\log(T)` values.
+   Number of :math:`\log(T/\kelvin)` values.
 
 .. option:: --u-limb=U
 
@@ -44,8 +44,8 @@ Options
 
 .. option:: --lambda=VALUE
 
-   Wavelength of monochromatic intensity. If not specified, then bolometric
-   intensities are calculated.
+   Wavelength of monochromatic intensity (:math:`\angstrom`). If not
+   specified, then bolometric intensities are calculated.
 
 .. option:: -l --grid-label=NAME
 
