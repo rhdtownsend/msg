@@ -40,10 +40,10 @@ basis functions are defined by
 
 .. math::
 
-   \begin{align}
+   \begin{aligned}
    \ell_{1}(u) &= 1 - u, \\
    \ell_{2}(u) &= u.
-   \end{align}
+   \end{aligned}
 
 This interpolation scheme is :math:`C^{0}` continuous, and reproduces
 :math:`f(x)` exactly at the grid points.
@@ -67,14 +67,15 @@ functions are
 
 .. math::
 
-   \begin{align}
+   \begin{aligned}
    c_{1}(u) &= 2 u^3 - 3 u^2 + 1, \\
    c_{2}(u) &= u^3 - u^2, \\
    c_{3}(u) &= -2 u^3 + 3 u^2, \\
    c_{4}(u) &= u^3 - 2 u^2 + u
-   \end{align}
+   \end{aligned}
 
-(these can be recognized as the basis functions for :wiki:`cubic Hermite splines <Cubic_Hermite_spline>`). This new definition is
+(these can be recognized as the basis functions for :wiki:`cubic
+Hermite splines <Cubic_Hermite_spline>`). This new definition is
 :math:`C^{1}` continuous, and reproduces :math:`f(x)` *and* its first
 derivative exactly at the grid points.
 

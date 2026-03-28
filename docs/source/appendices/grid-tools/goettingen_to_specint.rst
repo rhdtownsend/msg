@@ -40,6 +40,6 @@ Options
 
    In order for the :program:`goettingen_to_specint` tool to be built,
    you must first uncomment/edit the line in
-   :file:`$MSG_DIR/build/Makefile` that sets the
+   :file:`$MSG_DIR/Makefile` that sets the
    :envvar:`FITS_LDFLAGS` variable. This variable defines the flags
    used to link against your system's FITS library.
