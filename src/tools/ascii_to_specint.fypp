@@ -38,7 +38,8 @@ program ascii_to_specint
    character(:), allocatable :: specint_file_name
    character(:), allocatable :: lam_units
    character(:), allocatable :: flux_units
-   character(:), allocatable :: ignore_prefix
+   character(:), allocatable :: comment_prefix
+   character(:), allocatable :: label_prefix
    character(:), allocatable :: labels(:)
 
    type(arg_parser_t)        :: arg_parser
@@ -58,7 +59,8 @@ program ascii_to_specint
 
    lam_units = 'A'
    flux_units = 'erg/cm^2/s/A'
-   ignore_prefix = '#'
+   comment_prefix = ''
+   label_prefix = ''
 
    arg_parser = arg_parser_t('ascii_to_specint ASCII_FILE SPECINT_FILE', auto_help=.TRUE.)
 
@@ -67,9 +69,11 @@ program ascii_to_specint
    call arg_parser%define_option('flux-units', OPT_REQUIRED_ARG, &
       usage='--flux-units=UNITS', description='flux units of input file ( erg/cm^2/s/A | W/m^2/m )')
    call arg_parser%define_option('ignore-prefix', OPT_REQUIRED_ARG, &
-      usage='--ignore-prefix=PREFIX', description='ignore lines prefixed by PREFIX')
+      usage='--comment-prefix=PREFIX', description='treat lines prefixed by PREFIX as comments')
+   call arg_parser%define_option('label-prefix', OPT_REQUIRED_ARG, &
+      usage='--label-prefix=PREFIX', description='treat lines prefixed by PREFIX as photospheric parameter definitions')
    call arg_parser%define_option('label', OPT_REQUIRED_ARG, short_name='l', &
-      usage='--label=NAME:VALUE', description='photospheric parameter name/value')
+      usage='--label=NAME:VALUE', description='photospheric parameter name/value (overrides --label-prefix)')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
@@ -78,15 +82,15 @@ program ascii_to_specint
 
    ! Read data from the input file
 
-   call read_ascii_file(ascii_file_name, lam_units, flux_units, ignore_prefix, lam, F)
+   call read_ascii_file(ascii_file_name, lam_units, flux_units, comment_prefix, lam, F)
 
    ! Set up the bin-averaged intensity
 
-   n_lam = SIZE(F)
+   n_lam = SIZE(lam)
 
    allocate(I(1,n_lam-1))
 
-   I(1,:) = 0.5*(F(:n_lam-1) + F(2:))/PI
+   I(1,:) = 0.5_RD*(F(:n_lam-1) + F(2:))/PI
 
    ! Create specint
 
@@ -109,7 +113,11 @@ program ascii_to_specint
             @:STOP('invalid --label')
          end if
 
-         call hdf5io_labels%write_attr(name, value)
+         name = TRIM(ADJUSTL(name))
+
+         if (.NOT. hdf5io_labels%attr_exists(name)) then
+            call hdf5io_labels%write_attr(name, value)
+         end if
 
       end do
 
@@ -151,8 +159,10 @@ contains
          lam_units = value
       case('flux-units')
          flux_units = value
-      case('ignore-prefix')
-         ignore_prefix = value
+      case('comment-prefix')
+         comment_prefix = value
+      case('label-prefix')
+         label_prefix = value
       case('label')
          call append_string(labels, value)
       case('help')
@@ -174,12 +184,12 @@ contains
 
    !****
 
-   subroutine read_ascii_file(file_name, lam_units, flux_units, ignore_prefix, lam, F)
+   subroutine read_ascii_file(file_name, lam_units, flux_units, comment_prefix, lam, F)
 
       character(*), intent(in)           :: file_name
       character(*), intent(in)           :: lam_units
       character(*), intent(in)           :: flux_units
-      character(*), intent(in)           :: ignore_prefix
+      character(*), intent(in)           :: comment_prefix
       real(RD), allocatable, intent(out) :: lam(:)
       real(RD), allocatable, intent(out) :: F(:)
 
@@ -208,7 +218,20 @@ contains
          read(unit, 100, END=200) line
 100      format(A)
 
-         if (line == '' .OR. line(1:LEN(ignore_prefix)) == ignore_prefix) cycle read_loop
+         ! Handle special lines
+
+         if (line == '') cycle read_loop
+
+         if (label_prefix /= '') then
+            if (line(1:LEN(label_prefix)) == label_prefix) then
+               call append_string(labels, remove(line, 1, LEN(label_prefix)))
+               cycle read_loop
+            end if
+         end if
+
+         if (comment_prefix /= '') then
+            if (line(1:LEN(comment_prefix)) == comment_prefix) cycle read_loop
+         end if
 
          ! If necessary, expand arrays
 
