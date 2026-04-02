@@ -153,7 +153,8 @@ FC := gfortran
 
 MAKEDEP := awk -f makedepf08.awk
 
-FFLAGS += -std=f2018 -finit-real=snan -fbacktrace -fmax-errors=25 -fPIC
+FFLAGS += -std=f2018 -finit-real=snan -fbacktrace -fmax-errors=25 -fPIC \
+          -ftrampoline-impl=heap
 
 ifeq ($(FPE),yes)
    FFLAGS += -ffpe-trap=invalid,overflow,zero
