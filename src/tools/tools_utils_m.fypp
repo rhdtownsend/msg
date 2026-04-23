@@ -129,6 +129,8 @@ contains
             read(string, FMT=*, IOSTAT=iostat) value
             if (iostat /= 0) exit parse_block
 
+            if (PRESENT(stat)) stat = STAT_OK
+
             return
 
          end block parse_block
