@@ -6,7 +6,7 @@ Name: MSG (core)
 Description: Multidimensional Spectral Grids (core)
 URL: https://github.com/rhdtownsend/msg
 Version: 2.1.1+dev
-Requires.private: forum
+Requires.private: forum >= 1.2.3
 Cflags: -I${includedir}
 Libs: -Wl,-rpath,${libdir} -L${libdir} -lmsg
 
