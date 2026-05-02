@@ -37,6 +37,8 @@ program inspect_grid
    logical, allocatable      :: show_label
    logical, allocatable      :: show_axes
    logical, allocatable      :: show_lam
+   character(:), allocatable :: vis_x
+   character(:), allocatable :: vis_y
 
    type(arg_parser_t) :: arg_parser
    type(hdf5io_t)     :: hdf5io
@@ -63,7 +65,11 @@ program inspect_grid
    call arg_parser%define_option('lambda', OPT_NO_ARG, &
       description='show wavelength data')
    call arg_parser%define_option('all', OPT_NO_ARG, short_name='a', &
-      description='show everything')
+      description='show all metadata')
+   call arg_parser%define_option('vis-x', OPT_REQUIRED_ARG, &
+      usage='--vis-x=NAME', description='visualize grid occupancy, with NAME along the x-axis')
+   call arg_parser%define_option('vis-y', OPT_REQUIRED_ARG, &
+      usage='--vis-y=NAME', description='visualize grid occupancy, with NAME along the y-axis')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
@@ -157,6 +163,10 @@ contains
          show_label = .TRUE.
          show_axes = .TRUE.
          show_lam = .TRUE.
+      case('vis-x')
+         vis_x = value
+      case('vis-y')
+         vis_y = value
       case('help')
          call print_summary()
       case default
@@ -168,6 +178,8 @@ contains
       end if
 
    end subroutine opt_proc
+
+   !****
 
    subroutine print_summary()
 
@@ -186,59 +198,58 @@ contains
          type(${type}$), intent(in) :: grid
          character(*), intent(in)   :: grid_label
 
-         integer              :: rank
-         integer              :: r
-         type(axis_t)         :: axis
-         integer              :: n
-         real(RD)             :: x_min
-         real(RD)             :: x_max
-         character(LABEL_LEN) :: label
+         integer                           :: rank
+         integer, allocatable              :: shape(:)
+         integer                           :: r
+         type(axis_t), allocatable         :: axes(:)
+         character(LABEL_LEN), allocatable :: labels(:)
+         real(RD)                          :: x_min
+         real(RD)                          :: x_max
          #:if type == 'specgrid_t'
-            real(RD)          :: lam_min
-            real(RD)          :: lam_max
+            real(RD)                       :: lam_min
+            real(RD)                       :: lam_max
          #:endif
+         integer, allocatable              :: r_x
+         integer, allocatable              :: r_y
 
-         ! Inspect the grid
+         ! Extract metadata from the grid
 
-         ! Type
+         call grid%get_rank(rank)
+
+         allocate(shape(rank))
+         call grid%get_shape(shape)
+
+         allocate(axes(rank))
+         allocate(labels(rank))
+
+         do r = 1, rank
+            call grid%get_axis(r, axes(r))
+            call axes(r)%get_label(labels(r))
+         end do
+
+         ! Display the metadata
 
          if (show_type) then
-
-            write(OUTPUT_UNIT, 100) '${name}$'
-100         format('Type: ',A)
-
+            write(OUTPUT_UNIT, 100) 'Type:', '${name}$'
+100         format(A,1X,A)
          end if
-
-         ! Label
 
          if (show_label) then
-
-            write(OUTPUT_UNIT, 110) TRIM(grid_label)
-110         format('Label: ',A)
+            write(OUTPUT_UNIT, 100) 'Label:', TRIM(grid_label)
          end if
-
-         ! Axes
 
          if (show_axes) then
 
-            call grid%get_rank(rank)
-
-            write(OUTPUT_UNIT, 120) rank
-120         format('Axes [',I0,'] :')
+            write(OUTPUT_UNIT, 110) 'Axes [', rank, ']:'
+110         format(A,I0,A)
 
             do r = 1, rank
 
-               call grid%get_axis(r, axis)
+               call axes(r)%get_x_min(x_min)
+               call axes(r)%get_x_max(x_max)
 
-               call axis%get_n(n)
-
-               call axis%get_x_min(x_min)
-               call axis%get_x_max(x_max)
-
-               call axis%get_label(label)
-
-               write(OUTPUT_UNIT, 130) TRIM(label), n, x_min, x_max
-130            format(2X,A,' [',I0,']: ',T20,'(',G0,' -> ',G0,')')
+               write(OUTPUT_UNIT, 120) TRIM(labels(r)), '[', shape(r), ']', '(', x_min, '→', x_max, ')'
+120            format(2X,A,1X,A,I0,A,T20,A,G0.3,1X,A,1X,G0.3,A)
 
             end do
 
@@ -251,12 +262,38 @@ contains
                call grid%get_lam_min(lam_min)
                call grid%get_lam_max(lam_max)
 
-               write(OUTPUT_UNIT, 140) lam_min, lam_max
-140            format('Wavelength: ',T20,'(',G0,' -> ',G0,')')
+               write(OUTPUT_UNIT, 130) 'Wavelength:', '(', lam_min, '→', lam_max, ')'
+130            format(A,T20,A,G0.3,1X,A,1X,G0.3,A)
 
             end if
 
          #:endif
+
+         ! If necessary, visualize the grid
+
+         if (ALLOCATED(vis_x) .OR. ALLOCATED(vis_y)) then
+
+            ! Determine indices of the slice axes
+
+            do r = 1, rank
+               if (ALLOCATED(vis_x)) then
+                  if (vis_x == labels(r)) then
+                     r_x = r
+                  end if
+               end if
+               if (ALLOCATED(vis_y)) then
+                  if (vis_y == labels(r)) then
+                     r_y = r
+                  end if
+               end if
+            end do
+
+            @:ASSERT(ALLOCATED(vis_x) .EQV. ALLOCATED(r_x), 'could not determine visualization x-axis')
+            @:ASSERT(ALLOCATED(vis_y) .EQV. ALLOCATED(r_y), 'could not determine visualization y-axis')
+
+            call grid%vis_slice(r_x=r_x, r_y=r_y)
+
+         end if
 
          ! Finish
 

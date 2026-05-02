@@ -316,6 +316,59 @@ contains
 
    !****
 
+   module procedure probe_v_
+
+      integer :: r
+      integer :: v_lin
+      integer :: v_seq
+
+      ! Probe the grid, to see whether v_vec is a valid vertex
+
+      do r = 1, self%rank
+         if (v_vec(r) < 1) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_LO
+            return
+         else if (v_vec(r) > self%shape(r)) then
+            stat = STAT_OUT_OF_BOUNDS_AXIS_HI
+            return
+         end if
+      end do
+
+      v_lin = self%indexer%vert_linear(v_vec)
+      v_seq = self%indexer%vert_sequence(v_lin)
+
+      if (v_seq == NULL_NODE) then
+         stat = STAT_UNAVAILABLE_DATA
+      else
+         stat = STAT_OK
+      end if
+
+      ! Finish
+
+      return
+
+   end procedure probe_v_
+
+   !****
+
+   module procedure probe_x_
+
+      integer  :: c_vec(self%rank)
+      real(RD) :: u(self%rank)
+      real(RD) :: edge_deltas(self%rank)
+
+      ! Probe interpolation
+
+      call locate_cell_(self, x_vec, c_vec, u, edge_deltas, stat)
+
+      ! Finish
+
+      return
+
+   end procedure probe_x_
+
+   !****
+
    module procedure adjust_x_vec
 
       integer              :: r

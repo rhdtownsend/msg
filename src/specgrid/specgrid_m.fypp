@@ -75,6 +75,7 @@ module specgrid_m
       procedure, public :: interp_irradiance
       procedure, public :: interp_flux
       procedure, public :: adjust_x_vec
+      procedure, public :: vis_slice
       procedure, public :: read
       procedure, public :: write
       procedure, public :: flush_cache
@@ -289,6 +290,19 @@ module specgrid_m
          real(RD), intent(out)          :: x_adj(:)
          integer, intent(out), optional :: stat
       end subroutine adjust_x_vec
+
+   end interface
+
+   ! In specgrid_visualize_sm
+
+   interface
+
+      module subroutine vis_slice(self, r_x, r_y)
+         implicit none (type, external)
+         class(specgrid_t), intent(in) :: self
+         integer, intent(in), optional :: r_x
+         integer, intent(in), optional :: r_y
+      end subroutine vis_slice
 
    end interface
 

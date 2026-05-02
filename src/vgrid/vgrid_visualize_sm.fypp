@@ -1,0 +1,199 @@
+! Submodule : vgrid_visualize_sm
+! Purpose   : Visualization routines for vgrid_t
+!
+! Copyright 2021-2026 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (vgrid_m) vgrid_visualize_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure vis_slice
+
+      character(LABEL_LEN), allocatable :: labels(:)
+      integer                           :: r
+      integer                           :: n_x
+      integer                           :: n_y
+      logical, allocatable              :: mask(:)
+      integer                           :: n_lin
+      type(indexer_t)                   :: indexer
+      integer                           :: v_lin
+      integer, allocatable              :: v_vec(:)
+      real(RD), allocatable             :: x_vec(:)
+      integer                           :: i_x
+      integer                           :: i_y
+      integer                           :: stat_v_vec
+      integer                           :: stat_x_vec
+
+      ! Visualize the vgrid by showing vertex occupancy in slices along axes i_x and i_y
+
+      ! Extract labels for later use
+
+      allocate(labels(self%rank))
+
+      do r = 1, self%rank
+         call self%axes(r)%get_label(labels(r))
+      end do
+
+      ! Determine extents along axes i_x and i_y
+
+      if (PRESENT(r_x)) then
+         @:ASSERT(r_x >= 1 .AND. r_x <= self%rank)
+         n_x = self%shape(r_x)
+      else
+         n_x = 1
+      end if
+
+      if (PRESENT(r_y)) then
+         @:ASSERT(r_y >= 1 .AND. r_y <= self%rank)
+         n_y = self%shape(r_y)
+      else
+         n_y = 1
+      end if
+
+      write(OUTPUT_UNIT, 100, ADVANCE='NO') 'Visualizing grid occupancy in slices'
+100   format(A)
+
+      if (PRESENT(r_x)) then
+         write(OUTPUT_UNIT, 110, ADVANCE='NO') TRIM(labels(r_x)), '→'
+110      format(1X,A,1X,A)
+      end if
+
+      if (PRESENT(r_y)) then
+         write(OUTPUT_UNIT, 110, ADVANCE='NO') TRIM(labels(r_y)), '↓'
+      end if
+
+      write(OUTPUT_UNIT, *)
+
+      ! Print out the key
+
+      write(OUTPUT_UNIT, 100) 'Key:'
+      write(OUTPUT_UNIT, 100) '■ -- valid vertex'
+      write(OUTPUT_UNIT, 100) '□ -- orphaned vertex'
+      write(OUTPUT_UNIT, 100) '. -- missing vertex'
+      write(OUTPUT_UNIT, 100) '? -- invalid vertex, report a bug!'
+
+      ! Set up a mask and indexer for the non-slice axes
+
+      allocate(mask(self%rank))
+
+      mask = .TRUE.
+
+      if (PRESENT(r_x)) mask(r_x) = .FALSE.
+      if (PRESENT(r_y)) mask(r_y) = .FALSE.
+
+      n_lin = PRODUCT(self%shape, mask)
+
+      indexer = indexer_t(PACK(self%shape, mask), [(v_lin, v_lin = 1,n_lin)])
+
+      ! Loop over linear indices of non-slice axes
+
+      allocate(v_vec(self%rank))
+      allocate(x_vec(self%rank))
+
+      do v_lin = 1, n_lin
+
+         ! Set the base vector index
+
+         v_vec = UNPACK(indexer%vert_vector(v_lin), mask, 0)
+
+         if (n_lin > 1) then
+
+            write(OUTPUT_UNIT, 100, ADVANCE='NO') 'Slice for'
+
+            do r = 1, self%rank
+               if (mask(r)) then
+                  call self%axes(r)%fetch(v_vec(r), x_vec(r))
+                  write(OUTPUT_UNIT, 130, ADVANCE='NO') TRIM(labels(r)), '=', x_vec(r)
+130               format(1X,A,A,G0.3)
+               end if
+            end do
+
+            write(OUTPUT_UNIT, *)
+
+         end if
+
+         ! Print header row
+
+         write(OUTPUT_UNIT, 140, ADVANCE='NO')
+140      format(2X)
+
+         do i_x = 1, n_x
+            write(OUTPUT_UNIT, 150, ADVANCE='NO') MOD(i_x, 10)
+150         format(I1)
+         end do
+
+         write(OUTPUT_UNIT, *)
+
+         ! Now iterate over slice axes
+
+         do i_y = 1, n_y
+
+            if (PRESENT(r_y)) then
+               v_vec(r_y) = i_y
+               call self%axes(r_y)%fetch(v_vec(r_y), x_vec(r_y))
+            end if
+
+            write(OUTPUT_UNIT, 160, ADVANCE='NO') MOD(i_y, 10)
+160         format(I1,1X)
+
+            do i_x = 1, n_x
+
+               if (PRESENT(r_x)) then
+                  v_vec(r_x) = i_x
+                  call self%axes(r_x)%fetch(v_vec(r_x), x_vec(r_x))
+               end if
+
+               ! Probe the vertex
+
+               call self%probe(v_vec, stat_v_vec)
+               call self%probe(x_vec, stat_x_vec)
+
+               if (stat_v_vec == STAT_OK) then
+                  if (stat_x_vec == STAT_OK) then
+                     write(OUTPUT_UNIT, 170, ADVANCE='NO') '■'
+170                  format(A)
+                  else
+                     write(OUTPUT_UNIT, 170, ADVANCE='NO') '□'
+                  end if
+               else
+                  if (stat_x_vec == STAT_OK) then
+                     write(OUTPUT_UNIT, 170, ADVANCE='NO') '?'
+                  else
+                     write(OUTPUT_UNIT, 170, ADVANCE='NO') '.'
+                  end if
+               end if
+
+            end do
+
+            write(OUTPUT_UNIT, *)
+
+         end do
+      end do
+
+      ! Finish
+
+      return
+
+   end procedure vis_slice
+
+end submodule vgrid_visualize_sm

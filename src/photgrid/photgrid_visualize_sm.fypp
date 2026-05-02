@@ -1,0 +1,45 @@
+! Submodule : photgrid_visualize_sm
+! Purpose   : Visualization routines for photgrid_t
+!
+! Copyright 2021-2026 Rich Townsend & The MSG Team
+!
+! This file is part of MSG. MSG is free software: you can redistribute
+! it and/or modify it under the terms of the GNU General Public
+! License as published by the Free Software Foundation, version 3.
+!
+! MSG is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+! or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+! License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:include 'forum.inc'
+
+submodule (photgrid_m) photgrid_visualize_sm
+
+   ! No implicit typing
+
+   implicit none (type, external)
+
+   ! Procedures
+
+contains
+
+   module procedure vis_slice
+
+      character(LABEL_LEN), allocatable :: labels(:)
+      integer                           :: n_x
+
+      ! Visualize the photgrid
+
+      call self%vgrid%vis_slice(r_x, r_y)
+
+      ! Finish
+
+      return
+
+   end procedure vis_slice
+
+end submodule photgrid_visualize_sm
