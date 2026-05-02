@@ -56,13 +56,15 @@ indexer_SRCS = indexer_m.fypp indexer_construct_sm.fypp indexer_attribs_sm.fypp 
 
 vgrid_SRCS = vgrid_m.fypp vgrid_construct_sm.fypp \
              vgrid_attribs_sm.fypp vgrid_operate_sm.fypp vgrid_io_sm.fypp \
-             vgrid_interp_sm.fypp vgrid_interp_linear_sm.fypp vgrid_interp_cubic_sm.fypp
+             vgrid_interp_sm.fypp vgrid_interp_linear_sm.fypp vgrid_interp_cubic_sm.fypp \
+             vgrid_visualize_sm.fypp
 
 photcache_SRCS = photcache_m.fypp photcache_construct_sm.fypp photcache_attribs_sm.fypp \
                  photcache_access_sm.fypp
 
 photgrid_SRCS = photgrid_m.fypp photgrid_construct_sm.fypp photgrid_attribs_sm.fypp \
-                photgrid_operate_sm.fypp photgrid_interp_sm.fypp photgrid_io_sm.fypp
+                photgrid_operate_sm.fypp photgrid_interp_sm.fypp photgrid_visualize_sm.fypp \
+                photgrid_io_sm.fypp
 
 photint_SRCS = photint_m.fypp photint_sm.fypp \
                limb_photint_m.fypp limb_photint_construct_sm.fypp limb_photint_attribs_sm.fypp \
@@ -80,7 +82,8 @@ speccache_SRCS = speccache_m.fypp speccache_construct_sm.fypp speccache_attribs_
                  speccache_access_sm.fypp
 
 specgrid_SRCS = specgrid_m.fypp specgrid_construct_sm.fypp specgrid_attribs_sm.fypp \
-                specgrid_interp_sm.fypp specgrid_operate_sm.fypp specgrid_io_sm.fypp
+                specgrid_interp_sm.fypp specgrid_operate_sm.fypp specgrid_visualize_sm.fypp \
+                specgrid_io_sm.fypp
 
 specint_SRCS = specint_m.fypp specint_sm.fypp \
                 limb_specint_m.fypp limb_specint_construct_sm.fypp limb_specint_attribs_sm.fypp \
