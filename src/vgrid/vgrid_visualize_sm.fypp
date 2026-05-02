@@ -70,7 +70,7 @@ contains
          n_y = 1
       end if
 
-      write(OUTPUT_UNIT, 100, ADVANCE='NO') 'Visualizing grid occupancy in slices'
+      write(OUTPUT_UNIT, 100, ADVANCE='NO') 'Visualizing grid completeness by slicing'
 100   format(A)
 
       if (PRESENT(r_x)) then

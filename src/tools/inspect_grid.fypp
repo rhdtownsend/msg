@@ -24,6 +24,8 @@ program inspect_grid
    use forum_m
    use msg_m
 
+   use tools_utils_m
+
    use ISO_FORTRAN_ENV
 
    ! No implicit typing
@@ -37,8 +39,7 @@ program inspect_grid
    logical, allocatable      :: show_label
    logical, allocatable      :: show_axes
    logical, allocatable      :: show_lam
-   character(:), allocatable :: vis_x
-   character(:), allocatable :: vis_y
+   character(:), allocatable :: vis_slice
 
    type(arg_parser_t) :: arg_parser
    type(hdf5io_t)     :: hdf5io
@@ -66,10 +67,8 @@ program inspect_grid
       description='show wavelength data')
    call arg_parser%define_option('all', OPT_NO_ARG, short_name='a', &
       description='show all metadata')
-   call arg_parser%define_option('vis-x', OPT_REQUIRED_ARG, &
-      usage='--vis-x=NAME', description='visualize grid occupancy, with NAME along the x-axis')
-   call arg_parser%define_option('vis-y', OPT_REQUIRED_ARG, &
-      usage='--vis-y=NAME', description='visualize grid occupancy, with NAME along the y-axis')
+   call arg_parser%define_option('vis-slice', OPT_REQUIRED_ARG, &
+      usage='--vis-slice=XAXIS:YAXIS', description='visualize grid completeness by slicing along a pair of axes')
 
    call arg_parser%parse(arg_proc, opt_proc)
 
@@ -163,10 +162,8 @@ contains
          show_label = .TRUE.
          show_axes = .TRUE.
          show_lam = .TRUE.
-      case('vis-x')
-         vis_x = value
-      case('vis-y')
-         vis_y = value
+      case('vis-slice')
+         vis_slice = value
       case('help')
          call print_summary()
       case default
@@ -209,6 +206,8 @@ contains
             real(RD)                       :: lam_min
             real(RD)                       :: lam_max
          #:endif
+         character(:), allocatable         :: vis_x
+         character(:), allocatable         :: vis_y
          integer, allocatable              :: r_x
          integer, allocatable              :: r_y
 
@@ -271,25 +270,23 @@ contains
 
          ! If necessary, visualize the grid
 
-         if (ALLOCATED(vis_x) .OR. ALLOCATED(vis_y)) then
+         if (ALLOCATED(vis_slice)) then
 
             ! Determine indices of the slice axes
 
+            call parse_values(vis_slice, vis_x, vis_y)
+
             do r = 1, rank
-               if (ALLOCATED(vis_x)) then
-                  if (vis_x == labels(r)) then
-                     r_x = r
-                  end if
+               if (vis_x == labels(r)) then
+                  r_x = r
                end if
-               if (ALLOCATED(vis_y)) then
-                  if (vis_y == labels(r)) then
-                     r_y = r
-                  end if
+               if (vis_y == labels(r)) then
+                  r_y = r
                end if
             end do
 
-            @:ASSERT(ALLOCATED(vis_x) .EQV. ALLOCATED(r_x), 'could not determine visualization x-axis')
-            @:ASSERT(ALLOCATED(vis_y) .EQV. ALLOCATED(r_y), 'could not determine visualization y-axis')
+            @:ASSERT(vis_x /= '' .EQV. ALLOCATED(r_x), 'could not determine slice x-axis')
+            @:ASSERT(vis_y /= '' .EQV. ALLOCATED(r_y), 'could not determine slice y-axis')
 
             call grid%vis_slice(r_x=r_x, r_y=r_y)
 

@@ -46,3 +46,7 @@ Options
 
    Equivalent to specifying :option:`--type`, :option:`--label`,
    :option:`--axes` and :option:`--lambda`.
+
+.. option:: --vis-slice=XAXIS:YAXIS
+
+   Visualize grid completeness by slicing along a pair of axes.
