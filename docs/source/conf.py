@@ -24,7 +24,7 @@ import sphinx_rtd_theme
 
 project = 'MSG'
 author = 'Rich Townsend & The MSG Team'
-version = '2.2'
+version = '2.2+dev'
 release = version
 branch = 'main'
 copyright = '2021-2026, Rich Townsend & The MSG Team'
