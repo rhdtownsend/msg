@@ -5,9 +5,9 @@ includedir=${prefix}/include
 Name: MSG (Fortran)
 Description: Multidimensional Spectral Grids (Fortran interface)
 URL: https://github.com/rhdtownsend/msg
-Version: 2.1.1+dev
-Requires: msg = 2.1.1+dev
-Requires.private: forum
+Version: 2.2
+Requires: msg = 2.2
+Requires.private: forum >= 1.2.3
 Cflags: -I${includedir}
 Libs: -Wl,-rpath,${libdir} -L${libdir} -lfmsg
 
