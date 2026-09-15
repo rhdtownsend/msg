@@ -5,8 +5,8 @@ includedir=${prefix}/include
 Name: MSG (C)
 Description: Multidimensional Spectral Grids (C interface)
 URL: https://github.com/rhdtownsend/msg
-Version: 2.2
-Requires: msg = 2.2
+Version: 2.2.1
+Requires: msg = 2.2.1
 Requires.private: forum >= 1.2.3
 Cflags: -I${includedir}
 Libs: -Wl,-rpath,${libdir} -L${libdir} -lcmsg
