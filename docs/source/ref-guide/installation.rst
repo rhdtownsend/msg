@@ -30,6 +30,7 @@ you'll also need the following components:
 
 * `Python 3.7 <https://www.python.org/downloads/>`__ (or more recent)
 * `NumPy 1.15 <https://numpy.org/>`__ (or more recent)
+* `Cython 3.1.2 <https://cython.readthedocs.io/en/>`__ (or more recent); only required when compiling
 
 Building MSG
 ============
