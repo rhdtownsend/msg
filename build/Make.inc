@@ -26,10 +26,18 @@ ifneq ($(MAKECMDGOALS),clean)
    endif
 
    ifeq ($(PYTHON),yes)
-      CYTHON = $(shell which cython)
-      ifeq ($(CYTHON),)
-         $(error No cython found, consider installing with pip, conda, etc)
+
+      PYTHON_TEST := $(shell python -c "import $(PYTHON_MODULES)" 2>&1)
+      ifneq ($(PYTHON_TEST),)
+         $(info $(PYTHON_TEST))
+         $(error One or more of the required Python modules ($(PYTHON_MODULES)) cannot be found --- please install with pip, conda, etc)
       endif
+
+      CYTHON := $(shell which cython)
+      ifeq ($(CYTHON),)
+         $(error The cython executable cannot be found --- please install with pip, conda, etc)
+      endif
+
    endif
 
 endif

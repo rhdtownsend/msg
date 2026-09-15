@@ -15,6 +15,7 @@ INC_FILES = msg_m.mod fmsg_m.mod cmsg_m.mod cmsg.h
 
 ifeq ($(PYTHON),yes)
   PYC_TARGETS := pycmsg
+  PYTHON_MODULES := numpy,cython
 endif
 
 ifeq ($(TESTS),yes)
